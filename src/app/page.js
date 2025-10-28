@@ -14,7 +14,7 @@ export default function Home() {
         {/* Header Section */}
         <header className="text-center mb-8">
           <h1 className={`text-4xl md:text-5xl font-bold ${theme.colors.text.primary} mb-4`}>
-            🚀 We're Building Something Amazing
+            🚀 We&apos;re Building Something Amazing
           </h1>
           
           <p className={`text-xl ${theme.colors.text.secondary} mb-2`}>
