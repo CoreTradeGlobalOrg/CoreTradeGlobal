@@ -3,9 +3,7 @@
  * Reusable button with loading state and variants
  */
 
-import { theme } from '@/config/theme';
-
-export function Button({ 
+export function Button({
   children,
   onClick,
   type = 'button',
@@ -16,15 +14,28 @@ export function Button({
   ariaLabel,
   ...props
 }) {
-//   const variants = {
-//     primary: `
-//       text-white
-//       ${theme.colors.button.primary}
-//       ${theme.shadow.button}
-//     `,
-//     secondary: 'text-warmBrown-800 bg-cream-dark hover:bg-cream',
-//     outline: 'text-warmBrown-600 border-2 border-warmBrown-500 hover:bg-warmBrown-50',
-//   };
+  const variants = {
+    primary: `
+      bg-blue-600 hover:bg-blue-700 active:bg-blue-800
+      text-white
+      shadow-sm hover:shadow-md
+    `,
+    secondary: `
+      bg-slate-100 hover:bg-slate-200 active:bg-slate-300
+      text-slate-900
+      shadow-sm
+    `,
+    outline: `
+      bg-transparent hover:bg-slate-50 active:bg-slate-100
+      text-blue-600 hover:text-blue-700
+      border-2 border-blue-600 hover:border-blue-700
+    `,
+    danger: `
+      bg-red-600 hover:bg-red-700 active:bg-red-800
+      text-white
+      shadow-sm hover:shadow-md
+    `,
+  };
 
   return (
     <button
@@ -33,20 +44,19 @@ export function Button({
       disabled={disabled || loading}
       aria-label={ariaLabel}
       className={`
-        ${theme.spacing.button}
-        text-lg
+        px-6 py-3
         font-semibold
-        ${theme.borderRadius.button}
+        rounded-lg
         focus:outline-none
-        focus:ring-4
-        ${theme.colors.button.ring}
-        ${theme.transitions.default}
+        focus:ring-4 focus:ring-blue-200
+        transition-all duration-200
         transform
         hover:scale-105
         active:scale-95
         disabled:opacity-50
         disabled:cursor-not-allowed
         disabled:hover:scale-100
+        ${variants[variant]}
         ${className}
       `}
       {...props}
