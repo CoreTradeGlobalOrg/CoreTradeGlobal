@@ -11,15 +11,12 @@
 'use client';
 
 import { useAuth } from '@/presentation/contexts/AuthContext';
-import { useLogout } from '@/presentation/hooks/auth/useLogout';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { Button } from '@/components/ui/Button';
 import { UserStatusBanner } from '@/presentation/components/common/UserStatusBanner/UserStatusBanner';
 
 export default function DashboardPage() {
   const { user, loading, isAuthenticated, refreshUser } = useAuth();
-  const { logout } = useLogout();
   const router = useRouter();
   const [initialRefreshDone, setInitialRefreshDone] = useState(false);
 
@@ -70,9 +67,74 @@ export default function DashboardPage() {
       <header className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8 flex justify-between items-center">
           <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <Button onClick={logout} variant="secondary">
-            Logout
-          </Button>
+
+          <div className="flex items-center gap-3">
+            {/* Admin Dashboard Button - Only for admins */}
+            {user?.role === 'admin' && (
+              <button
+                onClick={() => router.push('/admin')}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm"
+              >
+                Admin Dashboard
+              </button>
+            )}
+
+            {/* Profile Button */}
+            <button
+              onClick={() => router.push(`/profile/${user?.uid}`)}
+              className="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors"
+            >
+              {/* Company Logo or Building Icon */}
+              {user?.companyLogo ? (
+                <img
+                  src={user.companyLogo}
+                  alt="Company logo"
+                  className="w-10 h-10 rounded-full object-cover border-2 border-gray-200"
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center">
+                  <svg
+                    className="w-5 h-5 text-white"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                    />
+                  </svg>
+                </div>
+              )}
+
+              {/* User Name */}
+              <div className="text-left">
+                <p className="text-sm font-medium text-gray-900">
+                  {user?.displayName || user?.email}
+                </p>
+                <p className="text-xs text-gray-500">
+                  {user?.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : 'Member'}
+                </p>
+              </div>
+
+              {/* Dropdown Icon */}
+              <svg
+                className="w-4 h-4 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
+            </button>
+          </div>
         </div>
       </header>
 

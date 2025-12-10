@@ -1,0 +1,334 @@
+[debug] [2025-11-29T13:40:26.354Z] ----------------------------------------------------------------------
+[debug] [2025-11-29T13:40:26.356Z] Command:       /opt/homebrew/Cellar/node/24.7.0/bin/node /opt/homebrew/bin/firebase emulators:start --only functions
+[debug] [2025-11-29T13:40:26.356Z] CLI Version:   14.1.0
+[debug] [2025-11-29T13:40:26.356Z] Platform:      darwin
+[debug] [2025-11-29T13:40:26.356Z] Node Version:  v24.7.0
+[debug] [2025-11-29T13:40:26.356Z] Time:          Sat Nov 29 2025 14:40:26 GMT+0100 (Central European Standard Time)
+[debug] [2025-11-29T13:40:26.356Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2025-11-29T13:40:26.444Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-11-29T13:40:26.444Z] > authorizing via signed-in user (coretrademail@gmail.com)
+[info] i  emulators: Starting emulators: functions {"metadata":{"emulator":{"name":"hub"},"message":"Starting emulators: functions"}}
+[debug] [2025-11-29T13:40:26.690Z] [logging] Logging Emulator only supports listening on one address (127.0.0.1). Not listening on ::1
+[debug] [2025-11-29T13:40:26.690Z] assigned listening specs for emulators {"user":{"hub":[{"address":"127.0.0.1","family":"IPv4","port":4400},{"address":"::1","family":"IPv6","port":4400}],"ui":[{"address":"127.0.0.1","family":"IPv4","port":4000},{"address":"::1","family":"IPv6","port":4000}],"logging":[{"address":"127.0.0.1","family":"IPv4","port":4500}]},"metadata":{"message":"assigned listening specs for emulators"}}
+[debug] [2025-11-29T13:40:26.692Z] [hub] writing locator at /var/folders/n_/8r26cpr51rl56j0mz5833yvm0000gn/T/hub-core-trade-global-c4fd0.json
+[debug] [2025-11-29T13:40:26.929Z] [functions] Functions Emulator only supports listening on one address (127.0.0.1). Not listening on ::1
+[debug] [2025-11-29T13:40:26.930Z] [eventarc] Eventarc Emulator only supports listening on one address (127.0.0.1). Not listening on ::1
+[debug] [2025-11-29T13:40:26.930Z] [tasks] Cloud Tasks Emulator only supports listening on one address (127.0.0.1). Not listening on ::1
+[debug] [2025-11-29T13:40:26.930Z] late-assigned ports for functions and eventarc emulators {"user":{"hub":[{"address":"127.0.0.1","family":"IPv4","port":4400},{"address":"::1","family":"IPv6","port":4400}],"ui":[{"address":"127.0.0.1","family":"IPv4","port":4000},{"address":"::1","family":"IPv6","port":4000}],"logging":[{"address":"127.0.0.1","family":"IPv4","port":4500}],"functions":[{"address":"127.0.0.1","family":"IPv4","port":5001}],"eventarc":[{"address":"127.0.0.1","family":"IPv4","port":9299}],"tasks":[{"address":"127.0.0.1","family":"IPv4","port":9499}]},"metadata":{"message":"late-assigned ports for functions and eventarc emulators"}}
+[warn] ⚠  functions: The following emulators are not running, calls to these services from the Functions emulator will affect production: apphosting, auth, firestore, database, hosting, pubsub, storage, dataconnect {"metadata":{"emulator":{"name":"functions"},"message":"The following emulators are not running, calls to these services from the Functions emulator will affect production: apphosting, auth, firestore, database, hosting, pubsub, storage, dataconnect"}}
+[debug] [2025-11-29T13:40:27.006Z] defaultcredentials: writing to file /Users/wenubey/.config/firebase/coretrademail_gmail_com_application_default_credentials.json
+[debug] [2025-11-29T13:40:27.007Z] Setting GAC to /Users/wenubey/.config/firebase/coretrademail_gmail_com_application_default_credentials.json {"metadata":{"emulator":{"name":"functions"},"message":"Setting GAC to /Users/wenubey/.config/firebase/coretrademail_gmail_com_application_default_credentials.json"}}
+[debug] [2025-11-29T13:40:27.007Z] Checked if tokens are valid: true, expires at: 1764427178286
+[debug] [2025-11-29T13:40:27.007Z] Checked if tokens are valid: true, expires at: 1764427178286
+[debug] [2025-11-29T13:40:27.008Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/core-trade-global-c4fd0/adminSdkConfig [none]
+[debug] [2025-11-29T13:40:27.734Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/core-trade-global-c4fd0/adminSdkConfig 403
+[debug] [2025-11-29T13:40:27.734Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/core-trade-global-c4fd0/adminSdkConfig {"error":{"code":403,"message":"The caller does not have permission","status":"PERMISSION_DENIED"}}
+[debug] [2025-11-29T13:40:27.734Z] Failed to get Admin SDK config for core-trade-global-c4fd0, falling back to cache Failed to get Admin SDK for Firebase project core-trade-global-c4fd0. Please make sure the project exists and your account has permission to access it. {"name":"FirebaseError","children":[],"exit":2,"message":"Failed to get Admin SDK for Firebase project core-trade-global-c4fd0. Please make sure the project exists and your account has permission to access it.","original":{"name":"FirebaseError","children":[],"context":{"body":{"error":{"code":403,"message":"The caller does not have permission","status":"PERMISSION_DENIED"}},"response":{"statusCode":403}},"exit":1,"message":"Request to https://firebase.googleapis.com/v1beta1/projects/core-trade-global-c4fd0/adminSdkConfig had HTTP Error: 403, The caller does not have permission","status":403},"status":500}
+[warn] ⚠  functions: Unable to fetch project Admin SDK configuration, Admin SDK behavior in Cloud Functions emulator may be incorrect. {"metadata":{"emulator":{"name":"functions"},"message":"Unable to fetch project Admin SDK configuration, Admin SDK behavior in Cloud Functions emulator may be incorrect."}}
+[info] i  ui: downloading ui-v1.14.0.zip... {"metadata":{"emulator":{"name":"ui"},"message":"downloading ui-v1.14.0.zip..."}}
+[debug] [2025-11-29T13:40:27.744Z] >>> [apiv2][query] GET https://storage.googleapis.com/firebase-preview-drop/emulator/ui-v1.14.0.zip 
+[debug] [2025-11-29T13:40:28.237Z] <<< [apiv2][status] GET https://storage.googleapis.com/firebase-preview-drop/emulator/ui-v1.14.0.zip 200
+[debug] [2025-11-29T13:40:28.238Z] <<< [apiv2][body] GET https://storage.googleapis.com/firebase-preview-drop/emulator/ui-v1.14.0.zip [stream]
+[debug] [2025-11-29T13:40:28.954Z] Data is 3615311
+[debug] [2025-11-29T13:40:28.954Z] [unzip] Entry: client/ (compressed_size=0 bytes, uncompressed_size=0 bytes)
+[debug] [2025-11-29T13:40:28.954Z] [unzip] Processing entry: client/
+[debug] [2025-11-29T13:40:28.954Z] [unzip] mkdir: /Users/wenubey/.cache/firebase/emulators/ui-v1.14.0/client/
+[debug] [2025-11-29T13:40:28.955Z] [unzip] Entry: client/favicon-16x16.png (compressed_size=293 bytes, uncompressed_size=293 bytes)
+[debug] [2025-11-29T13:40:28.955Z] [unzip] Processing entry: client/favicon-16x16.png
+[debug] [2025-11-29T13:40:28.955Z] [unzip] else mkdir: /Users/wenubey/.cache/firebase/emulators/ui-v1.14.0/client
+[debug] [2025-11-29T13:40:28.955Z] [unzip] Writing file: /Users/wenubey/.cache/firebase/emulators/ui-v1.14.0/client/favicon-16x16.png
+[debug] [2025-11-29T13:40:28.955Z] [unzip] Entry: client/safari-pinned-tab.svg (compressed_size=1433 bytes, uncompressed_size=2611 bytes)
+[debug] [2025-11-29T13:40:28.955Z] [unzip] Processing entry: client/safari-pinned-tab.svg
+[debug] [2025-11-29T13:40:28.955Z] [unzip] else mkdir: /Users/wenubey/.cache/firebase/emulators/ui-v1.14.0/client
+[debug] [2025-11-29T13:40:28.955Z] [unzip] deflating: /Users/wenubey/.cache/firebase/emulators/ui-v1.14.0/client/safari-pinned-tab.svg
+[debug] [2025-11-29T13:40:28.957Z] [unzip] Entry: client/favicon.ico (compressed_size=2933 bytes, uncompressed_size=13294 bytes)
+[debug] [2025-11-29T13:40:28.957Z] [unzip] Processing entry: client/favicon.ico
+[debug] [2025-11-29T13:40:28.957Z] [unzip] else mkdir: /Users/wenubey/.cache/firebase/emulators/ui-v1.14.0/client
+[debug] [2025-11-29T13:40:28.957Z] [unzip] deflating: /Users/wenubey/.cache/firebase/emulators/ui-v1.14.0/client/favicon.ico
+[debug] [2025-11-29T13:40:28.958Z] [unzip] Entry: client/index.html (compressed_size=1363 bytes, uncompressed_size=3071 bytes)
+[debug] [2025-11-29T13:40:28.958Z] [unzip] Processing entry: client/index.html
+[debug] [2025-11-29T13:40:28.958Z] [unzip] else mkdir: /Users/wenubey/.cache/firebase/emulators/ui-v1.14.0/client
+[debug] [2025-11-29T13:40:28.958Z] [unzip] deflating: /Users/wenubey/.cache/firebase/emulators/ui-v1.14.0/client/index.html
+[debug] [2025-11-29T13:40:28.958Z] [unzip] Entry: client/android-chrome-192x192.png (compressed_size=2684 bytes, uncompressed_size=2684 bytes)
+[debug] [2025-11-29T13:40:28.958Z] [unzip] Processing entry: client/android-chrome-192x192.png
+[debug] [2025-11-29T13:40:28.958Z] [unzip] else mkdir: /Users/wenubey/.cache/firebase/emulators/ui-v1.14.0/client
+[debug] [2025-11-29T13:40:28.958Z] [unzip] Writing file: /Users/wenubey/.cache/firebase/emulators/ui-v1.14.0/client/android-chrome-192x192.png
+[debug] [2025-11-29T13:40:28.959Z] [unzip] Entry: client/apple-touch-icon.png (compressed_size=2123 bytes, uncompressed_size=2152 bytes)
+[debug] [2025-11-29T13:40:28.959Z] [unzip] Processing entry: client/apple-touch-icon.png
+[debug] [2025-11-29T13:40:28.959Z] [unzip] else mkdir: /Users/wenubey/.cache/firebase/emulators/ui-v1.14.0/client
+[debug] [2025-11-29T13:40:28.959Z] [unzip] deflating: /Users/wenubey/.cache/firebase/emulators/ui-v1.14.0/client/apple-touch-icon.png
+[debug] [2025-11-29T13:40:28.959Z] [unzip] Entry: client/android-chrome-512x512.png (compressed_size=5369 bytes, uncompressed_size=5411 bytes)
+[debug] [2025-11-29T13:40:28.959Z] [unzip] Processing entry: client/android-chrome-512x512.png
+[debug] [2025-11-29T13:40:28.959Z] [unzip] else mkdir: /Users/wenubey/.cache/firebase/emulators/ui-v1.14.0/client
+[debug] [2025-11-29T13:40:28.959Z] [unzip] deflating: /Users/wenubey/.cache/firebase/emulators/ui-v1.14.0/client/android-chrome-512x512.png
+[debug] [2025-11-29T13:40:28.960Z] [unzip] Entry: client/manifest.json (compressed_size=245 bytes, uncompressed_size=551 bytes)
+[debug] [2025-11-29T13:40:28.960Z] [unzip] Processing entry: client/manifest.json
+[debug] [2025-11-29T13:40:28.960Z] [unzip] else mkdir: /Users/wenubey/.cache/firebase/emulators/ui-v1.14.0/client
+[debug] [2025-11-29T13:40:28.960Z] [unzip] deflating: /Users/wenubey/.cache/firebase/emulators/ui-v1.14.0/client/manifest.json
+[debug] [2025-11-29T13:40:28.960Z] [unzip] Entry: client/robots.txt (compressed_size=26 bytes, uncompressed_size=26 bytes)
+[debug] [2025-11-29T13:40:28.960Z] [unzip] Processing entry: client/robots.txt
+[debug] [2025-11-29T13:40:28.960Z] [unzip] else mkdir: /Users/wenubey/.cache/firebase/emulators/ui-v1.14.0/client
+[debug] [2025-11-29T13:40:28.960Z] [unzip] Writing file: /Users/wenubey/.cache/firebase/emulators/ui-v1.14.0/client/robots.txt
+[debug] [2025-11-29T13:40:28.960Z] [unzip] Entry: client/mstile-150x150.png (compressed_size=2034 bytes, uncompressed_size=2034 bytes)
+[debug] [2025-11-29T13:40:28.960Z] [unzip] Processing entry: client/mstile-150x150.png
+[debug] [2025-11-29T13:40:28.960Z] [unzip] else mkdir: /Users/wenubey/.cache/firebase/emulators/ui-v1.14.0/client
+[debug] [2025-11-29T13:40:28.961Z] [unzip] Writing file: /Users/wenubey/.cache/firebase/emulators/ui-v1.14.0/client/mstile-150x150.png
+[debug] [2025-11-29T13:40:28.961Z] [unzip] Entry: client/assets/ (compressed_size=0 bytes, uncompressed_size=0 bytes)
+[debug] [2025-11-29T13:40:28.961Z] [unzip] Processing entry: client/assets/
+[debug] [2025-11-29T13:40:28.961Z] [unzip] mkdir: /Users/wenubey/.cache/firebase/emulators/ui-v1.14.0/client/assets/
+[debug] [2025-11-29T13:40:28.961Z] [unzip] Entry: client/assets/index-ClZTY_JS.js.map (compressed_size=2328270 bytes, uncompressed_size=9947004 bytes)
+[debug] [2025-11-29T13:40:28.961Z] [unzip] Processing entry: client/assets/index-ClZTY_JS.js.map
+[debug] [2025-11-29T13:40:28.961Z] [unzip] else mkdir: /Users/wenubey/.cache/firebase/emulators/ui-v1.14.0/client/assets
+[debug] [2025-11-29T13:40:28.961Z] [unzip] deflating: /Users/wenubey/.cache/firebase/emulators/ui-v1.14.0/client/assets/index-ClZTY_JS.js.map
+[debug] [2025-11-29T13:40:28.987Z] [unzip] Entry: client/assets/index-ClZTY_JS.js (compressed_size=567195 bytes, uncompressed_size=2035940 bytes)
+[debug] [2025-11-29T13:40:28.987Z] [unzip] Processing entry: client/assets/index-ClZTY_JS.js
+[debug] [2025-11-29T13:40:28.987Z] [unzip] else mkdir: /Users/wenubey/.cache/firebase/emulators/ui-v1.14.0/client/assets
+[debug] [2025-11-29T13:40:28.987Z] [unzip] deflating: /Users/wenubey/.cache/firebase/emulators/ui-v1.14.0/client/assets/index-ClZTY_JS.js
+[debug] [2025-11-29T13:40:28.996Z] [unzip] Entry: client/assets/index-BdgySamB.css (compressed_size=35979 bytes, uncompressed_size=298654 bytes)
+[debug] [2025-11-29T13:40:28.996Z] [unzip] Processing entry: client/assets/index-BdgySamB.css
+[debug] [2025-11-29T13:40:28.996Z] [unzip] else mkdir: /Users/wenubey/.cache/firebase/emulators/ui-v1.14.0/client/assets
+[debug] [2025-11-29T13:40:28.996Z] [unzip] deflating: /Users/wenubey/.cache/firebase/emulators/ui-v1.14.0/client/assets/index-BdgySamB.css
+[debug] [2025-11-29T13:40:28.998Z] [unzip] Entry: client/assets/extensions/ (compressed_size=0 bytes, uncompressed_size=0 bytes)
+[debug] [2025-11-29T13:40:28.998Z] [unzip] Processing entry: client/assets/extensions/
+[debug] [2025-11-29T13:40:28.998Z] [unzip] mkdir: /Users/wenubey/.cache/firebase/emulators/ui-v1.14.0/client/assets/extensions/
+[debug] [2025-11-29T13:40:28.998Z] [unzip] Entry: client/assets/extensions/default-extension.png (compressed_size=1646 bytes, uncompressed_size=1657 bytes)
+[debug] [2025-11-29T13:40:28.998Z] [unzip] Processing entry: client/assets/extensions/default-extension.png
+[debug] [2025-11-29T13:40:28.998Z] [unzip] else mkdir: /Users/wenubey/.cache/firebase/emulators/ui-v1.14.0/client/assets/extensions
+[debug] [2025-11-29T13:40:28.998Z] [unzip] deflating: /Users/wenubey/.cache/firebase/emulators/ui-v1.14.0/client/assets/extensions/default-extension.png
+[debug] [2025-11-29T13:40:28.998Z] [unzip] Entry: client/assets/img/ (compressed_size=0 bytes, uncompressed_size=0 bytes)
+[debug] [2025-11-29T13:40:28.998Z] [unzip] Processing entry: client/assets/img/
+[debug] [2025-11-29T13:40:28.998Z] [unzip] mkdir: /Users/wenubey/.cache/firebase/emulators/ui-v1.14.0/client/assets/img/
+[debug] [2025-11-29T13:40:28.998Z] [unzip] Entry: client/assets/img/database.png (compressed_size=29449 bytes, uncompressed_size=29988 bytes)
+[debug] [2025-11-29T13:40:28.998Z] [unzip] Processing entry: client/assets/img/database.png
+[debug] [2025-11-29T13:40:28.998Z] [unzip] else mkdir: /Users/wenubey/.cache/firebase/emulators/ui-v1.14.0/client/assets/img
+[debug] [2025-11-29T13:40:28.998Z] [unzip] deflating: /Users/wenubey/.cache/firebase/emulators/ui-v1.14.0/client/assets/img/database.png
+[debug] [2025-11-29T13:40:29.000Z] [unzip] Entry: client/assets/provider-icons/ (compressed_size=0 bytes, uncompressed_size=0 bytes)
+[debug] [2025-11-29T13:40:29.000Z] [unzip] Processing entry: client/assets/provider-icons/
+[debug] [2025-11-29T13:40:29.000Z] [unzip] mkdir: /Users/wenubey/.cache/firebase/emulators/ui-v1.14.0/client/assets/provider-icons/
+[debug] [2025-11-29T13:40:29.001Z] [unzip] Entry: client/assets/provider-icons/auth_service_saml.svg (compressed_size=575 bytes, uncompressed_size=1226 bytes)
+[debug] [2025-11-29T13:40:29.001Z] [unzip] Processing entry: client/assets/provider-icons/auth_service_saml.svg
+[debug] [2025-11-29T13:40:29.001Z] [unzip] else mkdir: /Users/wenubey/.cache/firebase/emulators/ui-v1.14.0/client/assets/provider-icons
+[debug] [2025-11-29T13:40:29.001Z] [unzip] deflating: /Users/wenubey/.cache/firebase/emulators/ui-v1.14.0/client/assets/provider-icons/auth_service_saml.svg
+[debug] [2025-11-29T13:40:29.001Z] [unzip] Entry: client/assets/provider-icons/auth_service_phone.svg (compressed_size=261 bytes, uncompressed_size=414 bytes)
+[debug] [2025-11-29T13:40:29.001Z] [unzip] Processing entry: client/assets/provider-icons/auth_service_phone.svg
+[debug] [2025-11-29T13:40:29.001Z] [unzip] else mkdir: /Users/wenubey/.cache/firebase/emulators/ui-v1.14.0/client/assets/provider-icons
+[debug] [2025-11-29T13:40:29.001Z] [unzip] deflating: /Users/wenubey/.cache/firebase/emulators/ui-v1.14.0/client/assets/provider-icons/auth_service_phone.svg
+[debug] [2025-11-29T13:40:29.002Z] [unzip] Entry: client/assets/provider-icons/auth_service_facebook.svg (compressed_size=289 bytes, uncompressed_size=457 bytes)
+[debug] [2025-11-29T13:40:29.002Z] [unzip] Processing entry: client/assets/provider-icons/auth_service_facebook.svg
+[debug] [2025-11-29T13:40:29.002Z] [unzip] else mkdir: /Users/wenubey/.cache/firebase/emulators/ui-v1.14.0/client/assets/provider-icons
+[debug] [2025-11-29T13:40:29.002Z] [unzip] deflating: /Users/wenubey/.cache/firebase/emulators/ui-v1.14.0/client/assets/provider-icons/auth_service_facebook.svg
+[debug] [2025-11-29T13:40:29.002Z] [unzip] Entry: client/assets/provider-icons/auth_service_game_center.svg (compressed_size=991 bytes, uncompressed_size=3921 bytes)
+[debug] [2025-11-29T13:40:29.002Z] [unzip] Processing entry: client/assets/provider-icons/auth_service_game_center.svg
+[debug] [2025-11-29T13:40:29.002Z] [unzip] else mkdir: /Users/wenubey/.cache/firebase/emulators/ui-v1.14.0/client/assets/provider-icons
+[debug] [2025-11-29T13:40:29.002Z] [unzip] deflating: /Users/wenubey/.cache/firebase/emulators/ui-v1.14.0/client/assets/provider-icons/auth_service_game_center.svg
+[debug] [2025-11-29T13:40:29.002Z] [unzip] Entry: client/assets/provider-icons/auth_service_apple.svg (compressed_size=230 bytes, uncompressed_size=334 bytes)
+[debug] [2025-11-29T13:40:29.002Z] [unzip] Processing entry: client/assets/provider-icons/auth_service_apple.svg
+[debug] [2025-11-29T13:40:29.002Z] [unzip] else mkdir: /Users/wenubey/.cache/firebase/emulators/ui-v1.14.0/client/assets/provider-icons
+[debug] [2025-11-29T13:40:29.002Z] [unzip] deflating: /Users/wenubey/.cache/firebase/emulators/ui-v1.14.0/client/assets/provider-icons/auth_service_apple.svg
+[debug] [2025-11-29T13:40:29.003Z] [unzip] Entry: client/assets/provider-icons/auth_service_github.svg (compressed_size=466 bytes, uncompressed_size=838 bytes)
+[debug] [2025-11-29T13:40:29.003Z] [unzip] Processing entry: client/assets/provider-icons/auth_service_github.svg
+[debug] [2025-11-29T13:40:29.003Z] [unzip] else mkdir: /Users/wenubey/.cache/firebase/emulators/ui-v1.14.0/client/assets/provider-icons
+[debug] [2025-11-29T13:40:29.003Z] [unzip] deflating: /Users/wenubey/.cache/firebase/emulators/ui-v1.14.0/client/assets/provider-icons/auth_service_github.svg
+[debug] [2025-11-29T13:40:29.003Z] [unzip] Entry: client/assets/provider-icons/auth_service_mslive.svg (compressed_size=203 bytes, uncompressed_size=378 bytes)
+[debug] [2025-11-29T13:40:29.003Z] [unzip] Processing entry: client/assets/provider-icons/auth_service_mslive.svg
+[debug] [2025-11-29T13:40:29.003Z] [unzip] else mkdir: /Users/wenubey/.cache/firebase/emulators/ui-v1.14.0/client/assets/provider-icons
+[debug] [2025-11-29T13:40:29.003Z] [unzip] deflating: /Users/wenubey/.cache/firebase/emulators/ui-v1.14.0/client/assets/provider-icons/auth_service_mslive.svg
+[debug] [2025-11-29T13:40:29.003Z] [unzip] Entry: client/assets/provider-icons/auth_service_yahoo.svg (compressed_size=577 bytes, uncompressed_size=1182 bytes)
+[debug] [2025-11-29T13:40:29.003Z] [unzip] Processing entry: client/assets/provider-icons/auth_service_yahoo.svg
+[debug] [2025-11-29T13:40:29.003Z] [unzip] else mkdir: /Users/wenubey/.cache/firebase/emulators/ui-v1.14.0/client/assets/provider-icons
+[debug] [2025-11-29T13:40:29.003Z] [unzip] deflating: /Users/wenubey/.cache/firebase/emulators/ui-v1.14.0/client/assets/provider-icons/auth_service_yahoo.svg
+[debug] [2025-11-29T13:40:29.004Z] [unzip] Entry: client/assets/provider-icons/auth_service_twitter.svg (compressed_size=444 bytes, uncompressed_size=751 bytes)
+[debug] [2025-11-29T13:40:29.004Z] [unzip] Processing entry: client/assets/provider-icons/auth_service_twitter.svg
+[debug] [2025-11-29T13:40:29.004Z] [unzip] else mkdir: /Users/wenubey/.cache/firebase/emulators/ui-v1.14.0/client/assets/provider-icons
+[debug] [2025-11-29T13:40:29.004Z] [unzip] deflating: /Users/wenubey/.cache/firebase/emulators/ui-v1.14.0/client/assets/provider-icons/auth_service_twitter.svg
+[debug] [2025-11-29T13:40:29.004Z] [unzip] Entry: client/assets/provider-icons/auth_service_play_games.svg (compressed_size=565 bytes, uncompressed_size=1173 bytes)
+[debug] [2025-11-29T13:40:29.004Z] [unzip] Processing entry: client/assets/provider-icons/auth_service_play_games.svg
+[debug] [2025-11-29T13:40:29.004Z] [unzip] else mkdir: /Users/wenubey/.cache/firebase/emulators/ui-v1.14.0/client/assets/provider-icons
+[debug] [2025-11-29T13:40:29.004Z] [unzip] deflating: /Users/wenubey/.cache/firebase/emulators/ui-v1.14.0/client/assets/provider-icons/auth_service_play_games.svg
+[debug] [2025-11-29T13:40:29.005Z] [unzip] Entry: client/assets/provider-icons/auth_service_email.svg (compressed_size=228 bytes, uncompressed_size=326 bytes)
+[debug] [2025-11-29T13:40:29.005Z] [unzip] Processing entry: client/assets/provider-icons/auth_service_email.svg
+[debug] [2025-11-29T13:40:29.005Z] [unzip] else mkdir: /Users/wenubey/.cache/firebase/emulators/ui-v1.14.0/client/assets/provider-icons
+[debug] [2025-11-29T13:40:29.005Z] [unzip] deflating: /Users/wenubey/.cache/firebase/emulators/ui-v1.14.0/client/assets/provider-icons/auth_service_email.svg
+[debug] [2025-11-29T13:40:29.005Z] [unzip] Entry: client/assets/provider-icons/auth_service_google.svg (compressed_size=409 bytes, uncompressed_size=720 bytes)
+[debug] [2025-11-29T13:40:29.005Z] [unzip] Processing entry: client/assets/provider-icons/auth_service_google.svg
+[debug] [2025-11-29T13:40:29.005Z] [unzip] else mkdir: /Users/wenubey/.cache/firebase/emulators/ui-v1.14.0/client/assets/provider-icons
+[debug] [2025-11-29T13:40:29.005Z] [unzip] deflating: /Users/wenubey/.cache/firebase/emulators/ui-v1.14.0/client/assets/provider-icons/auth_service_google.svg
+[debug] [2025-11-29T13:40:29.005Z] [unzip] Entry: client/assets/provider-icons/auth_service_oidc.svg (compressed_size=414 bytes, uncompressed_size=858 bytes)
+[debug] [2025-11-29T13:40:29.005Z] [unzip] Processing entry: client/assets/provider-icons/auth_service_oidc.svg
+[debug] [2025-11-29T13:40:29.005Z] [unzip] else mkdir: /Users/wenubey/.cache/firebase/emulators/ui-v1.14.0/client/assets/provider-icons
+[debug] [2025-11-29T13:40:29.005Z] [unzip] deflating: /Users/wenubey/.cache/firebase/emulators/ui-v1.14.0/client/assets/provider-icons/auth_service_oidc.svg
+[debug] [2025-11-29T13:40:29.006Z] [unzip] Entry: client/browserconfig.xml (compressed_size=491 bytes, uncompressed_size=822 bytes)
+[debug] [2025-11-29T13:40:29.006Z] [unzip] Processing entry: client/browserconfig.xml
+[debug] [2025-11-29T13:40:29.006Z] [unzip] else mkdir: /Users/wenubey/.cache/firebase/emulators/ui-v1.14.0/client
+[debug] [2025-11-29T13:40:29.006Z] [unzip] deflating: /Users/wenubey/.cache/firebase/emulators/ui-v1.14.0/client/browserconfig.xml
+[debug] [2025-11-29T13:40:29.006Z] [unzip] Entry: client/favicon-32x32.png (compressed_size=475 bytes, uncompressed_size=475 bytes)
+[debug] [2025-11-29T13:40:29.006Z] [unzip] Processing entry: client/favicon-32x32.png
+[debug] [2025-11-29T13:40:29.006Z] [unzip] else mkdir: /Users/wenubey/.cache/firebase/emulators/ui-v1.14.0/client
+[debug] [2025-11-29T13:40:29.006Z] [unzip] Writing file: /Users/wenubey/.cache/firebase/emulators/ui-v1.14.0/client/favicon-32x32.png
+[debug] [2025-11-29T13:40:29.006Z] [unzip] Entry: server/ (compressed_size=0 bytes, uncompressed_size=0 bytes)
+[debug] [2025-11-29T13:40:29.006Z] [unzip] Processing entry: server/
+[debug] [2025-11-29T13:40:29.006Z] [unzip] mkdir: /Users/wenubey/.cache/firebase/emulators/ui-v1.14.0/server/
+[debug] [2025-11-29T13:40:29.006Z] [unzip] Entry: server/server.mjs.map (compressed_size=296496 bytes, uncompressed_size=1355667 bytes)
+[debug] [2025-11-29T13:40:29.006Z] [unzip] Processing entry: server/server.mjs.map
+[debug] [2025-11-29T13:40:29.006Z] [unzip] else mkdir: /Users/wenubey/.cache/firebase/emulators/ui-v1.14.0/server
+[debug] [2025-11-29T13:40:29.006Z] [unzip] deflating: /Users/wenubey/.cache/firebase/emulators/ui-v1.14.0/server/server.mjs.map
+[debug] [2025-11-29T13:40:29.010Z] [unzip] Entry: server/server.mjs (compressed_size=315701 bytes, uncompressed_size=1172682 bytes)
+[debug] [2025-11-29T13:40:29.010Z] [unzip] Processing entry: server/server.mjs
+[debug] [2025-11-29T13:40:29.010Z] [unzip] else mkdir: /Users/wenubey/.cache/firebase/emulators/ui-v1.14.0/server
+[debug] [2025-11-29T13:40:29.010Z] [unzip] deflating: /Users/wenubey/.cache/firebase/emulators/ui-v1.14.0/server/server.mjs
+[debug] [2025-11-29T13:40:29.013Z] [unzip] Entry: server/assets/ (compressed_size=0 bytes, uncompressed_size=0 bytes)
+[debug] [2025-11-29T13:40:29.013Z] [unzip] Processing entry: server/assets/
+[debug] [2025-11-29T13:40:29.013Z] [unzip] mkdir: /Users/wenubey/.cache/firebase/emulators/ui-v1.14.0/server/assets/
+[debug] [2025-11-29T13:40:29.013Z] [unzip] Entry: server/assets/multipart-parser-DGCUZdXu.mjs.map (compressed_size=4791 bytes, uncompressed_size=17918 bytes)
+[debug] [2025-11-29T13:40:29.013Z] [unzip] Processing entry: server/assets/multipart-parser-DGCUZdXu.mjs.map
+[debug] [2025-11-29T13:40:29.013Z] [unzip] else mkdir: /Users/wenubey/.cache/firebase/emulators/ui-v1.14.0/server/assets
+[debug] [2025-11-29T13:40:29.013Z] [unzip] deflating: /Users/wenubey/.cache/firebase/emulators/ui-v1.14.0/server/assets/multipart-parser-DGCUZdXu.mjs.map
+[debug] [2025-11-29T13:40:29.014Z] [unzip] Entry: server/assets/multipart-parser-DGCUZdXu.mjs (compressed_size=2621 bytes, uncompressed_size=10390 bytes)
+[debug] [2025-11-29T13:40:29.014Z] [unzip] Processing entry: server/assets/multipart-parser-DGCUZdXu.mjs
+[debug] [2025-11-29T13:40:29.014Z] [unzip] else mkdir: /Users/wenubey/.cache/firebase/emulators/ui-v1.14.0/server/assets
+[debug] [2025-11-29T13:40:29.014Z] [unzip] deflating: /Users/wenubey/.cache/firebase/emulators/ui-v1.14.0/server/assets/multipart-parser-DGCUZdXu.mjs
+[info] i  functions: Watching "/Users/wenubey/Desktop/CTG/core-trade-global/functions" for Cloud Functions... {"metadata":{"emulator":{"name":"functions"},"message":"Watching \"/Users/wenubey/Desktop/CTG/core-trade-global/functions\" for Cloud Functions..."}}
+[debug] [2025-11-29T13:40:29.019Z] Validating nodejs source
+[warn] ⚠  functions: package.json indicates an outdated version of firebase-functions. Please upgrade using npm install --save firebase-functions@latest in your functions directory. 
+[warn] ⚠  functions: Please note that there will be breaking changes when you upgrade. 
+[debug] [2025-11-29T13:40:29.570Z] > [functions] package.json contents: {
+  "name": "functions",
+  "description": "Cloud Functions for Firebase",
+  "scripts": {
+    "serve": "firebase emulators:start --only functions",
+    "shell": "firebase functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "engines": {
+    "node": "18"
+  },
+  "main": "index.js",
+  "dependencies": {
+    "firebase-admin": "^12.0.0",
+    "firebase-functions": "^5.0.0"
+  },
+  "devDependencies": {
+    "firebase-functions-test": "^3.1.0"
+  },
+  "private": true
+}
+[debug] [2025-11-29T13:40:29.570Z] Building nodejs source
+[debug] [2025-11-29T13:40:29.570Z] Failed to find version of module node: reached end of search path /Users/wenubey/Desktop/CTG/core-trade-global/functions/node_modules
+[warn] ⚠  functions: Your requested "node" version "18" doesn't match your global version "24". Using node@24 from host. 
+[debug] [2025-11-29T13:40:29.571Z] Could not find functions.yaml. Must use http discovery
+[debug] [2025-11-29T13:40:29.575Z] Found firebase-functions binary at '/Users/wenubey/Desktop/CTG/core-trade-global/functions/node_modules/.bin/firebase-functions'
+[info] Serving at port 8769
+
+[debug] [2025-11-29T13:40:30.021Z] Got response from /__/functions.yaml {"endpoints":{"deleteUser":{"availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","labels":{},"callableTrigger":{},"entryPoint":"deleteUser"}},"specVersion":"v1alpha1","requiredAPIs":[],"extensions":{}}
+[info] ✔  functions: Loaded functions definitions from source: deleteUser. {"metadata":{"emulator":{"name":"functions"},"message":"Loaded functions definitions from source: deleteUser."}}
+[info] ✔  functions[us-central1-deleteUser]: http function initialized (http://127.0.0.1:5001/core-trade-global-c4fd0/us-central1/deleteUser). {"metadata":{"emulator":{"name":"functions"},"message":"http function initialized (http://127.0.0.1:5001/core-trade-global-c4fd0/us-central1/deleteUser)."}}
+[debug] [2025-11-29T13:40:34.037Z] Could not find VSCode notification endpoint: FetchError: request to http://localhost:40001/vscode/notify failed, reason: . If you are not running the Firebase Data Connect VSCode extension, this is expected and not an issue.
+[info] 
+┌─────────────────────────────────────────────────────────────┐
+│ ✔  All emulators ready! It is now safe to connect your app. │
+│ i  View Emulator UI at http://127.0.0.1:4000/               │
+└─────────────────────────────────────────────────────────────┘
+
+┌───────────┬────────────────┬─────────────────────────────────┐
+│ Emulator  │ Host:Port      │ View in Emulator UI             │
+├───────────┼────────────────┼─────────────────────────────────┤
+│ Functions │ 127.0.0.1:5001 │ http://127.0.0.1:4000/functions │
+└───────────┴────────────────┴─────────────────────────────────┘
+  Emulator Hub host: 127.0.0.1 port: 4400
+  Other reserved ports: 4500
+
+Issues? Report them at https://github.com/firebase/firebase-tools/issues and attach the *-debug.log files.
+ 
+[debug] [2025-11-29T13:44:16.360Z] Functions emulator received unknown request at path /core-trade-global/us-central1/deleteUser
+[debug] [2025-11-29T13:45:26.196Z] Functions emulator received unknown request at path /core-trade-global/us-central1/deleteUser
+[debug] [2025-11-29T13:46:07.783Z] File /Users/wenubey/Desktop/CTG/core-trade-global/functions/index.js changed, reloading triggers {"metadata":{"emulator":{"name":"functions"},"message":"File /Users/wenubey/Desktop/CTG/core-trade-global/functions/index.js changed, reloading triggers"}}
+[debug] [2025-11-29T13:46:08.785Z] Validating nodejs source
+[warn] ⚠  functions: package.json indicates an outdated version of firebase-functions. Please upgrade using npm install --save firebase-functions@latest in your functions directory. 
+[warn] ⚠  functions: Please note that there will be breaking changes when you upgrade. 
+[debug] [2025-11-29T13:46:09.503Z] > [functions] package.json contents: {
+  "name": "functions",
+  "description": "Cloud Functions for Firebase",
+  "scripts": {
+    "serve": "firebase emulators:start --only functions",
+    "shell": "firebase functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "engines": {
+    "node": "18"
+  },
+  "main": "index.js",
+  "dependencies": {
+    "firebase-admin": "^12.0.0",
+    "firebase-functions": "^5.0.0"
+  },
+  "devDependencies": {
+    "firebase-functions-test": "^3.1.0"
+  },
+  "private": true
+}
+[debug] [2025-11-29T13:46:09.503Z] Building nodejs source
+[debug] [2025-11-29T13:46:09.503Z] Failed to find version of module node: reached end of search path /Users/wenubey/Desktop/CTG/core-trade-global/functions/node_modules
+[warn] ⚠  functions: Your requested "node" version "18" doesn't match your global version "24". Using node@24 from host. 
+[debug] [2025-11-29T13:46:09.504Z] Could not find functions.yaml. Must use http discovery
+[debug] [2025-11-29T13:46:09.505Z] Found firebase-functions binary at '/Users/wenubey/Desktop/CTG/core-trade-global/functions/node_modules/.bin/firebase-functions'
+[info] Serving at port 8590
+
+[debug] [2025-11-29T13:46:09.738Z] Got response from /__/functions.yaml {"endpoints":{"deleteUser":{"availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","labels":{},"callableTrigger":{},"entryPoint":"deleteUser"}},"specVersion":"v1alpha1","requiredAPIs":[],"extensions":{}}
+[info] ✔  functions: Loaded functions definitions from source: deleteUser. {"metadata":{"emulator":{"name":"functions"},"message":"Loaded functions definitions from source: deleteUser."}}
+[debug] [2025-11-29T13:46:27.392Z] File /Users/wenubey/Desktop/CTG/core-trade-global/functions/index.js changed, reloading triggers {"metadata":{"emulator":{"name":"functions"},"message":"File /Users/wenubey/Desktop/CTG/core-trade-global/functions/index.js changed, reloading triggers"}}
+[debug] [2025-11-29T13:46:28.393Z] Validating nodejs source
+[warn] ⚠  functions: package.json indicates an outdated version of firebase-functions. Please upgrade using npm install --save firebase-functions@latest in your functions directory. 
+[warn] ⚠  functions: Please note that there will be breaking changes when you upgrade. 
+[debug] [2025-11-29T13:46:28.954Z] > [functions] package.json contents: {
+  "name": "functions",
+  "description": "Cloud Functions for Firebase",
+  "scripts": {
+    "serve": "firebase emulators:start --only functions",
+    "shell": "firebase functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "engines": {
+    "node": "18"
+  },
+  "main": "index.js",
+  "dependencies": {
+    "firebase-admin": "^12.0.0",
+    "firebase-functions": "^5.0.0"
+  },
+  "devDependencies": {
+    "firebase-functions-test": "^3.1.0"
+  },
+  "private": true
+}
+[debug] [2025-11-29T13:46:28.954Z] Building nodejs source
+[debug] [2025-11-29T13:46:28.954Z] Failed to find version of module node: reached end of search path /Users/wenubey/Desktop/CTG/core-trade-global/functions/node_modules
+[warn] ⚠  functions: Your requested "node" version "18" doesn't match your global version "24". Using node@24 from host. 
+[debug] [2025-11-29T13:46:28.955Z] Could not find functions.yaml. Must use http discovery
+[debug] [2025-11-29T13:46:28.956Z] Found firebase-functions binary at '/Users/wenubey/Desktop/CTG/core-trade-global/functions/node_modules/.bin/firebase-functions'
+[info] Serving at port 8734
+
+[error] /Users/wenubey/Desktop/CTG/core-trade-global/functions/index.js:79
+}));
+  ^
+
+SyntaxError: Unexpected token ')'
+    at wrapSafe (node:internal/modules/cjs/loader:1669:18)
+    at Module._compile (node:internal/modules/cjs/loader:1712:20)
+    at Object..js (node:internal/modules/cjs/loader:1871:10)
+    at Module.load (node:internal/modules/cjs/loader:1470:32)
+    at Module._load (node:internal/modules/cjs/loader:1290:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:238:24)
+    at Module.require (node:internal/modules/cjs/loader:1493:12)
+    at require (node:internal/modules/helpers:152:16)
+    at loadModule (/Users/wenubey/Desktop/CTG/core-trade-global/functions/node_modules/firebase-functions/lib/runtime/loader.js:40:16)
+
+[debug] [2025-11-29T13:46:29.069Z] Got response code 400; body Failed to generate manifest from function source: SyntaxError: Unexpected token ')'
+[error] ⬢  functions: Failed to load function definition from source: FirebaseError: Functions codebase could not be analyzed successfully. It may have a syntax or runtime error {"metadata":{"emulator":{"name":"functions"},"message":"Failed to load function definition from source: FirebaseError: Functions codebase could not be analyzed successfully. It may have a syntax or runtime error"}}

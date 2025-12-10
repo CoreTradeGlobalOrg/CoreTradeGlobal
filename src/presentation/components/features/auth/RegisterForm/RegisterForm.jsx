@@ -50,9 +50,7 @@ export function RegisterForm() {
       country: '',
       password: '',
       confirmPassword: '',
-      acceptTerms: false,
-      acceptPrivacy: false,
-      acceptProductPolicy: false,
+      acceptPolicies: false,
     },
   });
 
@@ -458,15 +456,14 @@ export function RegisterForm() {
         </p>
 
         <div className="space-y-3">
-          {/* Terms of Service */}
-          <label className="flex items-center gap-3 cursor-pointer group">
+          <label className="flex items-start gap-3 cursor-pointer group">
             <input
               type="checkbox"
-              {...register('acceptTerms')}
+              {...register('acceptPolicies')}
               disabled={loading}
-              className="w-5 h-5 text-blue-600 border-slate-300 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer flex-shrink-0"
+              className="w-5 h-5 mt-0.5 text-blue-600 border-slate-300 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer flex-shrink-0"
             />
-            <span className={`text-sm ${errors.acceptTerms ? 'text-red-600' : 'text-slate-700'}`}>
+            <span className={`text-sm ${errors.acceptPolicies ? 'text-red-600' : 'text-slate-700'}`}>
               I accept the{' '}
               <a
                 href="/terms"
@@ -477,23 +474,7 @@ export function RegisterForm() {
               >
                 Terms of Service
               </a>
-              {' '}<span className="text-red-500">*</span>
-            </span>
-          </label>
-          {errors.acceptTerms && (
-            <p className="text-sm text-red-600 ml-8">{errors.acceptTerms.message}</p>
-          )}
-
-          {/* Privacy Policy */}
-          <label className="flex items-center gap-3 cursor-pointer group">
-            <input
-              type="checkbox"
-              {...register('acceptPrivacy')}
-              disabled={loading}
-              className="w-5 h-5 text-blue-600 border-slate-300 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer flex-shrink-0"
-            />
-            <span className={`text-sm ${errors.acceptPrivacy ? 'text-red-600' : 'text-slate-700'}`}>
-              I accept the{' '}
+              ,{' '}
               <a
                 href="/privacy-policy"
                 target="_blank"
@@ -503,23 +484,7 @@ export function RegisterForm() {
               >
                 Privacy Policy
               </a>
-              {' '}<span className="text-red-500">*</span>
-            </span>
-          </label>
-          {errors.acceptPrivacy && (
-            <p className="text-sm text-red-600 ml-8">{errors.acceptPrivacy.message}</p>
-          )}
-
-          {/* Product Listing Policy */}
-          <label className="flex items-center gap-3 cursor-pointer group">
-            <input
-              type="checkbox"
-              {...register('acceptProductPolicy')}
-              disabled={loading}
-              className="w-5 h-5 text-blue-600 border-slate-300 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer flex-shrink-0"
-            />
-            <span className={`text-sm ${errors.acceptProductPolicy ? 'text-red-600' : 'text-slate-700'}`}>
-              I accept the{' '}
+              , and{' '}
               <a
                 href="/product-listing-policy"
                 target="_blank"
@@ -532,8 +497,8 @@ export function RegisterForm() {
               {' '}<span className="text-red-500">*</span>
             </span>
           </label>
-          {errors.acceptProductPolicy && (
-            <p className="text-sm text-red-600 ml-8">{errors.acceptProductPolicy.message}</p>
+          {errors.acceptPolicies && (
+            <p className="text-sm text-red-600 ml-8">{errors.acceptPolicies.message}</p>
           )}
         </div>
       </div>

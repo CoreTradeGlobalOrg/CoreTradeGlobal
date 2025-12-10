@@ -41,7 +41,21 @@ export class AuthRepository {
       authUser.uid
     );
 
-    // 3. Combine auth data with profile
+    // 3. Check if user profile exists
+    if (!userProfile) {
+      // Logout and throw error
+      await this.authDataSource.logout();
+      throw new Error('Account not found. Please contact support.');
+    }
+
+    // 4. Check if user is deleted
+    if (userProfile.isDeleted === true) {
+      // Logout and throw error
+      await this.authDataSource.logout();
+      throw new Error('This account has been deleted. Please contact support if you believe this is an error.');
+    }
+
+    // 5. Combine auth data with profile
     return {
       uid: authUser.uid,
       email: authUser.email,

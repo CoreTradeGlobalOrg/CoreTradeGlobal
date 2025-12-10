@@ -112,22 +112,10 @@ export const registerSchema = z
       .min(6, 'Please confirm your password'),
 
     // Terms & Conditions
-    acceptTerms: z
+    acceptPolicies: z
       .boolean()
       .refine((val) => val === true, {
-        message: 'You must accept the terms of service',
-      }),
-
-    acceptPrivacy: z
-      .boolean()
-      .refine((val) => val === true, {
-        message: 'You must accept the privacy policy',
-      }),
-
-    acceptProductPolicy: z
-      .boolean()
-      .refine((val) => val === true, {
-        message: 'You must accept the product listing policy',
+        message: 'You must accept all policies to create an account',
       }),
   })
   .refine((data) => data.password === data.confirmPassword, {

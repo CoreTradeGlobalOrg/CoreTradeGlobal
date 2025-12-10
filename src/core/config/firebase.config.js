@@ -10,6 +10,7 @@ import { initializeApp, getApps } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
+import { getFunctions, connectFunctionsEmulator } from 'firebase/functions';
 
 // Firebase configuration from environment variables
 const firebaseConfig = {
@@ -40,10 +41,22 @@ if (!getApps().length) {
  * - auth: Firebase Authentication
  * - db: Firestore Database
  * - storage: Firebase Storage
+ * - functions: Cloud Functions
  */
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
+export const functions = getFunctions(app);
+
+/**
+ * Connect to emulators in development
+ * Commented out - using production functions for now
+ */
+// if (process.env.NODE_ENV === 'development') {
+//   // Connect Functions to emulator
+//   connectFunctionsEmulator(functions, '127.0.0.1', 5001);
+//   console.log('🔧 Connected to Functions Emulator');
+// }
 
 /**
  * Export the app instance for advanced usage

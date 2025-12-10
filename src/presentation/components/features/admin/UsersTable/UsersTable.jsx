@@ -14,6 +14,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { COUNTRIES } from '@/core/constants/countries';
 import { useApproveUser } from '@/presentation/hooks/admin/useApproveUser';
@@ -21,6 +22,7 @@ import { useSuspendUser } from '@/presentation/hooks/admin/useSuspendUser';
 import { useDeleteUser } from '@/presentation/hooks/admin/useDeleteUser';
 
 export function UsersTable({ users = [], onRefresh }) {
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterVerified, setFilterVerified] = useState('all'); // 'all', 'verified', 'unverified'
   const [filterApproved, setFilterApproved] = useState('all'); // 'all', 'approved', 'pending'
@@ -215,8 +217,11 @@ export function UsersTable({ users = [], onRefresh }) {
                 <tr key={user.id} className={`hover:bg-slate-50 transition-colors ${user.isSuspended ? 'bg-red-50' : ''}`}>
                   {/* User Info */}
                   <td className="px-6 py-4">
-                    <div>
-                      <div className="font-semibold text-slate-900">
+                    <div
+                      onClick={() => router.push(`/profile/${user.id}`)}
+                      className="cursor-pointer hover:bg-slate-100 p-2 -m-2 rounded transition-colors"
+                    >
+                      <div className="font-semibold text-blue-600 hover:text-blue-700">
                         {user.displayName || `${user.firstName} ${user.lastName}` || 'N/A'}
                       </div>
                       <div className="text-sm text-slate-600">{user.email}</div>

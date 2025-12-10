@@ -41,6 +41,24 @@ export function AuthProvider({ children }) {
               firebaseUser.uid
             );
 
+            // Check if user profile exists in Firestore
+            if (!userProfile) {
+              console.warn('User profile not found in Firestore. Logging out...');
+              await authRepository.logout();
+              setUser(null);
+              setLoading(false);
+              return;
+            }
+
+            // Check if user is deleted
+            if (userProfile.isDeleted === true) {
+              console.warn('User account is deleted. Logging out...');
+              await authRepository.logout();
+              setUser(null);
+              setLoading(false);
+              return;
+            }
+
             // Sync emailVerified status from Firebase Auth to Firestore
             if (userProfile && firebaseUser.emailVerified !== userProfile.emailVerified) {
               await authRepository.updateUserProfile(firebaseUser.uid, {
@@ -87,6 +105,22 @@ export function AuthProvider({ children }) {
       if (currentUser) {
         // Get fresh profile from Firestore
         const userProfile = await authRepository.getUserProfile(currentUser.uid);
+
+        // Check if user profile exists in Firestore
+        if (!userProfile) {
+          console.warn('User profile not found in Firestore. Logging out...');
+          await authRepository.logout();
+          setUser(null);
+          return;
+        }
+
+        // Check if user is deleted
+        if (userProfile.isDeleted === true) {
+          console.warn('User account is deleted. Logging out...');
+          await authRepository.logout();
+          setUser(null);
+          return;
+        }
 
         // Sync emailVerified status
         if (userProfile && currentUser.emailVerified !== userProfile.emailVerified) {

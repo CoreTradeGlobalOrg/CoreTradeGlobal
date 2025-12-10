@@ -18,15 +18,17 @@ export class User {
    * @param {string} role - User role (admin, member, viewer)
    * @param {string} displayName - User's display name
    * @param {string} photoURL - Profile photo URL
+   * @param {string} about - About user / Bio
    * @param {Date} createdAt - Account creation date
    */
-  constructor(id, email, companyId, role, displayName, photoURL, createdAt) {
+  constructor(id, email, companyId, role, displayName, photoURL, about, createdAt) {
     this.id = id;
     this.email = email;
     this.companyId = companyId;
     this.role = role || 'member';
     this.displayName = displayName || '';
     this.photoURL = photoURL || null;
+    this.about = about || '';
     this.createdAt = createdAt || new Date();
   }
 
@@ -43,6 +45,7 @@ export class User {
       data.role,
       data.displayName,
       data.photoURL,
+      data.about,
       data.createdAt
     );
   }
@@ -58,6 +61,7 @@ export class User {
       role: this.role,
       displayName: this.displayName,
       photoURL: this.photoURL,
+      about: this.about,
       createdAt: this.createdAt,
     };
   }
