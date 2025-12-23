@@ -1,0 +1,77 @@
+[
+  {
+    "name": "Electronics",
+    "iconUrl": "🔌",
+    "parentId": null
+  },
+  {
+    "name": "Industrial Equipment",
+    "iconUrl": "⚙️",
+    "parentId": null
+  },
+  {
+    "name": "Building Materials",
+    "iconUrl": "🏗️",
+    "parentId": null
+  },
+  {
+    "name": "Textiles & Fabrics",
+    "iconUrl": "🧵",
+    "parentId": null
+  },
+  {
+    "name": "Chemicals",
+    "iconUrl": "🧪",
+    "parentId": null
+  },
+  {
+    "name": "Food & Beverages",
+    "iconUrl": "🍔",
+    "parentId": null
+  },
+  {
+    "name": "Automotive Parts",
+    "iconUrl": "🚗",
+    "parentId": null
+  },
+  {
+    "name": "Medical Supplies",
+    "iconUrl": "⚕️",
+    "parentId": null
+  },
+  {
+    "name": "Agriculture",
+    "iconUrl": "🌾",
+    "parentId": null
+  },
+  {
+    "name": "Machinery",
+    "iconUrl": "🏭",
+    "parentId": null
+  },
+  {
+    "name": "Furniture",
+    "iconUrl": "🪑",
+    "parentId": null
+  },
+  {
+    "name": "Packaging Materials",
+    "iconUrl": "📦",
+    "parentId": null
+  },
+  {
+    "name": "Tools & Hardware",
+    "iconUrl": "🔧",
+    "parentId": null
+  },
+  {
+    "name": "Plastics & Rubber",
+    "iconUrl": "♻️",
+    "parentId": null
+  },
+  {
+    "name": "Metals & Alloys",
+    "iconUrl": "⚒️",
+    "parentId": null
+  }
+]

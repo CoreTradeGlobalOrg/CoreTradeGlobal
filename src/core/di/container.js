@@ -17,6 +17,9 @@ import { FirestoreDataSource } from '@/data/datasources/firebase/FirestoreDataSo
 import { FirebaseStorageDataSource } from '@/data/datasources/firebase/FirebaseStorageDataSource';
 import { AuthRepository } from '@/data/repositories/AuthRepository';
 import { UserRepository } from '@/data/repositories/UserRepository';
+import { ProductRepository } from '@/data/repositories/ProductRepository';
+import { RequestRepository } from '@/data/repositories/RequestRepository';
+import { CategoryRepository } from '@/data/repositories/CategoryRepository';
 
 /**
  * Singleton instances
@@ -27,6 +30,9 @@ let firestoreDataSource = null;
 let firebaseStorageDataSource = null;
 let authRepository = null;
 let userRepository = null;
+let productRepository = null;
+let requestRepository = null;
+let categoryRepository = null;
 
 /**
  * DI Container
@@ -96,6 +102,44 @@ export const container = {
   },
 
   /**
+   * Get Product Repository instance
+   * @returns {ProductRepository}
+   */
+  getProductRepository() {
+    if (!productRepository) {
+      productRepository = new ProductRepository(
+        this.getFirestoreDataSource(),
+        this.getFirebaseStorageDataSource()
+      );
+    }
+    return productRepository;
+  },
+
+  /**
+   * Get Request Repository instance
+   * @returns {RequestRepository}
+   */
+  getRequestRepository() {
+    if (!requestRepository) {
+      requestRepository = new RequestRepository(this.getFirestoreDataSource());
+    }
+    return requestRepository;
+  },
+
+  /**
+   * Get Category Repository instance
+   * @returns {CategoryRepository}
+   */
+  getCategoryRepository() {
+    if (!categoryRepository) {
+      categoryRepository = new CategoryRepository(
+        this.getFirestoreDataSource()
+      );
+    }
+    return categoryRepository;
+  },
+
+  /**
    * Reset all instances (useful for testing)
    * DO NOT use this in production code
    */
@@ -105,6 +149,9 @@ export const container = {
     firebaseStorageDataSource = null;
     authRepository = null;
     userRepository = null;
+    productRepository = null;
+    requestRepository = null;
+    categoryRepository = null;
   },
 };
 

@@ -20,8 +20,10 @@ export class User {
    * @param {string} photoURL - Profile photo URL
    * @param {string} about - About user / Bio
    * @param {Date} createdAt - Account creation date
+   * @param {Array<string>} productIds - Array of product IDs
+   * @param {Array<string>} requestIds - Array of request IDs
    */
-  constructor(id, email, companyId, role, displayName, photoURL, about, createdAt) {
+  constructor(id, email, companyId, role, displayName, photoURL, about, createdAt, productIds = [], requestIds = []) {
     this.id = id;
     this.email = email;
     this.companyId = companyId;
@@ -30,6 +32,8 @@ export class User {
     this.photoURL = photoURL || null;
     this.about = about || '';
     this.createdAt = createdAt || new Date();
+    this.productIds = productIds || [];
+    this.requestIds = requestIds || [];
   }
 
   /**
@@ -46,7 +50,9 @@ export class User {
       data.displayName,
       data.photoURL,
       data.about,
-      data.createdAt
+      data.createdAt,
+      data.productIds || [],
+      data.requestIds || []
     );
   }
 
@@ -63,6 +69,8 @@ export class User {
       photoURL: this.photoURL,
       about: this.about,
       createdAt: this.createdAt,
+      productIds: this.productIds || [],
+      requestIds: this.requestIds || [],
     };
   }
 
