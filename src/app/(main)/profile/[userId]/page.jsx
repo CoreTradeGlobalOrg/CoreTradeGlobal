@@ -15,13 +15,26 @@
 import { useAuth } from '@/presentation/contexts/AuthContext';
 import { useLogout } from '@/presentation/hooks/auth/useLogout';
 import { useDeleteAccount } from '@/presentation/hooks/auth/useDeleteAccount';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import toast from 'react-hot-toast';
 import { container } from '@/core/di/container';
 import { COUNTRIES } from '@/core/constants/countries';
+import { ProductList } from '@/presentation/components/features/product/ProductList/ProductList';
+import { ProductForm } from '@/presentation/components/features/product/ProductForm/ProductForm';
+import { RequestList } from '@/presentation/components/features/request/RequestList/RequestList';
+import { RequestForm } from '@/presentation/components/features/request/RequestForm/RequestForm';
+import { useProducts } from '@/presentation/hooks/product/useProducts';
+import { useCreateProduct } from '@/presentation/hooks/product/useCreateProduct';
+import { useUpdateProduct } from '@/presentation/hooks/product/useUpdateProduct';
+import { useDeleteProduct } from '@/presentation/hooks/product/useDeleteProduct';
+import { useRequests } from '@/presentation/hooks/request/useRequests';
+import { useCreateRequest } from '@/presentation/hooks/request/useCreateRequest';
+import { useUpdateRequest } from '@/presentation/hooks/request/useUpdateRequest';
+import { useDeleteRequest } from '@/presentation/hooks/request/useDeleteRequest';
+import { useCategories } from '@/presentation/hooks/category/useCategories';
 
 export default function ProfilePage() {
   const { user: currentUser, loading: authLoading, isAuthenticated } = useAuth();
@@ -29,16 +42,40 @@ export default function ProfilePage() {
   const { deleteAccount } = useDeleteAccount();
   const router = useRouter();
   const params = useParams();
+  const searchParams = useSearchParams();
   const userId = params.userId;
 
   const [profileUser, setProfileUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('profile');
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'profile');
   const [isEditing, setIsEditing] = useState(false);
 
   // Delete account modal state
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
+
+  // Product modal state
+  const [productModalOpen, setProductModalOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState(null);
+
+  // Request modal state
+  const [requestModalOpen, setRequestModalOpen] = useState(false);
+  const [editingRequest, setEditingRequest] = useState(null);
+
+  // Product hooks
+  const { products, loading: productsLoading, refetch: refetchProducts } = useProducts(userId);
+  const { createProduct } = useCreateProduct();
+  const { updateProduct } = useUpdateProduct();
+  const { deleteProduct } = useDeleteProduct();
+
+  // Request hooks
+  const { requests, loading: requestsLoading, refetch: refetchRequests } = useRequests(userId);
+  const { createRequest } = useCreateRequest();
+  const { updateRequest } = useUpdateRequest();
+  const { deleteRequest } = useDeleteRequest();
+
+  // Category hook
+  const { categories } = useCategories();
 
   // Check if viewing own profile
   const isOwnProfile = currentUser?.uid === userId;
@@ -260,6 +297,127 @@ export default function ProfilePage() {
     }
   };
 
+  // Handle tab change with URL update
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    const url = new URL(window.location.href);
+    url.searchParams.set('tab', tab);
+    window.history.pushState({}, '', url);
+  };
+
+  // Product handlers
+  const handleOpenProductModal = () => {
+    setEditingProduct(null);
+    setProductModalOpen(true);
+  };
+
+  const handleEditProduct = (product) => {
+    setEditingProduct(product);
+    setProductModalOpen(true);
+  };
+
+  const handleProductSubmit = async (productData, imageFiles) => {
+    try {
+      if (editingProduct) {
+        await updateProduct(editingProduct.id, userId, productData, imageFiles);
+      } else {
+        await createProduct(productData, imageFiles);
+      }
+      setProductModalOpen(false);
+      setEditingProduct(null);
+      refetchProducts();
+    } catch (error) {
+      // Error already shown by hook
+      console.error('Product submit error:', error);
+    }
+  };
+
+  const handleDeleteProduct = async (productId) => {
+    try {
+      await deleteProduct(productId, userId);
+      refetchProducts();
+    } catch (error) {
+      // Error already shown by hook
+      console.error('Product delete error:', error);
+    }
+  };
+
+  const handleToggleProductStatus = async (productId, newStatus) => {
+    try {
+      await updateProduct(productId, userId, { status: newStatus });
+      refetchProducts();
+      toast.success(`Product ${newStatus === 'active' ? 'activated' : 'deactivated'}!`);
+    } catch (error) {
+      console.error('Product toggle status error:', error);
+      toast.error('Failed to update product status');
+    }
+  };
+
+  // Request handlers
+  const handleOpenRequestModal = () => {
+    setEditingRequest(null);
+    setRequestModalOpen(true);
+  };
+
+  const handleEditRequest = (request) => {
+    setEditingRequest(request);
+    setRequestModalOpen(true);
+  };
+
+  const handleRequestSubmit = async (requestData) => {
+    try {
+      if (editingRequest) {
+        await updateRequest(editingRequest.id, userId, requestData);
+      } else {
+        await createRequest(requestData);
+      }
+      setRequestModalOpen(false);
+      setEditingRequest(null);
+      refetchRequests();
+    } catch (error) {
+      // Error already shown by hook
+      console.error('Request submit error:', error);
+    }
+  };
+
+  const handleDeleteRequest = async (requestId) => {
+    try {
+      await deleteRequest(requestId, userId);
+      refetchRequests();
+    } catch (error) {
+      // Error already shown by hook
+      console.error('Request delete error:', error);
+    }
+  };
+
+  const handleCloseRequest = async (requestId) => {
+    try {
+      await updateRequest(requestId, userId, { status: 'closed' });
+      refetchRequests();
+      toast.success('Request closed!');
+    } catch (error) {
+      console.error('Request close error:', error);
+      toast.error('Failed to close request');
+    }
+  };
+
+  const handleReopenRequest = async (requestId) => {
+    try {
+      await updateRequest(requestId, userId, { status: 'active' });
+      refetchRequests();
+      toast.success('Request reopened!');
+    } catch (error) {
+      console.error('Request reopen error:', error);
+      toast.error('Failed to reopen request');
+    }
+  };
+
+  const handleSendMessage = (request) => {
+    // TODO: Implement messaging functionality
+    toast.success('Messaging feature coming soon!');
+    console.log('Send message to request:', request);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -327,7 +485,7 @@ export default function ProfilePage() {
         <div className="mb-6 border-b border-gray-200">
           <nav className="-mb-px flex space-x-8">
             <button
-              onClick={() => setActiveTab('profile')}
+              onClick={() => handleTabChange('profile')}
               className={`${
                 activeTab === 'profile'
                   ? 'border-blue-500 text-blue-600'
@@ -337,7 +495,7 @@ export default function ProfilePage() {
               Profile
             </button>
             <button
-              onClick={() => setActiveTab('products')}
+              onClick={() => handleTabChange('products')}
               className={`${
                 activeTab === 'products'
                   ? 'border-blue-500 text-blue-600'
@@ -347,7 +505,7 @@ export default function ProfilePage() {
               {isOwnProfile ? 'My Products' : 'Products'}
             </button>
             <button
-              onClick={() => setActiveTab('requests')}
+              onClick={() => handleTabChange('requests')}
               className={`${
                 activeTab === 'requests'
                   ? 'border-blue-500 text-blue-600'
@@ -358,7 +516,7 @@ export default function ProfilePage() {
             </button>
             {isOwnProfile && (
               <button
-                onClick={() => setActiveTab('security')}
+                onClick={() => handleTabChange('security')}
                 className={`${
                   activeTab === 'security'
                     ? 'border-blue-500 text-blue-600'
@@ -583,66 +741,51 @@ export default function ProfilePage() {
         {/* Products Tab */}
         {activeTab === 'products' && (
           <div className="bg-white shadow rounded-lg p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">
-              {isOwnProfile ? 'My Products' : `${profileUser?.displayName || 'User'}'s Products`}
-            </h2>
-            <div className="text-center py-12">
-              <svg
-                className="mx-auto h-12 w-12 text-gray-400"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
-                />
-              </svg>
-              <h3 className="mt-2 text-sm font-medium text-gray-900">No products</h3>
-              <p className="mt-1 text-sm text-gray-500">
-                {isOwnProfile ? 'Get started by creating a new product.' : 'This user has not listed any products yet.'}
-              </p>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-semibold text-gray-900">
+                {isOwnProfile ? 'My Products' : `${profileUser?.displayName || 'User'}'s Products`}
+              </h2>
               {isOwnProfile && (
-                <div className="mt-6">
-                  <Button>Add Product</Button>
-                </div>
+                <Button onClick={handleOpenProductModal}>
+                  Add Product
+                </Button>
               )}
             </div>
+            <ProductList
+              products={products}
+              loading={productsLoading}
+              isOwnProfile={isOwnProfile}
+              onEdit={handleEditProduct}
+              onDelete={handleDeleteProduct}
+              onToggleStatus={handleToggleProductStatus}
+            />
           </div>
         )}
 
         {/* Requests Tab */}
         {activeTab === 'requests' && (
           <div className="bg-white shadow rounded-lg p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">
-              {isOwnProfile ? 'My Requests' : `${profileUser?.displayName || 'User'}'s Requests`}
-            </h2>
-            <div className="text-center py-12">
-              <svg
-                className="mx-auto h-12 w-12 text-gray-400"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                />
-              </svg>
-              <h3 className="mt-2 text-sm font-medium text-gray-900">No requests</h3>
-              <p className="mt-1 text-sm text-gray-500">
-                {isOwnProfile ? 'Get started by creating a new request.' : 'This user has not created any requests yet.'}
-              </p>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-semibold text-gray-900">
+                {isOwnProfile ? 'My Requests' : `${profileUser?.displayName || 'User'}'s Requests`}
+              </h2>
               {isOwnProfile && (
-                <div className="mt-6">
-                  <Button>Create Request</Button>
-                </div>
+                <Button onClick={handleOpenRequestModal}>
+                  Create Request
+                </Button>
               )}
             </div>
+            <RequestList
+              requests={requests}
+              categories={categories}
+              loading={requestsLoading}
+              isOwnProfile={isOwnProfile}
+              onEdit={handleEditRequest}
+              onDelete={handleDeleteRequest}
+              onClose={handleCloseRequest}
+              onReopen={handleReopenRequest}
+              onSendMessage={handleSendMessage}
+            />
           </div>
         )}
 
@@ -772,6 +915,46 @@ export default function ProfilePage() {
                 Cancel
               </Button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Product Form Modal */}
+      {productModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full p-6 my-8">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">
+              {editingProduct ? 'Edit Product' : 'Add Product'}
+            </h2>
+            <ProductForm
+              product={editingProduct}
+              onSubmit={handleProductSubmit}
+              onCancel={() => {
+                setProductModalOpen(false);
+                setEditingProduct(null);
+              }}
+              userId={userId}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Request Form Modal */}
+      {requestModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full p-6 my-8">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">
+              {editingRequest ? 'Edit Request' : 'Create Request'}
+            </h2>
+            <RequestForm
+              request={editingRequest}
+              onSubmit={handleRequestSubmit}
+              onCancel={() => {
+                setRequestModalOpen(false);
+                setEditingRequest(null);
+              }}
+              userId={userId}
+            />
           </div>
         </div>
       )}
