@@ -1,30 +1,662 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Primary Colors - Gold/Yellow from Homepage */
+  --color-primary: #D4AF37;
+  /* Accent Gold */
+  --color-primary-dark: #B59325;
+  /* Darker Gold */
+  --color-primary-light: #FFD700;
+  /* Bright Gold */
+
+  /* Background Colors - Deep Navy */
+  --color-bg-base: #0F1B2B;
+  /* Deep Navy */
+  --color-bg-secondary: #1A283B;
+  /* Accent Navy */
+  --color-bg-tertiary: #2C3542;
+  /* Lighter Navy */
+
+  /* Text Colors */
+  --color-text-primary: #F5F5F5;
+  /* White/Off-white */
+  --color-text-secondary: #A0A0A0;
+  /* Grey */
+  --color-text-tertiary: #64748b;
+  /* Slate 500 */
+  --color-text-muted: #94a3b8;
+  /* Slate 400 */
+
+  /* Success/Error/Warning */
+  --color-success: #10b981;
+  /* Green 500 */
+  --color-error: #ef4444;
+  /* Red 500 */
+  --color-warning: #f59e0b;
+  /* Amber 500 */
+
+  /* Border Colors */
+  --color-border: #1e293b;
+  /* Slate 800 */
+  --color-border-focus: #D4AF37;
+  /* Gold */
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-background: var(--color-bg-base);
+  --color-foreground: var(--color-text-primary);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-bg-base);
+  color: var(--color-text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-.shared-input::placeholder {
-  color: #555;   /* black */
+/* Headings */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: var(--color-text-primary);
+  font-weight: 600;
+}
+
+/* Links */
+a {
+  color: var(--color-primary);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+a:hover {
+  color: var(--color-primary-dark);
+}
+
+/* Input placeholders */
+::placeholder {
+  color: var(--color-text-muted);
+  opacity: 1;
+}
+
+/* Selection */
+::selection {
+  background-color: var(--color-primary);
+  color: white;
+}
+
+/* Scrollbar (Webkit) */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-muted);
+}
+
+/* --- ANASYF EXACT STYLES --- */
+
+/* Radial Gradients */
+.bg-radial-navy {
+  background: radial-gradient(circle at 50% 30%, #1c304a 0%, var(--color-bg-base) 70%);
+}
+
+.bg-radial-auth {
+  background: radial-gradient(circle at 50% 40%, #1c304a 0%, var(--color-bg-base) 70%);
+}
+
+/* Glassmorphism Cards */
+.glass-card {
+  background: linear-gradient(160deg, rgba(26, 28, 32, 0.6) 0%, rgba(15, 27, 43, 0.9) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  backdrop-filter: blur(20px);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+}
+
+/* Login/Register Card Specifics */
+.login-card,
+.register-card {
+  background: linear-gradient(160deg, rgba(26, 28, 32, 0.6) 0%, rgba(15, 27, 43, 0.9) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+  backdrop-filter: blur(20px);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+}
+
+/* Product Card Exact Match */
+.product-grid-card {
+  background: linear-gradient(160deg, rgba(26, 28, 32, 0.6) 0%, rgba(15, 27, 43, 0.8) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  height: 420px;
+}
+
+.product-grid-card:hover {
+  transform: translateY(-8px);
+  border-color: rgba(212, 175, 55, 0.4);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+}
+
+/* RFQ Card Exact Match */
+.rfq-card {
+  background: linear-gradient(160deg, rgba(26, 28, 32, 0.6) 0%, rgba(15, 27, 43, 0.8) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  height: 100%;
+}
+
+.rfq-card:hover {
+  transform: translateY(-8px);
+  border-color: rgba(212, 175, 55, 0.4);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+}
+
+/* Form Inputs */
+.form-input-anasyf {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 14px;
+  border-radius: 12px;
+  color: #fff;
+  font-size: 15px;
+  outline: none;
+  transition: 0.3s;
+}
+
+.form-input-anasyf:focus {
+  border-color: var(--color-primary);
+  background: rgba(15, 27, 43, 0.9);
+  box-shadow: 0 0 15px rgba(212, 175, 55, 0.1);
+}
+
+/* --- NAVBAR STYLES (Moved from homepage.css) --- */
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 40px;
+  z-index: 1000;
+  background: linear-gradient(to bottom, rgba(15, 27, 43, 0.95) 0%, rgba(15, 27, 43, 0) 100%);
+  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.navbar.scrolled {
+  top: 0;
+  left: 0;
+  transform: none;
+  width: 100%;
+  max-width: 100%;
+  height: 80px;
+  border-radius: 0;
+  background: #0F1B2B;
+  backdrop-filter: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  padding: 0 40px;
+}
+
+/* Sticky Search Bar */
+.sticky-search {
+  position: fixed;
+  top: 85px;
+  left: 50%;
+  transform: translateX(-50%) scale(0);
+  width: 400px;
+  max-width: 90vw;
+  z-index: 999;
+  opacity: 0;
+  transition: all 0.3s ease;
+  pointer-events: none;
+}
+
+.sticky-search.active {
+  transform: translateX(-50%) scale(1);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Sticky Search Toggle Button */
+.sticky-search-toggle {
+  position: fixed;
+  top: 85px;
+  right: 40px;
+  width: 50px;
+  height: 50px;
+  background: linear-gradient(135deg, #FFD700 0%, #FDB931 100%);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 998;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+  color: #0F1B2B;
+  font-weight: bold;
+  font-size: 20px;
+}
+
+.sticky-search-toggle.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.sticky-search-toggle:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 25px rgba(255, 215, 0, 0.5);
+}
+
+.nav-logo-container {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  /* Reduced gap */
+  height: 100%;
+}
+
+/* Fix: Ensure the Link (anchor) wrapping the logo is also centered */
+.nav-logo-container a {
+  display: flex;
+  align-items: center;
+}
+
+.nav-logo-img {
+  height: 95px;
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+  transition: 0.3s;
+  /* Removed transform: translateY(2px) - let's align text instead */
+}
+
+.navbar.scrolled .nav-logo-img {
+  height: 70px;
+}
+
+.nav-brand-text {
+  font-size: 32px;
+  font-weight: 800;
+  color: #FFD700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  transition: 0.3s;
+  display: flex;
+  align-items: center;
+  line-height: 1;
+  /* Fix vertical rhythm */
+  text-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+  /* Lift text up to match logo optical center */
+  transform: translateY(-5px);
+}
+
+.navbar.scrolled .nav-brand-text {
+  font-size: 24px;
+}
+
+.brand-line-1 {
+  font-size: 14px;
+  font-weight: 700;
+  color: #A0A0A0;
+  letter-spacing: 0.5px;
+  text-transform: capitalize;
+}
+
+.brand-line-2 {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--accent-gold);
+  letter-spacing: 0.5px;
+  text-transform: capitalize;
+}
+
+.navbar.scrolled .brand-line-1 {
+  font-size: 12px;
+}
+
+.navbar.scrolled .brand-line-2 {
+  font-size: 14px;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.nav-link {
+  text-decoration: none;
+  color: var(--color-text-primary);
+  font-size: 14px;
+  opacity: 0.8;
+  transition: 0.3s;
+  font-weight: 500;
+}
+
+.nav-link:hover {
+  opacity: 1;
+  color: var(--accent-gold);
+}
+
+.btn-signup {
+  padding: 10px 24px;
+  background: linear-gradient(135deg, #FFD700 0%, #FDB931 100%);
+  color: #0F1B2B;
+  border-radius: 50px;
+  text-decoration: none;
+  font-weight: 800;
+  font-size: 14px;
+  box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+  transition: 0.2s;
+}
+
+.btn-signup:hover {
+  transform: translateY(-2px);
+  background: #fff;
+}
+
+.btn-signup:active {
+  transform: scale(0.95);
+}
+
+/* --- FOOTER STYLES (Moved from homepage.css) --- */
+.footer-section {
+  background-color: var(--bg-deep-navy);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 60px 40px;
+  margin-top: auto;
+}
+
+.footer-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+.footer-grid {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1fr 1.5fr;
+  gap: 40px;
+  align-items: start;
+}
+
+.footer-col h4 {
+  color: #fff;
+  font-size: 16px;
+  margin-bottom: 20px;
+  font-weight: 600;
+}
+
+.footer-col a {
+  display: block;
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  margin-bottom: 10px;
+  font-size: 14px;
+  transition: 0.2s;
+}
+
+.footer-col a:hover {
+  color: var(--accent-gold);
+}
+
+.brand-col p {
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  line-height: 1.6;
+  max-width: 280px;
+  margin-top: 15px;
+}
+
+.newsletter-box {
+  display: flex;
+  position: relative;
+  margin-top: 10px;
+  width: 100%;
+}
+
+.footer-input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 12px 14px;
+  border-radius: 8px;
+  color: #fff;
+  outline: none;
+}
+
+.footer-btn {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: var(--accent-gold);
+  border: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.footer-bottom {
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  padding-top: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.footer-legal {
+  display: flex;
+  gap: 20px;
+}
+
+.footer-legal a {
+  color: #64748b;
+  text-decoration: none;
+}
+
+/* --- MOBILE RESPONSIVENESS --- */
+@media (max-width: 768px) {
+
+  /* Navbar Adjustments */
+  .navbar {
+    height: 70px;
+    padding: 0 20px;
+  }
+
+  .nav-logo-img {
+    height: 50px;
+  }
+
+  .nav-brand-text {
+    font-size: 24px;
+    transform: translateY(-2px);
+  }
+
+  .navbar.scrolled {
+    height: 60px;
+    padding: 0 20px;
+  }
+
+  .navbar.scrolled .nav-logo-img {
+    height: 40px;
+  }
+
+  .navbar.scrolled .nav-brand-text {
+    font-size: 20px;
+  }
+
+  /* Sticky Search adjustments for Mobile */
+  .sticky-search {
+    width: 90%;
+    top: 75px;
+  }
+
+}
+
+/* --- SEARCH SWITCH COMPONENT (Premium) --- */
+.search-switch-container {
+  display: flex;
+  background: rgba(255, 255, 255, 0.08);
+  /* Glassy dark background */
+  border-radius: 100px;
+  padding: 4px;
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  margin-right: 12px;
+  height: 48px;
+  align-items: center;
+}
+
+.search-switch-slider {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  bottom: 4px;
+  width: calc(50% - 4px);
+  background: var(--color-primary);
+  /* Gold */
+  border-radius: 100px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  z-index: 1;
+}
+
+/* Slider position when purely toggling based on class or state attribute could be handled via style prop in JS, 
+   but let's add a helper class for right alignment if needed, or handle inline. 
+   For now, I'll rely on inline styles/transforms in React for the sliding effect. */
+
+.search-switch-btn {
+  position: relative;
+  z-index: 2;
+  border: none;
+  background: transparent;
+  color: #fff;
+  padding: 0 20px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.3s;
+  min-width: 90px;
+  /* Ensure uniform width */
+}
+
+.search-switch-btn.active {
+  color: #0F1B2B;
+  /* Dark text on Gold background */
+}
+
+/* --- GLOBAL SEARCH BAR STYLES (Premium) --- */
+.search-bar {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  background: rgba(15, 27, 43, 0.75);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  border-radius: 100px;
+  padding: 8px 12px;
+  /* Adjusted padding */
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  transition: 0.3s;
+}
+
+.search-bar:focus-within {
+  box-shadow: 0 0 30px rgba(255, 215, 0, 0.4);
+  background: rgba(15, 27, 43, 0.95);
+  border-color: #FFD700;
+}
+
+.search-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #fff;
+  padding: 12px 20px;
+  font-size: 16px;
+}
+
+.search-input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.search-btn {
+  width: 48px;
+  height: 48px;
+  background: var(--color-primary);
+  /* Gold */
+  border: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #0F1B2B;
+  /* Navy text for contrast */
+  transition: 0.2s;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  flex-shrink: 0;
+}
+
+.search-btn:hover {
+  background: #fff;
+  transform: scale(1.05);
+  color: #0F1B2B;
+}
+
+/* Mobile responsive adjustments for search */
+@media (max-width: 768px) {
+  .search-bar {
+    padding: 6px 10px;
+  }
 }

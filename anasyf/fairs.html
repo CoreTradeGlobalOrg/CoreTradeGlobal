@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fairs & Events - CoreTradeGlobal</title>
+    
+    <!-- OPTIMIZATION: Font Loading (Same as Homepage) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    
+    <style>
+        /* --- 1. GLOBAL AYARLAR & DEĞİŞKENLER (Anasayfa ile Birebir) --- */
+        :root {
+            --bg-deep-navy: #0F1B2B;
+            --bg-accent-navy: #1A283B;
+            --accent-gold: #D4AF37;
+            --accent-bright-gold: #FFD700;
+            --text-white: #F5F5F5;
+            --text-grey: #A0A0A0;
+            --card-radius: 20px;
+            --container-width: 1200px;
+        }
+
+        * { box-sizing: border-box; }
+        
+        body {
+            margin: 0; padding: 0;
+            background-color: var(--bg-deep-navy);
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            color: var(--text-white);
+            overflow-x: hidden;
+        }
+
+        /* --- GPU Hızlandırma --- */
+        .hero-title, .hero-subtitle, .fair-grid-card {
+            will-change: transform, opacity;
+        }
+
+        /* --- NAVBAR (Anasayfa Aynısı - Opak Scroll) --- */
+        .navbar {
+            position: fixed; top: 0; left: 0; width: 100%; height: 90px;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 40px; z-index: 1000;
+            background: linear-gradient(to bottom, rgba(15, 27, 43, 0.95) 0%, rgba(15, 27, 43, 0) 100%);
+            transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .navbar.scrolled {
+            top: 0; left: 0; transform: none; width: 100%; max-width: 100%; height: 80px;
+            border-radius: 0; 
+            background: #0F1B2B; /* Fully Opaque */
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1); 
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); padding: 0 40px;
+        }
+
+        .nav-logo-img { height: 50px; width: auto; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); transition: 0.3s; }
+        .navbar.scrolled .nav-logo-img { height: 40px; }
+
+        .nav-links { display: flex; align-items: center; gap: 24px; }
+        .nav-link { text-decoration: none; color: var(--text-white); font-size: 14px; opacity: 0.8; transition: 0.3s; font-weight: 500; }
+        .nav-link:hover { opacity: 1; color: var(--accent-gold); }
+        .nav-link.active { color: var(--accent-gold); opacity: 1; font-weight: 600; }
+
+        .btn-signup {
+            padding: 10px 24px; background: linear-gradient(135deg, #FFD700 0%, #FDB931 100%); color: #0F1B2B;
+            border-radius: 50px; text-decoration: none; font-weight: 800; font-size: 14px;
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.3); transition: 0.2s;
+        }
+        .btn-signup:hover { transform: translateY(-2px); background: #fff; }
+        .btn-signup:active { transform: scale(0.95); }
+
+        /* --- HERO SECTION (Fairs Özel) --- */
+        .fairs-hero {
+            position: relative; width: 100%; height: 500px;
+            background: radial-gradient(circle at 50% 30%, #1c304a 0%, var(--bg-deep-navy) 70%);
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            text-align: center; padding: 0 20px;
+            overflow: hidden;
+            margin-bottom: 40px;
+        }
+
+        .hero-title {
+            font-size: 56px; font-weight: 800; letter-spacing: -1px; line-height: 1.1;
+            background: linear-gradient(180deg, #ffffff 20%, #909090 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            margin-bottom: 20px; opacity: 0; /* JS ile açılacak */
+            filter: drop-shadow(0 10px 20px rgba(0,0,0,0.5));
+            max-width: 900px;
+        }
+
+        .hero-subtitle {
+            font-size: 18px; color: var(--text-grey); max-width: 600px; line-height: 1.6;
+            margin-bottom: 40px; opacity: 0;
+        }
+
+        /* --- FILTER BAR --- */
+        .filter-bar-container {
+            width: 100%; max-width: 800px; opacity: 0; transform: translateY(20px);
+            display: flex; gap: 15px; flex-wrap: wrap; justify-content: center;
+        }
+
+        .filter-select {
+            background: rgba(15, 27, 43, 0.75); backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 100px;
+            padding: 12px 24px; color: #fff; font-size: 14px; font-weight: 500;
+            cursor: pointer; transition: 0.3s; outline: none; appearance: none;
+            min-width: 160px; text-align: center;
+        }
+        .filter-select:hover, .filter-select:focus {
+            border-color: var(--accent-gold); background: rgba(15, 27, 43, 0.95);
+        }
+
+        /* --- FAIRS GRID SECTION --- */
+        .fairs-grid-section {
+            width: 100%; background: var(--bg-deep-navy); padding: 20px 20px 100px 20px;
+            display: flex; flex-direction: column; align-items: center;
+        }
+
+        .full-fairs-grid {
+            width: 100%; max-width: 1200px;
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 30px;
+        }
+
+        /* Fair Card (Responsive Version of Homepage Card) */
+        .fair-grid-card {
+            background: linear-gradient(160deg, rgba(26,28,32,0.6) 0%, rgba(15,27,43,0.8) 100%);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: var(--card-radius);
+            padding: 20px;
+            position: relative;
+            display: flex; flex-direction: column;
+            transition: 0.3s; cursor: pointer;
+            height: 380px; /* Sabit yükseklik korundu */
+            opacity: 0; /* GSAP başlangıcı */
+        }
+
+        .fair-grid-card:hover {
+            transform: translateY(-8px);
+            border-color: var(--accent-gold);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+        }
+
+        .fair-content {
+            position: relative; z-index: 1; display: flex; flex-direction: column; height: 100%;
+        }
+
+        .fair-title { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 6px 0; }
+        .fair-desc { font-size: 13px; color: var(--text-grey); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        .fair-location {
+            font-size: 13px; color: #cbd5e1; display: flex; align-items: center; gap: 6px; margin-bottom: auto;
+        }
+
+        .fair-visual-area {
+            margin-top: 20px; width: 100%; height: 160px;
+            background: rgba(0,0,0,0.3); border-radius: 12px;
+            position: relative; overflow: hidden;
+            display: flex; align-items: center; justify-content: center;
+        }
+        
+        /* Placeholder Image Backgrounds */
+        .fv-1 { background: linear-gradient(to bottom right, #2c3e50, #000000); }
+        .fv-2 { background: linear-gradient(to bottom right, #141e30, #243b55); }
+        .fv-3 { background: linear-gradient(to bottom right, #000000, #434343); }
+        .fv-4 { background: linear-gradient(to bottom right, #232526, #414345); }
+
+        .fair-date-box {
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.15);
+            padding: 12px 20px; border-radius: 10px;
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(5px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .fair-date-day { font-size: 28px; font-weight: 700; color: #fff; display: block; line-height: 1; margin-bottom: 2px; }
+        .fair-date-month { font-size: 11px; color: var(--accent-gold); font-weight: 600; display: block; text-transform: uppercase; }
+
+        .btn-fair-register {
+            margin-top: 15px; width: 100%; padding: 12px;
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+            color: #fff; border-radius: 12px; font-size: 13px; font-weight: 600;
+            cursor: pointer; transition: 0.2s;
+        }
+        .fair-grid-card:hover .btn-fair-register {
+            background: var(--accent-gold); color: #0F1B2B; border-color: var(--accent-gold);
+        }
+
+        /* --- FOOTER (Anasayfa Aynısı) --- */
+        .footer-section { background-color: var(--bg-deep-navy); border-top: 1px solid rgba(255,255,255,0.05); padding: 60px 40px; margin-top: auto; }
+        .footer-container { max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 40px; }
+        .footer-grid { display: grid; grid-template-columns: 1.5fr 1fr 1fr 1.5fr; gap: 40px; align-items: start; }
+        .footer-col h4 { color: #fff; font-size: 16px; margin-bottom: 20px; font-weight: 600; }
+        .footer-col a { display: block; color: var(--text-grey); text-decoration: none; margin-bottom: 10px; font-size: 14px; transition: 0.2s; }
+        .footer-col a:hover { color: var(--accent-gold); }
+        .brand-col p { color: var(--text-grey); font-size: 13px; line-height: 1.6; max-width: 280px; margin-top: 15px; }
+        .newsletter-box { display: flex; position: relative; margin-top: 10px; width: 100%; }
+        .footer-input { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 12px 14px; border-radius: 8px; color: #fff; outline: none; }
+        .footer-btn { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); background: var(--accent-gold); border: none; width: 30px; height: 30px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .footer-bottom { border-top: 1px solid rgba(255,255,255,0.05); padding-top: 20px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: #64748b; }
+        .footer-legal { display: flex; gap: 20px; }
+        .footer-legal a { color: #64748b; text-decoration: none; }
+
+        @media (max-width: 900px) {
+            .footer-grid { grid-template-columns: 1fr 1fr; gap: 30px; }
+            .brand-col { grid-column: 1 / -1; }
+            .hero-title { font-size: 42px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- IntersectionObserver Trigger -->
+<div id="pixel-guard" style="position: absolute; top: 0; left: 0; width: 1px; height: 1px; pointer-events: none; opacity: 0;"></div>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+    <img src="Core-png.png" alt="CoreTradeGlobal" class="nav-logo-img">
+    <div class="nav-links">
+        <a href="index.html" class="nav-link">Products</a>
+        <a href="#" class="nav-link">RFQs</a>
+        <a href="categories.html" class="nav-link">Categories</a>
+        <a href="fairs.html" class="nav-link active">Fairs</a>
+        <a href="about.html" class="nav-link">About Us</a>
+        <a href="#" class="nav-link">Log In</a>
+        <a href="#" class="btn-signup">Register</a>
+    </div>
+</nav>
+
+<!-- HERO SECTION -->
+<section class="fairs-hero">
+    <h1 class="hero-title">Global Trade Calendar</h1>
+    <p class="hero-subtitle">Discover key exhibitions, networking events, and trade shows to grow your business globally.</p>
+    
+    <div class="filter-bar-container">
+        <select class="filter-select">
+            <option>All Sectors</option>
+            <option>Construction</option>
+            <option>Technology</option>
+            <option>Automotive</option>
+        </select>
+        <select class="filter-select">
+            <option>All Locations</option>
+            <option>Dubai, UAE</option>
+            <option>Las Vegas, USA</option>
+            <option>Berlin, Germany</option>
+        </select>
+        <select class="filter-select">
+            <option>2025</option>
+            <option>2026</option>
+        </select>
+    </div>
+</section>
+
+<!-- FAIRS GRID -->
+<section class="fairs-grid-section">
+    <div class="full-fairs-grid" id="fairsGrid">
+        <!-- Content injected via JS for cleaner code, but represented here -->
+        
+        <!-- Card 1 -->
+        <div class="fair-grid-card">
+            <div class="fair-content">
+                <h3 class="fair-title">Dubai Big 5</h3>
+                <p class="fair-desc">Construction & Building</p>
+                <div class="fair-location">
+                    <span>📍 Dubai World Trade Centre</span>
+                </div>
+                <div class="fair-visual-area fv-1">
+                    <div class="fair-date-box">
+                        <span class="fair-date-day">04</span>
+                        <span class="fair-date-month">DEC</span>
+                    </div>
+                </div>
+                <button class="btn-fair-register">View Details</button>
+            </div>
+        </div>
+
+        <!-- Card 2 -->
+        <div class="fair-grid-card">
+            <div class="fair-content">
+                <h3 class="fair-title">CES Las Vegas</h3>
+                <p class="fair-desc">Technology & Innovation</p>
+                <div class="fair-location">
+                    <span>📍 Las Vegas Convention Center</span>
+                </div>
+                <div class="fair-visual-area fv-2">
+                    <div class="fair-date-box">
+                        <span class="fair-date-day">08</span>
+                        <span class="fair-date-month">JAN</span>
+                    </div>
+                </div>
+                <button class="btn-fair-register">View Details</button>
+            </div>
+        </div>
+
+        <!-- Card 3 -->
+        <div class="fair-grid-card">
+            <div class="fair-content">
+                <h3 class="fair-title">Hannover Messe</h3>
+                <p class="fair-desc">Industrial Technology</p>
+                <div class="fair-location">
+                    <span>📍 Hannover Fairground, DE</span>
+                </div>
+                <div class="fair-visual-area fv-3">
+                    <div class="fair-date-box">
+                        <span class="fair-date-day">17</span>
+                        <span class="fair-date-month">APR</span>
+                    </div>
+                </div>
+                <button class="btn-fair-register">View Details</button>
+            </div>
+        </div>
+
+        <!-- Card 4 -->
+        <div class="fair-grid-card">
+            <div class="fair-content">
+                <h3 class="fair-title">Canton Fair</h3>
+                <p class="fair-desc">Import & Export</p>
+                <div class="fair-location">
+                    <span>📍 Guangzhou, China</span>
+                </div>
+                <div class="fair-visual-area fv-4">
+                    <div class="fair-date-box">
+                        <span class="fair-date-day">15</span>
+                        <span class="fair-date-month">OCT</span>
+                    </div>
+                </div>
+                <button class="btn-fair-register">View Details</button>
+            </div>
+        </div>
+
+         <!-- Card 5 -->
+         <div class="fair-grid-card">
+            <div class="fair-content">
+                <h3 class="fair-title">Automechanika</h3>
+                <p class="fair-desc">Automotive Service</p>
+                <div class="fair-location">
+                    <span>📍 Frankfurt, Germany</span>
+                </div>
+                <div class="fair-visual-area fv-2">
+                    <div class="fair-date-box">
+                        <span class="fair-date-day">10</span>
+                        <span class="fair-date-month">SEP</span>
+                    </div>
+                </div>
+                <button class="btn-fair-register">View Details</button>
+            </div>
+        </div>
+
+        <!-- Card 6 -->
+        <div class="fair-grid-card">
+            <div class="fair-content">
+                <h3 class="fair-title">SIAL Paris</h3>
+                <p class="fair-desc">Food Innovation</p>
+                <div class="fair-location">
+                    <span>📍 Paris Nord Villepinte</span>
+                </div>
+                <div class="fair-visual-area fv-1">
+                    <div class="fair-date-box">
+                        <span class="fair-date-day">19</span>
+                        <span class="fair-date-month">OCT</span>
+                    </div>
+                </div>
+                <button class="btn-fair-register">View Details</button>
+            </div>
+        </div>
+        
+    </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer-section">
+    <div class="footer-container">
+        <div class="footer-grid">
+            <div class="footer-col brand-col">
+                <img src="Core-png.png" alt="CoreTradeGlobal" class="nav-logo-img">
+                <p>CoreTradeGlobal is the world's leading premium B2B marketplace matched with AI-driven connections.</p>
+            </div>
+            <div class="footer-col"><h4>Platform</h4><a href="#">Browse Products</a><a href="#">Requests for Quotation</a><a href="#">Verified Partners</a><a href="#">Trade Shows & Fairs</a></div>
+            <div class="footer-col"><h4>Company</h4><a href="about.html">About Us</a><a href="#">Careers</a><a href="#">Contact Support</a><a href="#">Success Stories</a></div>
+            <div class="footer-col"><h4>Stay Connected</h4><div class="newsletter-box"><input type="email" class="footer-input" placeholder="Enter your email"><button class="footer-btn">></button></div></div>
+        </div>
+        <div class="footer-bottom"><span>© 2025 CoreTradeGlobal Inc. All rights reserved.</span><div class="footer-legal"><a href="#">Privacy Policy</a><a href="#">Terms of Service</a><a href="#">Cookie Settings</a></div></div>
+    </div>
+</footer>
+
+<script>
+    // --- 1. NAVBAR SCROLL CONTROL (Optimized) ---
+    const navObserver = new IntersectionObserver((entries) => {
+        const nav = document.querySelector('.navbar');
+        if (!entries.isIntersecting) {
+            nav.classList.add('scrolled');
+        } else {
+            nav.classList.remove('scrolled');
+        }
+    });
+    navObserver.observe(document.getElementById('pixel-guard'));
+
+    // --- 2. GSAP ANIMATIONS ---
+    document.addEventListener("DOMContentLoaded", (event) => {
+        gsap.registerPlugin();
+
+        // Hero Content Animation
+        const tl = gsap.timeline();
+        
+        tl.to(".hero-title", { 
+            duration: 1, 
+            opacity: 1, 
+            y: 0, 
+            ease: "power3.out",
+            startAt: { y: 50 } 
+        })
+        .to(".hero-subtitle", { 
+            duration: 1, 
+            opacity: 1, 
+            y: 0, 
+            ease: "power3.out",
+            startAt: { y: 30 } 
+        }, "-=0.6")
+        .to(".filter-bar-container", {
+            duration: 0.8,
+            opacity: 1,
+            y: 0,
+            ease: "back.out(1.7)"
+        }, "-=0.4");
+
+        // Fairs Grid Staggered Animation
+        gsap.to(".fair-grid-card", {
+            duration: 0.6,
+            opacity: 1,
+            y: 0,
+            stagger: 0.1, // Kartlar arası 0.1sn gecikme
+            ease: "power2.out",
+            delay: 0.5,
+            startAt: { y: 30, opacity: 0 }
+        });
+    });
+</script>
+
+</body>
+</html>

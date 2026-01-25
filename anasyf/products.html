@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global Products - CoreTradeGlobal</title>
+    
+    <!-- OPTIMIZATION: Font Loading -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    
+    <style>
+        /* --- 1. GLOBAL AYARLAR & DEĞİŞKENLER (Anasayfa ile Birebir) --- */
+        :root {
+            --bg-deep-navy: #0F1B2B;
+            --bg-accent-navy: #1A283B;
+            --accent-gold: #D4AF37;
+            --accent-bright-gold: #FFD700;
+            --text-white: #F5F5F5;
+            --text-grey: #A0A0A0;
+            --card-radius: 20px;
+            --container-width: 1200px;
+        }
+
+        * { box-sizing: border-box; }
+        
+        body {
+            margin: 0; padding: 0;
+            background-color: var(--bg-deep-navy);
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            color: var(--text-white);
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* --- GPU Hızlandırma --- */
+        .hero-title, .hero-subtitle, .product-grid-card, .filter-bar-container {
+            will-change: transform, opacity;
+        }
+
+        /* --- NAVBAR (Anasayfa Aynısı) --- */
+        .navbar {
+            position: fixed; top: 0; left: 0; width: 100%; height: 90px;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 40px; z-index: 1000;
+            background: linear-gradient(to bottom, rgba(15, 27, 43, 0.95) 0%, rgba(15, 27, 43, 0) 100%);
+            transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .navbar.scrolled {
+            top: 0; left: 0; transform: none; width: 100%; max-width: 100%; height: 80px;
+            border-radius: 0; 
+            background: #0F1B2B;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1); 
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); padding: 0 40px;
+        }
+
+        .nav-logo-img { height: 50px; width: auto; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); transition: 0.3s; }
+        .navbar.scrolled .nav-logo-img { height: 40px; }
+
+        .nav-links { display: flex; align-items: center; gap: 24px; }
+        .nav-link { text-decoration: none; color: var(--text-white); font-size: 14px; opacity: 0.8; transition: 0.3s; font-weight: 500; }
+        .nav-link:hover { opacity: 1; color: var(--accent-gold); }
+        .nav-link.active { color: var(--accent-gold); opacity: 1; font-weight: 600; }
+
+        .btn-signup {
+            padding: 10px 24px; background: linear-gradient(135deg, #FFD700 0%, #FDB931 100%); color: #0F1B2B;
+            border-radius: 50px; text-decoration: none; font-weight: 800; font-size: 14px;
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.3); transition: 0.2s;
+        }
+        .btn-signup:hover { transform: translateY(-2px); background: #fff; }
+        .btn-signup:active { transform: scale(0.95); }
+
+        /* --- HERO SECTION (Product Özel) --- */
+        .products-hero {
+            position: relative; width: 100%; height: 500px;
+            background: radial-gradient(circle at 50% 30%, #1c304a 0%, var(--bg-deep-navy) 70%);
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            text-align: center; padding: 0 20px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .hero-title {
+            font-size: 56px; font-weight: 800; letter-spacing: -1px; line-height: 1.1;
+            background: linear-gradient(180deg, #ffffff 20%, #909090 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            margin-bottom: 20px; opacity: 0; /* JS ile açılacak */
+            filter: drop-shadow(0 10px 20px rgba(0,0,0,0.5));
+            max-width: 900px;
+        }
+
+        .hero-subtitle {
+            font-size: 18px; color: var(--text-grey); max-width: 600px; line-height: 1.6;
+            margin-bottom: 40px; opacity: 0;
+        }
+
+        /* --- ADVANCED SEARCH & FILTER --- */
+        .filter-bar-container {
+            width: 100%; max-width: 1000px; opacity: 0; transform: translateY(20px);
+            display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;
+            background: rgba(15, 27, 43, 0.6); backdrop-filter: blur(20px);
+            padding: 10px; border-radius: 100px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .search-input-group {
+            flex: 2; min-width: 200px; display: flex; align-items: center;
+            background: rgba(255,255,255,0.05); border-radius: 50px; padding: 0 15px;
+            border: 1px solid transparent; transition: 0.3s;
+        }
+        .search-input-group:focus-within { border-color: var(--accent-gold); background: rgba(255,255,255,0.1); }
+        .search-icon { color: var(--text-grey); width: 18px; height: 18px; }
+        .product-search-input { width: 100%; background: transparent; border: none; color: #fff; padding: 12px 10px; outline: none; font-family: 'Inter', sans-serif; }
+
+        .filter-select {
+            flex: 1; min-width: 140px;
+            background: rgba(255,255,255,0.05); border: 1px solid transparent; border-radius: 50px;
+            padding: 12px 20px; color: #fff; font-size: 14px; font-weight: 500;
+            cursor: pointer; transition: 0.3s; outline: none; appearance: none;
+            text-align: center; font-family: 'Inter', sans-serif;
+        }
+        .filter-select:hover { background: rgba(255,255,255,0.1); }
+        .filter-select:focus { border-color: var(--accent-gold); }
+
+        .btn-search-action {
+            width: 48px; height: 48px; border-radius: 50%;
+            background: var(--accent-gold); color: #0F1B2B; border: none;
+            display: flex; align-items: center; justify-content: center; cursor: pointer;
+            transition: 0.2s; flex-shrink: 0;
+        }
+        .btn-search-action:hover { transform: scale(1.05); background: #fff; }
+
+        /* --- PRODUCTS GRID SECTION --- */
+        .products-grid-section {
+            width: 100%; background: var(--bg-deep-navy); padding: 40px 20px 100px 20px;
+            display: flex; flex-direction: column; align-items: center;
+        }
+
+        .products-grid-container {
+            width: 100%; max-width: 1200px;
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 25px;
+        }
+
+        /* Product Card Design */
+        .product-grid-card {
+            background: linear-gradient(160deg, rgba(26,28,32,0.6) 0%, rgba(15,27,43,0.8) 100%);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: var(--card-radius);
+            padding: 20px;
+            display: flex; flex-direction: column;
+            transition: all 0.3s ease;
+            position: relative; overflow: hidden;
+            cursor: pointer;
+            height: 420px;
+            opacity: 0; /* GSAP için */
+        }
+
+        .product-grid-card:hover {
+            transform: translateY(-8px);
+            border-color: rgba(212, 175, 55, 0.4);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+        }
+
+        .card-img-area {
+            width: 100%; height: 180px; background: #0F1B2B; border-radius: 12px;
+            margin-bottom: 16px; display: flex; align-items: center; justify-content: center;
+            padding: 10px; overflow: hidden; position: relative;
+        }
+        
+        .card-stock-img { width: 100%; height: 100%; object-fit: contain; transition: transform 0.5s; }
+        .product-grid-card:hover .card-stock-img { transform: scale(1.05); }
+
+        .card-category-tag {
+            position: absolute; top: 10px; left: 10px;
+            background: rgba(15, 27, 43, 0.85); color: var(--accent-gold);
+            padding: 4px 10px; border-radius: 50px; font-size: 11px; font-weight: 700;
+            backdrop-filter: blur(4px);
+        }
+
+        .card-content { flex: 1; display: flex; flex-direction: column; }
+
+        .card-country-row { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-grey); margin-bottom: 8px; }
+
+        .card-title { font-size: 18px; font-weight: 700; color: #fff; margin: 0 0 6px 0; line-height: 1.3; }
+
+        .card-desc {
+            font-size: 13px; color: #94a3b8; line-height: 1.5; margin-bottom: 15px;
+            display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+        }
+
+        .card-footer { margin-top: auto; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 15px; }
+
+        .price-tag { font-size: 15px; font-weight: 700; color: #fff; }
+        .price-unit { font-size: 11px; color: var(--text-grey); font-weight: 400; }
+
+        .btn-view-product {
+            background: var(--accent-gold); color: #0F1B2B; border: none;
+            padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600;
+            cursor: pointer; transition: 0.2s;
+        }
+        .btn-view-product:hover { background: #fff; }
+
+        /* --- FOOTER (Anasayfa Aynısı) --- */
+        .footer-section { background-color: var(--bg-deep-navy); border-top: 1px solid rgba(255,255,255,0.05); padding: 60px 40px; margin-top: auto; }
+        .footer-container { max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 40px; }
+        .footer-grid { display: grid; grid-template-columns: 1.5fr 1fr 1fr 1.5fr; gap: 40px; align-items: start; }
+        .footer-col h4 { color: #fff; font-size: 16px; margin-bottom: 20px; font-weight: 600; }
+        .footer-col a { display: block; color: var(--text-grey); text-decoration: none; margin-bottom: 10px; font-size: 14px; transition: 0.2s; }
+        .footer-col a:hover { color: var(--accent-gold); }
+        .brand-col p { color: var(--text-grey); font-size: 13px; line-height: 1.6; max-width: 280px; margin-top: 15px; }
+        .newsletter-box { display: flex; position: relative; margin-top: 10px; width: 100%; }
+        .footer-input { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 12px 14px; border-radius: 8px; color: #fff; outline: none; }
+        .footer-btn { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); background: var(--accent-gold); border: none; width: 30px; height: 30px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .footer-bottom { border-top: 1px solid rgba(255,255,255,0.05); padding-top: 20px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: #64748b; }
+        .footer-legal { display: flex; gap: 20px; }
+        .footer-legal a { color: #64748b; text-decoration: none; }
+
+        @media (max-width: 900px) {
+            .footer-grid { grid-template-columns: 1fr 1fr; gap: 30px; }
+            .brand-col { grid-column: 1 / -1; }
+            .hero-title { font-size: 42px; }
+            .filter-bar-container { flex-direction: column; border-radius: 20px; }
+            .search-input-group, .filter-select { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- IntersectionObserver Trigger -->
+<div id="pixel-guard" style="position: absolute; top: 0; left: 0; width: 1px; height: 1px; pointer-events: none; opacity: 0;"></div>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+    <img src="Core-png.png" alt="CoreTradeGlobal" class="nav-logo-img">
+    <div class="nav-links">
+        <a href="index.html" class="nav-link active">Products</a>
+        <a href="rfqs.html" class="nav-link">RFQs</a>
+        <a href="categories.html" class="nav-link">Categories</a>
+        <a href="fairs.html" class="nav-link">Fairs</a>
+        <a href="about.html" class="nav-link">About Us</a>
+        <a href="login.html" class="nav-link">Log In</a>
+        <a href="register.html" class="btn-signup">Register</a>
+    </div>
+</nav>
+
+<!-- HERO SECTION -->
+<section class="products-hero">
+    <h1 class="hero-title">Discover Premium Products</h1>
+    <p class="hero-subtitle">Source high-quality goods from verified global manufacturers.</p>
+    
+    <div class="filter-bar-container">
+        <div class="search-input-group">
+            <svg class="search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            <input type="text" class="product-search-input" placeholder="Search products...">
+        </div>
+        
+        <select class="filter-select">
+            <option>All Categories</option>
+            <option>Construction</option>
+            <option>Machinery</option>
+            <option>Food & Beverage</option>
+            <option>Textile</option>
+        </select>
+        
+        <select class="filter-select">
+            <option>Origin: All</option>
+            <option>Germany</option>
+            <option>Turkey</option>
+            <option>China</option>
+            <option>Italy</option>
+        </select>
+
+        <button class="btn-search-action">→</button>
+    </div>
+</section>
+
+<!-- PRODUCTS GRID -->
+<section class="products-grid-section">
+    <div class="products-grid-container">
+        
+        <!-- Product 1 -->
+        <div class="product-grid-card">
+            <div class="card-img-area">
+                <span class="card-category-tag">Construction</span>
+                <img src="Core-png.png" loading="lazy" class="card-stock-img" alt="Marble">
+            </div>
+            <div class="card-content">
+                <div class="card-country-row"><span>🇹🇷</span> <span>Turkey</span></div>
+                <h3 class="card-title">Luxury Marble Block (Afyon White)</h3>
+                <p class="card-desc">Premium quality white marble blocks suitable for high-end flooring and architectural projects.</p>
+                <div class="card-footer">
+                    <div class="price-info"><span class="price-tag">$450</span> <span class="price-unit">/ Ton</span></div>
+                    <button class="btn-view-product">View Details</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Product 2 -->
+        <div class="product-grid-card">
+            <div class="card-img-area">
+                <span class="card-category-tag">Machinery</span>
+                <img src="Core-png.png" loading="lazy" class="card-stock-img" alt="CNC">
+            </div>
+            <div class="card-content">
+                <div class="card-country-row"><span>🇩🇪</span> <span>Germany</span></div>
+                <h3 class="card-title">5-Axis CNC Milling Machine</h3>
+                <p class="card-desc">High precision industrial milling machine for complex parts manufacturing.</p>
+                <div class="card-footer">
+                    <div class="price-info"><span class="price-tag">$125,000</span> <span class="price-unit">/ Unit</span></div>
+                    <button class="btn-view-product">View Details</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Product 3 -->
+        <div class="product-grid-card">
+            <div class="card-img-area">
+                <span class="card-category-tag">Textile</span>
+                <img src="Core-png.png" loading="lazy" class="card-stock-img" alt="Silk">
+            </div>
+            <div class="card-content">
+                <div class="card-country-row"><span>🇨🇳</span> <span>China</span></div>
+                <h3 class="card-title">Raw Silk Fabric Rolls</h3>
+                <p class="card-desc">100% natural raw silk, ideal for luxury garment production. Available in various weights.</p>
+                <div class="card-footer">
+                    <div class="price-info"><span class="price-tag">$45</span> <span class="price-unit">/ Meter</span></div>
+                    <button class="btn-view-product">View Details</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Product 4 -->
+        <div class="product-grid-card">
+            <div class="card-img-area">
+                <span class="card-category-tag">Food</span>
+                <img src="Core-png.png" loading="lazy" class="card-stock-img" alt="Olive Oil">
+            </div>
+            <div class="card-content">
+                <div class="card-country-row"><span>🇮🇹</span> <span>Italy</span></div>
+                <h3 class="card-title">Extra Virgin Olive Oil (500L)</h3>
+                <p class="card-desc">Cold-pressed organic olive oil from Tuscany region. Bulk packaging for distributors.</p>
+                <div class="card-footer">
+                    <div class="price-info"><span class="price-tag">$8.50</span> <span class="price-unit">/ Liter</span></div>
+                    <button class="btn-view-product">View Details</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Product 5 -->
+        <div class="product-grid-card">
+            <div class="card-img-area">
+                <span class="card-category-tag">Energy</span>
+                <img src="Core-png.png" loading="lazy" class="card-stock-img" alt="Solar">
+            </div>
+            <div class="card-content">
+                <div class="card-country-row"><span>🇰🇷</span> <span>S. Korea</span></div>
+                <h3 class="card-title">Monocrystalline Solar Panels 550W</h3>
+                <p class="card-desc">High efficiency PV modules for commercial and residential solar installations.</p>
+                <div class="card-footer">
+                    <div class="price-info"><span class="price-tag">$0.28</span> <span class="price-unit">/ Watt</span></div>
+                    <button class="btn-view-product">View Details</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Product 6 -->
+        <div class="product-grid-card">
+            <div class="card-img-area">
+                <span class="card-category-tag">Construction</span>
+                <img src="Core-png.png" loading="lazy" class="card-stock-img" alt="Ceramic">
+            </div>
+            <div class="card-content">
+                <div class="card-country-row"><span>🇪🇸</span> <span>Spain</span></div>
+                <h3 class="card-title">Porcelain Ceramic Tiles 60x120</h3>
+                <p class="card-desc">Modern minimalist design, anti-slip surface for indoor and outdoor use.</p>
+                <div class="card-footer">
+                    <div class="price-info"><span class="price-tag">$22</span> <span class="price-unit">/ Sqm</span></div>
+                    <button class="btn-view-product">View Details</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Product 7 -->
+        <div class="product-grid-card">
+            <div class="card-img-area">
+                <span class="card-category-tag">Industrial</span>
+                <img src="Core-png.png" loading="lazy" class="card-stock-img" alt="Steel">
+            </div>
+            <div class="card-content">
+                <div class="card-country-row"><span>🇺🇦</span> <span>Ukraine</span></div>
+                <h3 class="card-title">Seamless Steel Pipes</h3>
+                <p class="card-desc">Heavy duty seamless pipes for oil and gas industry applications. API 5L certified.</p>
+                <div class="card-footer">
+                    <div class="price-info"><span class="price-tag">$950</span> <span class="price-unit">/ Ton</span></div>
+                    <button class="btn-view-product">View Details</button>
+                </div>
+            </div>
+        </div>
+
+         <!-- Product 8 -->
+         <div class="product-grid-card">
+            <div class="card-img-area">
+                <span class="card-category-tag">Textile</span>
+                <img src="Core-png.png" loading="lazy" class="card-stock-img" alt="Yarn">
+            </div>
+            <div class="card-content">
+                <div class="card-country-row"><span>🇮🇳</span> <span>India</span></div>
+                <h3 class="card-title">Organic Cotton Yarn 30/1</h3>
+                <p class="card-desc">Combed organic cotton yarn for high quality knitting and weaving.</p>
+                <div class="card-footer">
+                    <div class="price-info"><span class="price-tag">$4.20</span> <span class="price-unit">/ Kg</span></div>
+                    <button class="btn-view-product">View Details</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer-section">
+    <div class="footer-container">
+        <div class="footer-grid">
+            <div class="footer-col brand-col">
+                <img src="Core-png.png" alt="CoreTradeGlobal" class="nav-logo-img">
+                <p>CoreTradeGlobal is the world's leading premium B2B marketplace matched with AI-driven connections.</p>
+            </div>
+            <div class="footer-col"><h4>Platform</h4><a href="#">Browse Products</a><a href="#">Requests for Quotation</a><a href="#">Verified Partners</a><a href="#">Trade Shows & Fairs</a></div>
+            <div class="footer-col"><h4>Company</h4><a href="about.html">About Us</a><a href="#">Careers</a><a href="#">Contact Support</a><a href="#">Success Stories</a></div>
+            <div class="footer-col"><h4>Stay Connected</h4><div class="newsletter-box"><input type="email" class="footer-input" placeholder="Enter your email"><button class="footer-btn">></button></div></div>
+        </div>
+        <div class="footer-bottom"><span>© 2025 CoreTradeGlobal Inc. All rights reserved.</span><div class="footer-legal"><a href="#">Privacy Policy</a><a href="#">Terms of Service</a><a href="#">Cookie Settings</a></div></div>
+    </div>
+</footer>
+
+<script>
+    // --- 1. NAVBAR SCROLL CONTROL (Optimized) ---
+    const navObserver = new IntersectionObserver((entries) => {
+        const nav = document.querySelector('.navbar');
+        if (!entries.isIntersecting) {
+            nav.classList.add('scrolled');
+        } else {
+            nav.classList.remove('scrolled');
+        }
+    });
+    navObserver.observe(document.getElementById('pixel-guard'));
+
+    // --- 2. GSAP ANIMATIONS ---
+    document.addEventListener("DOMContentLoaded", (event) => {
+        gsap.registerPlugin();
+
+        // Hero Animation
+        const tl = gsap.timeline();
+        
+        tl.to(".hero-title", { 
+            duration: 1, 
+            opacity: 1, 
+            y: 0, 
+            ease: "power3.out",
+            startAt: { y: 50 } 
+        })
+        .to(".hero-subtitle", { 
+            duration: 1, 
+            opacity: 1, 
+            y: 0, 
+            ease: "power3.out",
+            startAt: { y: 30 } 
+        }, "-=0.6")
+        .to(".filter-bar-container", {
+            duration: 0.8,
+            opacity: 1,
+            y: 0,
+            ease: "back.out(1.7)"
+        }, "-=0.4");
+
+        // Product Grid Stagger Animation
+        gsap.to(".product-grid-card", {
+            duration: 0.6,
+            opacity: 1,
+            y: 0,
+            stagger: 0.1, // Kartlar arası 0.1sn gecikme
+            ease: "power2.out",
+            delay: 0.5,
+            startAt: { y: 30, opacity: 0 }
+        });
+    });
+</script>
+
+</body>
+</html>

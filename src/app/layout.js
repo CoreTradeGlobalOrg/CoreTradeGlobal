@@ -1,16 +1,19 @@
 import { Inter } from 'next/font/google';
 import './globals.css';
+import { AuthProvider } from '@/presentation/contexts/AuthContext';
+import { ProductViewProvider } from '@/presentation/contexts/ProductViewContext';
+import { Toaster } from 'react-hot-toast';
 
-const inter = Inter({ 
+const inter = Inter({
   subsets: ['latin'],
   variable: '--font-inter',
   display: 'swap',
 });
 
 export const metadata = {
-  title: 'Coming Soon | CoreTradeGlobal',
-  description: 'We\'re building something amazing. Subscribe to our newsletter to be the first to know when we launch!',
-  keywords: ['startup', 'coming soon', 'newsletter', 'launch', 'subscribe'],
+  title: 'CoreTradeGlobal | B2B Trading Platform',
+  description: 'B2B Trading Platform - Connect with businesses, manage products, and trade globally',
+  keywords: ['B2B', 'trading', 'platform', 'business', 'products', 'requests'],
   authors: [{ name: 'CoreTradeGlobal' }],
   creator: 'CoreTradeGlobal',
   publisher: 'CoreTradeGlobal',
@@ -22,14 +25,14 @@ export const metadata = {
     type: 'website',
     locale: 'en_US',
     url: 'https://yourdomain.com',
-    title: 'Coming Soon | CoreTradeGlobal',
-    description: 'We\'re building something amazing. Subscribe to be the first to know!',
+    title: 'CoreTradeGlobal | B2B Trading Platform',
+    description: 'B2B Trading Platform - Connect with businesses worldwide',
     siteName: 'CoreTradeGlobal',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Coming Soon | CoreTradeGlobal',
-    description: 'We\'re building something amazing. Subscribe to be the first to know!',
+    title: 'CoreTradeGlobal | B2B Trading Platform',
+    description: 'B2B Trading Platform - Connect with businesses worldwide',
     creator: '@CoreTradeGlobal',
   },
 };
@@ -37,7 +40,37 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en" className={inter.variable}>
-      <body className={inter.className}>{children}</body>
+      <body className={inter.className}>
+        <AuthProvider>
+          <ProductViewProvider>
+            {children}
+          </ProductViewProvider>
+        </AuthProvider>
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            duration: 4000,
+            style: {
+              background: '#363636',
+              color: '#fff',
+            },
+            success: {
+              duration: 3000,
+              iconTheme: {
+                primary: '#10b981',
+                secondary: '#fff',
+              },
+            },
+            error: {
+              duration: 4000,
+              iconTheme: {
+                primary: '#ef4444',
+                secondary: '#fff',
+              },
+            },
+          }}
+        />
+      </body>
     </html>
   );
 }

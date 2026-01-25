@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CoreTG-The Core of Global Trade</title>
+
+    <!-- OPTIMIZATION: Font Loading (Design System: Inter) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- External Animation Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+    <!-- Core Stylesheet -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- OPTIMIZATION: Pixel Guard for Scroll Observation -->
+    <div id="pixel-guard" style="position: absolute; top: 0; left: 0; width: 1px; height: 1px; pointer-events: none; opacity: 0;"></div>
+
+    <!-- NAVBAR -->
+    <nav class="navbar">
+        <div class="nav-logo-container">
+            <img src="Core-png.png" alt="CoreTradeGlobal" class="nav-logo-img">
+            <span class="nav-brand-text">CoreTG</span>
+        </div>
+        <div class="nav-links">
+            <a href="products.html" class="nav-link">Products</a>
+            <a href="RFQ.html" class="nav-link">RFQs</a>
+            <a href="all%20categories.html" class="nav-link">Categories</a>
+            <a href="fairs.html" class="nav-link">Fairs</a>
+            <a href="#faq" class="nav-link">FAQ</a>
+            <a href="About%20Us.html" class="nav-link">About Us</a>
+            <a href="login%20sayfas%C4%B1.html" class="nav-link">Log In</a>
+            <a href="register%20V2.html" class="btn-signup">Register</a>
+        </div>
+    </nav>
+
+    <!-- Sticky Search Bar (Hidden by default, shown on scroll) -->
+    <div class="sticky-search" id="stickySearch">
+        <div class="search-bar">
+            <div class="search-select-group" onclick="toggleSearchType()">
+                <span id="search-type-sticky">Products</span><span>▼</span>
+            </div>
+            <input type="text" class="search-input" id="search-input-sticky" placeholder="Search for products, companies, or RFQs...">
+            <button class="search-btn">
+                <svg class="search-icon" width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- Sticky Search Toggle Button -->
+    <button class="sticky-search-toggle" id="stickySearchToggle" onclick="toggleStickySearch()">
+        <span id="toggleIcon">🔍</span>
+    </button>
+
+    <!-- TAGLINE SECTION (Above Hero) -->
+    <div class="tagline-section">
+        <div class="hero-tagline"></div>
+    </div>
+
+    <!-- HERO SECTION (Three.js Globe & Intro) -->
+    <section id="hero-section">
+        <div class="globe-loading-text" id="loading">Welcome to CoreTradeGlobal</div>
+        
+        <div class="hero-overlay">
+            <div class="slogan-container">
+                <h1 class="hero-slogan">Connect with Verified Suppliers.</h1>
+                <div class="search-bar-container">
+                    <div class="search-bar">
+                        <div class="search-select-group" onclick="toggleSearchType()">
+                            <span id="search-type">Products</span><span>▼</span>
+                        </div>
+                        <input type="text" class="search-input" id="search-input" placeholder="Search for products, companies, or RFQs...">
+                        <button class="search-btn">
+                            <svg class="search-icon" width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="search-tags">
+                        <span class="search-tag-pill" onclick="applySearch('Marble')">Marble</span>
+                        <span class="search-tag-pill" onclick="applySearch('Steel')">Steel</span>
+                        <span class="search-tag-pill" onclick="applySearch('Textile')">Textile</span>
+                        <span class="search-tag-pill" onclick="applySearch('Germany')">Germany</span>
+                        <span class="search-tag-pill" onclick="applySearch('Electronics')">Electronics</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="hero-interactions">
+            <div class="hero-cta-group">
+                <a href="register%20V2.html" class="btn-hero-white">Sign Up for Free</a>
+                <a href="login%20sayfas%C4%B1.html" class="btn-hero-secondary">Log In <span class="arrow-icon">›</span></a>
+            </div>
+        </div>
+
+        <!-- Social Proof Stats -->
+        <div class="social-proof-bar">
+            <div class="sp-item"><span class="sp-number">15K+</span><span class="sp-label">Active Buyers</span></div>
+            <div style="width:1px; height:30px; background:rgba(255,255,255,0.1);"></div>
+            <div class="sp-item"><span class="sp-number">500+</span><span class="sp-label">Daily RFQs</span></div>
+            <div style="width:1px; height:30px; background:rgba(255,255,255,0.1);"></div>
+            <div class="sp-item"><span class="sp-number">120+</span><span class="sp-label">Countries</span></div>
+        </div>
+
+        <!-- Left Side Info Cards -->
+        <div class="hero-left-cards">
+            <div class="hero-info-card hero-product-card">
+                <div class="card-icon">📦</div>
+                <div class="card-content">
+                    <h3>Latest Product</h3>
+                    <p class="card-product-name">Luxury Marble Blocks</p>
+                    <p class="card-specs">Afyon White • Turkey</p>
+                    <p class="card-price">See Price ▼</p>
+                </div>
+            </div>
+            <div class="hero-info-card hero-rfq-card">
+                <div class="card-icon">📋</div>
+                <div class="card-content">
+                    <h3>Latest RFQ</h3>
+                    <p class="card-product-name">Steel Beams</p>
+                    <p class="card-specs">500 Ton • Needed by Jan 15</p>
+                    <p class="card-budget">Check Details ▼</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Side Info Cards -->
+        <div class="hero-right-cards">
+            <div class="hero-info-card hero-fair-card">
+                <div class="card-icon">🎪</div>
+                <div class="card-content">
+                    <h3>Latest Fair</h3>
+                    <p class="card-product-name">Istanbul Trade Expo</p>
+                    <p class="card-specs">Jan 20-24 • Istanbul, Turkey</p>
+                    <p class="card-price"></p>
+                </div>
+            </div>
+            <div class="hero-info-card hero-supplier-card">
+                <div class="card-icon">🏭</div>
+                <div class="card-content">
+                    <h3>Latest Supplier</h3>
+                    <p class="card-product-name">Global Steel Works</p>
+                    <p class="card-specs">Certified • Shipping Available</p>
+                    <p class="card-budget">Verified Member</p>
+                </div>
+            </div>
+        </div>
+
+        
+
+        <!-- Three.js Canvas Target -->
+        <div id="canvas-container"></div>
+    </section>
+
+    <!-- FEATURED PRODUCTS SECTION -->
+    <section class="featured-products-section">
+        <div class="featured-products-container">
+            <div class="featured-products-header">
+                <div>
+                    <h2>Featured Products</h2>
+                    <p>Goods from verified suppliers.</p>
+                </div>
+                <a href="products.html" class="btn-section-action">View All Products →</a>
+            </div>
+            <div class="featured-products-grid">
+                <div class="dynamic-container">
+                    <button class="scroll-arrow-btn scroll-left" id="dash-left" onclick="scrollDashboard('left', 'products')">
+                        <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"></path></svg>
+                    </button>
+                    <button class="scroll-arrow-btn scroll-right" id="dash-right" onclick="scrollDashboard('right', 'products')">
+                        <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"></path></svg>
+                    </button>
+                    <div id="products" class="tab-content active"><div id="products-grid"></div></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- DASHBOARD SECTION (Dynamic Data) -->
+    <section class="dashboard-container" id="dashboard-container">
+        <!-- RFQs SECTION -->
+        <div class="dashboard-section">
+            <h2 class="dashboard-section-title">Requests for Quotation (RFQs)</h2>
+            <div class="dynamic-container">
+                <button class="scroll-arrow-btn scroll-left" id="dash-left-rfq" onclick="scrollDashboard('left', 'requests')">
+                    <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"></path></svg>
+                </button>
+                <button class="scroll-arrow-btn scroll-right" id="dash-right-rfq" onclick="scrollDashboard('right', 'requests')">
+                    <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"></path></svg>
+                </button>
+                <div id="requests" class="tab-content active"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- STRATEGIC CTA SECTION -->
+    <section class="strategic-cta">
+        <div class="cta-container-main">
+            <!-- Buyer Side -->
+            <div class="cta-box-half">
+                <div class="cta-icon-bg">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
+                </div>
+                <h3>Sourcing a Product?</h3>
+                <p>Describe your needs once and get tailored quotes from verified global manufacturers within hours.</p>
+                <a href="RFQ.html" class="btn-cta-main btn-cta-gold">Post your RFQ</a>
+            </div>
+            
+            <div class="cta-divider-line"></div>
+            
+            <!-- Seller Side -->
+            <div class="cta-box-half">
+                <div class="cta-icon-bg">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                </div>
+                <h3>Ready to Export?</h3>
+                <p>Expand your business globally. Showcase your catalog to thousands of active buyers looking for your expertise.</p>
+                <a href="register%20V2.html" class="btn-cta-main btn-cta-outline">Register as Supplier</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- CATEGORIES SECTION -->
+    <section class="categories-section">
+            <div class="cat-header">
+            <h2 class="cat-title">Browse by Industry</h2>
+            <a href="all%20categories.html" class="btn-section-action">View All Categories →</a>
+        </div>
+        <div class="cat-container">
+            <div class="cat-card"><svg class="cat-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg><span class="cat-name">Construction</span></div>
+            <div class="cat-card"><svg class="cat-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg><span class="cat-name">Machinery</span></div>
+            <div class="cat-card"><svg class="cat-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path></svg><span class="cat-name">Textile</span></div>
+            <div class="cat-card"><svg class="cat-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg><span class="cat-name">Agriculture</span></div>
+            <div class="cat-card"><svg class="cat-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path></svg><span class="cat-name">Electronics</span></div>
+            <div class="cat-card"><svg class="cat-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg><span class="cat-name">Chemical</span></div>
+            <div class="cat-card"><svg class="cat-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg><span class="cat-name">Energy</span></div>
+            <div class="cat-card"><svg class="cat-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg><span class="cat-name">Logistics</span></div>
+        </div>
+    </section>
+
+    <!-- COMPANIES SECTION -->
+    <section class="companies-section">
+        <div class="companies-container">
+            <div class="companies-header">
+                <div><h2>New Verified Suppliers</h2><p>Recently joined manufacturers and exporters verified by CoreTrade.</p></div>
+                <a href="Company%20Profile.html" class="btn-section-action">View All Companies</a>
+            </div>
+            <div class="companies-grid">
+                <div class="company-grid-card"><div class="comp-logo">EL</div><div class="comp-info"><div class="comp-name">EuroLogistics GmbH</div><div class="comp-meta"><span>🇩🇪 Germany</span> • <span>Logistics</span></div></div></div>
+                <div class="company-grid-card"><div class="comp-logo">AT</div><div class="comp-info"><div class="comp-name">AsiaTech Manufacturing</div><div class="comp-meta"><span>🇨🇳 China</span> • <span>Electronics</span></div></div></div>
+                <div class="company-grid-card"><div class="comp-logo">AX</div><div class="comp-info"><div class="comp-name">Anatolia Textile</div><div class="comp-meta"><span>🇹🇷 Turkey</span> • <span>Textile</span></div></div></div>
+                <div class="company-grid-card"><div class="comp-logo">RS</div><div class="comp-info"><div class="comp-name">Royal Steel Industries</div><div class="comp-meta"><span>🇬🇧 UK</span> • <span>Industrial</span></div></div></div>
+                <div class="company-grid-card"><div class="comp-logo">KA</div><div class="comp-info"><div class="comp-name">Koto Automotive Parts</div><div class="comp-meta"><span>🇯🇵 Japan</span> • <span>Automotive</span></div></div></div>
+                <div class="company-grid-card"><div class="comp-logo">BC</div><div class="comp-info"><div class="comp-name">Brasilia Coffee Exp.</div><div class="comp-meta"><span>🇧🇷 Brazil</span> • <span>Food</span></div></div></div>
+                <div class="company-grid-card"><div class="comp-logo">UP</div><div class="comp-info"><div class="comp-name">US Polymers Inc.</div><div class="comp-meta"><span>🇺🇸 USA</span> • <span>Chemical</span></div></div></div>
+                <div class="company-grid-card"><div class="comp-logo">NS</div><div class="comp-info"><div class="comp-name">Nordic Supply Co.</div><div class="comp-meta"><span>🇸🇪 Sweden</span> • <span>Materials</span></div></div></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAIRS SECTION (Horizontal Scroll) -->
+    <section class="fairs-wrapper" id="fair-section">
+        <div class="exhibitions-container">
+            <div class="fair-header">
+                <div class="fair-title-group"><h2>Fair & Events Calendar</h2><p>Upcoming global trade exhibitions and networking events.</p></div>
+                <a href="fairs.html" class="btn-section-action">View Full Calendar</a>
+            </div>
+
+            <button class="scroll-arrow-btn scroll-left" id="fair-left" onclick="scrollSection('fair-container', 'left')">
+                <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"></path></svg>
+            </button>
+            <button class="scroll-arrow-btn scroll-right" id="fair-right" onclick="scrollSection('fair-container', 'right')">
+                <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"></path></svg>
+            </button>
+
+            <!-- JS will inject fair cards here -->
+            <div class="fair-scroll-row" id="fair-container"></div>
+        </div>
+    </section>
+
+    <!-- SHOWCASE SECTION (3D Carousel) -->
+    <section class="showcase-section" id="showcase-section">
+        <div class="section-header">
+            <h1 class="section-title">Featured Companies</h1>
+            <a href="#" class="link-hero-blue" style="justify-content: center; margin-top: 10px; color: #0066FF;">Want to see your company here? View Advertising Options <span class="arrow-icon">›</span></a>
+        </div>
+        <div class="carousel-container" id="carouselContainer">
+            <div class="spotlight"></div>
+            <div class="platform"></div>
+            <!-- JS will inject carousel cards here -->
+            <div class="carousel-scene" id="carouselScene"></div>
+        </div>
+    </section>
+
+    <!-- FAQ SECTION -->
+    <section class="faq-section" id="faq">
+        <div class="faq-container">
+            <div class="faq-header">
+                <h2>Frequently Asked Questions</h2>
+                <p>Everything you need to know about trading on CoreTradeGlobal.</p>
+            </div>
+
+            <!-- Static FAQ Items (JS handles click) -->
+            <div class="faq-item">
+                <button class="faq-question">1. What is B2B?<svg class="faq-icon" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg></button>
+                <div class="faq-answer"><div class="faq-content-wrapper"><p>B2B (Business-to-Business) is the exchange of products and services between companies.</p><p>Our platform brings these companies together—whether a manufacturer is looking for new customers, an importer is seeking a suitable supplier, or a distributor needs to complete stock—facilitating search and communication in one place.</p></div></div>
+            </div>
+
+            <div class="faq-item">
+                <button class="faq-question">2. What is an RFQ and How Does it Work on CoreTradeGlobal?<svg class="faq-icon" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg></button>
+                <div class="faq-answer"><div class="faq-content-wrapper"><p>RFQ (Request for Quote) is the process where a buyer requests price quotes and commercial terms for a needed product/service. The goal is to receive comparable offers from multiple suppliers to make the right purchasing decision.</p><p><strong>The RFQ Process on Our Platform:</strong></p><ul><li>In the <strong>Add Request (RFQ)</strong> form: Enter product name, category, target country, quantity, and detailed description.</li><li>Published RFQs are filtered on the <strong>All Requests</strong> page (by category/country).</li><li>Suppliers view your RFQ and send their proposals and documents via secure messaging.</li><li>You can easily compare the quotes based on country, delivery time, and price breakdowns.</li></ul></div></div>
+            </div>
+
+            <div class="faq-item">
+                <button class="faq-question">3. Why Should You Join CoreTradeGlobal? (Tangible Benefits)<svg class="faq-icon" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg></button>
+                <div class="faq-answer"><div class="faq-content-wrapper"><p>The core advantages our platform offers you are:</p><ul><li><strong>Global Reach:</strong> Get your products and requests in front of buyers and sellers worldwide.</li><li><strong>Visibility:</strong> Highlight your company with banner and featured product advertisements, promoting your product to all CoreTradeGlobal members.</li><li><strong>Rapid Discovery:</strong> Instantly find exactly what you are looking for using category, country, and product filters.</li><li><strong>Brand Strength:</strong> Increase your brand awareness and take your place at the center of the digital world.</li><li><strong>Secure Trade:</strong> Conduct secure commerce with verified profiles and transparent information.</li></ul></div></div>
+            </div>
+
+            <div class="faq-item">
+                <button class="faq-question">4. Who Should Join CoreTradeGlobal?<svg class="faq-icon" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg></button>
+                <div class="faq-answer"><div class="faq-content-wrapper"><p>From manufacturers to import-export firms, brand owners to procurement specialists, <strong>all businesses that want to be at the center of digital trade</strong> can join CoreTradeGlobal.</p></div></div>
+            </div>
+
+            <div class="faq-item">
+                <button class="faq-question">5. Is There a Membership Fee?<svg class="faq-icon" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg></button>
+                <div class="faq-answer"><div class="faq-content-wrapper"><p><strong>No</strong>, membership to CoreTradeGlobal is completely <strong>free</strong>.</p><p>You can create your company profile, showcase your products, and share your requests without paying any fee to join the platform.</p></div></div>
+            </div>
+
+            <div class="faq-item">
+                <button class="faq-question">6. How to Use CoreTradeGlobal (Step-by-Step)<svg class="faq-icon" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg></button>
+                <div class="faq-answer"><div class="faq-content-wrapper"><p>Starting your B2B trade journey on our platform is easy:</p><p><strong>Registration & Profile Creation:</strong> Become a member by entering your company information on our Register page. Add your logo, description, country, and sector information completely. This step is the first stage of your company's visibility in the B2B world.</p><p><strong>Product and Request Creation:</strong> Add products on the Add Product page (enter your product's photo, title, description, and price). Or open an RFQ on the Add Request page (enter the product name, category, target country, quantity, and detailed description).</p><p><strong>Establish Communication:</strong> Use filters to search and quickly find suitable companies. Communicate directly and securely with firms using our secure messaging system; share files or photos.</p><p><strong>Management in a Single Panel:</strong> Your products, requests, messages, and profile are easily managed from a single panel. We value your precious time with our user-friendly interface.</p></div></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- NEWS SECTION -->
+    <section class="news-section">
+        <div class="news-glow"></div>
+        <div class="news-container">
+            <div class="news-header">
+                <div class="news-header-content"><h2>Market Insights</h2><p>Latest trends, regulations, and success stories.</p></div>
+                <button class="btn-view-all-news">View All News →</button>
+            </div>
+
+            <button class="scroll-arrow-btn scroll-left" id="news-left" onclick="scrollSection('news-scroll-wrapper', 'left')">
+                <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"></path></svg>
+            </button>
+            <button class="scroll-arrow-btn scroll-right" id="news-right" onclick="scrollSection('news-scroll-wrapper', 'right')">
+                <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"></path></svg>
+            </button>
+
+            <div class="news-scroll-wrapper" id="news-scroll-wrapper">
+                <article class="news-card">
+                    <div class="news-img-wrapper"><span class="news-badge">Logistics</span><div class="news-img-placeholder bg-news-1"></div></div>
+                    <div class="news-content"><div class="news-meta"><span>Dec 18, 2025</span></div><h3 class="news-title">Global Supply Chain Shifts: 2026 Outlook</h3><p class="news-excerpt">Analysis of new trade corridors.</p><a href="#" class="news-link">Read Analysis →</a></div>
+                </article>
+                <article class="news-card">
+                    <div class="news-img-wrapper"><span class="news-badge">Regulations</span><div class="news-img-placeholder bg-news-2"></div></div>
+                    <div class="news-content"><div class="news-meta"><span>Dec 15, 2025</span></div><h3 class="news-title">New Import Taxes Explained</h3><p class="news-excerpt">Understanding customs adjustments.</p><a href="#" class="news-link">Read Analysis →</a></div>
+                </article>
+                <article class="news-card">
+                    <div class="news-img-wrapper"><span class="news-badge">Trends</span><div class="news-img-placeholder bg-news-3"></div></div>
+                    <div class="news-content"><div class="news-meta"><span>Dec 10, 2025</span></div><h3 class="news-title">Sustainable Packaging in 2026</h3><p class="news-excerpt">How eco-friendly materials are reshaping exports.</p><a href="#" class="news-link">Read Analysis →</a></div>
+                </article>
+                <article class="news-card">
+                    <div class="news-img-wrapper"><span class="news-badge">Tech</span><div class="news-img-placeholder bg-news-4"></div></div>
+                    <div class="news-content"><div class="news-meta"><span>Dec 05, 2025</span></div><h3 class="news-title">AI in B2B Matchmaking</h3><p class="news-excerpt">The future of finding suppliers automatically.</p><a href="#" class="news-link">Read Analysis →</a></div>
+                </article>
+                <article class="news-card">
+                    <div class="news-img-wrapper"><span class="news-badge">Finance</span><div class="news-img-placeholder bg-news-5"></div></div>
+                    <div class="news-content"><div class="news-meta"><span>Dec 01, 2025</span></div><h3 class="news-title">Currency Fluctuations & Trade</h3><p class="news-excerpt">Minimizing risks in cross-border payments.</p><a href="#" class="news-link">Read Analysis →</a></div>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="footer-section">
+        <div class="footer-container">
+            <div class="footer-grid">
+                <div class="footer-col brand-col">
+                    <img src="Core-png.png" alt="CoreTradeGlobal" class="nav-logo-img">
+                    <p>CoreTradeGlobal is the world's leading premium B2B marketplace matched with AI-driven connections.</p>
+                </div>
+                <div class="footer-col"><h4>Platform</h4><a href="#">Browse Products</a><a href="#">Requests for Quotation</a><a href="#">Verified Partners</a><a href="#">Trade Shows & Fairs</a></div>
+                <div class="footer-col"><h4>Company</h4><a href="#">About Us</a><a href="#">Careers</a><a href="#">Contact Support</a><a href="#">Success Stories</a></div>
+                <div class="footer-col"><h4>Stay Connected</h4><div class="newsletter-box"><input type="email" class="footer-input" placeholder="Enter your email"><button class="footer-btn">></button></div></div>
+            </div>
+            <div class="footer-bottom"><span>© 2025 CoreTradeGlobal Inc. All rights reserved.</span><div class="footer-legal"><a href="#">Privacy Policy</a><a href="#">Terms of Service</a><a href="#">Cookie Settings</a></div></div>
+        </div>
+    </footer>
+
+    <!-- MAIN SCRIPT MODULE -->
+    <script type="module" src="script.js"></script>
+
+</body>
+</html>
+
