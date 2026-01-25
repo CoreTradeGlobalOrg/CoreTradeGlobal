@@ -12,7 +12,7 @@ import { useAuth } from '@/presentation/contexts/AuthContext';
 import { useLogout } from '@/presentation/hooks/auth/useLogout';
 import { useDeleteAccount } from '@/presentation/hooks/auth/useDeleteAccount';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Modal } from '@/components/ui/Modal';
@@ -33,7 +33,7 @@ import { useUpdateRequest } from '@/presentation/hooks/request/useUpdateRequest'
 import { useDeleteRequest } from '@/presentation/hooks/request/useDeleteRequest';
 import { useCategories } from '@/presentation/hooks/category/useCategories';
 
-export default function ProfilePage() {
+function ProfileContent() {
   const { user: currentUser, loading: authLoading, isAuthenticated } = useAuth();
   const { logout } = useLogout();
   const { deleteAccount } = useDeleteAccount();
@@ -847,5 +847,20 @@ export default function ProfilePage() {
         </Modal>
       </main>
     </div>
+  );
+}
+
+export default function ProfilePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-radial-navy">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#D4AF37] mx-auto"></div>
+          <p className="mt-4 text-[#A0A0A0]">Loading...</p>
+        </div>
+      </div>
+    }>
+      <ProfileContent />
+    </Suspense>
   );
 }

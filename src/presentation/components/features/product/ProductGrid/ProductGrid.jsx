@@ -12,7 +12,6 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { container } from '@/core/di/container';
 import { COUNTRIES } from '@/core/constants/countries';
-import { useSearchParams } from 'next/navigation';
 
 // Helper to get flag
 const getCountryFlag = (countryValue) => {
