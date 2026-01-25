@@ -62,8 +62,8 @@ export function CategoriesManager() {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
-          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-600 border-r-transparent"></div>
-          <p className="mt-4 text-slate-600">Loading categories...</p>
+          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#D4AF37] border-r-transparent"></div>
+          <p className="mt-4 text-[#A0A0A0]">Loading categories...</p>
         </div>
       </div>
     );
@@ -74,10 +74,10 @@ export function CategoriesManager() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h3 className="text-2xl font-bold text-slate-900">Categories</h3>
-          <p className="text-slate-600 mt-1">Manage product and request categories</p>
+          <h3 className="text-2xl font-bold text-white">Categories</h3>
+          <p className="text-[#A0A0A0] mt-1">Manage product and request categories</p>
         </div>
-        <Button onClick={handleCreate} className="flex items-center gap-2">
+        <Button onClick={handleCreate} className="flex items-center gap-2 bg-[#D4AF37] hover:bg-[#B5952F] text-black font-semibold">
           <Plus className="w-4 h-4" />
           Add Category
         </Button>
@@ -88,33 +88,29 @@ export function CategoriesManager() {
         {categories.map((category) => (
           <div
             key={category.value}
-            className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+            className="bg-[rgba(255,255,255,0.03)] border border-[#D4AF37]/20 rounded-lg p-4 hover:border-[#D4AF37] transition-colors group backdrop-blur-md"
           >
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <span className="text-2xl">{category.icon}</span>
-                <span className="font-medium text-gray-900">{category.name}</span>
+                <span className="font-medium text-white group-hover:text-[#D4AF37] transition-colors">{category.name}</span>
               </div>
             </div>
 
             <div className="flex gap-2">
-              <Button
-                variant="secondary"
-                size="sm"
+              <button
                 onClick={() => handleEdit(category)}
-                className="flex-1 flex items-center justify-center gap-1"
+                className="flex-1 flex items-center justify-center gap-1 bg-[rgba(255,255,255,0.05)] hover:bg-[rgba(255,255,255,0.1)] text-white py-2 rounded-md transition-colors text-sm border border-[rgba(255,255,255,0.05)]"
               >
                 <Pencil className="w-3 h-3" />
                 Edit
-              </Button>
-              <Button
-                variant="danger"
-                size="sm"
+              </button>
+              <button
                 onClick={() => handleDelete(category.value, category.name)}
-                className="flex items-center justify-center gap-1 px-3"
+                className="flex items-center justify-center gap-1 px-3 bg-red-900/20 hover:bg-red-900/40 text-red-500 py-2 rounded-md transition-colors border border-red-900/30"
               >
                 <Trash2 className="w-3 h-3" />
-              </Button>
+              </button>
             </div>
           </div>
         ))}
@@ -124,9 +120,9 @@ export function CategoriesManager() {
       {categories.length === 0 && (
         <div className="text-center py-12">
           <div className="text-6xl mb-4">📦</div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">No categories yet</h3>
-          <p className="text-gray-600 mb-6">Start by creating your first category</p>
-          <Button onClick={handleCreate}>
+          <h3 className="text-lg font-semibold text-white mb-2">No categories yet</h3>
+          <p className="text-[#A0A0A0] mb-6">Start by creating your first category</p>
+          <Button onClick={handleCreate} className="bg-[#D4AF37] hover:bg-[#B5952F] text-black">
             <Plus className="w-4 h-4 mr-2" />
             Add Category
           </Button>
@@ -135,20 +131,22 @@ export function CategoriesManager() {
 
       {/* Category Form Modal */}
       {modalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+          <div className="bg-[#0F1B2B] rounded-xl shadow-2xl max-w-md w-full p-6 border border-[#D4AF37]/20">
+            <h2 className="text-2xl font-bold text-white mb-6">
               {editingCategory ? 'Edit Category' : 'Add Category'}
             </h2>
-            <CategoryForm
-              category={editingCategory}
-              categories={categories}
-              onSubmit={handleSubmit}
-              onCancel={() => {
-                setModalOpen(false);
-                setEditingCategory(null);
-              }}
-            />
+            <div className="category-form-dark">
+              <CategoryForm
+                category={editingCategory}
+                categories={categories}
+                onSubmit={handleSubmit}
+                onCancel={() => {
+                  setModalOpen(false);
+                  setEditingCategory(null);
+                }}
+              />
+            </div>
           </div>
         </div>
       )}

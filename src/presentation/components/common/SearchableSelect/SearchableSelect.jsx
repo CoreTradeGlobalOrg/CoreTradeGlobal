@@ -60,25 +60,30 @@ export function SearchableSelect({
         disabled={disabled}
         className={`
           w-full px-4 py-3 text-left
-          bg-white border-2 rounded-lg
+          border-2 rounded-lg
+          ${className.includes('dark-select')
+            ? 'bg-[#0F1B2B] border-[rgba(255,255,255,0.1)] text-white hover:border-[#D4AF37]/50'
+            : 'bg-white border-slate-300 text-slate-900'}
           ${error
             ? 'border-red-500 focus:border-red-600'
-            : 'border-slate-300 focus:border-blue-600'
+            : (className.includes('dark-select') ? 'focus:border-[#D4AF37]' : 'focus:border-blue-600')
           }
           ${disabled ? 'opacity-50 cursor-not-allowed bg-slate-50' : 'cursor-pointer'}
           focus:outline-none focus:ring-4
-          ${error ? 'focus:ring-red-200' : 'focus:ring-blue-200'}
+          ${error
+            ? 'focus:ring-red-200'
+            : (className.includes('dark-select') ? 'focus:ring-[#D4AF37]/20' : 'focus:ring-blue-200')
+          }
           transition-all duration-200
           flex items-center justify-between
         `}
       >
-        <span className={selectedOption ? 'text-slate-900' : 'text-slate-400'}>
+        <span className={selectedOption ? (className.includes('dark-select') ? 'text-white' : 'text-slate-900') : (className.includes('dark-select') ? 'text-gray-500' : 'text-slate-400')}>
           {displayValue}
         </span>
         <svg
-          className={`w-5 h-5 text-slate-400 transition-transform ${
-            isOpen ? 'rotate-180' : ''
-          }`}
+          className={`w-5 h-5 transition-transform ${isOpen ? 'rotate-180' : ''
+            } ${className.includes('dark-select') ? 'text-gray-400' : 'text-slate-400'}`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -94,15 +99,22 @@ export function SearchableSelect({
 
       {/* Dropdown menu */}
       {isOpen && (
-        <div className="absolute z-50 w-full mt-2 bg-white border-2 border-slate-200 rounded-lg shadow-lg max-h-80 overflow-hidden">
+        <div className={`absolute z-50 w-full mt-2 rounded-lg shadow-xl max-h-80 overflow-hidden border-2 ${className.includes('dark-select')
+          ? 'bg-[#0F1B2B] border-[#D4AF37]/30 text-white'
+          : 'bg-white border-slate-200 text-slate-900'
+          }`}>
           {/* Search input */}
-          <div className="p-2 border-b border-slate-200">
+          <div className={`p-2 border-b ${className.includes('dark-select') ? 'border-white/10' : 'border-slate-200'
+            }`}>
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder={searchPlaceholder}
-              className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900"
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${className.includes('dark-select')
+                ? 'bg-[rgba(255,255,255,0.05)] border-white/10 text-white focus:ring-[#D4AF37] placeholder:text-gray-500'
+                : 'bg-white border-slate-300 text-slate-900 focus:ring-blue-500'
+                }`}
               autoFocus
             />
           </div>
@@ -116,12 +128,11 @@ export function SearchableSelect({
                   type="button"
                   onClick={() => handleSelect(option)}
                   className={`
-                    w-full px-4 py-3 text-left hover:bg-blue-50
+                    w-full px-4 py-3 text-left
                     transition-colors duration-150
-                    ${
-                      option.value === value
-                        ? 'bg-blue-100 text-blue-900 font-medium'
-                        : 'text-slate-700'
+                    ${option.value === value
+                      ? (className.includes('dark-select') ? 'bg-[#D4AF37]/20 text-[#D4AF37] font-medium' : 'bg-blue-100 text-blue-900 font-medium')
+                      : (className.includes('dark-select') ? 'text-gray-300 hover:bg-white/5 hover:text-white' : 'text-slate-700 hover:bg-blue-50')
                     }
                   `}
                 >
@@ -129,7 +140,7 @@ export function SearchableSelect({
                 </button>
               ))
             ) : (
-              <div className="px-4 py-8 text-center text-slate-500">
+              <div className={`px-4 py-8 text-center ${className.includes('dark-select') ? 'text-gray-500' : 'text-slate-500'}`}>
                 No results found
               </div>
             )}

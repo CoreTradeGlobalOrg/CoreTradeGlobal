@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All Categories - CoreTradeGlobal</title>
+    
+    <!-- OPTIMIZATION: Font Loading (Same as Homepage) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    
+    <style>
+        /* --- 1. GLOBAL AYARLAR & DEĞİŞKENLER (Anasayfa ile Birebir) --- */
+        :root {
+            --bg-deep-navy: #0F1B2B;
+            --bg-accent-navy: #1A283B;
+            --accent-gold: #D4AF37;
+            --accent-bright-gold: #FFD700;
+            --text-white: #F5F5F5;
+            --text-grey: #A0A0A0;
+            --card-radius: 20px;
+            --container-width: 1200px;
+        }
+
+        * { box-sizing: border-box; }
+        
+        body {
+            margin: 0; padding: 0;
+            background-color: var(--bg-deep-navy);
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            color: var(--text-white);
+            overflow-x: hidden;
+        }
+
+        /* --- GPU Hızlandırma --- */
+        .hero-title, .hero-subtitle, .cat-card {
+            will-change: transform, opacity;
+        }
+
+        /* --- NAVBAR (Anasayfa Aynısı - Opak Scroll) --- */
+        .navbar {
+            position: fixed; top: 0; left: 0; width: 100%; height: 90px;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 40px; z-index: 1000;
+            background: linear-gradient(to bottom, rgba(15, 27, 43, 0.95) 0%, rgba(15, 27, 43, 0) 100%);
+            transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .navbar.scrolled {
+            top: 0; left: 0; transform: none; width: 100%; max-width: 100%; height: 80px;
+            border-radius: 0; 
+            background: #0F1B2B; /* Fully Opaque */
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1); 
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); padding: 0 40px;
+        }
+
+        .nav-logo-img { height: 50px; width: auto; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); transition: 0.3s; }
+        .navbar.scrolled .nav-logo-img { height: 40px; }
+
+        .nav-links { display: flex; align-items: center; gap: 24px; }
+        .nav-link { text-decoration: none; color: var(--text-white); font-size: 14px; opacity: 0.8; transition: 0.3s; font-weight: 500; }
+        .nav-link:hover { opacity: 1; color: var(--accent-gold); }
+        .nav-link.active { color: var(--accent-gold); opacity: 1; font-weight: 600; }
+
+        .btn-signup {
+            padding: 10px 24px; background: linear-gradient(135deg, #FFD700 0%, #FDB931 100%); color: #0F1B2B;
+            border-radius: 50px; text-decoration: none; font-weight: 800; font-size: 14px;
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.3); transition: 0.2s;
+        }
+        .btn-signup:hover { transform: translateY(-2px); background: #fff; }
+        .btn-signup:active { transform: scale(0.95); }
+
+        /* --- HERO SECTION (Categories Özel) --- */
+        .categories-hero {
+            position: relative; width: 100%; height: 500px;
+            background: radial-gradient(circle at 50% 30%, #1c304a 0%, var(--bg-deep-navy) 70%);
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            text-align: center; padding: 0 20px;
+            overflow: hidden;
+            margin-bottom: 40px;
+        }
+
+        .hero-title {
+            font-size: 56px; font-weight: 800; letter-spacing: -1px; line-height: 1.1;
+            background: linear-gradient(180deg, #ffffff 20%, #909090 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            margin-bottom: 20px; opacity: 0; /* JS ile açılacak */
+            filter: drop-shadow(0 10px 20px rgba(0,0,0,0.5));
+            max-width: 900px;
+        }
+
+        .hero-subtitle {
+            font-size: 18px; color: var(--text-grey); max-width: 600px; line-height: 1.6;
+            margin-bottom: 40px; opacity: 0;
+        }
+
+        /* --- SEARCH STRIP (Simplified for this page) --- */
+        .hero-search-container {
+            width: 100%; max-width: 600px; opacity: 0; transform: translateY(20px);
+        }
+        .simple-search-bar {
+            width: 100%; display: flex; align-items: center;
+            background: rgba(15, 27, 43, 0.75); backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 100px; padding: 6px 6px 6px 24px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2); transition: 0.3s;
+        }
+        .simple-search-input { flex: 1; background: transparent; border: none; outline: none; color: #fff; font-size: 16px; }
+        .simple-search-input::placeholder { color: rgba(255,255,255,0.5); }
+        .simple-search-btn {
+            width: 48px; height: 48px; background: var(--accent-gold); border: none; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; cursor: pointer; color: #0F1B2B;
+            transition: 0.2s;
+        }
+        .simple-search-btn:hover { background: #fff; transform: scale(1.05); }
+
+        /* --- CATEGORIES GRID --- */
+        .categories-grid-section {
+            width: 100%; background: var(--bg-deep-navy); padding: 40px 20px 100px 20px;
+            display: flex; flex-direction: column; align-items: center;
+        }
+
+        .full-category-grid {
+            width: 100%; max-width: 1200px;
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); /* Daha geniş kartlar */
+            gap: 30px;
+        }
+
+        /* Category Card (Anasayfa stilinin büyütülmüş hali) */
+        .cat-card {
+            background: linear-gradient(160deg, rgba(255, 255, 255, 0.03) 0%, rgba(20, 30, 50, 0.4) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+            padding: 40px 20px;
+            display: flex; flex-direction: column; align-items: center; text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            opacity: 0; /* GSAP için başlangıç */
+        }
+
+        .cat-card:hover {
+            background: linear-gradient(160deg, rgba(255, 255, 255, 0.08) 0%, rgba(30, 40, 60, 0.6) 100%);
+            border-color: var(--accent-gold);
+            transform: translateY(-8px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+        }
+        
+        .cat-card:active { transform: scale(0.98); }
+
+        .cat-icon { 
+            width: 48px; height: 48px; margin-bottom: 20px; 
+            color: var(--text-grey); transition: 0.3s; 
+        }
+        
+        .cat-card:hover .cat-icon { 
+            color: var(--accent-gold); transform: scale(1.1); 
+        }
+
+        .cat-name { 
+            font-size: 18px; font-weight: 600; color: #fff; margin-bottom: 8px; 
+        }
+
+        .cat-count {
+            font-size: 13px; color: var(--text-grey);
+            background: rgba(255,255,255,0.05); padding: 4px 12px; border-radius: 20px;
+        }
+
+        /* --- FOOTER (Anasayfa Aynısı) --- */
+        .footer-section { background-color: var(--bg-deep-navy); border-top: 1px solid rgba(255,255,255,0.05); padding: 60px 40px; margin-top: auto; }
+        .footer-container { max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 40px; }
+        .footer-grid { display: grid; grid-template-columns: 1.5fr 1fr 1fr 1.5fr; gap: 40px; align-items: start; }
+        .footer-col h4 { color: #fff; font-size: 16px; margin-bottom: 20px; font-weight: 600; }
+        .footer-col a { display: block; color: var(--text-grey); text-decoration: none; margin-bottom: 10px; font-size: 14px; transition: 0.2s; }
+        .footer-col a:hover { color: var(--accent-gold); }
+        .brand-col p { color: var(--text-grey); font-size: 13px; line-height: 1.6; max-width: 280px; margin-top: 15px; }
+        .newsletter-box { display: flex; position: relative; margin-top: 10px; width: 100%; }
+        .footer-input { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 12px 14px; border-radius: 8px; color: #fff; outline: none; }
+        .footer-btn { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); background: var(--accent-gold); border: none; width: 30px; height: 30px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .footer-bottom { border-top: 1px solid rgba(255,255,255,0.05); padding-top: 20px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: #64748b; }
+        .footer-legal { display: flex; gap: 20px; }
+        .footer-legal a { color: #64748b; text-decoration: none; }
+
+        @media (max-width: 900px) {
+            .footer-grid { grid-template-columns: 1fr 1fr; gap: 30px; }
+            .brand-col { grid-column: 1 / -1; }
+            .hero-title { font-size: 42px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- IntersectionObserver Trigger -->
+<div id="pixel-guard" style="position: absolute; top: 0; left: 0; width: 1px; height: 1px; pointer-events: none; opacity: 0;"></div>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+    <img src="Core-png.png" alt="CoreTradeGlobal" class="nav-logo-img">
+    <div class="nav-links">
+        <a href="index.html" class="nav-link">Products</a>
+        <a href="#" class="nav-link">RFQs</a>
+        <a href="categories.html" class="nav-link active">Categories</a>
+        <a href="#" class="nav-link">Fairs</a>
+        <a href="about.html" class="nav-link">About Us</a>
+        <a href="#" class="nav-link">Log In</a>
+        <a href="#" class="btn-signup">Register</a>
+    </div>
+</nav>
+
+<!-- HERO SECTION -->
+<section class="categories-hero">
+    <h1 class="hero-title">Explore Global Industries</h1>
+    <p class="hero-subtitle">Browse verified suppliers and premium products across 12+ major industrial sectors.</p>
+    
+    <div class="hero-search-container">
+        <div class="simple-search-bar">
+            <input type="text" class="simple-search-input" placeholder="Filter categories...">
+            <button class="simple-search-btn"><svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg></button>
+        </div>
+    </div>
+</section>
+
+<!-- CATEGORIES GRID -->
+<section class="categories-grid-section">
+    <div class="full-category-grid">
+        <!-- Construction -->
+        <div class="cat-card">
+            <svg class="cat-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+            <span class="cat-name">Construction</span>
+            <span class="cat-count">1,240 Suppliers</span>
+        </div>
+
+        <!-- Machinery -->
+        <div class="cat-card">
+            <svg class="cat-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+            <span class="cat-name">Machinery</span>
+            <span class="cat-count">850 Suppliers</span>
+        </div>
+
+        <!-- Textile -->
+        <div class="cat-card">
+            <svg class="cat-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path></svg>
+            <span class="cat-name">Textile & Apparel</span>
+            <span class="cat-count">2,100 Suppliers</span>
+        </div>
+
+        <!-- Agriculture -->
+        <div class="cat-card">
+            <svg class="cat-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <span class="cat-name">Agriculture</span>
+            <span class="cat-count">940 Suppliers</span>
+        </div>
+
+        <!-- Electronics -->
+        <div class="cat-card">
+            <svg class="cat-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path></svg>
+            <span class="cat-name">Electronics</span>
+            <span class="cat-count">1,560 Suppliers</span>
+        </div>
+
+        <!-- Chemical -->
+        <div class="cat-card">
+            <svg class="cat-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
+            <span class="cat-name">Chemicals</span>
+            <span class="cat-count">430 Suppliers</span>
+        </div>
+
+        <!-- Energy -->
+        <div class="cat-card">
+            <svg class="cat-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+            <span class="cat-name">Energy & Power</span>
+            <span class="cat-count">320 Suppliers</span>
+        </div>
+
+        <!-- Logistics -->
+        <div class="cat-card">
+            <svg class="cat-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
+            <span class="cat-name">Logistics</span>
+            <span class="cat-count">600 Suppliers</span>
+        </div>
+
+        <!-- Automotive -->
+        <div class="cat-card">
+            <svg class="cat-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0"></path></svg>
+            <span class="cat-name">Automotive</span>
+            <span class="cat-count">1,120 Suppliers</span>
+        </div>
+
+        <!-- Food & Beverage -->
+        <div class="cat-card">
+            <svg class="cat-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+            <span class="cat-name">Food & Beverage</span>
+            <span class="cat-count">1,800 Suppliers</span>
+        </div>
+
+        <!-- Medical -->
+        <div class="cat-card">
+            <svg class="cat-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4v16m8-8H4"></path></svg>
+            <span class="cat-name">Health & Medical</span>
+            <span class="cat-count">560 Suppliers</span>
+        </div>
+
+        <!-- Packaging -->
+        <div class="cat-card">
+            <svg class="cat-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
+            <span class="cat-name">Packaging</span>
+            <span class="cat-count">780 Suppliers</span>
+        </div>
+    </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer-section">
+    <div class="footer-container">
+        <div class="footer-grid">
+            <div class="footer-col brand-col">
+                <img src="Core-png.png" alt="CoreTradeGlobal" class="nav-logo-img">
+                <p>CoreTradeGlobal is the world's leading premium B2B marketplace matched with AI-driven connections.</p>
+            </div>
+            <div class="footer-col"><h4>Platform</h4><a href="#">Browse Products</a><a href="#">Requests for Quotation</a><a href="#">Verified Partners</a><a href="#">Trade Shows & Fairs</a></div>
+            <div class="footer-col"><h4>Company</h4><a href="about.html">About Us</a><a href="#">Careers</a><a href="#">Contact Support</a><a href="#">Success Stories</a></div>
+            <div class="footer-col"><h4>Stay Connected</h4><div class="newsletter-box"><input type="email" class="footer-input" placeholder="Enter your email"><button class="footer-btn">></button></div></div>
+        </div>
+        <div class="footer-bottom"><span>© 2025 CoreTradeGlobal Inc. All rights reserved.</span><div class="footer-legal"><a href="#">Privacy Policy</a><a href="#">Terms of Service</a><a href="#">Cookie Settings</a></div></div>
+    </div>
+</footer>
+
+<script>
+    // --- 1. NAVBAR SCROLL CONTROL (Optimized) ---
+    const navObserver = new IntersectionObserver((entries) => {
+        const nav = document.querySelector('.navbar');
+        if (!entries.isIntersecting) {
+            nav.classList.add('scrolled');
+        } else {
+            nav.classList.remove('scrolled');
+        }
+    });
+    navObserver.observe(document.getElementById('pixel-guard'));
+
+    // --- 2. GSAP ANIMATIONS ---
+    document.addEventListener("DOMContentLoaded", (event) => {
+        gsap.registerPlugin();
+
+        // Hero Content Animation
+        const tl = gsap.timeline();
+        
+        tl.to(".hero-title", { 
+            duration: 1, 
+            opacity: 1, 
+            y: 0, 
+            ease: "power3.out",
+            startAt: { y: 50 } 
+        })
+        .to(".hero-subtitle", { 
+            duration: 1, 
+            opacity: 1, 
+            y: 0, 
+            ease: "power3.out",
+            startAt: { y: 30 } 
+        }, "-=0.6")
+        .to(".hero-search-container", {
+            duration: 0.8,
+            opacity: 1,
+            y: 0,
+            ease: "back.out(1.7)"
+        }, "-=0.4");
+
+        // Categories Grid Staggered Animation
+        gsap.to(".cat-card", {
+            duration: 0.6,
+            opacity: 1,
+            y: 0,
+            stagger: 0.05, // Her kart arasında 0.05sn bekleme
+            ease: "power2.out",
+            delay: 0.5,
+            startAt: { y: 30, opacity: 0 }
+        });
+    });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Join CoreTradeGlobal - Register</title>
+    
+    <!-- OPTIMIZATION: Font Loading -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    
+    <style>
+        /* --- 1. GLOBAL AYARLAR & DEĞİŞKENLER --- */
+        :root {
+            --bg-deep-navy: #0F1B2B;
+            --bg-accent-navy: #1A283B;
+            --accent-gold: #D4AF37;
+            --accent-bright-gold: #FFD700;
+            --text-white: #F5F5F5;
+            --text-grey: #A0A0A0;
+            --card-radius: 20px;
+            --container-width: 1200px;
+        }
+
+        * { box-sizing: border-box; }
+        
+        body {
+            margin: 0; padding: 0;
+            background-color: var(--bg-deep-navy);
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            color: var(--text-white);
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* --- GPU Hızlandırma --- */
+        .register-card {
+            will-change: transform, opacity;
+        }
+
+        /* --- NAVBAR (Anasayfa Aynısı) --- */
+        .navbar {
+            position: fixed; top: 0; left: 0; width: 100%; height: 90px;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 40px; z-index: 1000;
+            background: linear-gradient(to bottom, rgba(15, 27, 43, 0.95) 0%, rgba(15, 27, 43, 0) 100%);
+            transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .navbar.scrolled {
+            top: 0; left: 0; transform: none; width: 100%; max-width: 100%; height: 80px;
+            border-radius: 0; 
+            background: #0F1B2B;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1); 
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); padding: 0 40px;
+        }
+
+        .nav-logo-img { height: 50px; width: auto; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); transition: 0.3s; }
+        .navbar.scrolled .nav-logo-img { height: 40px; }
+
+        .nav-links { display: flex; align-items: center; gap: 24px; }
+        .nav-link { text-decoration: none; color: var(--text-white); font-size: 14px; opacity: 0.8; transition: 0.3s; font-weight: 500; }
+        .nav-link:hover { opacity: 1; color: var(--accent-gold); }
+
+        .btn-signup {
+            padding: 10px 24px; background: linear-gradient(135deg, #FFD700 0%, #FDB931 100%); color: #0F1B2B;
+            border-radius: 50px; text-decoration: none; font-weight: 800; font-size: 14px;
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.3); transition: 0.2s;
+        }
+        .btn-signup:hover { transform: translateY(-2px); background: #fff; }
+        .btn-signup:active { transform: scale(0.95); }
+
+        /* --- REGISTER SECTION --- */
+        .register-section {
+            flex: 1; /* Footer'ı aşağı itmesi için */
+            position: relative; width: 100%;
+            background: radial-gradient(circle at 50% 40%, #1c304a 0%, var(--bg-deep-navy) 70%);
+            display: flex; justify-content: center; align-items: center;
+            padding: 140px 20px 80px 20px;
+        }
+
+        .register-card {
+            width: 100%; max-width: 600px; /* Form genişliği artırıldı */
+            background: linear-gradient(160deg, rgba(26,28,32,0.6) 0%, rgba(15,27,43,0.9) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+            backdrop-filter: blur(20px);
+            opacity: 0; /* GSAP başlangıcı */
+            text-align: center;
+        }
+
+        .reg-title { font-size: 32px; font-weight: 700; color: #fff; margin: 0 0 10px 0; }
+        .reg-subtitle { font-size: 14px; color: var(--text-grey); margin-bottom: 30px; line-height: 1.5; }
+
+        /* Form Elements */
+        .form-group { margin-bottom: 20px; text-align: left; }
+        
+        .form-label {
+            display: block; font-size: 12px; color: var(--text-grey); 
+            margin-bottom: 8px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase;
+        }
+
+        .form-input, .form-select {
+            width: 100%;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 14px; border-radius: 12px;
+            color: #fff; font-size: 15px; font-family: 'Inter', sans-serif;
+            outline: none; transition: 0.3s;
+        }
+
+        .form-input:focus, .form-select:focus {
+            border-color: var(--accent-gold);
+            background: rgba(15, 27, 43, 0.9);
+            box-shadow: 0 0 15px rgba(212, 175, 55, 0.1);
+        }
+
+        .form-row { display: flex; gap: 15px; }
+        .form-row .form-group { flex: 1; }
+
+        /* Checkbox */
+        .form-checkbox-group {
+            display: flex; align-items: flex-start; gap: 10px; margin-bottom: 30px; text-align: left;
+        }
+        .form-checkbox { margin-top: 3px; accent-color: var(--accent-gold); cursor: pointer; }
+        .form-checkbox-label { font-size: 13px; color: var(--text-grey); line-height: 1.4; }
+        .form-link { color: var(--accent-gold); text-decoration: none; transition: 0.2s; }
+        .form-link:hover { color: #fff; text-decoration: underline; }
+
+        /* Submit Button */
+        .btn-submit {
+            width: 100%; padding: 16px;
+            background: linear-gradient(135deg, #FFD700 0%, #FDB931 100%);
+            color: #0F1B2B; font-weight: 700; font-size: 16px;
+            border: none; border-radius: 100px;
+            cursor: pointer; transition: 0.2s;
+            box-shadow: 0 4px 20px rgba(255, 215, 0, 0.2);
+        }
+        .btn-submit:hover { transform: translateY(-2px); background: #fff; box-shadow: 0 6px 30px rgba(255, 215, 0, 0.4); }
+        .btn-submit:active { transform: scale(0.98); }
+
+        .login-prompt { margin-top: 20px; font-size: 14px; color: var(--text-grey); }
+
+        /* --- FOOTER (Anasayfa Aynısı) --- */
+        .footer-section { background-color: var(--bg-deep-navy); border-top: 1px solid rgba(255,255,255,0.05); padding: 60px 40px; }
+        .footer-container { max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 40px; }
+        .footer-grid { display: grid; grid-template-columns: 1.5fr 1fr 1fr 1.5fr; gap: 40px; align-items: start; }
+        .footer-col h4 { color: #fff; font-size: 16px; margin-bottom: 20px; font-weight: 600; }
+        .footer-col a { display: block; color: var(--text-grey); text-decoration: none; margin-bottom: 10px; font-size: 14px; transition: 0.2s; }
+        .footer-col a:hover { color: var(--accent-gold); }
+        .brand-col p { color: var(--text-grey); font-size: 13px; line-height: 1.6; max-width: 280px; margin-top: 15px; }
+        .newsletter-box { display: flex; position: relative; margin-top: 10px; width: 100%; }
+        .footer-input { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 12px 14px; border-radius: 8px; color: #fff; outline: none; }
+        .footer-btn { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); background: var(--accent-gold); border: none; width: 30px; height: 30px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .footer-bottom { border-top: 1px solid rgba(255,255,255,0.05); padding-top: 20px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: #64748b; }
+        .footer-legal { display: flex; gap: 20px; }
+        .footer-legal a { color: #64748b; text-decoration: none; }
+
+        @media (max-width: 900px) {
+            .footer-grid { grid-template-columns: 1fr 1fr; gap: 30px; }
+            .brand-col { grid-column: 1 / -1; }
+            .form-row { flex-direction: column; gap: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- IntersectionObserver Trigger -->
+<div id="pixel-guard" style="position: absolute; top: 0; left: 0; width: 1px; height: 1px; pointer-events: none; opacity: 0;"></div>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+    <img src="Core-png.png" alt="CoreTradeGlobal" class="nav-logo-img">
+    <div class="nav-links">
+        <a href="index.html" class="nav-link">Products</a>
+        <a href="#" class="nav-link">RFQs</a>
+        <a href="categories.html" class="nav-link">Categories</a>
+        <a href="fairs.html" class="nav-link">Fairs</a>
+        <a href="about.html" class="nav-link">About Us</a>
+        <a href="#" class="nav-link">Log In</a>
+        <a href="register.html" class="btn-signup">Register</a>
+    </div>
+</nav>
+
+<!-- REGISTER FORM SECTION -->
+<section class="register-section">
+    <div class="register-card">
+        <h1 class="reg-title">Join CoreTradeGlobal</h1>
+        <p class="reg-subtitle">Create your company profile to access global buyers, suppliers, and premium market insights.</p>
+        
+        <form>
+            <!-- Personal Information Row -->
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">First Name</label>
+                    <input type="text" class="form-input" placeholder="e.g. John">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Last Name</label>
+                    <input type="text" class="form-input" placeholder="e.g. Doe">
+                </div>
+            </div>
+
+            <!-- Contact Information Row -->
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Phone Number</label>
+                    <input type="tel" class="form-input" placeholder="+1 (555) 000-0000">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Official Email</label>
+                    <input type="email" class="form-input" placeholder="name@company.com">
+                </div>
+            </div>
+
+            <!-- Company Information Row -->
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Company Name</label>
+                    <input type="text" class="form-input" placeholder="e.g. Acme Industries Ltd.">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Company Website</label>
+                    <input type="url" class="form-input" placeholder="https://www.example.com">
+                </div>
+            </div>
+
+            <!-- Details Row -->
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Country</label>
+                    <select class="form-select">
+                        <option>Select Country</option>
+                        <option>Germany</option>
+                        <option>USA</option>
+                        <option>Turkey</option>
+                        <option>China</option>
+                        <option>United Kingdom</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Business Type</label>
+                    <select class="form-select">
+                        <option>Manufacturer</option>
+                        <option>Buyer/Seller</option>
+                        <option>Logistics Service</option>
+                        <option>Insurance Service</option> <!-- ADDED -->
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Password</label>
+                <input type="password" class="form-input" placeholder="••••••••">
+            </div>
+
+            <div class="form-checkbox-group">
+                <input type="checkbox" class="form-checkbox">
+                <span class="form-checkbox-label">I agree to the <a href="#" class="form-link">Terms of Service</a> and <a href="#" class="form-link">Privacy Policy</a>.</span>
+            </div>
+
+            <button type="button" class="btn-submit">Create Account</button>
+            
+            <p class="login-prompt">Already have an account? <a href="#" class="form-link">Log In</a></p>
+        </form>
+    </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer-section">
+    <div class="footer-container">
+        <div class="footer-grid">
+            <div class="footer-col brand-col">
+                <img src="Core-png.png" alt="CoreTradeGlobal" class="nav-logo-img">
+                <p>CoreTradeGlobal is the world's leading premium B2B marketplace matched with AI-driven connections.</p>
+            </div>
+            <div class="footer-col"><h4>Platform</h4><a href="#">Browse Products</a><a href="#">Requests for Quotation</a><a href="#">Verified Partners</a><a href="#">Trade Shows & Fairs</a></div>
+            <div class="footer-col"><h4>Company</h4><a href="about.html">About Us</a><a href="#">Careers</a><a href="#">Contact Support</a><a href="#">Success Stories</a></div>
+            <div class="footer-col"><h4>Stay Connected</h4><div class="newsletter-box"><input type="email" class="footer-input" placeholder="Enter your email"><button class="footer-btn">></button></div></div>
+        </div>
+        <div class="footer-bottom"><span>© 2025 CoreTradeGlobal Inc. All rights reserved.</span><div class="footer-legal"><a href="#">Privacy Policy</a><a href="#">Terms of Service</a><a href="#">Cookie Settings</a></div></div>
+    </div>
+</footer>
+
+<script>
+    // --- 1. NAVBAR SCROLL CONTROL ---
+    const navObserver = new IntersectionObserver((entries) => {
+        const nav = document.querySelector('.navbar');
+        if (!entries.isIntersecting) {
+            nav.classList.add('scrolled');
+        } else {
+            nav.classList.remove('scrolled');
+        }
+    });
+    navObserver.observe(document.getElementById('pixel-guard'));
+
+    // --- 2. GSAP ANIMATION ---
+    document.addEventListener("DOMContentLoaded", (event) => {
+        gsap.registerPlugin();
+
+        gsap.to(".register-card", {
+            duration: 1,
+            opacity: 1,
+            y: 0,
+            ease: "power3.out",
+            startAt: { y: 40, opacity: 0 }
+        });
+    });
+</script>
+
+</body>
+</html>

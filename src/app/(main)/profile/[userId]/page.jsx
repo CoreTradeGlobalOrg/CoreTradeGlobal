@@ -3,11 +3,7 @@
  *
  * URL: /profile/[userId]
  * Protected route - requires authentication
- *
- * Features:
- * - View any user's profile (if authenticated)
- * - Edit own profile only
- * - Admin can access admin dashboard
+ * Uses Dark Theme / Glassmorphism
  */
 
 'use client';
@@ -19,6 +15,7 @@ import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { Modal } from '@/components/ui/Modal';
 import toast from 'react-hot-toast';
 import { container } from '@/core/di/container';
 import { COUNTRIES } from '@/core/constants/countries';
@@ -106,7 +103,7 @@ export default function ProfilePage() {
 
         if (!userData) {
           toast.error('User not found');
-          router.push('/dashboard');
+          router.push('/');
           return;
         }
 
@@ -139,10 +136,10 @@ export default function ProfilePage() {
   // Show loading
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-radial-navy">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#D4AF37] mx-auto"></div>
+          <p className="mt-4 text-[#A0A0A0]">Loading...</p>
         </div>
       </div>
     );
@@ -419,45 +416,35 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-radial-navy pb-20">
       {/* Header */}
-      <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
+      <header className="border-b border-[rgba(255,255,255,0.1)] bg-[rgba(15,27,43,0.6)] backdrop-blur-md sticky top-0 z-50 pt-[100px] pb-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
             {/* User Info with Logo */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-6">
               {/* Company Logo or Building Icon */}
               {profileUser?.companyLogo ? (
                 <img
                   src={profileUser.companyLogo}
                   alt="Company logo"
-                  className="w-16 h-16 rounded-full object-cover border-2 border-gray-200"
+                  className="w-20 h-20 rounded-2xl object-cover border-2 border-[rgba(212,175,55,0.3)] shadow-[0_0_20px_rgba(0,0,0,0.3)]"
                 />
               ) : (
-                <div className="w-16 h-16 rounded-full bg-blue-600 flex items-center justify-center">
-                  <svg
-                    className="w-8 h-8 text-white"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-                    />
-                  </svg>
+                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#1c304a] to-[#0F1B2B] border border-[rgba(255,255,255,0.1)] flex items-center justify-center shadow-[0_0_20px_rgba(0,0,0,0.3)]">
+                  <span className="text-3xl">🏭</span>
                 </div>
               )}
 
               {/* User Name and Position */}
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">
+                <h1 className="text-3xl font-bold text-white mb-1">
                   {profileUser?.displayName || profileUser?.email || 'User'}
                 </h1>
-                <p className="text-sm text-gray-500 mt-1">
-                  {profileUser?.companyName || 'No company'}{profileUser?.position && ` • ${profileUser.position}`}
+                <p className="text-[#A0A0A0] flex items-center gap-2">
+                  <span className="text-[#D4AF37] font-medium">{profileUser?.companyName || 'No company'}</span>
+                  {profileUser?.position && <span className="w-1 h-1 rounded-full bg-[#A0A0A0]"></span>}
+                  {profileUser?.position && <span>{profileUser.position}</span>}
                 </p>
               </div>
             </div>
@@ -465,67 +452,42 @@ export default function ProfilePage() {
             {/* Action Buttons */}
             <div className="flex gap-3">
               {isOwnProfile && currentUser?.role === 'admin' && (
-                <Button
+                <button
                   onClick={() => router.push('/admin')}
+                  className="px-6 py-2.5 rounded-full bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] text-white hover:bg-[rgba(255,255,255,0.1)] transition-all font-medium"
                 >
                   Admin Dashboard
-                </Button>
+                </button>
               )}
-              <Button onClick={() => router.push('/dashboard')} variant="secondary">
-                Back to Dashboard
-              </Button>
+              <button
+                onClick={() => router.push('/')}
+                className="px-6 py-2.5 rounded-full bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] text-white hover:bg-[rgba(255,255,255,0.1)] transition-all font-medium"
+              >
+                Back to Home
+              </button>
             </div>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+      <main className="max-w-7xl mx-auto py-8 sm:px-6 lg:px-8">
         {/* Tabs */}
-        <div className="mb-6 border-b border-gray-200">
+        <div className="mb-8 border-b border-[rgba(255,255,255,0.1)]">
           <nav className="-mb-px flex space-x-8">
-            <button
-              onClick={() => handleTabChange('profile')}
-              className={`${
-                activeTab === 'profile'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-            >
-              Profile
-            </button>
-            <button
-              onClick={() => handleTabChange('products')}
-              className={`${
-                activeTab === 'products'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-            >
-              {isOwnProfile ? 'My Products' : 'Products'}
-            </button>
-            <button
-              onClick={() => handleTabChange('requests')}
-              className={`${
-                activeTab === 'requests'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-            >
-              {isOwnProfile ? 'My Requests' : 'Requests'}
-            </button>
-            {isOwnProfile && (
+            {['profile', 'products', 'requests', isOwnProfile && 'security'].filter(Boolean).map((tab) => (
               <button
-                onClick={() => handleTabChange('security')}
-                className={`${
-                  activeTab === 'security'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+                key={tab}
+                onClick={() => handleTabChange(tab)}
+                className={`${activeTab === tab
+                  ? 'border-[#D4AF37] text-[#D4AF37]'
+                  : 'border-transparent text-[#A0A0A0] hover:text-white hover:border-[rgba(255,255,255,0.3)]'
+                  } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm capitalize transition-colors`}
               >
-                Security
+                {tab === 'products' ? (isOwnProfile ? 'My Products' : 'Products') :
+                  tab === 'requests' ? (isOwnProfile ? 'My Requests' : 'Requests') : tab}
               </button>
-            )}
+            ))}
           </nav>
         </div>
 
@@ -533,71 +495,67 @@ export default function ProfilePage() {
         {activeTab === 'profile' && (
           <div className="space-y-6">
             {/* Personal Information */}
-            <div className="bg-white shadow rounded-lg p-6">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-semibold text-gray-900">Personal Information</h2>
+            <div className="glass-card p-8">
+              <div className="flex justify-between items-center mb-8">
+                <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                  <span className="w-1 h-6 bg-[#D4AF37] rounded-full"></span>
+                  Personal Information
+                </h2>
                 {canEdit && !isEditing && (
-                  <Button onClick={() => setIsEditing(true)} variant="secondary">
-                    Edit
-                  </Button>
+                  <button
+                    onClick={() => setIsEditing(true)}
+                    className="text-[#D4AF37] hover:text-white text-sm font-semibold transition-colors uppercase tracking-wider"
+                  >
+                    Edit Details
+                  </button>
                 )}
               </div>
 
-              <form onSubmit={handleProfileUpdate} className="space-y-4">
+              <form onSubmit={handleProfileUpdate} className="space-y-6">
                 {/* Display Name (Read-only) */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs text-[#A0A0A0] font-semibold tracking-wider uppercase mb-2">
                     Full Name
                   </label>
-                  <Input
+                  <input
                     type="text"
                     value={profileUser?.displayName || ''}
                     disabled
-                    className="bg-gray-50"
+                    className="form-input-anasyf opacity-60 cursor-not-allowed"
                   />
-                  {canEdit && (
-                    <p className="mt-1 text-xs text-gray-500">
-                      Contact support to change your name
-                    </p>
-                  )}
                 </div>
 
                 {/* Email (Read-only) */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs text-[#A0A0A0] font-semibold tracking-wider uppercase mb-2">
                     Email
                   </label>
-                  <Input
+                  <input
                     type="email"
                     value={profileUser?.email || ''}
                     disabled
-                    className="bg-gray-50"
+                    className="form-input-anasyf opacity-60 cursor-not-allowed"
                   />
-                  {canEdit && (
-                    <p className="mt-1 text-xs text-gray-500">
-                      Contact support to change your email
-                    </p>
-                  )}
                 </div>
 
                 {/* Phone Number */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs text-[#A0A0A0] font-semibold tracking-wider uppercase mb-2">
                     Phone Number
                   </label>
-                  <Input
+                  <input
                     type="tel"
                     value={canEdit && isEditing ? phone : (profileUser?.phone || 'Not set')}
                     onChange={(e) => setPhone(e.target.value)}
                     disabled={!canEdit || !isEditing}
                     placeholder="+1 234 567 8900"
-                    className={!canEdit || !isEditing ? 'bg-gray-50' : ''}
+                    className={`form-input-anasyf ${!canEdit || !isEditing ? 'opacity-80' : ''}`}
                   />
                 </div>
 
                 {/* About / Bio */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs text-[#A0A0A0] font-semibold tracking-wider uppercase mb-2">
                     About / Bio
                   </label>
                   <textarea
@@ -605,16 +563,15 @@ export default function ProfilePage() {
                     onChange={(e) => setAbout(e.target.value)}
                     disabled={!canEdit || !isEditing}
                     rows={4}
-                    className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                      !canEdit || !isEditing ? 'bg-gray-50 text-gray-500' : ''
-                    }`}
+                    className={`form-input-anasyf ${!canEdit || !isEditing ? 'opacity-80 text-[#A0A0A0]' : 'text-white'
+                      }`}
                     placeholder="Tell us about yourself..."
                   />
                 </div>
 
                 {/* Company Logo */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs text-[#A0A0A0] font-semibold tracking-wider uppercase mb-2">
                     Company Logo
                   </label>
 
@@ -623,12 +580,12 @@ export default function ProfilePage() {
                       <img
                         src={logoPreview}
                         alt="Company logo"
-                        className="w-24 h-24 object-cover rounded-lg border border-gray-200"
+                        className="w-24 h-24 object-cover rounded-lg border border-[rgba(255,255,255,0.1)]"
                       />
                       {canEdit && isEditing && (
                         <div className="space-x-2">
                           <label className="cursor-pointer">
-                            <span className="inline-block px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                            <span className="inline-block px-4 py-2 bg-[#D4AF37] text-[#0F1B2B] font-bold rounded-md hover:bg-white transition-colors">
                               Change
                             </span>
                             <input
@@ -641,7 +598,7 @@ export default function ProfilePage() {
                           <Button
                             type="button"
                             onClick={handleRemoveLogo}
-                            variant="secondary"
+                            className="bg-[rgba(255,255,255,0.1)] text-white hover:bg-[rgba(255,255,255,0.2)]"
                           >
                             Remove
                           </Button>
@@ -651,11 +608,11 @@ export default function ProfilePage() {
                   ) : (
                     <>
                       {!canEdit ? (
-                        <p className="text-sm text-gray-500">No logo uploaded</p>
+                        <p className="text-sm text-[#A0A0A0]">No logo uploaded</p>
                       ) : (
                         isEditing && (
                           <label className="cursor-pointer inline-block">
-                            <span className="inline-block px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                            <span className="inline-block px-4 py-2 bg-[#D4AF37] text-[#0F1B2B] font-bold rounded-md hover:bg-white transition-colors">
                               Upload Logo
                             </span>
                             <input
@@ -673,12 +630,12 @@ export default function ProfilePage() {
 
                 {canEdit && isEditing && (
                   <div className="flex gap-3 pt-4">
-                    <Button type="submit">
+                    <Button type="submit" className="bg-gradient-to-r from-[#FFD700] to-[#FDB931] text-[#0F1B2B] font-bold border-none hover:shadow-lg">
                       Save Changes
                     </Button>
                     <Button
                       type="button"
-                      variant="secondary"
+                      className="bg-[rgba(255,255,255,0.1)] text-white hover:bg-[rgba(255,255,255,0.2)] border-none"
                       onClick={() => {
                         setIsEditing(false);
                         setPhone(profileUser?.phone || '');
@@ -695,41 +652,44 @@ export default function ProfilePage() {
             </div>
 
             {/* Company Information (Read-only) */}
-            <div className="bg-white shadow rounded-lg p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-6">Company Information</h2>
+            <div className="glass-card p-8">
+              <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                <span className="w-1 h-6 bg-[#D4AF37] rounded-full"></span>
+                Company Information
+              </h2>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs text-[#A0A0A0] font-semibold tracking-wider uppercase mb-2">
                     Company Name
                   </label>
-                  <Input
+                  <input
                     type="text"
                     value={profileUser?.companyName || 'Not set'}
                     disabled
-                    className="bg-gray-50"
+                    className="form-input-anasyf opacity-60 cursor-not-allowed"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs text-[#A0A0A0] font-semibold tracking-wider uppercase mb-2">
                     Role
                   </label>
-                  <Input
+                  <input
                     type="text"
                     value={formatRole(profileUser?.role)}
                     disabled
-                    className="bg-gray-50"
+                    className="form-input-anasyf opacity-60 cursor-not-allowed"
                   />
                 </div>
                 {profileUser?.country && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-xs text-[#A0A0A0] font-semibold tracking-wider uppercase mb-2">
                       Country
                     </label>
-                    <Input
+                    <input
                       type="text"
                       value={getCountryLabel(profileUser.country)}
                       disabled
-                      className="bg-gray-50"
+                      className="form-input-anasyf opacity-60 cursor-not-allowed"
                     />
                   </div>
                 )}
@@ -740,13 +700,13 @@ export default function ProfilePage() {
 
         {/* Products Tab */}
         {activeTab === 'products' && (
-          <div className="bg-white shadow rounded-lg p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-gray-900">
+          <div className="glass-card p-8">
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="text-xl font-bold text-white">
                 {isOwnProfile ? 'My Products' : `${profileUser?.displayName || 'User'}'s Products`}
               </h2>
               {isOwnProfile && (
-                <Button onClick={handleOpenProductModal}>
+                <Button onClick={handleOpenProductModal} className="bg-[#D4AF37] text-[#0F1B2B] hover:bg-white font-bold border-none">
                   Add Product
                 </Button>
               )}
@@ -764,13 +724,13 @@ export default function ProfilePage() {
 
         {/* Requests Tab */}
         {activeTab === 'requests' && (
-          <div className="bg-white shadow rounded-lg p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-gray-900">
+          <div className="glass-card p-8">
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="text-xl font-bold text-white">
                 {isOwnProfile ? 'My Requests' : `${profileUser?.displayName || 'User'}'s Requests`}
               </h2>
               {isOwnProfile && (
-                <Button onClick={handleOpenRequestModal}>
+                <Button onClick={handleOpenRequestModal} className="bg-[#D4AF37] text-[#0F1B2B] hover:bg-white font-bold border-none">
                   Create Request
                 </Button>
               )}
@@ -793,171 +753,99 @@ export default function ProfilePage() {
         {isOwnProfile && activeTab === 'security' && (
           <div className="space-y-6">
             {/* Change Password */}
-            <div className="bg-white shadow rounded-lg p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-6">Change Password</h2>
+            <div className="glass-card p-8">
+              <h2 className="text-xl font-bold text-white mb-6">Change Password</h2>
               <form onSubmit={handlePasswordChange} className="space-y-4 max-w-md">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs text-[#A0A0A0] font-semibold tracking-wider uppercase mb-2">
                     Current Password
                   </label>
-                  <Input
+                  <input
                     type="password"
                     value={currentPassword}
                     onChange={(e) => setCurrentPassword(e.target.value)}
                     required
+                    className="form-input-anasyf"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs text-[#A0A0A0] font-semibold tracking-wider uppercase mb-2">
                     New Password
                   </label>
-                  <Input
+                  <input
                     type="password"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     required
+                    className="form-input-anasyf"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Confirm New Password
+                  <label className="block text-xs text-[#A0A0A0] font-semibold tracking-wider uppercase mb-2">
+                    Confirm Password
                   </label>
-                  <Input
+                  <input
                     type="password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
+                    className="form-input-anasyf"
                   />
                 </div>
-                <Button type="submit">
-                  Update Password
-                </Button>
+                <div className="pt-4">
+                  <Button type="submit" className="bg-[#D4AF37] text-[#0F1B2B] hover:bg-white font-bold border-none">
+                    Update Password
+                  </Button>
+                </div>
               </form>
             </div>
 
-            {/* Danger Zone */}
-            <div className="bg-white shadow rounded-lg p-6 border-2 border-red-200">
-              <h2 className="text-xl font-semibold text-red-600 mb-6">Danger Zone</h2>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                  <div>
-                    <h3 className="font-medium text-gray-900">Delete Account</h3>
-                    <p className="text-sm text-gray-500">
-                      Permanently delete your account and all data
-                    </p>
-                  </div>
-                  <Button
-                    onClick={handleOpenDeleteModal}
-                    className="bg-red-600 hover:bg-red-700"
-                  >
-                    Delete Account
-                  </Button>
-                </div>
-
-                <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                  <div>
-                    <h3 className="font-medium text-gray-900">Logout</h3>
-                    <p className="text-sm text-gray-500">
-                      Sign out of your account
-                    </p>
-                  </div>
-                  <Button
-                    onClick={handleLogout}
-                    variant="secondary"
-                  >
-                    Logout
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-      </main>
-
-      {/* Delete Account Confirmation Modal */}
-      {deleteModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-            <h2 className="text-2xl font-bold text-red-600 mb-4">Delete Account</h2>
-
-            <div className="mb-6">
-              <p className="text-gray-700 mb-4">
-                This action cannot be undone. This will permanently delete your account and all associated data.
+            {/* Delete Account */}
+            <div className="glass-card p-8 border border-red-900/30 bg-red-900/10">
+              <h2 className="text-xl font-bold text-red-400 mb-4">Danger Zone</h2>
+              <p className="text-[#A0A0A0] mb-6">
+                Once you delete your account, there is no going back. Please be certain.
               </p>
-
-              <p className="text-gray-700 mb-4">
-                Please type <span className="font-bold text-red-600">"Delete my account"</span> to confirm.
-              </p>
-
-              <Input
-                type="text"
-                value={deleteConfirmText}
-                onChange={(e) => setDeleteConfirmText(e.target.value)}
-                placeholder="Type here..."
-                className="w-full"
-                autoFocus
-              />
-            </div>
-
-            <div className="flex gap-3">
               <Button
-                onClick={handleDeleteAccount}
-                disabled={deleteConfirmText !== 'Delete my account'}
-                className="flex-1 bg-red-600 hover:bg-red-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                variant="destructive"
+                onClick={handleOpenDeleteModal}
+                className="bg-red-600 hover:bg-red-700 text-white border-none"
               >
                 Delete Account
               </Button>
-              <Button
-                onClick={handleCloseDeleteModal}
-                variant="secondary"
-                className="flex-1"
-              >
-                Cancel
-              </Button>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Product Form Modal */}
-      {productModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full p-6 my-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">
-              {editingProduct ? 'Edit Product' : 'Add Product'}
-            </h2>
-            <ProductForm
-              product={editingProduct}
-              onSubmit={handleProductSubmit}
-              onCancel={() => {
-                setProductModalOpen(false);
-                setEditingProduct(null);
-              }}
-              userId={userId}
-            />
-          </div>
-        </div>
-      )}
+        {/* Product Modal */}
+        <Modal
+          isOpen={productModalOpen}
+          onClose={() => setProductModalOpen(false)}
+          title={editingProduct ? 'Edit Product' : 'Add New Product'}
+        >
+          <ProductForm
+            product={editingProduct}
+            onSubmit={handleProductSubmit}
+            onCancel={() => setProductModalOpen(false)}
+            userId={userId}
+          />
+        </Modal>
 
-      {/* Request Form Modal */}
-      {requestModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full p-6 my-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">
-              {editingRequest ? 'Edit Request' : 'Create Request'}
-            </h2>
-            <RequestForm
-              request={editingRequest}
-              onSubmit={handleRequestSubmit}
-              onCancel={() => {
-                setRequestModalOpen(false);
-                setEditingRequest(null);
-              }}
-              userId={userId}
-            />
-          </div>
-        </div>
-      )}
+        {/* Request Modal */}
+        <Modal
+          isOpen={requestModalOpen}
+          onClose={() => setRequestModalOpen(false)}
+          title={editingRequest ? 'Edit Request' : 'Create New Request'}
+        >
+          <RequestForm
+            request={editingRequest}
+            categories={categories}
+            onSubmit={handleRequestSubmit}
+            onCancel={() => setRequestModalOpen(false)}
+            userId={userId}
+          />
+        </Modal>
+      </main>
     </div>
   );
 }

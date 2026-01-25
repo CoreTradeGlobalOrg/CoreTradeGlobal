@@ -26,11 +26,11 @@ export function Input({
         w-full
         px-4 py-3
         text-base
-        bg-white
+        ${className.includes('bg-') ? '' : 'bg-white'}
         border-2
         ${error
           ? 'border-red-500 focus:border-red-600 focus:ring-red-200'
-          : 'border-slate-300 focus:border-blue-600 focus:ring-blue-200'
+          : `${className.includes('border-') ? '' : 'border-slate-300'} ${className.includes('focus:border-') ? '' : 'focus:border-blue-600'} ${className.includes('focus:ring-') ? '' : 'focus:ring-blue-200'}`
         }
         rounded-lg
         text-slate-900

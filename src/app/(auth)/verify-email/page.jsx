@@ -23,7 +23,7 @@ export default function VerifyEmailPage() {
   // Check if email is already verified
   useEffect(() => {
     if (!loading && user?.emailVerified) {
-      router.push('/dashboard');
+      router.push('/');
     }
   }, [user, loading, router]);
 
@@ -65,7 +65,7 @@ export default function VerifyEmailPage() {
         toast.success('Email verified! Redirecting to dashboard...');
         // Wait a bit more to ensure state is synced before navigation
         await new Promise(resolve => setTimeout(resolve, 500));
-        router.push('/dashboard');
+        router.push('/');
       } else {
         toast.error('Email not verified yet. Please check your inbox and click the verification link.');
       }

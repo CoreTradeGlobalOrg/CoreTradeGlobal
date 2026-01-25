@@ -7,10 +7,12 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { Pencil, Trash2, Power, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export function ProductCard({ product, isOwnProfile, onEdit, onDelete, onToggleStatus }) {
+  const router = useRouter();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [imageLoading, setImageLoading] = useState(true);
   const images = product?.images || [];
@@ -61,10 +63,20 @@ export function ProductCard({ product, isOwnProfile, onEdit, onDelete, onToggleS
     }
   };
 
+  const handleCardClick = () => {
+    router.push(`/product/${product.id}`);
+  };
+
+  const truncateDescription = (text, maxLength = 100) => {
+    if (!text) return '';
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + '...';
+  };
+
   return (
-    <div className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow">
+    <div className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow flex flex-col h-full">
       {/* Product Image Carousel */}
-      <div className="relative h-48 bg-gray-100 group">
+      <div className="relative h-48 bg-gray-100 group cursor-pointer flex-shrink-0" onClick={handleCardClick}>
         {hasImages ? (
           <>
             {/* Loading Spinner */}
@@ -77,9 +89,8 @@ export function ProductCard({ product, isOwnProfile, onEdit, onDelete, onToggleS
             <img
               src={images[currentImageIndex]}
               alt={`${product.name} - Image ${currentImageIndex + 1}`}
-              className={`w-full h-full object-cover transition-opacity duration-200 ${
-                imageLoading ? 'opacity-0' : 'opacity-100'
-              }`}
+              className={`w-full h-full object-cover transition-opacity duration-200 ${imageLoading ? 'opacity-0' : 'opacity-100'
+                }`}
               onLoad={handleImageLoad}
             />
 
@@ -139,8 +150,11 @@ export function ProductCard({ product, isOwnProfile, onEdit, onDelete, onToggleS
       </div>
 
       {/* Product Details */}
-      <div className="p-4">
-        <h3 className="font-semibold text-lg text-gray-900 mb-2 line-clamp-1">
+      <div className="p-4 flex flex-col flex-1">
+        <h3
+          className="font-semibold text-lg text-gray-900 mb-2 line-clamp-1 cursor-pointer hover:text-blue-600 transition-colors"
+          onClick={handleCardClick}
+        >
           {product.name}
         </h3>
 
@@ -157,21 +171,24 @@ export function ProductCard({ product, isOwnProfile, onEdit, onDelete, onToggleS
           <div className="flex items-center justify-between">
             <span className="text-sm text-gray-600">Stock:</span>
             <span className={`font-medium ${product.stockQuantity > 0 ? 'text-green-600' : 'text-red-600'}`}>
-              {product.stockQuantity || 0} units
+              {product.stockQuantity || 0} {product.unit || 'PCE'}
             </span>
           </div>
         </div>
 
         {/* Description Preview */}
         {product.description && (
-          <p className="text-sm text-gray-600 line-clamp-2 mb-4">
-            {product.description}
+          <p
+            className="text-sm text-gray-600 mb-4 cursor-pointer hover:text-gray-900 transition-colors flex-1"
+            onClick={handleCardClick}
+          >
+            {truncateDescription(product.description, 100)}
           </p>
         )}
 
         {/* Actions (Only for own profile) */}
         {isOwnProfile && (
-          <div className="space-y-2 pt-2 border-t border-gray-100">
+          <div className="space-y-2 pt-2 border-t border-gray-100 mt-auto">
             <div className="flex gap-2">
               <Button
                 variant="secondary"

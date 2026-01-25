@@ -5,6 +5,11 @@
  */
 
 import { z } from 'zod';
+import { UNITS, UNIT_CATEGORIES } from '@/core/constants/units';
+
+// Extract valid unit codes and categories
+const validUnitCodes = UNITS.map((unit) => unit.code);
+const validUnitCategories = UNIT_CATEGORIES.map((cat) => cat.value);
 
 export const productSchema = z.object({
   // Product name
@@ -23,6 +28,20 @@ export const productSchema = z.object({
     .number()
     .min(0, 'Stock quantity cannot be negative')
     .int('Stock quantity must be a whole number'),
+
+  // Unit (UNECE code)
+  unit: z
+    .string()
+    .refine((val) => validUnitCodes.includes(val), {
+      message: 'Please select a valid unit',
+    }),
+
+  // Unit Category
+  unitCategory: z
+    .string()
+    .refine((val) => validUnitCategories.includes(val), {
+      message: 'Please select a valid unit category',
+    }),
 
   // Price
   price: z

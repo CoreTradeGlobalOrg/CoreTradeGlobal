@@ -33,7 +33,10 @@ export class CreateRequestUseCase {
       categoryId,
       targetCountry,
       quantity,
+      unit,
+      unitCategory,
       description,
+      budget,
     } = requestData;
 
     // 1. Validate all inputs
@@ -41,6 +44,7 @@ export class CreateRequestUseCase {
     this.validateCategory(categoryId);
     this.validateTargetCountry(targetCountry);
     this.validateQuantity(quantity);
+    if (budget) this.validateBudget(budget);
     this.validateDescription(description);
 
     try {
@@ -51,7 +55,10 @@ export class CreateRequestUseCase {
         categoryId,
         targetCountry,
         quantity: parseInt(quantity, 10),
+        unit: unit || 'PCE',
+        unitCategory: unitCategory || 'Quantity',
         description,
+        budget: budget ? parseFloat(budget) : null,
         status: 'active',
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -117,6 +124,21 @@ export class CreateRequestUseCase {
     }
     if (qty <= 0) {
       throw new Error('Quantity must be greater than 0');
+    }
+  }
+
+  /**
+   * Validate budget
+   * @param {number} budget
+   * @throws {Error} If invalid
+   */
+  validateBudget(budget) {
+    const b = parseFloat(budget);
+    if (isNaN(b)) {
+      throw new Error('Budget must be a valid number');
+    }
+    if (b < 0) {
+      throw new Error('Budget cannot be negative');
     }
   }
 

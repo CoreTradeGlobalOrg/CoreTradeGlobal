@@ -97,12 +97,12 @@ export function StatsCards({ users = [] }) {
       {stats.map((stat) => (
         <div
           key={stat.title}
-          className="bg-white rounded-xl shadow-sm border-2 border-slate-100 p-6 hover:shadow-md transition-shadow"
+          className="bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.1)] rounded-xl p-6 backdrop-blur-md hover:border-[#D4AF37]/30 transition-all group"
         >
           {/* Icon and Title */}
           <div className="flex items-center justify-between mb-4">
             <div
-              className={`w-12 h-12 rounded-lg ${colorClasses[stat.color]} flex items-center justify-center text-2xl`}
+              className={`w-12 h-12 rounded-lg bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] flex items-center justify-center text-2xl group-hover:scale-110 transition-transform`}
             >
               {stat.icon}
             </div>
@@ -110,13 +110,13 @@ export function StatsCards({ users = [] }) {
 
           {/* Value */}
           <div className="mb-2">
-            <div className="text-3xl font-bold text-slate-900">{stat.value}</div>
+            <div className="text-3xl font-bold text-[#D4AF37]">{stat.value}</div>
           </div>
 
           {/* Title and Description */}
           <div>
-            <div className="text-sm font-semibold text-slate-900">{stat.title}</div>
-            <div className="text-xs text-slate-500 mt-1">{stat.description}</div>
+            <div className="text-sm font-semibold text-white">{stat.title}</div>
+            <div className="text-xs text-[#A0A0A0] mt-1">{stat.description}</div>
           </div>
         </div>
       ))}

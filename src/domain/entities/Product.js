@@ -17,6 +17,8 @@ export class Product {
    * @param {string} name - Product name
    * @param {string} categoryId - Category ID
    * @param {number} stockQuantity - Stock quantity
+   * @param {string} unit - UNECE unit code (e.g., PCE, KGM, LTR)
+   * @param {string} unitCategory - Unit category (e.g., Quantity, Weight, Volume)
    * @param {number} price - Product price
    * @param {string} currency - Price currency (USD, EUR, etc.)
    * @param {string} description - Product description
@@ -31,6 +33,8 @@ export class Product {
     name,
     categoryId,
     stockQuantity,
+    unit,
+    unitCategory,
     price,
     currency,
     description,
@@ -44,6 +48,8 @@ export class Product {
     this.name = name;
     this.categoryId = categoryId;
     this.stockQuantity = stockQuantity || 0;
+    this.unit = unit || 'PCE';
+    this.unitCategory = unitCategory || 'Quantity';
     this.price = price || 0;
     this.currency = currency || 'USD';
     this.description = description || '';
@@ -65,6 +71,8 @@ export class Product {
       data.name,
       data.categoryId,
       data.stockQuantity,
+      data.unit,
+      data.unitCategory,
       data.price,
       data.currency,
       data.description,
@@ -85,6 +93,8 @@ export class Product {
       name: this.name,
       categoryId: this.categoryId,
       stockQuantity: this.stockQuantity,
+      unit: this.unit,
+      unitCategory: this.unitCategory,
       price: this.price,
       currency: this.currency,
       description: this.description,
@@ -190,6 +200,14 @@ export class Product {
    */
   getFormattedPrice() {
     return `${this.price.toFixed(2)} ${this.currency}`;
+  }
+
+  /**
+   * Format quantity with unit
+   * @returns {string}
+   */
+  getFormattedQuantity() {
+    return `${this.stockQuantity} ${this.unit}`;
   }
 
   /**

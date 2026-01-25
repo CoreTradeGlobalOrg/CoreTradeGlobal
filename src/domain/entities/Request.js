@@ -18,6 +18,8 @@ export class Request {
    * @param {string} categoryId - Category ID
    * @param {string} targetCountry - Target country for request
    * @param {number} quantity - Requested quantity
+   * @param {string} unit - UNECE unit code (e.g., PCE, KGM, LTR)
+   * @param {string} unitCategory - Unit category (e.g., Quantity, Weight, Volume)
    * @param {string} description - Request description
    * @param {string} status - Request status (active, closed)
    * @param {Date} createdAt - Creation date
@@ -30,6 +32,8 @@ export class Request {
     categoryId,
     targetCountry,
     quantity,
+    unit,
+    unitCategory,
     description,
     status,
     createdAt,
@@ -41,6 +45,8 @@ export class Request {
     this.categoryId = categoryId;
     this.targetCountry = targetCountry;
     this.quantity = quantity || 1;
+    this.unit = unit || 'PCE';
+    this.unitCategory = unitCategory || 'Quantity';
     this.description = description || '';
     this.status = status || 'active';
     this.createdAt = createdAt || new Date();
@@ -60,6 +66,8 @@ export class Request {
       data.categoryId,
       data.targetCountry,
       data.quantity,
+      data.unit,
+      data.unitCategory,
       data.description,
       data.status,
       data.createdAt,
@@ -78,6 +86,8 @@ export class Request {
       categoryId: this.categoryId,
       targetCountry: this.targetCountry,
       quantity: this.quantity,
+      unit: this.unit,
+      unitCategory: this.unitCategory,
       description: this.description,
       status: this.status,
       createdAt: this.createdAt,
@@ -150,6 +160,14 @@ export class Request {
    */
   getStatusColor() {
     return this.isActive() ? 'green' : 'gray';
+  }
+
+  /**
+   * Format quantity with unit
+   * @returns {string}
+   */
+  getFormattedQuantity() {
+    return `${this.quantity} ${this.unit}`;
   }
 
   /**

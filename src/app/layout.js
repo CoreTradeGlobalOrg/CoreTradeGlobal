@@ -1,6 +1,7 @@
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from '@/presentation/contexts/AuthContext';
+import { ProductViewProvider } from '@/presentation/contexts/ProductViewContext';
 import { Toaster } from 'react-hot-toast';
 
 const inter = Inter({
@@ -41,7 +42,9 @@ export default function RootLayout({ children }) {
     <html lang="en" className={inter.variable}>
       <body className={inter.className}>
         <AuthProvider>
-          {children}
+          <ProductViewProvider>
+            {children}
+          </ProductViewProvider>
         </AuthProvider>
         <Toaster
           position="top-right"

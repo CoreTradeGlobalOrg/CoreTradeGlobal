@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Us - CoreTradeGlobal</title>
+    
+    <!-- OPTIMIZATION: Font Loading (Same as Homepage) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    
+    <style>
+        /* --- 1. GLOBAL AYARLAR & DEĞİŞKENLER (Anasayfa ile Birebir) --- */
+        :root {
+            --bg-deep-navy: #0F1B2B;
+            --bg-accent-navy: #1A283B;
+            --accent-gold: #D4AF37;
+            --accent-bright-gold: #FFD700;
+            --text-white: #F5F5F5;
+            --text-grey: #A0A0A0;
+            --card-radius: 20px;
+            --container-width: 1200px;
+        }
+
+        * { box-sizing: border-box; }
+        
+        body {
+            margin: 0; padding: 0;
+            background-color: var(--bg-deep-navy);
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            color: var(--text-white);
+            overflow-x: hidden;
+        }
+
+        /* --- GPU Hızlandırma --- */
+        .hero-title, .hero-subtitle, .mission-card {
+            will-change: transform, opacity;
+        }
+
+        /* --- NAVBAR (Anasayfa Aynısı - Opak Scroll) --- */
+        .navbar {
+            position: fixed; top: 0; left: 0; width: 100%; height: 90px;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 40px; z-index: 1000;
+            background: linear-gradient(to bottom, rgba(15, 27, 43, 0.95) 0%, rgba(15, 27, 43, 0) 100%);
+            transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .navbar.scrolled {
+            top: 0; left: 0; transform: none; width: 100%; max-width: 100%; height: 80px;
+            border-radius: 0; 
+            background: #0F1B2B; /* Fully Opaque */
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1); 
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); padding: 0 40px;
+        }
+
+        .nav-logo-img { height: 50px; width: auto; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); transition: 0.3s; }
+        .navbar.scrolled .nav-logo-img { height: 40px; }
+
+        .nav-links { display: flex; align-items: center; gap: 24px; }
+        .nav-link { text-decoration: none; color: var(--text-white); font-size: 14px; opacity: 0.8; transition: 0.3s; font-weight: 500; }
+        .nav-link:hover { opacity: 1; color: var(--accent-gold); }
+
+        .btn-signup {
+            padding: 10px 24px; background: linear-gradient(135deg, #FFD700 0%, #FDB931 100%); color: #0F1B2B;
+            border-radius: 50px; text-decoration: none; font-weight: 800; font-size: 14px;
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.3); transition: 0.2s;
+        }
+        .btn-signup:hover { transform: translateY(-2px); background: #fff; }
+        .btn-signup:active { transform: scale(0.95); }
+
+        /* --- HERO SECTION (About Us Özel Düzenleme) --- */
+        .about-hero {
+            position: relative; width: 100%; height: 600px; /* Globe olmadığı için yükseklik optimize edildi */
+            background: radial-gradient(circle at 50% 30%, #1c304a 0%, var(--bg-deep-navy) 70%);
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            text-align: center; padding: 0 20px;
+            overflow: hidden;
+        }
+
+        .hero-title {
+            font-size: 64px; font-weight: 800; letter-spacing: -2px; line-height: 1.1;
+            background: linear-gradient(180deg, #ffffff 20%, #909090 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            margin-bottom: 20px; opacity: 0; /* JS ile açılacak */
+            filter: drop-shadow(0 10px 20px rgba(0,0,0,0.5));
+            max-width: 900px;
+        }
+
+        .hero-subtitle {
+            font-size: 18px; color: var(--text-grey); max-width: 600px; line-height: 1.6;
+            margin-bottom: 60px; opacity: 0;
+        }
+
+        /* --- STATS BAR (Hero İçinde) --- */
+        .stats-bar-wrapper {
+            position: relative;
+            background: rgba(15, 27, 43, 0.6); 
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 100px;
+            padding: 20px 60px;
+            display: flex; justify-content: center; align-items: center; gap: 60px;
+            opacity: 0; transform: translateY(20px);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        
+        .sp-item { text-align: center; display: flex; gap: 10px; align-items: baseline; }
+        .sp-number { font-size: 24px; font-weight: 700; color: #fff; }
+        .sp-label { font-size: 12px; color: var(--text-grey); text-transform: uppercase; letter-spacing: 1px; }
+
+        /* --- MISSION & VISION SECTION --- */
+        .mission-section {
+            padding: 80px 20px;
+            display: flex; justify-content: center;
+            background: var(--bg-deep-navy);
+        }
+
+        .mission-container {
+            width: 100%; max-width: 1200px;
+            display: flex; gap: 30px;
+            flex-wrap: wrap;
+        }
+
+        /* Glassmorphism Card (Anasayfa stilinden türetildi ama genişletildi) */
+        .mission-card {
+            flex: 1; min-width: 300px;
+            background: linear-gradient(160deg, rgba(26,28,32,0.6) 0%, rgba(15,27,43,0.8) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: var(--card-radius);
+            padding: 40px;
+            display: flex; flex-direction: column; justify-content: center;
+            transition: all 0.3s ease;
+            position: relative; overflow: hidden;
+            opacity: 0; transform: translateY(20px); /* Scroll animasyonu için */
+        }
+
+        .mission-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(212, 175, 55, 0.3);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+        }
+
+        /* Dekoratif Arka Plan Işığı */
+        .card-glow {
+            position: absolute; top: 0; right: 0; width: 150px; height: 150px;
+            background: radial-gradient(circle, rgba(212, 175, 55, 0.15) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .mission-title {
+            font-size: 32px; font-weight: 700; color: #fff; margin-bottom: 20px;
+            display: flex; align-items: center; gap: 12px;
+        }
+
+        .mission-icon { color: var(--accent-gold); width: 32px; height: 32px; }
+
+        .mission-text {
+            font-size: 16px; line-height: 1.8; color: #cbd5e1;
+        }
+
+        /* --- FOOTER (Anasayfa Aynısı) --- */
+        .footer-section { background-color: var(--bg-deep-navy); border-top: 1px solid rgba(255,255,255,0.05); padding: 60px 40px; margin-top: auto; }
+        .footer-container { max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 40px; }
+        .footer-grid { display: grid; grid-template-columns: 1.5fr 1fr 1fr 1.5fr; gap: 40px; align-items: start; }
+        .footer-col h4 { color: #fff; font-size: 16px; margin-bottom: 20px; font-weight: 600; }
+        .footer-col a { display: block; color: var(--text-grey); text-decoration: none; margin-bottom: 10px; font-size: 14px; transition: 0.2s; }
+        .footer-col a:hover { color: var(--accent-gold); }
+        .brand-col p { color: var(--text-grey); font-size: 13px; line-height: 1.6; max-width: 280px; margin-top: 15px; }
+        .newsletter-box { display: flex; position: relative; margin-top: 10px; width: 100%; }
+        .footer-input { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 12px 14px; border-radius: 8px; color: #fff; outline: none; }
+        .footer-btn { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); background: var(--accent-gold); border: none; width: 30px; height: 30px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .footer-bottom { border-top: 1px solid rgba(255,255,255,0.05); padding-top: 20px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: #64748b; }
+        .footer-legal { display: flex; gap: 20px; }
+        .footer-legal a { color: #64748b; text-decoration: none; }
+
+        @media (max-width: 900px) {
+            .footer-grid { grid-template-columns: 1fr 1fr; gap: 30px; }
+            .brand-col { grid-column: 1 / -1; }
+            .hero-title { font-size: 42px; }
+            .stats-bar-wrapper { flex-direction: column; gap: 20px; padding: 20px; border-radius: 20px; }
+            .mission-container { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- IntersectionObserver için Görünmez Tetikleyici -->
+<div id="pixel-guard" style="position: absolute; top: 0; left: 0; width: 1px; height: 1px; pointer-events: none; opacity: 0;"></div>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+    <img src="Core-png.png" alt="CoreTradeGlobal" class="nav-logo-img">
+    <div class="nav-links">
+        <a href="index.html" class="nav-link">Products</a>
+        <a href="#" class="nav-link">RFQs</a>
+        <a href="#" class="nav-link">Categories</a>
+        <a href="#" class="nav-link">Fairs</a>
+        <a href="#" class="nav-link">About Us</a>
+        <a href="#" class="nav-link">Log In</a>
+        <a href="#" class="btn-signup">Register</a>
+    </div>
+</nav>
+
+<!-- HERO SECTION -->
+<section class="about-hero">
+    <h1 class="hero-title">Revolutionizing<br>Global Trade</h1>
+    <p class="hero-subtitle">We are bridging the gap between manufacturers and buyers with AI-driven technology, making B2B commerce seamless, secure, and efficient.</p>
+    
+    <!-- STATS BAR (Integrated into Hero) -->
+    <div class="stats-bar-wrapper">
+        <div class="sp-item"><span class="sp-number">2023</span><span class="sp-label">Founded</span></div>
+        <div style="width:1px; height:30px; background:rgba(255,255,255,0.1);"></div>
+        <div class="sp-item"><span class="sp-number">120+</span><span class="sp-label">Countries</span></div>
+        <div style="width:1px; height:30px; background:rgba(255,255,255,0.1);"></div>
+        <div class="sp-item"><span class="sp-number">$500M+</span><span class="sp-label">Trade Volume</span></div>
+    </div>
+</section>
+
+<!-- MISSION & VISION SECTION -->
+<section class="mission-section">
+    <div class="mission-container">
+        <!-- Mission Card -->
+        <div class="mission-card">
+            <div class="card-glow"></div>
+            <h2 class="mission-title">
+                <svg class="mission-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                Our Mission
+            </h2>
+            <p class="mission-text">
+                To democratize global trade by providing a transparent, secure, and intelligent platform where businesses of all sizes can connect, negotiate, and transact without borders. We aim to remove the friction from B2B commerce through verified networks and smart logistics solutions.
+            </p>
+        </div>
+
+        <!-- Vision Card -->
+        <div class="mission-card">
+            <div class="card-glow"></div>
+            <h2 class="mission-title">
+                <svg class="mission-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                Our Vision
+            </h2>
+            <p class="mission-text">
+                To become the world's most trusted digital ecosystem for industrial trade, defining the future of supply chains where AI matches the right buyer with the right seller instantly, reducing waste and increasing global economic prosperity.
+            </p>
+        </div>
+    </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer-section">
+    <div class="footer-container">
+        <div class="footer-grid">
+            <div class="footer-col brand-col">
+                <img src="Core-png.png" alt="CoreTradeGlobal" class="nav-logo-img">
+                <p>CoreTradeGlobal is the world's leading premium B2B marketplace matched with AI-driven connections.</p>
+            </div>
+            <div class="footer-col"><h4>Platform</h4><a href="#">Browse Products</a><a href="#">Requests for Quotation</a><a href="#">Verified Partners</a><a href="#">Trade Shows & Fairs</a></div>
+            <div class="footer-col"><h4>Company</h4><a href="#">About Us</a><a href="#">Careers</a><a href="#">Contact Support</a><a href="#">Success Stories</a></div>
+            <div class="footer-col"><h4>Stay Connected</h4><div class="newsletter-box"><input type="email" class="footer-input" placeholder="Enter your email"><button class="footer-btn">></button></div></div>
+        </div>
+        <div class="footer-bottom"><span>© 2025 CoreTradeGlobal Inc. All rights reserved.</span><div class="footer-legal"><a href="#">Privacy Policy</a><a href="#">Terms of Service</a><a href="#">Cookie Settings</a></div></div>
+    </div>
+</footer>
+
+<script>
+    // --- 1. NAVBAR SCROLL KONTROLÜ (Performance Optimized) ---
+    const navObserver = new IntersectionObserver((entries) => {
+        const nav = document.querySelector('.navbar');
+        if (!entries.isIntersecting) {
+            nav.classList.add('scrolled');
+        } else {
+            nav.classList.remove('scrolled');
+        }
+    });
+    navObserver.observe(document.getElementById('pixel-guard'));
+
+    // --- 2. GSAP ANIMASYONLARI ---
+    document.addEventListener("DOMContentLoaded", (event) => {
+        gsap.registerPlugin();
+
+        // Hero Animasyonları (Sıralı Giriş)
+        const tl = gsap.timeline();
+        
+        tl.to(".hero-title", { 
+            duration: 1, 
+            opacity: 1, 
+            y: 0, 
+            ease: "power3.out",
+            startAt: { y: 50 } 
+        })
+        .to(".hero-subtitle", { 
+            duration: 1, 
+            opacity: 1, 
+            y: 0, 
+            ease: "power3.out",
+            startAt: { y: 30 } 
+        }, "-=0.6")
+        .to(".stats-bar-wrapper", { 
+            duration: 1, 
+            opacity: 1, 
+            y: 0, 
+            ease: "back.out(1.7)",
+            startAt: { y: 30 }
+        }, "-=0.6");
+
+        // Mission Kartları Animasyonu (Fade Up)
+        const cards = document.querySelectorAll('.mission-card');
+        
+        // Basit bir Intersection Observer ile kartlar ekrana girince tetiklensin
+        const cardObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if(entry.isIntersecting) {
+                    gsap.to(entry.target, {
+                        duration: 0.8,
+                        opacity: 1,
+                        y: 0,
+                        ease: "power2.out",
+                        delay: 0.1
+                    });
+                    cardObserver.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.1 });
+
+        cards.forEach(card => cardObserver.observe(card));
+    });
+</script>
+
+</body>
+</html>

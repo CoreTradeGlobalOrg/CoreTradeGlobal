@@ -1,12 +1,14 @@
-/**
- * Main Layout
- *
- * Layout for protected routes (dashboard, products, etc.)
- * The (main) folder with parentheses creates a route group
- *
- * You can add a sidebar, navigation, etc. here later
- */
+'use client';
+
+import { Navbar } from '@/presentation/components/homepage/Navbar/Navbar';
+import { Footer } from '@/presentation/components/homepage/Footer/Footer';
 
 export default function MainLayout({ children }) {
-  return <>{children}</>;
+  return (
+    <>
+      <Navbar />
+      {children}
+      <Footer />
+    </>
+  );
 }

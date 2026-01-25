@@ -19,6 +19,10 @@ export const COLLECTIONS = {
   // Requests & Orders
   REQUESTS: 'requests',         // B2B requests/orders
 
+  // Homepage Content
+  FAIRS: 'fairs',               // Trade fairs/exhibitions
+  NEWS: 'news',                 // Trade news/articles
+
   // Messaging
   CONVERSATIONS: 'conversations', // Message conversations
   MESSAGES: 'messages',          // Messages

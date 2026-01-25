@@ -23,9 +23,9 @@ export default function SuspendedPage() {
       router.push('/login');
     }
 
-    // If user is not suspended, redirect to dashboard
+    // If user is not suspended, redirect to homepage
     if (!loading && user && !user.isSuspended) {
-      router.push('/dashboard');
+      router.push('/');
     }
   }, [user, loading, router]);
 

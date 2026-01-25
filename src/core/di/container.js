@@ -20,6 +20,8 @@ import { UserRepository } from '@/data/repositories/UserRepository';
 import { ProductRepository } from '@/data/repositories/ProductRepository';
 import { RequestRepository } from '@/data/repositories/RequestRepository';
 import { CategoryRepository } from '@/data/repositories/CategoryRepository';
+import { FairsRepository } from '@/data/repositories/FairsRepository';
+import { NewsRepository } from '@/data/repositories/NewsRepository';
 
 /**
  * Singleton instances
@@ -33,6 +35,8 @@ let userRepository = null;
 let productRepository = null;
 let requestRepository = null;
 let categoryRepository = null;
+let fairsRepository = null;
+let newsRepository = null;
 
 /**
  * DI Container
@@ -140,6 +144,28 @@ export const container = {
   },
 
   /**
+   * Get Fairs Repository instance
+   * @returns {FairsRepository}
+   */
+  getFairsRepository() {
+    if (!fairsRepository) {
+      fairsRepository = new FairsRepository(this.getFirestoreDataSource());
+    }
+    return fairsRepository;
+  },
+
+  /**
+   * Get News Repository instance
+   * @returns {NewsRepository}
+   */
+  getNewsRepository() {
+    if (!newsRepository) {
+      newsRepository = new NewsRepository(this.getFirestoreDataSource());
+    }
+    return newsRepository;
+  },
+
+  /**
    * Reset all instances (useful for testing)
    * DO NOT use this in production code
    */
@@ -152,6 +178,8 @@ export const container = {
     productRepository = null;
     requestRepository = null;
     categoryRepository = null;
+    fairsRepository = null;
+    newsRepository = null;
   },
 };
 
