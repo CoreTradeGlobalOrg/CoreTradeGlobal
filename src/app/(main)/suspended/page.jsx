@@ -42,7 +42,7 @@ export default function SuspendedPage() {
 
   const handleLogout = async () => {
     await logout();
-    router.push('/login');
+    router.push('/');
   };
 
   return (

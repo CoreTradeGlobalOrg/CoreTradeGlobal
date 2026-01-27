@@ -7,37 +7,32 @@
 
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, memo } from 'react';
 import Link from 'next/link';
 import { container } from '@/core/di/container';
 import { COUNTRIES } from '@/core/constants/countries';
+import { CountryFlag } from '@/presentation/components/common/CountryFlag/CountryFlag';
 
-// Helper to get flag
-const getCountryInfo = (countryValue) => {
-  if (!countryValue) return { flag: '🌍', name: 'Global' };
-  const country = COUNTRIES.find(c =>
-    c.value === countryValue ||
-    c.label.toLowerCase().includes(countryValue.toLowerCase())
-  );
+// Helper to get country name from ISO code
+const getCountryName = (countryCode) => {
+  if (!countryCode) return 'Global';
+  const country = COUNTRIES.find(c => c.value === countryCode);
   if (country) {
-    return {
-      flag: country.label.split(' ')[0],
-      name: country.label.substring(country.label.indexOf(' ') + 1)
-    };
+    return country.label.replace(/^[\u{1F1E0}-\u{1F1FF}]{2}\s*/u, '').trim();
   }
-  return { flag: '🌍', name: countryValue };
+  return countryCode;
 };
 
-// Default companies data (Fallback)
+// Default companies data (Fallback) - country is ISO code
 const DEFAULT_COMPANIES = [
-  { name: 'EuroLogistics', logo: 'EL', country: 'DE', flag: '🇩🇪', category: 'Logistics & Shipping', rating: 4.9, volume: '€50M+' },
-  { name: 'AsiaTech Mfg', logo: 'AT', country: 'CN', flag: '🇨🇳', category: 'Electronics Mfg', rating: 4.8, volume: '$120M+' },
-  { name: 'Nordic Supply', logo: 'NS', country: 'SE', flag: '🇸🇪', category: 'Raw Materials', rating: 5.0, volume: '€85M+' },
-  { name: 'Anatolia Tex', logo: 'AX', country: 'TR', flag: '🇹🇷', category: 'Textiles & Fabrics', rating: 4.9, volume: '$40M+' },
-  { name: 'US Polymers', logo: 'UP', country: 'US', flag: '🇺🇸', category: 'Chemical Products', rating: 4.7, volume: '$200M+' },
-  { name: 'Koto Automotive', logo: 'KA', country: 'JP', flag: '🇯🇵', category: 'Auto Spare Parts', rating: 4.9, volume: '¥900M+' },
-  { name: 'Brasilia Coffee', logo: 'BC', country: 'BR', flag: '🇧🇷', category: 'Food Exports', rating: 4.6, volume: '$30M+' },
-  { name: 'Royal Steel', logo: 'RS', country: 'UK', flag: '🇬🇧', category: 'Industrial Metals', rating: 4.8, volume: '£60M+' },
+  { name: 'EuroLogistics', logo: 'EL', country: 'DE', category: 'Logistics & Shipping', rating: 4.9, volume: '€50M+' },
+  { name: 'AsiaTech Mfg', logo: 'AT', country: 'CN', category: 'Electronics Mfg', rating: 4.8, volume: '$120M+' },
+  { name: 'Nordic Supply', logo: 'NS', country: 'SE', category: 'Raw Materials', rating: 5.0, volume: '€85M+' },
+  { name: 'Anatolia Tex', logo: 'AX', country: 'TR', category: 'Textiles & Fabrics', rating: 4.9, volume: '$40M+' },
+  { name: 'US Polymers', logo: 'UP', country: 'US', category: 'Chemical Products', rating: 4.7, volume: '$200M+' },
+  { name: 'Koto Automotive', logo: 'KA', country: 'JP', category: 'Auto Spare Parts', rating: 4.9, volume: '¥900M+' },
+  { name: 'Brasilia Coffee', logo: 'BC', country: 'BR', category: 'Food Exports', rating: 4.6, volume: '$30M+' },
+  { name: 'Royal Steel', logo: 'RS', country: 'GB', category: 'Industrial Metals', rating: 4.8, volume: '£60M+' },
 ];
 
 // Verified icon SVG
@@ -46,6 +41,33 @@ const VerifiedIcon = () => (
     <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z" />
   </svg>
 );
+
+// Company logo image with loading state
+const CompanyLogoImage = memo(function CompanyLogoImage({ src, alt, fallback }) {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  if (error) {
+    return <span className="text-lg font-bold">{fallback}</span>;
+  }
+
+  return (
+    <>
+      {loading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-[#1A283B]">
+          <div className="w-5 h-5 border-2 border-[#D4AF37] border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      )}
+      <img
+        src={src}
+        alt={alt}
+        className={`w-full h-full object-cover transition-opacity duration-200 ${loading ? 'opacity-0' : 'opacity-100'}`}
+        onLoad={() => setLoading(false)}
+        onError={() => { setLoading(false); setError(true); }}
+      />
+    </>
+  );
+});
 
 // Star icon SVG
 const StarIcon = () => (
@@ -67,15 +89,15 @@ function CompanyCard({ company, isActive, style }) {
       <div className="card-inner">
         {/* Card Header */}
         <div className="card-header">
-          <div className="logo-box overflow-hidden flex items-center justify-center">
+          <div className="logo-box overflow-hidden flex items-center justify-center relative">
             {isLogoUrl ? (
-              <img src={company.logo} alt={company.name} className="w-full h-full object-cover" />
+              <CompanyLogoImage src={company.logo} alt={company.name} fallback={company.name?.substring(0, 2).toUpperCase() || 'CO'} />
             ) : (
               company.logo
             )}
           </div>
-          <div className="country-flag" title={company.country}>
-            {company.flag}
+          <div className="country-flag" title={getCountryName(company.country)}>
+            <CountryFlag countryCode={company.country} size={24} />
           </div>
         </div>
 
@@ -148,13 +170,11 @@ export function ShowcaseSection() {
 
         if (featuredUsers && featuredUsers.length > 0) {
           const mappedCompanies = featuredUsers.map(user => {
-            const countryInfo = getCountryInfo(user.country);
             return {
               id: user.id, // Store ID for linking
               name: user.companyName || user.displayName || 'Unknown Company',
               logo: user.companyLogo || user.photoURL || (user.companyName ? user.companyName.substring(0, 2).toUpperCase() : 'CO'),
-              country: countryInfo.name || 'Global',
-              flag: countryInfo.flag,
+              country: user.country || '', // ISO code
               category: user.industry || 'Global Trade',
               rating: (4.5 + Math.random() * 0.5).toFixed(1), // Mock rating until we have real ones
               volume: '$10M+' // Mock volume

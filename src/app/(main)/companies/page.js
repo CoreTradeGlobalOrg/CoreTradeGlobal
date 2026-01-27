@@ -1,22 +1,32 @@
+'use client';
+
 import React from 'react';
 import { Navbar } from '@/presentation/components/homepage/Navbar/Navbar';
 import { Footer } from '@/presentation/components/homepage/Footer/Footer';
 import { UserCheck } from 'lucide-react';
+import { COUNTRIES } from '@/core/constants/countries';
+import { CountryFlag } from '@/presentation/components/common/CountryFlag/CountryFlag';
 
-export const metadata = {
-    title: 'Verified Companies | CoreTradeGlobal',
-    description: 'Connect with verified manufacturers and exporters.',
+// Helper to get country name from ISO code
+const getCountryName = (countryCode) => {
+    if (!countryCode) return 'Global';
+    const country = COUNTRIES.find(c => c.value === countryCode);
+    if (country) {
+        return country.label.replace(/^[\u{1F1E0}-\u{1F1FF}]{2}\s*/u, '').trim();
+    }
+    return countryCode;
 };
 
+// Default companies - country is ISO code
 const COMPANIES = [
-    { name: 'EuroLogistics GmbH', country: 'Germany', flag: '🇩🇪', type: 'Logistics', logo: 'EL' },
-    { name: 'AsiaTech Mfg', country: 'China', flag: '🇨🇳', type: 'Electronics', logo: 'AT' },
-    { name: 'Anatolia Textile', country: 'Turkey', flag: '🇹🇷', type: 'Textile', logo: 'AX' },
-    { name: 'Royal Steel Industries', country: 'UK', flag: '🇬🇧', type: 'Industrial', logo: 'RS' },
-    { name: 'Koto Automotive Parts', country: 'Japan', flag: '🇯🇵', type: 'Automotive', logo: 'KA' },
-    { name: 'Brasilia Coffee Exp.', country: 'Brazil', flag: '🇧🇷', type: 'Food', logo: 'BC' },
-    { name: 'Nordic Supply Co.', country: 'Sweden', flag: '🇸🇪', type: 'Materials', logo: 'NS' },
-    { name: 'US Polymers Inc.', country: 'USA', flag: '🇺🇸', type: 'Chemical', logo: 'UP' },
+    { name: 'EuroLogistics GmbH', country: 'DE', type: 'Logistics', logo: 'EL' },
+    { name: 'AsiaTech Mfg', country: 'CN', type: 'Electronics', logo: 'AT' },
+    { name: 'Anatolia Textile', country: 'TR', type: 'Textile', logo: 'AX' },
+    { name: 'Royal Steel Industries', country: 'GB', type: 'Industrial', logo: 'RS' },
+    { name: 'Koto Automotive Parts', country: 'JP', type: 'Automotive', logo: 'KA' },
+    { name: 'Brasilia Coffee Exp.', country: 'BR', type: 'Food', logo: 'BC' },
+    { name: 'Nordic Supply Co.', country: 'SE', type: 'Materials', logo: 'NS' },
+    { name: 'US Polymers Inc.', country: 'US', type: 'Chemical', logo: 'UP' },
 ];
 
 export default function CompaniesPage() {
@@ -54,8 +64,8 @@ export default function CompaniesPage() {
                             <h3 className="text-xl font-bold mb-1 truncate">{company.name}</h3>
 
                             <div className="flex items-center gap-2 text-sm text-[var(--color-text-secondary)] mb-4">
-                                <span className="text-lg">{company.flag}</span>
-                                <span>{company.country}</span>
+                                <CountryFlag countryCode={company.country} size={20} />
+                                <span>{getCountryName(company.country)}</span>
                                 <span className="w-1 h-1 bg-gray-500 rounded-full mx-1"></span>
                                 <span className="text-[var(--color-primary)]">{company.type}</span>
                             </div>

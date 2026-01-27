@@ -23,6 +23,7 @@ export function ProductForm({ product, onSubmit, onCancel, userId }) {
   const { categories, loading: categoriesLoading } = useCategories();
   const [imageFiles, setImageFiles] = useState([]);
   const [imagePreviews, setImagePreviews] = useState(product?.images || []);
+  const [imageLoadingCount, setImageLoadingCount] = useState(0); // Track how many images are loading
   const [submitting, setSubmitting] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
 
@@ -85,11 +86,17 @@ export function ProductForm({ product, onSubmit, onCancel, userId }) {
     if (validFiles.length === 0) return;
 
     setImageFiles([...imageFiles, ...validFiles]);
+    setImageLoadingCount((prev) => prev + validFiles.length);
 
     validFiles.forEach((file) => {
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreviews((prev) => [...prev, reader.result]);
+        setImageLoadingCount((prev) => prev - 1);
+      };
+      reader.onerror = () => {
+        toast.error(`Failed to load ${file.name}`);
+        setImageLoadingCount((prev) => prev - 1);
       };
       reader.readAsDataURL(file);
     });
@@ -328,7 +335,7 @@ export function ProductForm({ product, onSubmit, onCancel, userId }) {
         </label>
 
         {/* Preview */}
-        {imagePreviews.length > 0 && (
+        {(imagePreviews.length > 0 || imageLoadingCount > 0) && (
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
             {imagePreviews.map((preview, index) => (
               <div key={index} className="relative group">
@@ -345,6 +352,15 @@ export function ProductForm({ product, onSubmit, onCancel, userId }) {
                 >
                   ×
                 </button>
+              </div>
+            ))}
+            {/* Loading placeholders for images being processed */}
+            {[...Array(imageLoadingCount)].map((_, index) => (
+              <div key={`loading-${index}`} className="relative w-full h-24 rounded-lg border-2 border-dashed border-[#D4AF37] bg-[rgba(212,175,55,0.1)] flex items-center justify-center">
+                <div className="flex flex-col items-center gap-1">
+                  <div className="w-6 h-6 border-2 border-[#D4AF37] border-t-transparent rounded-full animate-spin"></div>
+                  <span className="text-xs text-[#D4AF37]">Loading...</span>
+                </div>
               </div>
             ))}
           </div>
@@ -406,10 +422,15 @@ export function ProductForm({ product, onSubmit, onCancel, userId }) {
 
       {/* Actions */}
       <div className="flex gap-3 pt-4">
-        <Button type="submit" disabled={submitting}>
-          {submitting ? 'Saving...' : isEditing ? 'Update Product' : 'Create Product'}
+        <Button type="submit" disabled={submitting || imageLoadingCount > 0}>
+          {submitting ? (
+            <span className="flex items-center gap-2">
+              <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+              Uploading...
+            </span>
+          ) : isEditing ? 'Update Product' : 'Create Product'}
         </Button>
-        <Button type="button" variant="secondary" onClick={onCancel} disabled={submitting}>
+        <Button type="button" variant="secondary" onClick={onCancel} disabled={submitting || imageLoadingCount > 0}>
           Cancel
         </Button>
       </div>

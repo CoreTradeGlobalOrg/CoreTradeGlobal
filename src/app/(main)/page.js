@@ -8,7 +8,6 @@
 
 'use client';
 
-import './homepage.css';
 import { HeroSection } from '@/presentation/components/homepage/Hero/HeroSection';
 import { FeaturedProducts } from '@/presentation/components/homepage/Products/FeaturedProducts';
 import { FeaturedRFQs } from '@/presentation/components/homepage/RFQs/FeaturedRFQs';

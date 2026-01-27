@@ -7,8 +7,8 @@
 
 import { NextResponse } from 'next/server';
 
-// Routes that require authentication
-const protectedRoutes = ['/dashboard', '/admin', '/products', '/requests', '/messages'];
+// Routes that require authentication (admin only now - products/requests are public with view limits)
+const protectedRoutes = ['/dashboard', '/admin', '/messages'];
 
 // Routes only for guests (redirects to dashboard if already logged in)
 const guestOnlyRoutes = ['/login', '/register'];

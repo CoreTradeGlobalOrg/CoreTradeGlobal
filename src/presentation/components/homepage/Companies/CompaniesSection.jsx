@@ -10,18 +10,19 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { container } from '@/core/di/container';
+import { CountryFlag } from '@/presentation/components/common/CountryFlag/CountryFlag';
+import { COUNTRIES } from '@/core/constants/countries';
 
-// Default companies for initial display
-// Default companies matching/implied by anasyf
+// Default companies for initial display (country = ISO code)
 const DEFAULT_COMPANIES = [
-  { id: '1', companyName: 'EuroLogistics GmbH', country: 'Germany', countryEmoji: '🇩🇪' },
-  { id: '2', companyName: 'Ankara Marble Export', country: 'Turkey', countryEmoji: '🇹🇷' },
-  { id: '3', companyName: 'Shanghai Silk Co.', country: 'China', countryEmoji: '🇨🇳' },
-  { id: '4', companyName: 'Tuscany Olive Oils', country: 'Italy', countryEmoji: '🇮🇹' },
-  { id: '5', companyName: 'Seoul Solar Tech', country: 'S. Korea', countryEmoji: '🇰🇷' },
-  { id: '6', companyName: 'Valencia Ceramics', country: 'Spain', countryEmoji: '🇪🇸' },
-  { id: '7', companyName: 'Kyiv Steel Works', country: 'Ukraine', countryEmoji: '🇺🇦' },
-  { id: '8', companyName: 'Mumbai Textiles', country: 'India', countryEmoji: '🇮🇳' },
+  { id: '1', companyName: 'EuroLogistics GmbH', country: 'DE' },
+  { id: '2', companyName: 'Ankara Marble Export', country: 'TR' },
+  { id: '3', companyName: 'Shanghai Silk Co.', country: 'CN' },
+  { id: '4', companyName: 'Tuscany Olive Oils', country: 'IT' },
+  { id: '5', companyName: 'Seoul Solar Tech', country: 'KR' },
+  { id: '6', companyName: 'Valencia Ceramics', country: 'ES' },
+  { id: '7', companyName: 'Kyiv Steel Works', country: 'UA' },
+  { id: '8', companyName: 'Mumbai Textiles', country: 'IN' },
 ];
 
 // Get abbreviation from company name
@@ -34,24 +35,17 @@ const getAbbreviation = (name) => {
   return name.substring(0, 2).toUpperCase();
 };
 
-// Helper to get flag from country name
-import { COUNTRIES } from '@/core/constants/countries';
+// Helper to get country name from ISO code
+const getCountryName = (countryCode) => {
+  if (!countryCode) return 'Global';
 
-const getCountryFlag = (countryName) => {
-  if (!countryName) return '🌍';
-  // Try to find by exact label match first, then partial
-  const found = COUNTRIES.find(c => c.label.toLowerCase().includes(countryName.toLowerCase()));
+  const found = COUNTRIES.find(c => c.value === countryCode);
   if (found) {
-    return found.label.split(' ')[0]; // Extract emoji
+    // Remove emoji from label
+    return found.label.replace(/^[\u{1F1E0}-\u{1F1FF}]{2}\s*/u, '').trim();
   }
-  // Fallback map for common ones if not in COUNTRIES or strictly named
-  const map = {
-    'Germany': '🇩🇪', 'Turkey': '🇹🇷', 'China': '🇨🇳', 'Italy': '🇮🇹',
-    'USA': '🇺🇸', 'UK': '🇬🇧', 'Japan': '🇯🇵', 'France': '🇫🇷',
-    'Spain': '🇪🇸', 'Ukraine': '🇺🇦', 'India': '🇮🇳', 'S. Korea': '🇰🇷',
-    'South Korea': '🇰🇷', 'Poland': '🇵🇱', 'Egypt': '🇪🇬', 'South Africa': '🇿🇦'
-  };
-  return map[countryName] || '🌍';
+
+  return countryCode; // Return code as fallback
 };
 
 export function CompaniesSection() {
@@ -73,12 +67,8 @@ export function CompaniesSection() {
           });
 
           if (sorted.length > 0) {
-            // Map fetched companies to include emoji
-            const enhanced = sorted.slice(0, 8).map(c => ({
-              ...c,
-              countryEmoji: c.countryEmoji || getCountryFlag(c.country)
-            }));
-            setCompanies(enhanced);
+            // country field is already ISO code (e.g., "TR")
+            setCompanies(sorted.slice(0, 8));
           }
         }
       } catch (error) {
@@ -129,9 +119,9 @@ export function CompaniesSection() {
                 <div className="comp-logo">{getAbbreviation(company.companyName)}</div>
                 <div className="comp-info">
                   <div className="comp-name">{company.companyName}</div>
-                  <div className="comp-meta">
-                    <span className="text-lg mr-1">{company.countryEmoji || getCountryFlag(company.country)}</span>
-                    <span>{company.country || 'Global'}</span>
+                  <div className="comp-meta flex items-center gap-1.5">
+                    <CountryFlag countryCode={company.country} size={18} />
+                    <span>{getCountryName(company.country)}</span>
                   </div>
                 </div>
               </Link>

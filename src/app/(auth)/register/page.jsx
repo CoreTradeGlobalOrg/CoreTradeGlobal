@@ -5,6 +5,7 @@
  * Public page - no authentication required
  */
 
+import { Suspense } from 'react';
 import { RegisterForm } from '@/presentation/components/features/auth/RegisterForm/RegisterForm';
 
 export const metadata = {
@@ -14,14 +15,8 @@ export const metadata = {
 
 export default function RegisterPage() {
   return (
-    <div className="max-w-3xl mx-auto">
-      <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold text-slate-900">Create Your Account</h1>
-        <p className="text-slate-600 mt-2">
-          Join CoreTradeGlobal B2B Platform
-        </p>
-      </div>
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-radial-auth"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#D4AF37]"></div></div>}>
       <RegisterForm />
-    </div>
+    </Suspense>
   );
 }

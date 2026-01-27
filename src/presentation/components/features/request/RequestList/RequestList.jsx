@@ -11,20 +11,16 @@ import Link from 'next/link';
 import { FileText, MoreVertical, Edit, Trash2, CheckCircle, XCircle } from 'lucide-react';
 import { useState } from 'react';
 import { COUNTRIES } from '@/core/constants/countries';
+import { CountryFlag } from '@/presentation/components/common/CountryFlag/CountryFlag';
 
-// Helper to get flag and name
-const getCountryInfo = (countryValue) => {
-  if (!countryValue) return { flag: '🌍', name: 'Global' };
-  const country = COUNTRIES.find(c =>
-    c.value === countryValue ||
-    c.label.toLowerCase().includes(countryValue.toLowerCase())
-  );
+// Helper to get country name from ISO code
+const getCountryName = (countryCode) => {
+  if (!countryCode) return 'Global';
+  const country = COUNTRIES.find(c => c.value === countryCode);
   if (country) {
-    const flag = country.label.split(' ')[0];
-    const name = country.label.substring(flag.length + 1);
-    return { flag, name };
+    return country.label.replace(/^[\u{1F1E0}-\u{1F1FF}]{2}\s*/u, '').trim();
   }
-  return { flag: '🌍', name: countryValue };
+  return countryCode;
 };
 
 export function RequestList({ requests = [], loading, isOwnProfile, onEdit, onDelete, onClose, onReopen }) {
@@ -64,7 +60,7 @@ export function RequestList({ requests = [], loading, isOwnProfile, onEdit, onDe
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" onClick={() => setActiveMenu(null)}>
       {requests.map((request) => {
-        const countryInfo = getCountryInfo(request.targetCountry || request.country);
+        const countryCode = request.targetCountry || request.country;
 
         return (
           <div
@@ -149,8 +145,8 @@ export function RequestList({ requests = [], loading, isOwnProfile, onEdit, onDe
 
             <div className="mt-auto pt-4 border-t border-[rgba(255,255,255,0.05)] flex justify-between items-center">
               <div className="flex items-center gap-1.5 text-[13px] text-white">
-                <span>{countryInfo.flag}</span>
-                <span>{countryInfo.name}</span>
+                <CountryFlag countryCode={countryCode} size={16} />
+                <span>{getCountryName(countryCode)}</span>
               </div>
               <Link href={`/request/${request.id}`}>
                 <button className="bg-[rgba(255,255,255,0.1)] text-white hover:bg-white hover:text-black hover:font-bold border-0 px-4 py-2 rounded-full text-[13px] font-medium transition-all">

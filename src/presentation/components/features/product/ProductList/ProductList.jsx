@@ -9,20 +9,45 @@
 
 import Link from 'next/link';
 import { Package, MoreVertical, Edit, Trash2, Eye, EyeOff } from 'lucide-react';
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { COUNTRIES } from '@/core/constants/countries';
+import { CountryFlag } from '@/presentation/components/common/CountryFlag/CountryFlag';
 
-// Helper to get flag
-const getCountryFlag = (countryValue) => {
-  if (!countryValue) return '🌍';
-  const country = COUNTRIES.find(c =>
-    c.value === countryValue ||
-    c.label.toLowerCase().includes(countryValue.toLowerCase())
-  );
-  if (country) {
-    return country.label.split(' ')[0];
+// Individual product card with image loading state
+const ProductCardImage = memo(function ProductCardImage({ src, alt, inactive }) {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  if (!src || error) {
+    return <div className="text-4xl">📦</div>;
   }
-  return '🌍';
+
+  return (
+    <>
+      {loading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-[#1A283B] z-10">
+          <div className="w-8 h-8 border-2 border-[#D4AF37] border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      )}
+      <img
+        src={src}
+        alt={alt}
+        className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 ${loading ? 'opacity-0' : 'opacity-100'} ${inactive ? 'opacity-50 grayscale' : ''}`}
+        onLoad={() => setLoading(false)}
+        onError={() => { setLoading(false); setError(true); }}
+      />
+    </>
+  );
+});
+
+// Helper to get country name from ISO code
+const getCountryName = (countryCode) => {
+  if (!countryCode) return 'Global';
+  const country = COUNTRIES.find(c => c.value === countryCode);
+  if (country) {
+    return country.label.replace(/^[\u{1F1E0}-\u{1F1FF}]{2}\s*/u, '').trim();
+  }
+  return countryCode;
 };
 
 // Map codes to symbols
@@ -141,15 +166,11 @@ export function ProductList({ products = [], loading, isOwnProfile, onEdit, onDe
             <Link href={`/product/${product.id}`} className="block h-full flex flex-col">
               {/* Image Area */}
               <div className="aspect-[4/3] w-full bg-[#1A283B] rounded-xl mb-4 overflow-hidden relative flex items-center justify-center">
-                {product.images && product.images[0] ? (
-                  <img
-                    src={product.images[0]}
-                    alt={product.name}
-                    className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 ${product.status !== 'active' && isOwnProfile ? 'opacity-50 grayscale' : ''}`}
-                  />
-                ) : (
-                  <div className="text-4xl">📦</div>
-                )}
+                <ProductCardImage
+                  src={product.images?.[0]}
+                  alt={product.name}
+                  inactive={product.status !== 'active' && isOwnProfile}
+                />
 
                 {/* Status Badge */}
                 {isOwnProfile && product.status !== 'active' && (
@@ -166,8 +187,8 @@ export function ProductList({ products = [], loading, isOwnProfile, onEdit, onDe
               {/* Content */}
               <div className="flex flex-col flex-1">
                 <div className="flex items-center gap-2 mb-2 text-[#A0A0A0] text-sm">
-                  <span>{getCountryFlag(product.country)}</span>
-                  <span>{product.country || 'Global'}</span>
+                  <CountryFlag countryCode={product.country} size={16} />
+                  <span>{getCountryName(product.country)}</span>
                 </div>
 
                 <h3 className="text-lg font-bold text-white mb-2 leading-tight line-clamp-2 min-h-[44px]">

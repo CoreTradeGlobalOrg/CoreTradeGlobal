@@ -687,11 +687,11 @@ html {
     height: 10px;
     background: #FF4444;
     border-radius: 50%;
-    animation: pulse 2s infinite;
+    animation: live-feed-pulse 2s infinite;
     box-shadow: 0 0 10px #FF4444;
 }
 
-@keyframes pulse {
+@keyframes live-feed-pulse {
 
     0%,
     100% {

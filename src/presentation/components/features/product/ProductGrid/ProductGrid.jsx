@@ -12,18 +12,16 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { container } from '@/core/di/container';
 import { COUNTRIES } from '@/core/constants/countries';
+import { CountryFlag } from '@/presentation/components/common/CountryFlag/CountryFlag';
 
-// Helper to get flag
-const getCountryFlag = (countryValue) => {
-    if (!countryValue) return '🌍';
-    const country = COUNTRIES.find(c =>
-        c.value === countryValue ||
-        c.label.toLowerCase().includes(countryValue.toLowerCase())
-    );
+// Helper to get country name from ISO code
+const getCountryName = (countryCode) => {
+    if (!countryCode) return 'Global';
+    const country = COUNTRIES.find(c => c.value === countryCode);
     if (country) {
-        return country.label.split(' ')[0];
+        return country.label.replace(/^[\u{1F1E0}-\u{1F1FF}]{2}\s*/u, '').trim();
     }
-    return '🌍';
+    return countryCode;
 };
 
 const DEFAULT_PRODUCTS = [
@@ -236,10 +234,12 @@ function ProductCard({ product }) {
 
             {/* Content */}
             <div className="flex flex-col flex-1">
-                <div className="flex items-center gap-2 mb-2 text-[#A0A0A0] text-sm">
-                    <span>{getCountryFlag(product.country)}</span>
-                    <span>{product.country || 'Global'}</span>
-                </div>
+                {product.country && (
+                    <div className="flex items-center gap-2 mb-2 text-[#A0A0A0] text-sm">
+                        <CountryFlag countryCode={product.country} size={16} />
+                        <span>{getCountryName(product.country)}</span>
+                    </div>
+                )}
 
                 <h3 className="text-lg font-bold text-white mb-2 leading-tight line-clamp-2 min-h-[44px]">
                     {product.name}

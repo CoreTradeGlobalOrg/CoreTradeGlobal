@@ -7,21 +7,31 @@
 
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, memo } from 'react';
 import Link from 'next/link';
 import { container } from '@/core/di/container';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { COUNTRIES } from '@/core/constants/countries';
+import { CountryFlag } from '@/presentation/components/common/CountryFlag/CountryFlag';
 
-// Default products for initial display
-// Exact products from anasyf/products.html
+// Helper to get country name from ISO code
+const getCountryName = (countryCode) => {
+  if (!countryCode) return 'Global';
+  const country = COUNTRIES.find(c => c.value === countryCode);
+  if (country) {
+    return country.label.replace(/^[\u{1F1E0}-\u{1F1FF}]{2}\s*/u, '').trim();
+  }
+  return countryCode;
+};
+
+// Default products for initial display - country is ISO code
 const DEFAULT_PRODUCTS = [
   {
     id: '1',
     name: 'Luxury Marble Block (Afyon White)',
     description: 'Premium quality white marble blocks suitable for high-end flooring and architectural projects.',
-    country: 'Turkey',
-    countryFlag: '🇹🇷',
-    imageUrl: '', // Will use default placeholder logic if empty, or we could map to a local asset if available
+    country: 'TR',
+    imageUrl: '',
     price: '450',
     currency: '$',
     unit: '/ Ton',
@@ -31,8 +41,7 @@ const DEFAULT_PRODUCTS = [
     id: '2',
     name: '5-Axis CNC Milling Machine',
     description: 'High precision industrial milling machine for complex parts manufacturing.',
-    country: 'Germany',
-    countryFlag: '🇩🇪',
+    country: 'DE',
     imageUrl: '',
     price: '125,000',
     currency: '$',
@@ -43,8 +52,7 @@ const DEFAULT_PRODUCTS = [
     id: '3',
     name: 'Raw Silk Fabric Rolls',
     description: '100% natural raw silk, ideal for luxury garment production. Available in various weights.',
-    country: 'China',
-    countryFlag: '🇨🇳',
+    country: 'CN',
     imageUrl: '',
     price: '45',
     currency: '$',
@@ -55,8 +63,7 @@ const DEFAULT_PRODUCTS = [
     id: '4',
     name: 'Extra Virgin Olive Oil (500L)',
     description: 'Cold-pressed organic olive oil from Tuscany region. Bulk packaging for distributors.',
-    country: 'Italy',
-    countryFlag: '🇮🇹',
+    country: 'IT',
     imageUrl: '',
     price: '8.50',
     currency: '$',
@@ -67,8 +74,7 @@ const DEFAULT_PRODUCTS = [
     id: '5',
     name: 'Monocrystalline Solar Panels 550W',
     description: 'High efficiency PV modules for commercial and residential solar installations.',
-    country: 'S. Korea',
-    countryFlag: '🇰🇷',
+    country: 'KR',
     imageUrl: '',
     price: '0.28',
     currency: '$',
@@ -79,8 +85,7 @@ const DEFAULT_PRODUCTS = [
     id: '6',
     name: 'Porcelain Ceramic Tiles 60x120',
     description: 'Modern minimalist design, anti-slip surface for indoor and outdoor use.',
-    country: 'Spain',
-    countryFlag: '🇪🇸',
+    country: 'ES',
     imageUrl: '',
     price: '22',
     currency: '$',
@@ -91,8 +96,7 @@ const DEFAULT_PRODUCTS = [
     id: '7',
     name: 'Seamless Steel Pipes',
     description: 'Heavy duty seamless pipes for oil and gas industry applications. API 5L certified.',
-    country: 'Ukraine',
-    countryFlag: '🇺🇦',
+    country: 'UA',
     imageUrl: '',
     price: '950',
     currency: '$',
@@ -103,8 +107,7 @@ const DEFAULT_PRODUCTS = [
     id: '8',
     name: 'Organic Cotton Yarn 30/1',
     description: 'Combed organic cotton yarn for high quality knitting and weaving.',
-    country: 'India',
-    countryFlag: '🇮🇳',
+    country: 'IN',
     imageUrl: '',
     price: '4.20',
     currency: '$',
@@ -144,10 +147,37 @@ const CURRENCY_SYMBOLS = {
   'ZAR': 'R'
 };
 
+// Image component with loading state
+const ProductCardImage = memo(function ProductCardImage({ src, alt }) {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  if (!src || error) {
+    return <div className="text-6xl">📦</div>;
+  }
+
+  return (
+    <>
+      {loading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-[#1A283B] z-10">
+          <div className="w-8 h-8 border-2 border-[#D4AF37] border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      )}
+      <img
+        src={src}
+        alt={alt}
+        className={`w-full h-full object-cover transition-opacity duration-300 ${loading ? 'opacity-0' : 'opacity-100'}`}
+        onLoad={() => setLoading(false)}
+        onError={() => { setLoading(false); setError(true); }}
+      />
+    </>
+  );
+});
+
 function ProductCard({ product }) {
   // Get first image from images array
   const imageUrl = product.images?.[0] || product.imageUrl;
-  const countryEmoji = product.countryFlag || (product.origin === 'Turkey' ? '🇹🇷' : product.origin === 'Germany' ? '🇩🇪' : '🌍');
+  const countryCode = product.country || product.origin || '';
 
   // Resolve Currency Symbol
   const code = product.currency || 'USD';
@@ -156,19 +186,15 @@ function ProductCard({ product }) {
   return (
     <Link href={`/product/${product.id}`} className="product-card block no-underline text-inherit hover:no-underline">
       {/* Product Image */}
-      <div className="product-card-image">
-        {imageUrl ? (
-          <img src={imageUrl} alt={product.name} />
-        ) : (
-          <div className="text-6xl">📦</div>
-        )}
+      <div className="product-card-image relative">
+        <ProductCardImage src={imageUrl} alt={product.name} />
       </div>
 
       {/* Product Content */}
       <div className="product-card-content">
         <div className="flex items-center gap-2 mb-2 text-sm text-[var(--color-text-secondary)]">
-          <span>{countryEmoji}</span>
-          <span>{product.country || product.origin || 'Global'}</span>
+          <CountryFlag countryCode={countryCode} size={16} />
+          <span>{getCountryName(countryCode)}</span>
         </div>
 
         <h3 className="product-card-name">{product.name}</h3>

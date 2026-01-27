@@ -85,6 +85,7 @@ function ProfileContent() {
   const [about, setAbout] = useState('');
   const [logoFile, setLogoFile] = useState(null);
   const [logoPreview, setLogoPreview] = useState(null);
+  const [logoLoading, setLogoLoading] = useState(false);
 
   // Password form state
   const [currentPassword, setCurrentPassword] = useState('');
@@ -175,9 +176,15 @@ function ProfileContent() {
         return;
       }
       setLogoFile(file);
+      setLogoLoading(true);
       const reader = new FileReader();
       reader.onloadend = () => {
         setLogoPreview(reader.result);
+        setLogoLoading(false);
+      };
+      reader.onerror = () => {
+        toast.error('Failed to load image');
+        setLogoLoading(false);
       };
       reader.readAsDataURL(file);
     }
@@ -288,7 +295,7 @@ function ProfileContent() {
   const handleLogout = async () => {
     try {
       await logout();
-      router.push('/login');
+      router.push('/');
     } catch (error) {
       toast.error('Failed to logout');
     }
@@ -575,7 +582,14 @@ function ProfileContent() {
                     Company Logo
                   </label>
 
-                  {logoPreview ? (
+                  {logoLoading ? (
+                    <div className="w-24 h-24 rounded-lg border-2 border-dashed border-[#D4AF37] bg-[rgba(212,175,55,0.1)] flex items-center justify-center">
+                      <div className="flex flex-col items-center gap-1">
+                        <div className="w-6 h-6 border-2 border-[#D4AF37] border-t-transparent rounded-full animate-spin"></div>
+                        <span className="text-xs text-[#D4AF37]">Loading...</span>
+                      </div>
+                    </div>
+                  ) : logoPreview ? (
                     <div className="flex items-center gap-4">
                       <img
                         src={logoPreview}

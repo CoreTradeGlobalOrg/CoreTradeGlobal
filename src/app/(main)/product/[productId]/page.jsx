@@ -2,20 +2,20 @@
  * Product Detail Page
  *
  * URL: /product/[productId]
- * Protected route - requires authentication
+ * Public with view limits - guests can view up to 3 products
  *
  * Features:
  * - View product details with all information
  * - Image carousel
  * - Seller information
- * - Edit/Delete for own products
+ * - Edit/Delete for own products (authenticated only)
  */
 
 'use client';
 
 import { useAuth } from '@/presentation/contexts/AuthContext';
 import { useRouter, useParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, memo } from 'react';
 import { useProduct } from '@/presentation/hooks/product/useProduct';
 import { useCategories } from '@/presentation/hooks/category/useCategories';
 import { useUpdateProduct } from '@/presentation/hooks/product/useUpdateProduct';
@@ -23,12 +23,61 @@ import { useDeleteProduct } from '@/presentation/hooks/product/useDeleteProduct'
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { ProductForm } from '@/presentation/components/features/product/ProductForm/ProductForm';
+import { ViewLimitGuard } from '@/presentation/components/common/ViewLimitGuard/ViewLimitGuard';
 import { ChevronLeft, ChevronRight, ArrowLeft, Pencil, Trash2, Power, User } from 'lucide-react';
 import { container } from '@/core/di/container';
 import toast from 'react-hot-toast';
 
+// Thumbnail image with loading state
+const ThumbnailImage = memo(function ThumbnailImage({ src, alt }) {
+  const [loading, setLoading] = useState(true);
+
+  return (
+    <>
+      {loading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-[#1A283B]">
+          <div className="w-4 h-4 border-2 border-[#D4AF37] border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      )}
+      <img
+        src={src}
+        alt={alt}
+        className={`w-full h-full object-cover transition-opacity duration-200 ${loading ? 'opacity-0' : 'opacity-100'}`}
+        onLoad={() => setLoading(false)}
+      />
+    </>
+  );
+});
+
+// Seller avatar with loading state
+const SellerAvatar = memo(function SellerAvatar({ src, alt }) {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  if (!src || error) {
+    return <User className="w-8 h-8" />;
+  }
+
+  return (
+    <>
+      {loading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-[#1A283B]">
+          <div className="w-4 h-4 border-2 border-[#D4AF37] border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      )}
+      <img
+        src={src}
+        alt={alt}
+        className={`w-full h-full object-cover transition-opacity duration-200 ${loading ? 'opacity-0' : 'opacity-100'}`}
+        onLoad={() => setLoading(false)}
+        onError={() => { setLoading(false); setError(true); }}
+      />
+    </>
+  );
+});
+
 export default function ProductDetailPage() {
-  const { user: currentUser, isAuthenticated, loading: authLoading } = useAuth();
+  const { user: currentUser } = useAuth();
   const router = useRouter();
   const params = useParams();
   const productId = params.productId;
@@ -46,13 +95,6 @@ export default function ProductDetailPage() {
   const isOwnProduct = currentUser?.uid === product?.userId;
   const images = product?.images || [];
   const hasImages = images.length > 0;
-
-  // Redirect if not authenticated
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      router.push('/login');
-    }
-  }, [authLoading, isAuthenticated, router]);
 
   // Fetch seller information
   useEffect(() => {
@@ -136,10 +178,10 @@ export default function ProductDetailPage() {
     return category?.label || 'Unknown Category';
   };
 
-  if (authLoading || productLoading) {
+  if (productLoading) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+      <div className="flex justify-center items-center min-h-screen bg-[#0a1628]">
+        <div className="w-12 h-12 border-4 border-[#D4AF37] border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -159,6 +201,7 @@ export default function ProductDetailPage() {
   }
 
   return (
+    <ViewLimitGuard itemId={productId} itemType="product">
     <div className="min-h-screen pt-[120px] pb-20 bg-radial-navy">
       <div className="max-w-[1200px] mx-auto px-4">
         {/* Back Button */}
@@ -241,7 +284,7 @@ export default function ProductDetailPage() {
                       : 'border-white/10 hover:border-white/30 opacity-70 hover:opacity-100'
                       }`}
                   >
-                    <img src={img} alt={`Thumbnail ${index + 1}`} className="w-full h-full object-cover" />
+                    <ThumbnailImage src={img} alt={`Thumbnail ${index + 1}`} />
                     {index === currentImageIndex && (
                       <div className="absolute inset-0 bg-[#D4AF37]/10" />
                     )}
@@ -310,16 +353,11 @@ export default function ProductDetailPage() {
               <div className="glass-card p-6">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#1A283B] to-[#0F1B2B] border border-white/10 flex items-center justify-center text-[#D4AF37] shadow-lg overflow-hidden">
-                      {(seller.logoURL || seller.photoURL || seller.image || seller.avatar) ? (
-                        <img
-                          src={seller.logoURL || seller.photoURL || seller.image || seller.avatar}
-                          alt={seller.companyName || seller.displayName}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <User className="w-8 h-8" />
-                      )}
+                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#1A283B] to-[#0F1B2B] border border-white/10 flex items-center justify-center text-[#D4AF37] shadow-lg overflow-hidden relative">
+                      <SellerAvatar
+                        src={seller.logoURL || seller.photoURL || seller.image || seller.avatar}
+                        alt={seller.companyName || seller.displayName}
+                      />
                     </div>
                     <div>
                       <div className="text-xs text-gray-500 uppercase tracking-widest mb-1">Seller</div>
@@ -387,5 +425,6 @@ export default function ProductDetailPage() {
         </Modal>
       </div>
     </div>
+    </ViewLimitGuard>
   );
 }

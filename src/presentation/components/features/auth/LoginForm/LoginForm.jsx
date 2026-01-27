@@ -9,7 +9,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useLogin } from '@/presentation/hooks/auth/useLogin';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
@@ -20,6 +20,8 @@ export function LoginForm() {
   const [password, setPassword] = useState('');
   const { login, loading, error } = useLogin();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get('redirect');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -35,9 +37,17 @@ export function LoginForm() {
         return;
       }
 
-      // Success - redirect to profile page
+      // Success - redirect to intended page or profile
       toast.success('Login successful!');
-      router.push(`/profile/${user.uid}`);
+
+      // Check localStorage for redirect (from registration flow)
+      const storedRedirect = localStorage.getItem('ctg_auth_redirect');
+      if (storedRedirect) {
+        localStorage.removeItem('ctg_auth_redirect');
+        router.push(storedRedirect);
+      } else {
+        router.push(redirectTo || `/profile/${user.uid}`);
+      }
     } catch (err) {
       console.error('Login failed:', err);
       toast.error(error || 'Login failed. Please check your credentials.');

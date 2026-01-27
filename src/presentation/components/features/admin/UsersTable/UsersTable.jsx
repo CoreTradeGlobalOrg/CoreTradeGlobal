@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
-import { Star, MoreVertical, Check, Ban, Trash2, Eye } from 'lucide-react';
+import { Star, MoreVertical, Check, Ban, Trash2, Eye, Shield } from 'lucide-react';
 import { container } from '@/core/di/container';
 import { COUNTRIES } from '@/core/constants/countries';
 import { useApproveUser } from '@/presentation/hooks/admin/useApproveUser';
@@ -13,6 +13,7 @@ export function UsersTable({ users = [], onRefresh }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterVerified, setFilterVerified] = useState('all'); // 'all', 'verified', 'unverified'
   const [filterApproved, setFilterApproved] = useState('all'); // 'all', 'approved', 'pending'
+  const [filterRole, setFilterRole] = useState('all'); // 'all', 'admin', 'member'
   const [actionLoading, setActionLoading] = useState(null); // Track which user action is loading
   const [activeActionMenu, setActiveActionMenu] = useState(null); // Track open menu
 
@@ -50,6 +51,28 @@ export function UsersTable({ users = [], onRefresh }) {
     } catch (error) {
       console.error('Toggle featured error:', error);
       toast.error('Failed to update featured status');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  // Handle toggle admin role
+  const handleToggleAdmin = async (userId, currentRole, userName) => {
+    const isCurrentlyAdmin = currentRole === 'admin';
+    const newRole = isCurrentlyAdmin ? 'member' : 'admin';
+    const action = isCurrentlyAdmin ? 'remove admin rights from' : 'grant admin rights to';
+
+    if (!confirm(`⚠️ Are you sure you want to ${action} ${userName}?`)) return;
+
+    setActionLoading(userId);
+    try {
+      const userRepository = container.getUserRepository();
+      await userRepository.update(userId, { role: newRole });
+      toast.success(`${userName} is ${isCurrentlyAdmin ? 'no longer an admin' : 'now an admin'}!`);
+      if (onRefresh) onRefresh();
+    } catch (error) {
+      console.error('Toggle admin error:', error);
+      toast.error('Failed to update admin status');
     } finally {
       setActionLoading(null);
     }
@@ -116,7 +139,7 @@ export function UsersTable({ users = [], onRefresh }) {
     });
   };
 
-  // Filter users based on search, verification and approval status
+  // Filter users based on search, verification, approval status and role
   const filteredUsers = users.filter((user) => {
     // Search filter
     const searchLower = searchTerm.toLowerCase();
@@ -139,7 +162,13 @@ export function UsersTable({ users = [], onRefresh }) {
       (filterApproved === 'approved' && user.adminApproved === true) ||
       (filterApproved === 'pending' && user.adminApproved !== true);
 
-    return matchesSearch && matchesVerification && matchesApproval;
+    // Role filter
+    const matchesRole =
+      filterRole === 'all' ||
+      (filterRole === 'admin' && user.role === 'admin') ||
+      (filterRole === 'member' && user.role !== 'admin');
+
+    return matchesSearch && matchesVerification && matchesApproval && matchesRole;
   });
 
   return (
@@ -190,6 +219,17 @@ export function UsersTable({ users = [], onRefresh }) {
               <option value="approved">Admin Approved</option>
               <option value="pending">Pending Approval</option>
             </select>
+
+            {/* Role Filter */}
+            <select
+              value={filterRole}
+              onChange={(e) => setFilterRole(e.target.value)}
+              className="px-4 py-2 bg-[#0F1B2B] border border-[rgba(255,255,255,0.1)] rounded-lg text-white focus:border-[#D4AF37] focus:outline-none cursor-pointer"
+            >
+              <option value="all">All Roles</option>
+              <option value="admin">Admins Only</option>
+              <option value="member">Members Only</option>
+            </select>
           </div>
         </div>
       </div>
@@ -212,7 +252,7 @@ export function UsersTable({ users = [], onRefresh }) {
                 Email Status
               </th>
               <th className="px-6 py-4 text-left text-xs font-bold text-[#A0A0A0] uppercase tracking-wider">
-                Admin Status
+                Status / Role
               </th>
               <th className="px-6 py-4 text-left text-xs font-bold text-[#A0A0A0] uppercase tracking-wider">
                 Registered
@@ -280,21 +320,30 @@ export function UsersTable({ users = [], onRefresh }) {
                     )}
                   </td>
 
-                  {/* Admin Approval Status */}
+                  {/* Admin Approval Status + Role */}
                   <td className="px-6 py-4">
-                    {user.isSuspended ? (
-                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-500/10 text-red-400 border border-red-500/20">
-                        Suspended
-                      </span>
-                    ) : user.adminApproved ? (
-                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-500/10 text-green-400 border border-green-500/20">
-                        Approved
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-orange-500/10 text-orange-400 border border-orange-500/20">
-                        Pending Action
-                      </span>
-                    )}
+                    <div className="flex flex-col gap-1.5">
+                      {/* Admin Badge */}
+                      {user.role === 'admin' && (
+                        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-purple-500/10 text-purple-400 border border-purple-500/20 w-fit">
+                          <Shield size={12} /> Admin
+                        </span>
+                      )}
+                      {/* Status Badge */}
+                      {user.isSuspended ? (
+                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-500/10 text-red-400 border border-red-500/20 w-fit">
+                          Suspended
+                        </span>
+                      ) : user.adminApproved ? (
+                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-500/10 text-green-400 border border-green-500/20 w-fit">
+                          Approved
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-orange-500/10 text-orange-400 border border-orange-500/20 w-fit">
+                          Pending
+                        </span>
+                      )}
+                    </div>
                   </td>
 
                   {/* Registration Date */}
@@ -321,6 +370,7 @@ export function UsersTable({ users = [], onRefresh }) {
                         // Reset immediately by not changing state (value is fixed to "")
 
                         if (value === 'feature') handleAction(handleToggleFeatured, user.id, user.featured, user.displayName);
+                        else if (value === 'admin') handleAction(handleToggleAdmin, user.id, user.role, user.displayName);
                         else if (value === 'approve') handleAction(handleApprove, user.id, user.displayName);
                         else if (value === 'suspend') handleAction(handleSuspend, user.id, user.displayName, user.isSuspended);
                         else if (value === 'profile') router.push(`/profile/${user.id}`);
@@ -333,6 +383,13 @@ export function UsersTable({ users = [], onRefresh }) {
                       {!user.isSuspended && user.adminApproved && (
                         <option value="feature" className="text-black">
                           {user.featured ? 'Unfeature User' : 'Feature User'}
+                        </option>
+                      )}
+
+                      {/* Admin Toggle - Only for approved, non-suspended users */}
+                      {!user.isSuspended && user.adminApproved && (
+                        <option value="admin" className="text-purple-600 font-medium">
+                          {user.role === 'admin' ? '🛡️ Remove Admin' : '🛡️ Make Admin'}
                         </option>
                       )}
 

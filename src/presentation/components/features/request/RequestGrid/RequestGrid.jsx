@@ -12,30 +12,26 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { container } from '@/core/di/container';
 import { COUNTRIES } from '@/core/constants/countries';
+import { CountryFlag } from '@/presentation/components/common/CountryFlag/CountryFlag';
 
-// Helper to get flag and name
-const getCountryInfo = (countryValue) => {
-    if (!countryValue) return { flag: '🌍', name: 'Global' };
-    const country = COUNTRIES.find(c =>
-        c.value === countryValue ||
-        c.label.toLowerCase().includes(countryValue.toLowerCase())
-    );
+// Helper to get country name from ISO code
+const getCountryName = (countryCode) => {
+    if (!countryCode) return 'Global';
+    const country = COUNTRIES.find(c => c.value === countryCode);
     if (country) {
-        const flag = country.label.split(' ')[0];
-        const name = country.label.substring(flag.length + 1);
-        return { flag, name };
+        return country.label.replace(/^[\u{1F1E0}-\u{1F1FF}]{2}\s*/u, '').trim();
     }
-    return { flag: '🌍', name: countryValue };
+    return countryCode;
 };
 
+// Default RFQs - country is ISO code
 const DEFAULT_RFQS = [
     {
         id: '1',
         title: 'Steel Beams H-Profile for Construction Project',
         quantity: '500 Tons',
         deadline: '2 hrs ago',
-        country: 'Germany',
-        countryFlag: '🇩🇪',
+        country: 'DE',
         budget: 'Open',
         badge: 'Urgent',
         description: 'Seeking high-quality H-Profile steel beams for a large scale commercial project in Berlin. Standard DIN 1025.'
@@ -45,8 +41,7 @@ const DEFAULT_RFQS = [
         title: 'Organic Cotton Fabric Rolls',
         quantity: '20,000 Meters',
         deadline: '4 hrs ago',
-        country: 'USA',
-        countryFlag: '🇺🇸',
+        country: 'US',
         budget: '$150k - $200k',
         badge: 'New',
         description: 'Looking for GOTS certified organic cotton fabric manufacturers. Sample required before bulk order.'
@@ -56,8 +51,7 @@ const DEFAULT_RFQS = [
         title: 'Automotive Brake Pads (Ceramic)',
         quantity: '5,000 Sets',
         deadline: '6 hrs ago',
-        country: 'Japan',
-        countryFlag: '🇯🇵',
+        country: 'JP',
         budget: 'Market Price',
         badge: 'New',
         description: 'Distributor seeking OEM standard ceramic brake pads for Japanese car models (Toyota, Honda).'
@@ -67,8 +61,7 @@ const DEFAULT_RFQS = [
         title: 'Bulk Wheat Grain (Hard Red Winter)',
         quantity: '1,000 Tons',
         deadline: '1 day ago',
-        country: 'Egypt',
-        countryFlag: '🇪🇬',
+        country: 'EG',
         budget: '$280/Ton',
         badge: 'Urgent',
         description: 'Immediate requirement for milling grade wheat. CIF Alexandria port. Payment via LC.'
@@ -78,8 +71,7 @@ const DEFAULT_RFQS = [
         title: 'Polypropylene (PP) Granules',
         quantity: '200 Tons',
         deadline: '1 day ago',
-        country: 'Poland',
-        countryFlag: '🇵🇱',
+        country: 'PL',
         budget: 'Negotiable',
         badge: 'New',
         description: 'Injection molding grade PP required for plastic container manufacturing. Monthly recurring order.'
@@ -89,8 +81,7 @@ const DEFAULT_RFQS = [
         title: 'Solar Inverters 5kW Hybrid',
         quantity: '100 Units',
         deadline: '2 days ago',
-        country: 'South Africa',
-        countryFlag: '🇿🇦',
+        country: 'ZA',
         budget: '$50k Total',
         badge: 'New',
         description: 'Looking for reliable suppliers of hybrid solar inverters compatible with lithium batteries.'
@@ -120,12 +111,10 @@ export function RequestGrid({ searchQuery, categoryFilter }) {
                     if (sorted.length > 0) {
                         setRequests(
                             sorted.map((r) => {
-                                const countryInfo = getCountryInfo(r.targetCountry || r.country);
                                 return {
                                     ...r,
                                     title: r.productName || r.title,
-                                    countryFlag: countryInfo.flag,
-                                    country: countryInfo.name,
+                                    country: r.targetCountry || r.country, // ISO code
                                     deadline: r.deadline || 'ASAP',
                                     budget: r.budget || 'Negotiable',
                                 };
@@ -213,8 +202,8 @@ export function RequestGrid({ searchQuery, categoryFilter }) {
 
                     <div className="mt-auto pt-4 border-t border-[rgba(255,255,255,0.05)] flex justify-between items-center">
                         <div className="flex items-center gap-1.5 text-[13px] text-white">
-                            <span>{rfq.countryFlag || '🌍'}</span>
-                            <span>{rfq.country || 'Global'}</span>
+                            <CountryFlag countryCode={rfq.country} size={16} />
+                            <span>{getCountryName(rfq.country)}</span>
                         </div>
                         <Link href={`/request/${rfq.id}`}>
                             <button className="bg-gradient-to-br from-[#3b82f6] to-[#2563eb] text-white border-0 px-5 py-2 rounded-full text-[13px] font-semibold shadow-lg hover:bg-blue-400 hover:-translate-y-0.5 transition-all">Quote Now</button>

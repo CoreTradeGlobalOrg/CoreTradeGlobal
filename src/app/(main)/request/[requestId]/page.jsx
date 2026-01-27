@@ -2,7 +2,7 @@
  * Request Details Page
  *
  * Displays full details of an RFQ.
- * Protected route - UI updated to Dark Theme ("anasyf" style)
+ * Public with view limits - guests can view up to 3 requests
  */
 
 'use client';
@@ -14,12 +14,14 @@ import { container } from '@/core/di/container';
 import { COUNTRIES } from '@/core/constants/countries';
 import Link from 'next/link';
 import { ArrowLeft, Calendar, MapPin, Package, DollarSign, Building } from 'lucide-react';
+import { ViewLimitGuard } from '@/presentation/components/common/ViewLimitGuard/ViewLimitGuard';
+import { CountryFlag } from '@/presentation/components/common/CountryFlag/CountryFlag';
 import toast from 'react-hot-toast';
 
 export default function RequestDetailsPage() {
   const params = useParams();
   const router = useRouter();
-  const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const { isAuthenticated } = useAuth();
 
   const [request, setRequest] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -59,7 +61,7 @@ export default function RequestDetailsPage() {
   }, [params.requestId, router]);
 
   // Loading State
-  if (loading || authLoading) {
+  if (loading) {
     return (
       <div className="min-h-screen pt-[120px] pb-20 px-6 bg-radial-navy flex items-center justify-center">
         <div className="text-center">
@@ -73,20 +75,18 @@ export default function RequestDetailsPage() {
   // Not Found State
   if (!request) return null;
 
-  // Helper to get Country Flag
-  const getCountryInfo = (countryCode) => {
-    if (!countryCode) return { flag: '🌍', name: 'Global' };
-    const country = COUNTRIES.find(c => c.value === countryCode || c.label === countryCode);
+  // Helper to get Country info from ISO code
+  const getCountryName = (countryCode) => {
+    if (!countryCode) return 'Global';
+    const country = COUNTRIES.find(c => c.value === countryCode);
     if (country) {
-      return {
-        flag: country.label.split(' ')[0],
-        name: country.label.substring(country.label.split(' ')[0].length).trim()
-      };
+      return country.label.replace(/^[\u{1F1E0}-\u{1F1FF}]{2}\s*/u, '').trim();
     }
-    return { flag: '🌍', name: countryCode };
+    return countryCode;
   };
 
-  const countryInfo = getCountryInfo(request.targetCountry || request.country);
+  const countryCode = request.targetCountry || request.country;
+  const countryName = getCountryName(countryCode);
 
   const handleQuoteClick = () => {
     if (!isAuthenticated) {
@@ -97,6 +97,7 @@ export default function RequestDetailsPage() {
   };
 
   return (
+    <ViewLimitGuard itemId={params.requestId} itemType="request">
     <main className="min-h-screen pt-[120px] pb-20 px-6 bg-radial-navy">
       <div className="max-w-4xl mx-auto">
         {/* Back Button */}
@@ -146,7 +147,8 @@ export default function RequestDetailsPage() {
                   <span className="block text-xs text-[#A0A0A0] mb-1">Destination</span>
                   <div className="flex items-center gap-2 text-white font-semibold">
                     <MapPin size={16} className="text-[#D4AF37]" />
-                    {countryInfo.flag} {countryInfo.name}
+                    <CountryFlag countryCode={countryCode} size={18} />
+                    {countryName}
                   </div>
                 </div>
               </div>
@@ -197,7 +199,8 @@ export default function RequestDetailsPage() {
                 <div>
                   <p className="font-bold text-white">{author?.companyName || 'Verified Buyer'}</p>
                   <p className="text-xs text-[#A0A0A0] flex items-center gap-1 mt-1">
-                    {countryInfo.flag} {countryInfo.name}
+                    <CountryFlag countryCode={countryCode} size={14} />
+                    {countryName}
                   </p>
                 </div>
               </div>
@@ -250,5 +253,6 @@ export default function RequestDetailsPage() {
         </div>
       </div>
     </main>
+    </ViewLimitGuard>
   );
 }

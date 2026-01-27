@@ -12,37 +12,28 @@ import Link from 'next/link';
 import { container } from '@/core/di/container';
 import { ChevronLeft, ChevronRight, FileText } from 'lucide-react';
 import { COUNTRIES } from '@/core/constants/countries';
+import { CountryFlag } from '@/presentation/components/common/CountryFlag/CountryFlag';
 
-// Get country info from COUNTRIES constant
-const getCountryInfo = (countryValue) => {
-  if (!countryValue) return { flag: '🌍', name: 'Global' };
+// Helper to get country name from ISO code
+const getCountryName = (countryCode) => {
+  if (!countryCode) return 'Global';
 
-  // Find by value (ISO code like "TR") or by label match
-  const country = COUNTRIES.find(c =>
-    c.value === countryValue ||
-    c.label.toLowerCase().includes(countryValue.toLowerCase())
-  );
-
-  if (country) {
-    // Extract emoji (first characters before space)
-    const flag = country.label.split(' ')[0];
-    const name = country.label.substring(flag.length + 1);
-    return { flag, name };
+  const found = COUNTRIES.find(c => c.value === countryCode);
+  if (found) {
+    return found.label.replace(/^[\u{1F1E0}-\u{1F1FF}]{2}\s*/u, '').trim();
   }
 
-  return { flag: '🌍', name: countryValue };
+  return countryCode;
 };
 
-// Default RFQs for initial display
-// Exact RFQs from anasyf/RFQ.html
+// Default RFQs for initial display (country = ISO code)
 const DEFAULT_RFQS = [
   {
     id: '1',
     title: 'Steel Beams H-Profile for Construction Project',
     quantity: '500 Tons',
-    deadline: '2 hrs ago', // Using 'posted' time as deadline/relative time for now to match UI text
-    country: 'Germany',
-    countryFlag: '🇩🇪',
+    deadline: '2 hrs ago',
+    country: 'DE',
     budget: 'Open',
     badge: 'Urgent',
     description: 'Seeking high-quality H-Profile steel beams for a large scale commercial project in Berlin. Standard DIN 1025.'
@@ -52,8 +43,7 @@ const DEFAULT_RFQS = [
     title: 'Organic Cotton Fabric Rolls',
     quantity: '20,000 Meters',
     deadline: '4 hrs ago',
-    country: 'USA',
-    countryFlag: '🇺🇸',
+    country: 'US',
     budget: '$150k - $200k',
     badge: 'New',
     description: 'Looking for GOTS certified organic cotton fabric manufacturers. Sample required before bulk order.'
@@ -63,8 +53,7 @@ const DEFAULT_RFQS = [
     title: 'Automotive Brake Pads (Ceramic)',
     quantity: '5,000 Sets',
     deadline: '6 hrs ago',
-    country: 'Japan',
-    countryFlag: '🇯🇵',
+    country: 'JP',
     budget: 'Market Price',
     badge: 'New',
     description: 'Distributor seeking OEM standard ceramic brake pads for Japanese car models (Toyota, Honda).'
@@ -74,8 +63,7 @@ const DEFAULT_RFQS = [
     title: 'Bulk Wheat Grain (Hard Red Winter)',
     quantity: '1,000 Tons',
     deadline: '1 day ago',
-    country: 'Egypt',
-    countryFlag: '🇪🇬',
+    country: 'EG',
     budget: '$280/Ton',
     badge: 'Urgent',
     description: 'Immediate requirement for milling grade wheat. CIF Alexandria port. Payment via LC.'
@@ -85,8 +73,7 @@ const DEFAULT_RFQS = [
     title: 'Polypropylene (PP) Granules',
     quantity: '200 Tons',
     deadline: '1 day ago',
-    country: 'Poland',
-    countryFlag: '🇵🇱',
+    country: 'PL',
     budget: 'Negotiable',
     badge: 'New',
     description: 'Injection molding grade PP required for plastic container manufacturing. Monthly recurring order.'
@@ -96,8 +83,7 @@ const DEFAULT_RFQS = [
     title: 'Solar Inverters 5kW Hybrid',
     quantity: '100 Units',
     deadline: '2 days ago',
-    country: 'South Africa',
-    countryFlag: '🇿🇦',
+    country: 'ZA',
     budget: '$50k Total',
     badge: 'New',
     description: 'Looking for reliable suppliers of hybrid solar inverters compatible with lithium batteries.'
@@ -133,8 +119,8 @@ function RFQCard({ rfq }) {
 
       <div className="mt-auto pt-4 border-t border-[rgba(255,255,255,0.05)] flex justify-between items-center">
         <div className="flex items-center gap-1.5 text-[13px] text-white">
-          <span>{rfq.countryFlag || '🌍'}</span>
-          <span>{rfq.country || 'Global'}</span>
+          <CountryFlag countryCode={rfq.country} size={16} />
+          <span>{getCountryName(rfq.country)}</span>
         </div>
         <div className="bg-gradient-to-br from-[#3b82f6] to-[#2563eb] text-white border-0 px-5 py-2 rounded-full text-[13px] font-semibold shadow-lg hover:bg-blue-400 hover:-translate-y-0.5 transition-all text-center">
           Quote Now
@@ -168,17 +154,13 @@ export function FeaturedRFQs() {
           });
 
           setRfqs(
-            sorted.slice(0, 10).map((r) => {
-              const countryInfo = getCountryInfo(r.targetCountry || r.country);
-              return {
-                ...r,
-                title: r.productName || r.title,
-                countryFlag: countryInfo.flag,
-                country: countryInfo.name,
-                deadline: r.deadline || 'ASAP',
-                budget: r.budget || 'Negotiable',
-              };
-            })
+            sorted.slice(0, 10).map((r) => ({
+              ...r,
+              title: r.productName || r.title,
+              country: r.targetCountry || r.country, // ISO code
+              deadline: r.deadline || 'ASAP',
+              budget: r.budget || 'Negotiable',
+            }))
           );
         }
       } catch (error) {

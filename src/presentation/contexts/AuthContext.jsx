@@ -68,10 +68,10 @@ export function AuthProvider({ children }) {
             }
 
             setUser({
+              ...userProfile,
               uid: firebaseUser.uid,
               email: firebaseUser.email,
-              emailVerified: firebaseUser.emailVerified, // Use Firebase Auth value
-              ...userProfile,
+              emailVerified: firebaseUser.emailVerified, // Use Firebase Auth value (must be after spread)
             });
           } else {
             // User is signed out
@@ -131,10 +131,10 @@ export function AuthProvider({ children }) {
         }
 
         setUser({
+          ...userProfile,
           uid: currentUser.uid,
           email: currentUser.email,
-          emailVerified: currentUser.emailVerified,
-          ...userProfile,
+          emailVerified: currentUser.emailVerified, // Must be after spread
         });
       }
     } catch (err) {
@@ -149,7 +149,8 @@ export function AuthProvider({ children }) {
     user,
     loading,
     error,
-    isAuthenticated: !!user,
+    isAuthenticated: !!user && user.emailVerified === true,
+    isEmailVerified: user?.emailVerified === true,
     refreshUser, // Expose refresh function
   };
 

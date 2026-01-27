@@ -8,8 +8,8 @@
 
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useRouter } from 'next/navigation';
-import { useState, useRef } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useState, useRef, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import ReCAPTCHA from 'react-google-recaptcha';
 import Link from 'next/link';
@@ -24,7 +24,16 @@ import { COMPANY_CATEGORIES } from '@/core/constants/categories';
 
 export function RegisterForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get('redirect');
   const { register: registerUser, loading } = useRegister();
+
+  // Store redirect URL in localStorage for after email verification
+  useEffect(() => {
+    if (redirectTo) {
+      localStorage.setItem('ctg_auth_redirect', redirectTo);
+    }
+  }, [redirectTo]);
   const [logoFile, setLogoFile] = useState(null);
   const [logoPreview, setLogoPreview] = useState(null);
   const [recaptchaValue, setRecaptchaValue] = useState(null);
@@ -433,7 +442,7 @@ export function RegisterForm() {
         <div className="flex justify-center">
           <ReCAPTCHA
             ref={recaptchaRef}
-            sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI'}
+            sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY}
             onChange={(value) => setRecaptchaValue(value)}
             onExpired={() => setRecaptchaValue(null)}
           />

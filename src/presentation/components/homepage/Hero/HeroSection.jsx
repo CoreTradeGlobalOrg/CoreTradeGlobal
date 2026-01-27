@@ -15,6 +15,18 @@ import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { useAuth } from '@/presentation/contexts/AuthContext';
 import { container } from '@/core/di/container';
+import { COUNTRIES } from '@/core/constants/countries';
+import { CountryFlag } from '@/presentation/components/common/CountryFlag/CountryFlag';
+
+// Helper to get country name from ISO code
+const getCountryName = (countryCode) => {
+  if (!countryCode) return 'Global';
+  const country = COUNTRIES.find(c => c.value === countryCode);
+  if (country) {
+    return country.label.replace(/^[\u{1F1E0}-\u{1F1FF}]{2}\s*/u, '').trim();
+  }
+  return countryCode;
+};
 
 // Dynamic import for 3D globe to avoid SSR issues
 const GlobeCanvas = dynamic(
@@ -326,9 +338,14 @@ export function HeroSection({ fetchData = false }) {
                 {fetchData && latestSupplier ? latestSupplier.companyName : 'Verified Companies'}
               </p>
               <p className="card-specs">
-                {fetchData && latestSupplier
-                  ? `${latestSupplier.countryEmoji || '🌍'} ${latestSupplier.country || ''} • ${latestSupplier.industry || ''}`
-                  : 'Worldwide network'}
+                {fetchData && latestSupplier ? (
+                  <span className="flex items-center gap-1">
+                    <CountryFlag countryCode={latestSupplier.country} size={14} />
+                    <span>{getCountryName(latestSupplier.country)}</span>
+                    <span>•</span>
+                    <span>{latestSupplier.industry || ''}</span>
+                  </span>
+                ) : 'Worldwide network'}
               </p>
               <p className="card-budget">{fetchData ? 'Verified Member' : 'Browse →'}</p>
             </div>

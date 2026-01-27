@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+/* Immediate base styles to prevent FOUC */
+html, body {
+  background-color: #0F1B2B;
+  color: #F5F5F5;
+}
+
 :root {
   /* Primary Colors - Gold/Yellow from Homepage */
   --color-primary: #D4AF37;
@@ -40,6 +46,23 @@
   /* Slate 800 */
   --color-border-focus: #D4AF37;
   /* Gold */
+
+  /* Homepage Component Variables (hp-*) */
+  --hp-gold: #D4AF37;
+  --hp-gold-light: #FFD700;
+  --hp-text-primary: #F5F5F5;
+  --hp-text-secondary: #A0A0A0;
+  --hp-text-muted: #94a3b8;
+  --hp-border: rgba(255, 255, 255, 0.1);
+  --hp-card-bg: rgba(26, 40, 59, 0.6);
+
+  /* Legacy variables used in homepage.css */
+  --bg-deep-navy: #0F1B2B;
+  --bg-accent-navy: #1A283B;
+  --accent-gold: #D4AF37;
+  --accent-bright-gold: #FFD700;
+  --text-white: #F5F5F5;
+  --text-grey: #A0A0A0;
 }
 
 @theme inline {
@@ -394,6 +417,21 @@ a:hover {
 
 .btn-signup:active {
   transform: scale(0.95);
+}
+
+/* --- HOMEPAGE RFQ CARD --- */
+.hp-rfq-card {
+  background: linear-gradient(160deg, rgba(26, 40, 59, 0.6) 0%, rgba(15, 27, 43, 0.9) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 20px;
+  transition: all 0.3s ease;
+}
+
+.hp-rfq-card:hover {
+  border-color: rgba(212, 175, 55, 0.3);
+  transform: translateY(-4px);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
 }
 
 /* --- FOOTER STYLES (Moved from homepage.css) --- */
