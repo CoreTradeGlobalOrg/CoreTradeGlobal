@@ -12,7 +12,9 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/presentation/contexts/AuthContext';
 import { StatsCards } from '@/presentation/components/features/admin/StatsCards/StatsCards';
 import { UsersTable } from '@/presentation/components/features/admin/UsersTable/UsersTable';
 import { CategoriesManager } from '@/presentation/components/features/admin/CategoriesManager/CategoriesManager';
@@ -21,15 +23,45 @@ import { NewsManager } from '@/presentation/components/features/admin/NewsManage
 import { useGetAllUsers } from '@/presentation/hooks/admin/useGetAllUsers';
 
 export default function AdminPage() {
+  const router = useRouter();
+  const { user, loading: authLoading, isAuthenticated } = useAuth();
   const { users, loading, error, refetch } = useGetAllUsers();
   const [activeTab, setActiveTab] = useState('users');
 
+  // Auth check - redirect if not admin
+  useEffect(() => {
+    if (!authLoading) {
+      if (!isAuthenticated) {
+        router.replace('/login?redirect=/admin');
+      } else if (user?.role !== 'admin') {
+        router.replace('/');
+      }
+    }
+  }, [authLoading, isAuthenticated, user, router]);
+
+  // Show loading while checking auth
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-[#0F1B2B]">
+        <div className="text-center">
+          <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-[#D4AF37] border-r-transparent"></div>
+          <p className="mt-4 text-[#A0A0A0]">Checking permissions...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render if not admin
+  if (!isAuthenticated || user?.role !== 'admin') {
+    return null;
+  }
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
+      <div className="flex items-center justify-center min-h-[400px] bg-[#0F1B2B]">
         <div className="text-center">
-          <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-blue-600 border-r-transparent"></div>
-          <p className="mt-4 text-slate-600">Loading users data...</p>
+          <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-[#D4AF37] border-r-transparent"></div>
+          <p className="mt-4 text-[#A0A0A0]">Loading users data...</p>
         </div>
       </div>
     );
@@ -37,14 +69,14 @@ export default function AdminPage() {
 
   if (error) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
+      <div className="flex items-center justify-center min-h-[400px] bg-[#0F1B2B]">
         <div className="text-center">
           <div className="text-6xl mb-4">❌</div>
-          <h2 className="text-xl font-bold text-slate-900 mb-2">Error Loading Data</h2>
-          <p className="text-slate-600 mb-4">{error}</p>
+          <h2 className="text-xl font-bold text-white mb-2">Error Loading Data</h2>
+          <p className="text-[#A0A0A0] mb-4">{error}</p>
           <button
             onClick={refetch}
-            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors"
+            className="px-6 py-3 bg-[#D4AF37] hover:bg-[#B59325] text-[#0F1B2B] rounded-lg font-semibold transition-colors"
           >
             Try Again
           </button>

@@ -67,15 +67,37 @@ export function AuthProvider({ children }) {
               });
             }
 
-            setUser({
+            const userData = {
               ...userProfile,
               uid: firebaseUser.uid,
               email: firebaseUser.email,
               emailVerified: firebaseUser.emailVerified, // Use Firebase Auth value (must be after spread)
-            });
+            };
+
+            setUser(userData);
+
+            // Set session cookie for middleware authentication
+            try {
+              await fetch('/api/auth/session', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  uid: userData.uid,
+                  role: userData.role,
+                  email: userData.email,
+                }),
+              });
+            } catch (cookieError) {
+              console.error('Failed to set session cookie:', cookieError);
+            }
           } else {
-            // User is signed out
+            // User is signed out - clear session cookie
             setUser(null);
+            try {
+              await fetch('/api/auth/session', { method: 'DELETE' });
+            } catch (cookieError) {
+              console.error('Failed to clear session cookie:', cookieError);
+            }
           }
         } catch (err) {
           console.error('Auth state change error:', err);
