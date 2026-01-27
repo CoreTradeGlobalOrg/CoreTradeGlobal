@@ -46,7 +46,7 @@ export function LoginForm() {
         localStorage.removeItem('ctg_auth_redirect');
         router.push(storedRedirect);
       } else {
-        router.push(redirectTo || `/profile/${user.uid}`);
+        router.push(redirectTo || '/');
       }
     } catch (err) {
       console.error('Login failed:', err);

@@ -254,9 +254,9 @@ function Scene({ isMobile }) {
   const config = useMemo(() => ({
     globeRadius: 6,
     pointCount: isMobile ? 2000 : 4000, // Adjusted for land-only density
-    pointSize: isMobile ? 0.25 : 0.18,
-    pointColor: 0xD4AF37,
-    waterColor: 0x050B14,
+    pointSize: isMobile ? 0.35 : 0.28,
+    pointColor: 0xFFFFFF,
+    waterColor: 0x0A1628,
     mapUrl: 'https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/earth_specular_2048.jpg',
     maxRoutes: isMobile ? 4 : 8, // Further reduced for a cleaner look
     tubeSegments: isMobile ? 32 : 64
@@ -324,11 +324,12 @@ function Scene({ isMobile }) {
       <GlobeGroup landPositions={landPositions} config={config} />
       {landPositions && <PlaneRoutes landPositions={landPositions} config={config} />}
       <OrbitControls
-        enableDamping={false}
+        enableDamping={true}
+        dampingFactor={0.02}
         enableZoom={false}
         enablePan={false}
         autoRotate
-        autoRotateSpeed={0.5}
+        autoRotateSpeed={2}
       />
     </>
   );

@@ -1,6 +1,4 @@
 import React from 'react';
-import { Navbar } from '@/presentation/components/homepage/Navbar/Navbar';
-import { Footer } from '@/presentation/components/homepage/Footer/Footer';
 
 export const metadata = {
     title: 'About Us | CoreTradeGlobal',
@@ -10,8 +8,6 @@ export const metadata = {
 export default function AboutUsPage() {
     return (
         <div className="bg-[var(--color-bg-base)] min-h-screen text-[var(--color-text-primary)]">
-            <Navbar />
-
             <main className="pt-32 pb-20 px-4 md:px-8 max-w-[1200px] mx-auto">
                 {/* Hero Section */}
                 <section className="mb-20 text-center">
@@ -106,8 +102,6 @@ export default function AboutUsPage() {
                     </a>
                 </div>
             </main>
-
-            <Footer />
         </div>
     );
 }

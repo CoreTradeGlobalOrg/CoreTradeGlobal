@@ -151,10 +151,10 @@ export function RequestForm({ request, onSubmit, onCancel, userId }) {
           )}
         </div>
 
-        {/* Budget (Optional) */}
+        {/* Budget (Required) */}
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-2">
-            Target Budget (USD) <span className="text-gray-500 font-normal">(Optional)</span>
+            Target Budget (USD) <span className="text-[#D4AF37]">*</span>
           </label>
           <Input
             type="number"
@@ -162,7 +162,7 @@ export function RequestForm({ request, onSubmit, onCancel, userId }) {
             error={!!errors.budget}
             disabled={submitting}
             placeholder="e.g. 5000"
-            min="0"
+            min="1"
             className="bg-[#0F1B2B] border-[rgba(255,255,255,0.1)] text-white placeholder:text-gray-500 focus:border-[#D4AF37] focus:ring-[#D4AF37]/20"
           />
           {errors.budget && (

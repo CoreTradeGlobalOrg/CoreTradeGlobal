@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CoreTG - Global B2B CTA</title>
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --card-bg: #1e293b;
+            --card-hover: #263349; 
+            --yellow: #facc15;
+            --blue: #3b82f6;
+            --blue-light: #60a5fa;
+            --text-muted: #94a3b8;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .cta-container {
+            display: flex;
+            background-color: rgba(255, 255, 255, 0.05);
+            border-radius: 24px;
+            overflow: hidden;
+            max-width: 950px;
+            width: 95%;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .cta-card {
+            flex: 1;
+            background-color: var(--card-bg);
+            padding: 60px 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: default;
+        }
+
+        /* Kart Üzerine Gelindiğinde Arka Plan Değişimi */
+        .cta-card:hover {
+            background-color: var(--card-hover);
+        }
+
+        .icon-box {
+            width: 60px;
+            height: 60px;
+            background-color: rgba(255, 255, 255, 0.03);
+            border-radius: 16px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .cta-card h2 {
+            color: white;
+            font-size: 28px;
+            margin-bottom: 16px;
+            font-weight: 700;
+        }
+
+        .cta-card p {
+            color: var(--text-muted);
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 36px;
+            min-height: 90px; /* Metin alanı hizalaması için */
+        }
+
+        /* Yeni Eklenen Vurgulu Alt Metin Stili */
+        .action-highlight {
+            display: block;
+            margin-top: 15px; /* Üst metinden ayırma */
+            color: #ffffff; /* Daha belirgin beyaz */
+            font-weight: 600;
+            font-size: 15px;
+            letter-spacing: 0.3px;
+        }
+
+        .btn {
+            padding: 16px 36px;
+            border-radius: 50px;
+            font-weight: 700;
+            text-decoration: none;
+            font-size: 16px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        /* SOL BUTON - SELL (SARI) */
+        .btn-sell {
+            background-color: var(--yellow);
+            color: #000;
+        }
+
+        .btn-sell:hover {
+            background-color: #ffffff;
+            color: #000;
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+
+        /* SAĞ BUTON - BUY (MAVİ) */
+        .btn-buy {
+            background-color: var(--blue);
+            color: #ffffff;
+        }
+
+        .btn-buy:hover {
+            background-color: var(--blue-light);
+            box-shadow: 0 0 25px rgba(59, 130, 246, 0.6);
+            transform: translateY(-3px);
+        }
+
+        @media (max-width: 768px) {
+            .cta-container {
+                flex-direction: column;
+            }
+            .cta-card {
+                padding: 45px 25px;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="cta-container">
+        <div class="cta-card">
+            <div class="icon-box">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#facc15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+            </div>
+            <h2>Ready to Export?</h2>
+            <p>
+                Expand your business globally. Showcase your products to buyers worldwide. 
+                <span class="action-highlight">Upload Your First Product:</span>
+            </p>
+            <a href="#" class="btn btn-sell">I want to sell</a>
+        </div>
+
+        <div class="cta-card">
+            <div class="icon-box">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+            </div>
+            <h2>Sourcing a Product?</h2>
+            <p>
+                Describe your requirements, receive quotes from verified global manufacturers. 
+                <span class="action-highlight">Post Your First RFQ:</span>
+            </p>
+            <a href="#" class="btn btn-buy">I want to buy</a>
+        </div>
+    </div>
+
+</body>
+</html>

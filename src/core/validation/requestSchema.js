@@ -60,11 +60,10 @@ export const requestSchema = z.object({
     .default('active')
     .optional(),
 
-  // Budget (optional)
+  // Budget (required)
   budget: z
-    .number()
-    .min(0, 'Budget must be a positive number')
-    .optional(),
+    .number({ invalid_type_error: 'Please enter a valid budget amount' })
+    .min(1, 'Budget must be at least 1'),
 });
 
 export default requestSchema;

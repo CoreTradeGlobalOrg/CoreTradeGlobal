@@ -16,7 +16,6 @@ import { StrategicCTA } from '@/presentation/components/homepage/StrategicCTA/St
 import { CompaniesSection } from '@/presentation/components/homepage/Companies/CompaniesSection';
 import { ShowcaseSection } from '@/presentation/components/homepage/Showcase/ShowcaseSection';
 import { FairsSection } from '@/presentation/components/homepage/Fairs/FairsSection';
-import { FAQSection } from '@/presentation/components/homepage/FAQ/FAQSection';
 import { NewsSection } from '@/presentation/components/homepage/News/NewsSection';
 
 export default function Home() {
@@ -50,9 +49,6 @@ export default function Home() {
 
       {/* Upcoming Fairs */}
       <FairsSection />
-
-      {/* FAQ Section */}
-      <FAQSection />
 
       {/* News Section */}
       <NewsSection />

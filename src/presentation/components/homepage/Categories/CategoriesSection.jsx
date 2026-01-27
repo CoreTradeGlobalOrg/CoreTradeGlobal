@@ -11,20 +11,13 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { container } from '@/core/di/container';
 
-// Default categories with emojis - Updated to be more relevant
+// Default categories with emojis - Show 5 on homepage + "More" card
 const DEFAULT_CATEGORIES = [
   { id: '1', name: 'Electronics', icon: '⚡' },
   { id: '2', name: 'Textiles', icon: '🧶' },
   { id: '3', name: 'Food & Beverages', icon: '🍎' },
   { id: '4', name: 'Machinery', icon: '⚙️' },
   { id: '5', name: 'Chemicals', icon: '🧪' },
-  { id: '6', name: 'Automotive', icon: '🚗' },
-  { id: '7', name: 'Furniture', icon: '🛋️' },
-  { id: '8', name: 'Cosmetics', icon: '💄' },
-  { id: '9', name: 'Construction', icon: '🏗️' },
-  { id: '10', name: 'Jewelry', icon: '💎' },
-  { id: '11', name: 'Agriculture', icon: '🌾' },
-  { id: '12', name: 'Other', icon: '📦' },
 ];
 
 const CategoryCard = ({ category }) => {
@@ -94,7 +87,7 @@ export function CategoriesSection() {
               iconUrl: finalIconUrl
             };
           });
-          setCategories(mappedCategories.slice(0, 12));
+          setCategories(mappedCategories.slice(0, 5));
         }
       } catch (error) {
         console.error('Error fetching categories:', error);
@@ -112,7 +105,7 @@ export function CategoriesSection() {
       {/* Header */}
       <div className="cat-header">
         <h2 className="cat-title">Browse by Category</h2>
-        <Link href="/products" className="btn-section-action">
+        <Link href="/categories" className="btn-section-action">
           View All Categories →
         </Link>
       </div>
@@ -122,6 +115,11 @@ export function CategoriesSection() {
         {categories.map((category) => (
           <CategoryCard key={category.id} category={category} />
         ))}
+        {/* More Categories Card */}
+        <Link href="/categories" className="cat-card cat-card-more group">
+          <span className="text-4xl mb-4 transform group-hover:scale-110 transition-transform">➕</span>
+          <span className="cat-name">More Categories</span>
+        </Link>
       </div>
     </section>
   );

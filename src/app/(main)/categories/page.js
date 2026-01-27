@@ -3,8 +3,6 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { container } from '@/core/di/container';
-import { Navbar } from '@/presentation/components/homepage/Navbar/Navbar';
-import { Footer } from '@/presentation/components/homepage/Footer/Footer';
 import { SearchBar } from '@/presentation/components/common/SearchBar/SearchBar';
 
 // Default Categories Fallback
@@ -66,10 +64,8 @@ export default function CategoriesPage() {
     );
 
     return (
-        <div className="min-h-screen bg-[var(--bg-deep-navy)] text-[var(--color-text-primary)]">
-            <Navbar />
-
-            <main className="pt-32 pb-20 px-4 md:px-8 max-w-[1200px] mx-auto">
+        <main className="min-h-screen pt-[120px] pb-20 px-6 bg-radial-navy">
+            <div className="max-w-[1400px] mx-auto">
                 <section className="mb-12 text-center">
                     <h1 className="text-4xl font-bold mb-4 text-white">Browse by Industry</h1>
                     <p className="text-[var(--text-grey)] mb-8">Explore thousands of verified suppliers across major sectors.</p>
@@ -85,35 +81,44 @@ export default function CategoriesPage() {
                 </section>
 
                 {loading ? (
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                         {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
-                            <div key={i} className="h-40 bg-[rgba(255,255,255,0.05)] rounded-2xl animate-pulse"></div>
+                            <div key={i} className="h-[240px] bg-[rgba(255,255,255,0.05)] rounded-[20px] animate-pulse"></div>
                         ))}
                     </div>
                 ) : (
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                         {filteredCategories.map((category) => (
                             <Link
                                 key={category.id}
-                                href={`/products?category=${category.id}`}
-                                className="bg-[rgba(26,40,59,0.4)] border border-[rgba(255,255,255,0.08)] rounded-2xl p-6 flex flex-col items-center justify-center hover:border-[var(--accent-gold)] hover:bg-[rgba(255,255,255,0.05)] transition-all hover:-translate-y-1 group"
+                                href={`/products?categoryId=${category.id}`}
+                                className="product-grid-card !h-[240px] group"
                             >
-                                <div className="mb-4 h-16 w-16 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                                    {category.icon && (category.icon.startsWith('http') || category.icon.startsWith('/')) ? (
-                                        <img src={category.icon} alt={category.name} className="w-full h-full object-contain filter drop-shadow-lg" />
-                                    ) : (
-                                        <span className="text-4xl filter drop-shadow-lg">{category.icon}</span>
-                                    )}
+                                {/* Icon Area */}
+                                <div className="flex-1 flex items-center justify-center">
+                                    <div className="w-20 h-20 rounded-2xl bg-[rgba(255,255,255,0.05)] flex items-center justify-center group-hover:scale-110 group-hover:bg-[rgba(212,175,55,0.1)] transition-all duration-300">
+                                        {category.icon && (category.icon.startsWith('http') || category.icon.startsWith('/')) ? (
+                                            <img src={category.icon} alt={category.name} className="w-12 h-12 object-contain" />
+                                        ) : (
+                                            <span className="text-4xl">{category.icon}</span>
+                                        )}
+                                    </div>
                                 </div>
-                                <h3 className="text-lg font-bold mb-1 text-center text-[#F5F5F5]">{category.name}</h3>
-                                {/* Listing count removed per user request */}
+
+                                {/* Category Name */}
+                                <h3 className="text-lg font-bold text-white text-center group-hover:text-[#D4AF37] transition-colors mb-4">
+                                    {category.name}
+                                </h3>
+
+                                {/* View Products Button */}
+                                <div className="w-full py-3 text-center text-sm font-semibold text-[#d1d5db] bg-[rgba(255,255,255,0.05)] rounded-xl border border-transparent group-hover:bg-[rgba(212,163,69,0.15)] group-hover:text-[#d4a345] group-hover:border-[rgba(212,163,69,0.3)] transition-all">
+                                    View Products
+                                </div>
                             </Link>
                         ))}
                     </div>
                 )}
-            </main>
-
-            <Footer />
-        </div>
+            </div>
+        </main>
     );
 }

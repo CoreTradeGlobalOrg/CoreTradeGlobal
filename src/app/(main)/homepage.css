@@ -285,6 +285,43 @@ html {
     gap: 12px;
 }
 
+/* Hero CTA Buttons (for logged in users) */
+.hero-cta-btn {
+    padding: 16px 36px;
+    border-radius: 50px;
+    font-weight: 700;
+    text-decoration: none;
+    font-size: 16px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.hero-cta-btn-sell {
+    background-color: #facc15;
+    color: #000;
+    box-shadow: 0 10px 30px rgba(250, 204, 21, 0.3);
+}
+
+.hero-cta-btn-sell:hover {
+    background-color: #ffffff;
+    color: #000;
+    transform: translateY(-3px);
+    box-shadow: 0 15px 40px rgba(250, 204, 21, 0.5);
+}
+
+.hero-cta-btn-buy {
+    background-color: #3b82f6;
+    color: #ffffff;
+}
+
+.hero-cta-btn-buy:hover {
+    background-color: #60a5fa;
+    color: #ffffff;
+    box-shadow: 0 0 25px rgba(59, 130, 246, 0.6);
+    transform: translateY(-3px);
+}
+
 @keyframes fadeUp {
     to {
         opacity: 1;
@@ -331,7 +368,7 @@ html {
 
 .globe-loading-text {
     position: absolute;
-    top: calc(50% + 100px);
+    top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
     color: #ffd700;
@@ -343,7 +380,8 @@ html {
     text-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
     z-index: 10;
     pointer-events: none;
-    display: block;
+    text-align: center;
+    width: 100%;
 }
 
 /* --- 5. ARAMA ÇUBUĞU BÖLÜMÜ --- */
@@ -1115,8 +1153,20 @@ html {
     width: 100%;
     max-width: 1200px;
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    grid-template-columns: repeat(6, 1fr);
     gap: 20px;
+}
+
+@media (max-width: 900px) {
+    .cat-container {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 500px) {
+    .cat-container {
+        grid-template-columns: repeat(2, 1fr);
+    }
 }
 
 .cat-card {
@@ -1140,6 +1190,21 @@ html {
 
 .cat-card:active {
     transform: scale(0.95);
+}
+
+.cat-card-more {
+    background: rgba(212, 175, 55, 0.05);
+    border: 1px dashed rgba(212, 175, 55, 0.3);
+}
+
+.cat-card-more:hover {
+    background: rgba(212, 175, 55, 0.15);
+    border-color: var(--accent-gold);
+    border-style: solid;
+}
+
+.cat-card-more .cat-name {
+    color: var(--accent-gold);
 }
 
 .cat-icon {
@@ -1548,101 +1613,87 @@ html {
 /* Keep inner parts transparent only when needed; avoid forcing all descendants */
 
 
-/* --- 10. ŞİRKETLER BÖLÜMÜ --- */
-.companies-section {
-    width: 100%;
-    background: var(--bg-deep-navy);
-    padding: 60px 20px;
+/* --- 10. COMPANIES SECTION (uses same styles as products) --- */
+
+/* Companies scroll container sizing - Same as products */
+#companies {
     display: flex;
-    justify-content: center;
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    gap: 24px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 10px 40px 30px 40px;
 }
 
-.companies-container {
-    width: 100%;
-    max-width: 1200px;
-}
-
-.companies-header {
+#companies .product-card {
+    flex: 0 0 calc((100% - 72px) / 4);
+    min-width: 220px;
+    height: 480px;
+    flex-shrink: 0;
     display: flex;
-    justify-content: space-between;
-    align-items: flex-end;
-    margin-bottom: 30px;
+    flex-direction: column;
+    background: linear-gradient(145deg, rgba(18, 28, 40, 0.55) 0%, rgba(11, 20, 32, 0.6) 100%);
+    border: 1px solid rgba(212, 175, 55, 0.16);
+    box-shadow: 0 8px 30px rgba(8, 12, 20, 0.45);
 }
 
-.companies-header h2 {
-    font-size: 28px;
-    font-weight: 700;
-    color: #fff;
-    margin: 0;
+#companies .product-card .product-card-image {
+    height: 200px;
 }
 
-.companies-header p {
-    color: var(--text-grey);
-    margin: 5px 0 0 0;
-    font-size: 14px;
-}
-
-.companies-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 20px;
-}
-
-.company-grid-card {
-    background: linear-gradient(145deg, rgba(255, 255, 255, 0.03) 0%, rgba(20, 30, 50, 0.4) 100%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
+#companies .product-card .product-card-content {
     padding: 20px;
     display: flex;
-    align-items: center;
-    gap: 15px;
-    transition: all 0.3s ease;
-    cursor: pointer;
+    flex-direction: column;
+    flex: 1 1 auto;
 }
 
-.company-grid-card:hover {
-    border-color: var(--accent-gold);
-    transform: translateY(-5px);
-    background: linear-gradient(145deg, rgba(255, 255, 255, 0.07) 0%, rgba(30, 40, 60, 0.5) 100%);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+/* Responsive breakpoints for companies */
+@media (max-width: 1199px) {
+    #companies .product-card {
+        flex: 0 0 calc((100% - 48px) / 3);
+    }
 }
 
-.comp-logo {
-    width: 50px;
-    height: 50px;
-    background: #1A283B;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 800;
-    color: #D4AF37;
-    font-size: 14px;
-    flex-shrink: 0;
+@media (max-width: 899px) {
+    #companies .product-card {
+        flex: 0 0 calc((100% - 24px) / 2);
+    }
 }
 
-.comp-info {
-    flex: 1;
-    overflow: hidden;
+@media (max-width: 639px) {
+    #companies {
+        padding: 8px 16px 20px 16px;
+        gap: 16px;
+    }
+
+    #companies .product-card {
+        flex: 0 0 100%;
+        min-width: 280px;
+        height: 520px;
+    }
 }
 
-.comp-name {
-    color: #fff;
-    font-weight: 700;
-    font-size: 16px;
-    margin-bottom: 4px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+/* Arrow positioning for companies section */
+#dash-left-companies,
+#dash-right-companies {
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    z-index: 100;
 }
 
-.comp-meta {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 13px;
-    color: var(--text-grey);
+#dash-left-companies:hover,
+#dash-right-companies:hover {
+    transform: translateY(-50%) scale(1.1) !important;
+}
+
+#dash-left-companies {
+    left: -25px;
+    right: auto;
+}
+
+#dash-right-companies {
+    right: -25px;
+    left: auto;
 }
 
 /* --- 11. FUARLAR (FAIRS) BÖLÜMÜ --- */
@@ -2099,7 +2150,8 @@ html {
 }
 
 .faq-item.active .faq-question {
-    color: var(--faq-accent-gold);
+    color: #FFD700;
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
 }
 
 .faq-icon {
@@ -2117,7 +2169,7 @@ html {
 
 .faq-item.active .faq-icon {
     transform: rotate(180deg);
-    stroke: var(--faq-accent-gold);
+    stroke: #FFD700;
 }
 
 .faq-answer {
@@ -2386,92 +2438,109 @@ html {
     border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-/* --- 15. STRATEGIC CTA SECTION --- */
-.strategic-cta {
-    padding: 100px 20px;
+/* --- 15. STRATEGIC CTA SECTION V2 --- */
+.strategic-cta-v2 {
+    padding: 80px 20px;
     display: flex;
     justify-content: center;
     background-color: var(--bg-deep-navy);
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.cta-container-main {
-    width: 100%;
-    max-width: 1100px;
+.cta-container-v2 {
     display: flex;
-    align-items: center;
-    background: linear-gradient(145deg, rgba(26, 40, 59, 0.4) 0%, rgba(15, 27, 43, 0.6) 100%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 40px;
+    background-color: rgba(255, 255, 255, 0.05);
+    border-radius: 24px;
     overflow: hidden;
-    backdrop-filter: blur(15px);
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    max-width: 950px;
+    width: 95%;
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.cta-box-half {
+.cta-card-v2 {
     flex: 1;
-    padding: 100px 60px;
-    text-align: center;
-    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    background-color: #1e293b;
+    padding: 60px 40px;
     display: flex;
     flex-direction: column;
     align-items: center;
-}
-
-.cta-box-half:hover {
-    background: rgba(255, 255, 255, 0.03);
-}
-
-.cta-icon-bg {
-    width: 80px;
-    height: 80px;
-    background: rgba(212, 175, 55, 0.1);
-    border-radius: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 30px;
-    color: var(--accent-gold);
-    transition: 0.3s;
-}
-
-.cta-box-half:hover .cta-icon-bg {
-    transform: scale(1.1) rotate(5deg);
-    background: var(--accent-gold);
-    color: #0F1B2B;
-}
-
-.cta-box-half h3 {
-    font-size: 32px;
-    font-weight: 800;
-    margin: 0 0 16px 0;
-    background: linear-gradient(180deg, #fff 0%, #bbb 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-}
-
-.cta-box-half p {
-    font-size: 16px;
-    color: var(--text-grey);
-    line-height: 1.7;
-    margin-bottom: 40px;
-    max-width: 380px;
-}
-
-.btn-cta-main {
-    padding: 18px 40px;
-    border-radius: 100px;
-    font-weight: 700;
-    font-size: 16px;
-    text-decoration: none;
+    text-align: center;
     transition: all 0.3s ease;
-    display: inline-block;
+    cursor: default;
 }
 
-.btn-cta-gold {
-    background: linear-gradient(135deg, #FFD700 0%, #FDB931 100%);
-    color: #0F1B2B;
-    box-shadow: 0 10px 25px rgba(255, 215, 0, 0.2);
+.cta-card-v2:hover {
+    background-color: #263349;
+}
+
+.cta-icon-box {
+    width: 60px;
+    height: 60px;
+    background-color: rgba(255, 255, 255, 0.03);
+    border-radius: 16px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.cta-card-v2 h2 {
+    color: white;
+    font-size: 28px;
+    margin-bottom: 16px;
+    font-weight: 700;
+}
+
+.cta-card-v2 p {
+    color: #94a3b8;
+    font-size: 16px;
+    line-height: 1.6;
+    margin-bottom: 36px;
+    min-height: 90px;
+}
+
+.cta-action-highlight {
+    display: block;
+    margin-top: 15px;
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 15px;
+    letter-spacing: 0.3px;
+}
+
+.cta-btn {
+    padding: 16px 36px;
+    border-radius: 50px;
+    font-weight: 700;
+    text-decoration: none;
+    font-size: 16px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.cta-btn-sell {
+    background-color: #facc15;
+    color: #000;
+}
+
+.cta-btn-sell:hover {
+    background-color: #ffffff;
+    color: #000;
+    transform: translateY(-3px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+}
+
+.cta-btn-buy {
+    background-color: #3b82f6;
+    color: #ffffff;
+}
+
+.cta-btn-buy:hover {
+    background-color: #60a5fa;
+    color: #ffffff;
+    box-shadow: 0 0 25px rgba(59, 130, 246, 0.6);
+    transform: translateY(-3px);
 }
 
 /* --- FIX: HORIZONTAL PRODUCT CARDS --- */
@@ -2524,30 +2593,18 @@ html {
     overflow: visible;
 }
 
-.btn-cta-outline {
-    background: transparent;
-    color: #fff;
-    border: 2px solid rgba(255, 255, 255, 0.2);
-}
-
-.btn-cta-main:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
-}
-
-.btn-cta-gold:hover {
-    background: #fff;
-}
-
-.btn-cta-outline:hover {
-    border-color: var(--accent-gold);
-    color: var(--accent-gold);
-}
-
-.cta-divider-line {
-    width: 1px;
-    height: 300px;
-    background: linear-gradient(to bottom, transparent, rgba(255, 255, 255, 0.1), transparent);
+/* CTA V2 Responsive */
+@media (max-width: 768px) {
+    .cta-container-v2 {
+        flex-direction: column;
+    }
+    .cta-card-v2 {
+        padding: 45px 25px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .cta-card-v2:last-child {
+        border-bottom: none;
+    }
 }
 
 /* --- 16. FOOTER BÖLÜMÜ --- */
@@ -2578,20 +2635,6 @@ html {
         grid-column: 1 / -1;
     }
 
-    .cta-container-main {
-        flex-direction: column;
-        margin: 0 10px;
-    }
-
-    .cta-divider-line {
-        width: 80%;
-        height: 1px;
-        background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.1), transparent);
-    }
-
-    .cta-box-half {
-        padding: 60px 30px;
-    }
 }
 
 @media (max-width: 768px) {

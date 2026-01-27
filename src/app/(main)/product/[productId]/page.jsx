@@ -143,7 +143,7 @@ export default function ProductDetailPage() {
   const handleToggleStatus = async () => {
     const newStatus = product.status === 'active' ? 'inactive' : 'active';
     try {
-      await updateProduct(productId, { status: newStatus });
+      await updateProduct(productId, currentUser.uid, { status: newStatus });
       toast.success(`Product ${newStatus === 'active' ? 'activated' : 'deactivated'}`);
       refetch();
     } catch (err) {
@@ -151,15 +151,10 @@ export default function ProductDetailPage() {
     }
   };
 
-  const handleEditSubmit = async (data) => {
-    try {
-      await updateProduct(productId, data);
-      toast.success('Product updated successfully');
-      setEditModalOpen(false);
-      refetch();
-    } catch (err) {
-      toast.error('Failed to update product');
-    }
+  const handleEditSubmit = async (data, imageFiles = []) => {
+    await updateProduct(productId, currentUser.uid, data, imageFiles);
+    setEditModalOpen(false);
+    refetch();
   };
 
   const getStatusColor = (status) => {
@@ -419,6 +414,7 @@ export default function ProductDetailPage() {
         >
           <ProductForm
             product={product}
+            userId={currentUser?.uid}
             onSubmit={handleEditSubmit}
             onCancel={() => setEditModalOpen(false)}
           />

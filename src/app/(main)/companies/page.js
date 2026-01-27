@@ -1,11 +1,13 @@
 'use client';
 
-import React from 'react';
-import { Navbar } from '@/presentation/components/homepage/Navbar/Navbar';
-import { Footer } from '@/presentation/components/homepage/Footer/Footer';
-import { UserCheck } from 'lucide-react';
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
+import { UserCheck, Building2 } from 'lucide-react';
 import { COUNTRIES } from '@/core/constants/countries';
 import { CountryFlag } from '@/presentation/components/common/CountryFlag/CountryFlag';
+import { SearchBar } from '@/presentation/components/common/SearchBar/SearchBar';
+import { container } from '@/core/di/container';
 
 // Helper to get country name from ISO code
 const getCountryName = (countryCode) => {
@@ -17,68 +19,215 @@ const getCountryName = (countryCode) => {
     return countryCode;
 };
 
-// Default companies - country is ISO code
-const COMPANIES = [
-    { name: 'EuroLogistics GmbH', country: 'DE', type: 'Logistics', logo: 'EL' },
-    { name: 'AsiaTech Mfg', country: 'CN', type: 'Electronics', logo: 'AT' },
-    { name: 'Anatolia Textile', country: 'TR', type: 'Textile', logo: 'AX' },
-    { name: 'Royal Steel Industries', country: 'GB', type: 'Industrial', logo: 'RS' },
-    { name: 'Koto Automotive Parts', country: 'JP', type: 'Automotive', logo: 'KA' },
-    { name: 'Brasilia Coffee Exp.', country: 'BR', type: 'Food', logo: 'BC' },
-    { name: 'Nordic Supply Co.', country: 'SE', type: 'Materials', logo: 'NS' },
-    { name: 'US Polymers Inc.', country: 'US', type: 'Chemical', logo: 'UP' },
-];
+// Get abbreviation from company name
+const getAbbreviation = (name) => {
+    if (!name) return '??';
+    const words = name.split(' ').filter(w => w.length > 0);
+    if (words.length >= 2) {
+        return (words[0][0] + words[1][0]).toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
+};
 
-export default function CompaniesPage() {
+function CompanyCard({ company }) {
+    const [imgError, setImgError] = useState(false);
+    const profileImage = company.companyLogo || company.photoURL;
+    const hasImage = profileImage && !imgError;
+
     return (
-        <div className="bg-[var(--color-bg-base)] min-h-screen text-[var(--color-text-primary)]">
-            <Navbar />
-
-            <main className="pt-32 pb-20 px-4 md:px-8 max-w-[1200px] mx-auto">
-                <section className="mb-12 flex flex-col md:flex-row justify-between items-end gap-6">
-                    <div>
-                        <h1 className="text-4xl font-bold mb-2 text-[var(--color-primary)]">Verified Suppliers</h1>
-                        <p className="text-[var(--color-text-secondary)]">Trusted partners freshly verified by CoreTradeGlobal.</p>
+        <Link
+            href={`/profile/${company.id}`}
+            className="bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-xl overflow-hidden hover:border-[var(--color-primary)] transition-all hover:shadow-xl hover:-translate-y-1 cursor-pointer block"
+        >
+            {/* Image/Logo Area */}
+            <div className="w-full h-40 bg-[var(--color-bg-tertiary)] flex items-center justify-center overflow-hidden">
+                {hasImage ? (
+                    <img
+                        src={profileImage}
+                        alt={company.companyName}
+                        className="w-full h-full object-cover"
+                        onError={() => setImgError(true)}
+                    />
+                ) : (
+                    <div className="text-4xl font-extrabold text-[var(--color-primary)]">
+                        {getAbbreviation(company.companyName)}
                     </div>
+                )}
+            </div>
 
-                    <button className="bg-[var(--color-bg-tertiary)] hover:bg-[var(--color-primary)] hover:text-[#0F1B2B] text-[var(--color-text-primary)] px-6 py-3 rounded-full font-semibold transition-colors">
-                        Register Your Company
-                    </button>
-                </section>
+            {/* Content */}
+            <div className="p-5">
+                <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2 text-sm text-[var(--color-text-secondary)]">
+                        <CountryFlag countryCode={company.country} size={18} />
+                        <span>{getCountryName(company.country)}</span>
+                    </div>
+                    <div className="bg-[rgba(16,185,129,0.1)] text-[#10b981] p-1.5 rounded-full" title="Verified">
+                        <UserCheck size={16} />
+                    </div>
+                </div>
 
+                <h3 className="text-lg font-bold mb-2 truncate text-white">{company.companyName}</h3>
+
+                {company.industry && (
+                    <p className="text-sm text-[var(--color-primary)] mb-3">{company.industry}</p>
+                )}
+
+                <div className="w-full py-2.5 bg-gradient-to-r from-[#D4A745] to-[#E0B555] rounded-full text-sm font-bold text-[#0F1B2B] text-center">
+                    View Profile
+                </div>
+            </div>
+        </Link>
+    );
+}
+
+function CompaniesContent() {
+    const searchParams = useSearchParams();
+    const initialSearch = searchParams.get('search') || '';
+    const initialCountry = searchParams.get('country') || '';
+
+    const [companies, setCompanies] = useState([]);
+    const [filteredCompanies, setFilteredCompanies] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [searchQuery, setSearchQuery] = useState(initialSearch);
+
+    // Fetch verified companies from Firebase
+    useEffect(() => {
+        const fetchCompanies = async () => {
+            try {
+                const firestoreDS = container.getFirestoreDataSource();
+                const allUsers = await firestoreDS.query('users', { limit: 100 });
+
+                if (allUsers && allUsers.length > 0) {
+                    // Filter: must have company name, email verified, admin approved, and not suspended
+                    const verifiedCompanies = allUsers.filter(u =>
+                        u.companyName &&
+                        u.emailVerified === true &&
+                        u.adminApproved === true &&
+                        !u.isSuspended
+                    );
+
+                    const sorted = verifiedCompanies.sort((a, b) => {
+                        const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
+                        const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
+                        return dateB - dateA;
+                    });
+
+                    setCompanies(sorted);
+                    setFilteredCompanies(sorted);
+                }
+            } catch (error) {
+                console.error('Error fetching companies:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchCompanies();
+    }, []);
+
+    // Filter companies based on search query
+    useEffect(() => {
+        if (!searchQuery.trim()) {
+            setFilteredCompanies(companies);
+            return;
+        }
+
+        const query = searchQuery.toLowerCase();
+        const filtered = companies.filter(company => {
+            const companyName = (company.companyName || '').toLowerCase();
+            const industry = (company.industry || '').toLowerCase();
+            const country = getCountryName(company.country).toLowerCase();
+
+            return companyName.includes(query) ||
+                   industry.includes(query) ||
+                   country.includes(query);
+        });
+
+        setFilteredCompanies(filtered);
+    }, [searchQuery, companies]);
+
+    // Apply initial country filter if present
+    useEffect(() => {
+        if (initialCountry && companies.length > 0) {
+            const filtered = companies.filter(c => c.country === initialCountry);
+            setFilteredCompanies(filtered);
+        }
+    }, [initialCountry, companies]);
+
+    return (
+        <>
+            <div className="mb-10 text-center max-w-2xl mx-auto">
+                <h1 className="text-4xl font-bold text-white mb-3">Verified Suppliers</h1>
+                <p className="text-[#A0A0A0] mb-8">Trusted partners verified by CoreTradeGlobal.</p>
+
+                <div className="max-w-2xl mx-auto">
+                    <SearchBar
+                        placeholder="Search companies by name, industry, or country..."
+                        initialValue={searchQuery}
+                        onSearch={(val) => setSearchQuery(val)}
+                    />
+                </div>
+            </div>
+
+            {initialCountry && (
+                <div className="mb-6 flex items-center gap-2">
+                    <span className="text-[#A0A0A0]">Filtering by country:</span>
+                    <span className="bg-[#D4AF37] text-[#0F1B2B] px-3 py-1 rounded-full text-sm font-bold flex items-center gap-2">
+                        <CountryFlag countryCode={initialCountry} size={16} />
+                        {getCountryName(initialCountry)}
+                    </span>
+                </div>
+            )}
+
+            {loading ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    {COMPANIES.map((company, index) => (
-                        <div
-                            key={index}
-                            className="bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-xl p-6 hover:border-[var(--color-primary)] transition-all hover:shadow-xl cursor-pointer"
-                        >
-                            <div className="flex items-center justify-between mb-6">
-                                <div className="w-16 h-16 bg-[var(--color-bg-tertiary)] rounded-full flex items-center justify-center text-xl font-bold text-[var(--color-primary)] border border-[var(--color-border)]">
-                                    {company.logo}
-                                </div>
-                                <div className="bg-[rgba(16,185,129,0.1)] text-[#10b981] p-2 rounded-full" title="Verified">
-                                    <UserCheck size={20} />
-                                </div>
+                    {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                        <div key={i} className="bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-xl overflow-hidden">
+                            <div className="w-full h-40 bg-[var(--color-bg-tertiary)] animate-pulse" />
+                            <div className="p-5">
+                                <div className="h-4 bg-[var(--color-bg-tertiary)] rounded animate-pulse mb-3" />
+                                <div className="h-6 bg-[var(--color-bg-tertiary)] rounded animate-pulse mb-2" />
+                                <div className="h-4 bg-[var(--color-bg-tertiary)] rounded animate-pulse w-20 mb-3" />
+                                <div className="h-10 bg-[var(--color-bg-tertiary)] rounded-full animate-pulse" />
                             </div>
-
-                            <h3 className="text-xl font-bold mb-1 truncate">{company.name}</h3>
-
-                            <div className="flex items-center gap-2 text-sm text-[var(--color-text-secondary)] mb-4">
-                                <CountryFlag countryCode={company.country} size={20} />
-                                <span>{getCountryName(company.country)}</span>
-                                <span className="w-1 h-1 bg-gray-500 rounded-full mx-1"></span>
-                                <span className="text-[var(--color-primary)]">{company.type}</span>
-                            </div>
-
-                            <button className="w-full py-2 border border-[var(--color-border)] rounded-lg text-sm hover:bg-[var(--color-primary)] hover:border-[var(--color-primary)] hover:text-[#0F1B2B] transition-colors">
-                                View Profile
-                            </button>
                         </div>
                     ))}
                 </div>
-            </main>
+            ) : filteredCompanies.length === 0 ? (
+                <div className="text-center py-20">
+                    <Building2 size={64} className="mx-auto text-[var(--color-text-secondary)] mb-4" />
+                    <h3 className="text-xl font-bold text-white mb-2">No Companies Found</h3>
+                    <p className="text-[var(--color-text-secondary)]">
+                        {searchQuery
+                            ? `No verified companies match "${searchQuery}"`
+                            : 'No verified companies available at the moment.'}
+                    </p>
+                </div>
+            ) : (
+                <>
+                    <div className="mb-4 text-sm text-[var(--color-text-secondary)]">
+                        Showing {filteredCompanies.length} verified {filteredCompanies.length === 1 ? 'company' : 'companies'}
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        {filteredCompanies.map((company) => (
+                            <CompanyCard key={company.id} company={company} />
+                        ))}
+                    </div>
+                </>
+            )}
+        </>
+    );
+}
 
-            <Footer />
-        </div>
+export default function CompaniesPage() {
+    return (
+        <main className="min-h-screen pt-[120px] pb-20 px-6 bg-radial-navy">
+            <div className="max-w-[1400px] mx-auto">
+                <Suspense fallback={<div className="text-white text-center">Loading...</div>}>
+                    <CompaniesContent />
+                </Suspense>
+            </div>
+        </main>
     );
 }
