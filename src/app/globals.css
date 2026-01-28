@@ -401,7 +401,7 @@ a:hover {
 .btn-signup {
   padding: 10px 24px;
   background: linear-gradient(135deg, #FFD700 0%, #FDB931 100%);
-  color: #0F1B2B;
+  color: black;
   border-radius: 50px;
   text-decoration: none;
   font-weight: 800;
@@ -413,6 +413,7 @@ a:hover {
 .btn-signup:hover {
   transform: translateY(-2px);
   background: #fff;
+  color: black;
 }
 
 .btn-signup:active {

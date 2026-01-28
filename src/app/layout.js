@@ -2,6 +2,7 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from '@/presentation/contexts/AuthContext';
 import { ProductViewProvider } from '@/presentation/contexts/ProductViewContext';
+import { MessagesProvider } from '@/presentation/contexts/MessagesContext';
 import { Toaster } from 'react-hot-toast';
 
 const inter = Inter({
@@ -17,6 +18,12 @@ export const metadata = {
   authors: [{ name: 'CoreTradeGlobal' }],
   creator: 'CoreTradeGlobal',
   publisher: 'CoreTradeGlobal',
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'CoreTradeGlobal',
+  },
   robots: {
     index: true,
     follow: true,
@@ -37,14 +44,23 @@ export const metadata = {
   },
 };
 
+export const viewport = {
+  themeColor: '#FFD700',
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+};
+
 export default function RootLayout({ children }) {
   return (
     <html lang="en" className={inter.variable}>
       <body className={inter.className}>
         <AuthProvider>
-          <ProductViewProvider>
-            {children}
-          </ProductViewProvider>
+          <MessagesProvider>
+            <ProductViewProvider>
+              {children}
+            </ProductViewProvider>
+          </MessagesProvider>
         </AuthProvider>
         <Toaster
           position="top-right"

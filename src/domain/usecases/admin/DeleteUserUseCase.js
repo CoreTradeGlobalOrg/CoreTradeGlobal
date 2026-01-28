@@ -1,10 +1,12 @@
 /**
  * Delete User Use Case
  *
- * Admin soft-deletes a user (marks as deleted)
- * NOTE: This does NOT delete Firebase Auth account (requires Firebase Admin SDK on backend)
- * The user will be marked as deleted and cannot login anymore
+ * Admin hard-deletes a user via Cloud Function
+ * Removes user from both Firebase Auth and Firestore
  */
+
+import { getFunctions, httpsCallable } from 'firebase/functions';
+import app from '@/core/config/firebase.config';
 
 export class DeleteUserUseCase {
   /**
@@ -16,7 +18,7 @@ export class DeleteUserUseCase {
   }
 
   /**
-   * Execute user soft deletion
+   * Execute user hard deletion via Cloud Function
    * @param {string} userId - User ID to delete
    * @returns {Promise<void>}
    */
@@ -25,14 +27,15 @@ export class DeleteUserUseCase {
       throw new Error('User ID is required');
     }
 
-    // Mark user as deleted (soft delete)
-    // Also suspend them to prevent login
-    await this.authRepository.updateUserProfile(userId, {
-      isDeleted: true,
-      isSuspended: true,
-      deletedAt: new Date(),
-      updatedAt: new Date(),
-    });
+    // Call Cloud Function to delete user from Auth and Firestore
+    const functions = getFunctions(app);
+    const deleteUserFn = httpsCallable(functions, 'deleteUser');
+
+    const result = await deleteUserFn({ userId });
+
+    if (!result.data.success) {
+      throw new Error(result.data.message || 'Failed to delete user');
+    }
   }
 }
 

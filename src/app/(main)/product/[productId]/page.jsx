@@ -24,8 +24,9 @@ import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { ProductForm } from '@/presentation/components/features/product/ProductForm/ProductForm';
 import { ViewLimitGuard } from '@/presentation/components/common/ViewLimitGuard/ViewLimitGuard';
-import { ChevronLeft, ChevronRight, ArrowLeft, Pencil, Trash2, Power, User } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ArrowLeft, Pencil, Trash2, Power, User, MessageCircle } from 'lucide-react';
 import { container } from '@/core/di/container';
+import { useConversations } from '@/presentation/hooks/messaging/useConversations';
 import toast from 'react-hot-toast';
 
 // Thumbnail image with loading state
@@ -93,6 +94,9 @@ export default function ProductDetailPage() {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [seller, setSeller] = useState(null);
+  const [sendingMessage, setSendingMessage] = useState(false);
+
+  const { startDirectConversation } = useConversations();
 
   const isOwnProduct = currentUser?.uid === product?.userId;
   const images = product?.images || [];
@@ -178,6 +182,43 @@ export default function ProductDetailPage() {
   const getCategoryName = () => {
     const category = categories.find((cat) => cat.value === product?.categoryId);
     return category?.label || 'Unknown Category';
+  };
+
+  const handleSendMessage = async () => {
+    if (!currentUser?.uid) {
+      toast.error('Please log in to send a message');
+      router.push(`/login?redirect=/product/${productId}`);
+      return;
+    }
+
+    if (!seller?.id) {
+      toast.error('Seller information not available');
+      return;
+    }
+
+    setSendingMessage(true);
+    try {
+      // Check if conversation already exists
+      const conversationRepo = container.getConversationRepository();
+      const existingConversation = await conversationRepo.findDirectConversation(currentUser.uid, seller.id);
+
+      // Prepare draft message
+      const draftMessage = `Hi, I'm interested in your product "${product.name}" (${product.currency} ${product.price?.toLocaleString() || '0'}). Is it still available?`;
+
+      if (existingConversation) {
+        // Conversation exists - navigate with draft
+        router.push(`/messages/${existingConversation.id}?draft=${encodeURIComponent(draftMessage)}`);
+      } else {
+        // New conversation - create and navigate with draft
+        const conversation = await startDirectConversation(seller.id);
+        router.push(`/messages/${conversation.id}?draft=${encodeURIComponent(draftMessage)}`);
+      }
+    } catch (err) {
+      console.error('Error opening conversation:', err);
+      toast.error('Failed to open conversation. Please try again.');
+    } finally {
+      setSendingMessage(false);
+    }
   };
 
   if (productLoading) {
@@ -378,12 +419,31 @@ export default function ProductDetailPage() {
                   </div>
 
                   {!isOwnProduct && (
-                    <Button
-                      onClick={() => router.push(`/profile/${seller.id}`)}
-                      className="px-6 py-3 rounded-full border border-[#FFD700]/30 text-[#FFD700] hover:bg-[#FFD700] hover:text-[#0F1B2B] transition-all font-semibold text-sm"
-                    >
-                      View Profile
-                    </Button>
+                    <div className="flex items-center gap-3">
+                      <Button
+                        onClick={handleSendMessage}
+                        disabled={sendingMessage}
+                        className="px-6 py-3 rounded-full bg-gradient-to-r from-[#FFD700] to-[#FDB931] !text-black hover:shadow-[0_0_20px_rgba(255,215,0,0.3)] transition-all font-semibold text-sm flex items-center gap-2 disabled:opacity-50"
+                      >
+                        {sendingMessage ? (
+                          <>
+                            <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></span>
+                            Opening...
+                          </>
+                        ) : (
+                          <>
+                            <MessageCircle className="w-4 h-4" />
+                            Contact Seller
+                          </>
+                        )}
+                      </Button>
+                      <Button
+                        onClick={() => router.push(`/profile/${seller.id}`)}
+                        className="px-6 py-3 rounded-full border border-[#FFD700]/30 text-[#FFD700] hover:bg-[#FFD700] hover:text-[#0F1B2B] transition-all font-semibold text-sm"
+                      >
+                        View Profile
+                      </Button>
+                    </div>
                   )}
                 </div>
               </div>

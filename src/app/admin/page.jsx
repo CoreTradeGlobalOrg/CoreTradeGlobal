@@ -20,6 +20,7 @@ import { UsersTable } from '@/presentation/components/features/admin/UsersTable/
 import { CategoriesManager } from '@/presentation/components/features/admin/CategoriesManager/CategoriesManager';
 import { FairsManager } from '@/presentation/components/features/admin/FairsManager/FairsManager';
 import { NewsManager } from '@/presentation/components/features/admin/NewsManager/NewsManager';
+import { ConversationsManager } from '@/presentation/components/features/admin/ConversationsManager/ConversationsManager';
 import { useGetAllUsers } from '@/presentation/hooks/admin/useGetAllUsers';
 
 export default function AdminPage() {
@@ -97,8 +98,8 @@ export default function AdminPage() {
 
       {/* Tabs */}
       <div className="mb-8 border-b border-[rgba(255,255,255,0.1)]">
-        <nav className="-mb-px flex space-x-8">
-          {['users', 'categories', 'fairs', 'news'].map((tab) => (
+        <nav className="-mb-px flex space-x-8 overflow-x-auto">
+          {['users', 'messages', 'categories', 'fairs', 'news'].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -107,7 +108,7 @@ export default function AdminPage() {
                   : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
                 } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm capitalize transition-colors`}
             >
-              {tab === 'users' ? 'Users Management' : `${tab.charAt(0).toUpperCase() + tab.slice(1)} Management`}
+              {tab === 'users' ? 'Users Management' : tab === 'messages' ? 'Conversations' : `${tab.charAt(0).toUpperCase() + tab.slice(1)} Management`}
             </button>
           ))}
         </nav>
@@ -132,6 +133,13 @@ export default function AdminPage() {
               Refresh Data
             </button>
           </div>
+        </div>
+      )}
+
+      {/* Messages Tab */}
+      {activeTab === 'messages' && (
+        <div className="text-white">
+          <ConversationsManager />
         </div>
       )}
 

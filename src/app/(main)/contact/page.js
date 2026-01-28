@@ -1,17 +1,32 @@
 'use client';
 
-import { useState } from 'react';
-import { Send, MessageSquare } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Send, MessageSquare, CheckCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useContactMessage } from '@/presentation/hooks/messaging/useContactMessage';
+import { useAuth } from '@/presentation/contexts/AuthContext';
 
 export default function ContactPage() {
+    const { user, isAuthenticated } = useAuth();
+    const { sendContactMessage, sending, error, success, reset } = useContactMessage();
+
     const [formData, setFormData] = useState({
         name: '',
         email: '',
         subject: '',
         message: ''
     });
-    const [sending, setSending] = useState(false);
+
+    // Pre-fill form for authenticated users
+    useEffect(() => {
+        if (isAuthenticated && user) {
+            setFormData((prev) => ({
+                ...prev,
+                name: user.displayName || prev.name,
+                email: user.email || prev.email,
+            }));
+        }
+    }, [isAuthenticated, user]);
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -25,15 +40,19 @@ export default function ContactPage() {
             return;
         }
 
-        setSending(true);
+        try {
+            await sendContactMessage({
+                name: formData.name,
+                email: formData.email,
+                subject: formData.subject,
+                message: formData.message,
+            });
 
-        // TODO: Connect to in-app messaging system
-        // Messages will be sent to admin with "contact" tag
-        setTimeout(() => {
             toast.success('Message sent successfully! We will get back to you soon.');
             setFormData({ name: '', email: '', subject: '', message: '' });
-            setSending(false);
-        }, 1500);
+        } catch (err) {
+            toast.error(err.message || 'Failed to send message. Please try again.');
+        }
     };
 
     return (
@@ -144,6 +163,18 @@ export default function ContactPage() {
                                         </>
                                     )}
                                 </button>
+
+                                {/* Info about replies */}
+                                {isAuthenticated ? (
+                                    <p className="text-center text-sm text-[#64748b] mt-4">
+                                        <CheckCircle className="w-4 h-4 inline-block mr-1 text-green-500" />
+                                        You're logged in! We'll reply to your messages and you can see them in your inbox.
+                                    </p>
+                                ) : (
+                                    <p className="text-center text-sm text-[#64748b] mt-4">
+                                        <a href="/login" className="text-[#FFD700] hover:underline">Log in</a> to see our replies in your inbox, or we'll respond to your email.
+                                    </p>
+                                )}
                             </form>
                         </div>
                     </div>

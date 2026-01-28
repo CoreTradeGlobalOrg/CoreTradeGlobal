@@ -24,6 +24,7 @@ import {
   limit,
   startAfter,
   serverTimestamp,
+  onSnapshot,
 } from 'firebase/firestore';
 
 export class FirestoreDataSource {
@@ -218,6 +219,244 @@ export class FirestoreDataSource {
     const docRef = doc(this.db, collectionName, docId);
     const docSnap = await getDoc(docRef);
     return docSnap.exists();
+  }
+
+  /**
+   * Subscribe to real-time query updates
+   * @param {string} collectionName
+   * @param {Object} options - { where: [], orderBy: [], limit: number }
+   * @param {Function} onData - Callback with array of documents
+   * @param {Function} onError - Error callback
+   * @returns {Function} Unsubscribe function
+   *
+   * Usage:
+   * const unsubscribe = firestoreDS.subscribeToQuery('conversations', {
+   *   where: [['participants', 'array-contains', 'user123']],
+   *   orderBy: [['updatedAt', 'desc']]
+   * }, (docs) => console.log(docs), (err) => console.error(err))
+   */
+  subscribeToQuery(collectionName, options = {}, onData, onError) {
+    let q = collection(this.db, collectionName);
+
+    // Apply where filters
+    if (options.where && options.where.length > 0) {
+      options.where.forEach(([field, operator, value]) => {
+        q = query(q, where(field, operator, value));
+      });
+    }
+
+    // Apply orderBy
+    if (options.orderBy && options.orderBy.length > 0) {
+      options.orderBy.forEach(([field, direction = 'asc']) => {
+        q = query(q, orderBy(field, direction));
+      });
+    }
+
+    // Apply limit
+    if (options.limit) {
+      q = query(q, limit(options.limit));
+    }
+
+    return onSnapshot(
+      q,
+      (querySnapshot) => {
+        const docs = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        onData(docs);
+      },
+      onError
+    );
+  }
+
+  /**
+   * Subscribe to a single document
+   * @param {string} collectionName
+   * @param {string} docId
+   * @param {Function} onData - Callback with document data
+   * @param {Function} onError - Error callback
+   * @returns {Function} Unsubscribe function
+   */
+  subscribeToDocument(collectionName, docId, onData, onError) {
+    const docRef = doc(this.db, collectionName, docId);
+
+    return onSnapshot(
+      docRef,
+      (docSnap) => {
+        if (docSnap.exists()) {
+          onData({ id: docSnap.id, ...docSnap.data() });
+        } else {
+          onData(null);
+        }
+      },
+      onError
+    );
+  }
+
+  /**
+   * Create document in subcollection
+   * @param {string} parentCollection
+   * @param {string} parentDocId
+   * @param {string} subcollectionName
+   * @param {Object} data
+   * @returns {Promise<{id: string, ...data}>}
+   */
+  async createInSubcollection(parentCollection, parentDocId, subcollectionName, data) {
+    const docData = {
+      ...data,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    };
+
+    const subcollectionRef = collection(
+      this.db,
+      parentCollection,
+      parentDocId,
+      subcollectionName
+    );
+    const docRef = await addDoc(subcollectionRef, docData);
+
+    return {
+      id: docRef.id,
+      ...data,
+    };
+  }
+
+  /**
+   * Get documents from subcollection with query
+   * @param {string} parentCollection
+   * @param {string} parentDocId
+   * @param {string} subcollectionName
+   * @param {Object} options - { where: [], orderBy: [], limit: number }
+   * @returns {Promise<Array>}
+   */
+  async querySubcollection(parentCollection, parentDocId, subcollectionName, options = {}) {
+    let q = collection(
+      this.db,
+      parentCollection,
+      parentDocId,
+      subcollectionName
+    );
+
+    // Apply where filters
+    if (options.where && options.where.length > 0) {
+      options.where.forEach(([field, operator, value]) => {
+        q = query(q, where(field, operator, value));
+      });
+    }
+
+    // Apply orderBy
+    if (options.orderBy && options.orderBy.length > 0) {
+      options.orderBy.forEach(([field, direction = 'asc']) => {
+        q = query(q, orderBy(field, direction));
+      });
+    }
+
+    // Apply limit
+    if (options.limit) {
+      q = query(q, limit(options.limit));
+    }
+
+    const querySnapshot = await getDocs(q);
+
+    return querySnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+  }
+
+  /**
+   * Subscribe to subcollection with real-time updates
+   * @param {string} parentCollection
+   * @param {string} parentDocId
+   * @param {string} subcollectionName
+   * @param {Object} options
+   * @param {Function} onData
+   * @param {Function} onError
+   * @returns {Function} Unsubscribe function
+   */
+  subscribeToSubcollection(parentCollection, parentDocId, subcollectionName, options = {}, onData, onError) {
+    let q = collection(
+      this.db,
+      parentCollection,
+      parentDocId,
+      subcollectionName
+    );
+
+    // Apply where filters
+    if (options.where && options.where.length > 0) {
+      options.where.forEach(([field, operator, value]) => {
+        q = query(q, where(field, operator, value));
+      });
+    }
+
+    // Apply orderBy
+    if (options.orderBy && options.orderBy.length > 0) {
+      options.orderBy.forEach(([field, direction = 'asc']) => {
+        q = query(q, orderBy(field, direction));
+      });
+    }
+
+    // Apply limit
+    if (options.limit) {
+      q = query(q, limit(options.limit));
+    }
+
+    return onSnapshot(
+      q,
+      (querySnapshot) => {
+        const docs = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        onData(docs);
+      },
+      onError
+    );
+  }
+
+  /**
+   * Update document in subcollection
+   * @param {string} parentCollection
+   * @param {string} parentDocId
+   * @param {string} subcollectionName
+   * @param {string} docId
+   * @param {Object} data
+   * @returns {Promise<void>}
+   */
+  async updateInSubcollection(parentCollection, parentDocId, subcollectionName, docId, data) {
+    const docRef = doc(
+      this.db,
+      parentCollection,
+      parentDocId,
+      subcollectionName,
+      docId
+    );
+
+    await updateDoc(docRef, {
+      ...data,
+      updatedAt: serverTimestamp(),
+    });
+  }
+
+  /**
+   * Delete document from subcollection
+   * @param {string} parentCollection
+   * @param {string} parentDocId
+   * @param {string} subcollectionName
+   * @param {string} docId
+   * @returns {Promise<void>}
+   */
+  async deleteFromSubcollection(parentCollection, parentDocId, subcollectionName, docId) {
+    const docRef = doc(
+      this.db,
+      parentCollection,
+      parentDocId,
+      subcollectionName,
+      docId
+    );
+    await deleteDoc(docRef);
   }
 }
 

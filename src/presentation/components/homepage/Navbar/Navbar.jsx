@@ -13,6 +13,7 @@ import Image from 'next/image';
 import { useAuth } from '@/presentation/contexts/AuthContext';
 import { useLogout } from '@/presentation/hooks/auth/useLogout';
 import { Menu, X, User, LogOut } from 'lucide-react';
+import { NotificationBell } from '@/presentation/components/common/NotificationBell/NotificationBell';
 
 const NAV_LINKS = [
   { label: 'Products', href: '/products' },
@@ -113,15 +114,17 @@ export function Navbar() {
         {loading ? (
           <div className="w-20 h-8 bg-[rgba(255,255,255,0.1)] rounded-full animate-pulse" />
         ) : isAuthenticated && user ? (
-          <div className="relative group">
-            <button
-              className="btn-signup flex items-center gap-2"
-              onClick={() => setShowUserMenu(!showUserMenu)}
-              onMouseEnter={() => setShowUserMenu(true)}
-            >
-              <User className="w-4 h-4" />
-              <span>Profile</span>
-            </button>
+          <div className="flex items-center gap-3">
+            <NotificationBell />
+            <div className="relative group">
+              <button
+                className="btn-signup flex items-center gap-2"
+                onClick={() => setShowUserMenu(!showUserMenu)}
+                onMouseEnter={() => setShowUserMenu(true)}
+              >
+                <User className="w-4 h-4" />
+                <span>Profile</span>
+              </button>
 
             <div
               className={`absolute right-0 top-full mt-2 w-48 bg-[#0F1B2B] border border-[rgba(255,255,255,0.1)] rounded-xl shadow-xl overflow-hidden transition-all duration-200 ${showUserMenu ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible -translate-y-2 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0'}`}
@@ -149,6 +152,7 @@ export function Navbar() {
                 <LogOut className="w-4 h-4" />
                 Log Out
               </button>
+            </div>
             </div>
           </div>
         ) : (

@@ -22,6 +22,9 @@ import { RequestRepository } from '@/data/repositories/RequestRepository';
 import { CategoryRepository } from '@/data/repositories/CategoryRepository';
 import { FairsRepository } from '@/data/repositories/FairsRepository';
 import { NewsRepository } from '@/data/repositories/NewsRepository';
+import { ConversationRepository } from '@/data/repositories/ConversationRepository';
+import { MessageRepository } from '@/data/repositories/MessageRepository';
+import { NotificationRepository } from '@/data/repositories/NotificationRepository';
 
 /**
  * Singleton instances
@@ -37,6 +40,9 @@ let requestRepository = null;
 let categoryRepository = null;
 let fairsRepository = null;
 let newsRepository = null;
+let conversationRepository = null;
+let messageRepository = null;
+let notificationRepository = null;
 
 /**
  * DI Container
@@ -166,6 +172,43 @@ export const container = {
   },
 
   /**
+   * Get Conversation Repository instance
+   * @returns {ConversationRepository}
+   */
+  getConversationRepository() {
+    if (!conversationRepository) {
+      conversationRepository = new ConversationRepository(
+        this.getFirestoreDataSource()
+      );
+    }
+    return conversationRepository;
+  },
+
+  /**
+   * Get Message Repository instance
+   * @returns {MessageRepository}
+   */
+  getMessageRepository() {
+    if (!messageRepository) {
+      messageRepository = new MessageRepository(this.getFirestoreDataSource());
+    }
+    return messageRepository;
+  },
+
+  /**
+   * Get Notification Repository instance
+   * @returns {NotificationRepository}
+   */
+  getNotificationRepository() {
+    if (!notificationRepository) {
+      notificationRepository = new NotificationRepository(
+        this.getFirestoreDataSource()
+      );
+    }
+    return notificationRepository;
+  },
+
+  /**
    * Reset all instances (useful for testing)
    * DO NOT use this in production code
    */
@@ -180,6 +223,9 @@ export const container = {
     categoryRepository = null;
     fairsRepository = null;
     newsRepository = null;
+    conversationRepository = null;
+    messageRepository = null;
+    notificationRepository = null;
   },
 };
 
