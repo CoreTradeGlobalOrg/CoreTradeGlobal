@@ -86,6 +86,8 @@ function ProfileContent() {
   const [logoFile, setLogoFile] = useState(null);
   const [logoPreview, setLogoPreview] = useState(null);
   const [logoLoading, setLogoLoading] = useState(false);
+  const [logoRemoved, setLogoRemoved] = useState(false);
+  const [profileUpdating, setProfileUpdating] = useState(false);
 
   // Password form state
   const [currentPassword, setCurrentPassword] = useState('');
@@ -127,26 +129,26 @@ function ProfileContent() {
     fetchProfileUser();
   }, [userId, authLoading, isOwnProfile, router]);
 
-  // Redirect to login if not authenticated
+  // Redirect to login if not authenticated (use replace to fix back button)
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
-      router.push('/login');
+      router.replace(`/login?redirect=/profile/${userId}`);
     }
-  }, [authLoading, isAuthenticated, router]);
+  }, [authLoading, isAuthenticated, router, userId]);
 
   // Show loading
   if (authLoading || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-radial-navy">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#D4AF37] mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FFD700] mx-auto"></div>
           <p className="mt-4 text-[#A0A0A0]">Loading...</p>
         </div>
       </div>
     );
   }
 
-  // Don't render if not authenticated
+  // Don't render if not authenticated or profile not loaded
   if (!isAuthenticated || !profileUser) {
     return null;
   }
@@ -176,6 +178,7 @@ function ProfileContent() {
         return;
       }
       setLogoFile(file);
+      setLogoRemoved(false); // Reset removed flag when new file is selected
       setLogoLoading(true);
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -192,24 +195,30 @@ function ProfileContent() {
 
   const handleRemoveLogo = () => {
     setLogoFile(null);
-    setLogoPreview(profileUser?.companyLogo || null);
+    setLogoPreview(null);
+    setLogoRemoved(true); // Mark logo for removal
   };
 
   const handleProfileUpdate = async (e) => {
     e.preventDefault();
     if (!canEdit) return;
 
+    setProfileUpdating(true);
+
     try {
       const userRepository = container.getUserRepository();
       const storageDataSource = container.getFirebaseStorageDataSource();
 
-      // Upload new logo if selected
+      // Handle logo: upload new, remove, or keep existing
       let logoUrl = profileUser.companyLogo;
-      if (logoFile) {
-        // Get file extension
+
+      if (logoRemoved) {
+        // User wants to remove logo
+        logoUrl = null;
+      } else if (logoFile) {
+        // Upload new logo
         const fileExtension = logoFile.name.split('.').pop();
         const path = `${userId}/company-logo/image.${fileExtension}`;
-
         logoUrl = await storageDataSource.uploadFile(path, logoFile);
       }
 
@@ -229,9 +238,12 @@ function ProfileContent() {
       toast.success('Profile updated successfully!');
       setIsEditing(false);
       setLogoFile(null);
+      setLogoRemoved(false);
     } catch (error) {
       console.error('Failed to update profile:', error);
       toast.error('Failed to update profile');
+    } finally {
+      setProfileUpdating(false);
     }
   };
 
@@ -435,7 +447,7 @@ function ProfileContent() {
                 <img
                   src={profileUser.companyLogo}
                   alt="Company logo"
-                  className="w-20 h-20 rounded-2xl object-cover border-2 border-[rgba(212,175,55,0.3)] shadow-[0_0_20px_rgba(0,0,0,0.3)]"
+                  className="w-20 h-20 rounded-2xl object-cover border-2 border-[rgba(255,215,0,0.3)] shadow-[0_0_20px_rgba(0,0,0,0.3)]"
                 />
               ) : (
                 <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#1c304a] to-[#0F1B2B] border border-[rgba(255,255,255,0.1)] flex items-center justify-center shadow-[0_0_20px_rgba(0,0,0,0.3)]">
@@ -449,7 +461,7 @@ function ProfileContent() {
                   {profileUser?.displayName || profileUser?.email || 'User'}
                 </h1>
                 <p className="text-[#A0A0A0] flex items-center gap-2">
-                  <span className="text-[#D4AF37] font-medium">{profileUser?.companyName || 'No company'}</span>
+                  <span className="text-[#FFD700] font-medium">{profileUser?.companyName || 'No company'}</span>
                   {profileUser?.position && <span className="w-1 h-1 rounded-full bg-[#A0A0A0]"></span>}
                   {profileUser?.position && <span>{profileUser.position}</span>}
                 </p>
@@ -487,7 +499,7 @@ function ProfileContent() {
                 key={tab}
                 onClick={() => handleTabChange(tab)}
                 className={`${activeTab === tab
-                  ? 'border-[#D4AF37] text-[#D4AF37]'
+                  ? 'border-[#FFD700] text-[#FFD700]'
                   : 'border-transparent text-[#A0A0A0] hover:text-white hover:border-[rgba(255,255,255,0.3)]'
                   } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm capitalize transition-colors`}
               >
@@ -505,13 +517,13 @@ function ProfileContent() {
             <div className="glass-card p-8">
               <div className="flex justify-between items-center mb-8">
                 <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                  <span className="w-1 h-6 bg-[#D4AF37] rounded-full"></span>
+                  <span className="w-1 h-6 bg-[#FFD700] rounded-full"></span>
                   Personal Information
                 </h2>
                 {canEdit && !isEditing && (
                   <button
                     onClick={() => setIsEditing(true)}
-                    className="text-[#D4AF37] hover:text-white text-sm font-semibold transition-colors uppercase tracking-wider"
+                    className="text-[#FFD700] hover:text-white text-sm font-semibold transition-colors uppercase tracking-wider"
                   >
                     Edit Details
                   </button>
@@ -583,10 +595,10 @@ function ProfileContent() {
                   </label>
 
                   {logoLoading ? (
-                    <div className="w-24 h-24 rounded-lg border-2 border-dashed border-[#D4AF37] bg-[rgba(212,175,55,0.1)] flex items-center justify-center">
+                    <div className="w-24 h-24 rounded-lg border-2 border-dashed border-[#FFD700] bg-[rgba(255,215,0,0.1)] flex items-center justify-center">
                       <div className="flex flex-col items-center gap-1">
-                        <div className="w-6 h-6 border-2 border-[#D4AF37] border-t-transparent rounded-full animate-spin"></div>
-                        <span className="text-xs text-[#D4AF37]">Loading...</span>
+                        <div className="w-6 h-6 border-2 border-[#FFD700] border-t-transparent rounded-full animate-spin"></div>
+                        <span className="text-xs text-[#FFD700]">Loading...</span>
                       </div>
                     </div>
                   ) : logoPreview ? (
@@ -597,9 +609,9 @@ function ProfileContent() {
                         className="w-24 h-24 object-cover rounded-lg border border-[rgba(255,255,255,0.1)]"
                       />
                       {canEdit && isEditing && (
-                        <div className="space-x-2">
+                        <div className="flex gap-3">
                           <label className="cursor-pointer">
-                            <span className="inline-block px-4 py-2 bg-[#D4AF37] text-[#0F1B2B] font-bold rounded-md hover:bg-white transition-colors">
+                            <span className="inline-flex items-center justify-center px-5 py-2 bg-gradient-to-r from-[#FFD700] to-[#FDB931] text-white font-bold rounded-lg hover:shadow-lg transition-all">
                               Change
                             </span>
                             <input
@@ -607,15 +619,17 @@ function ProfileContent() {
                               accept="image/*"
                               onChange={handleLogoChange}
                               className="sr-only"
+                              disabled={profileUpdating}
                             />
                           </label>
-                          <Button
+                          <button
                             type="button"
                             onClick={handleRemoveLogo}
-                            className="bg-[rgba(255,255,255,0.1)] text-white hover:bg-[rgba(255,255,255,0.2)]"
+                            disabled={profileUpdating}
+                            className="inline-flex items-center justify-center px-5 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-all disabled:opacity-50"
                           >
                             Remove
-                          </Button>
+                          </button>
                         </div>
                       )}
                     </div>
@@ -626,7 +640,7 @@ function ProfileContent() {
                       ) : (
                         isEditing && (
                           <label className="cursor-pointer inline-block">
-                            <span className="inline-block px-4 py-2 bg-[#D4AF37] text-[#0F1B2B] font-bold rounded-md hover:bg-white transition-colors">
+                            <span className="inline-flex items-center justify-center px-5 py-2 bg-gradient-to-r from-[#FFD700] to-[#FDB931] text-white font-bold rounded-lg hover:shadow-lg transition-all">
                               Upload Logo
                             </span>
                             <input
@@ -634,6 +648,7 @@ function ProfileContent() {
                               accept="image/*"
                               onChange={handleLogoChange}
                               className="sr-only"
+                              disabled={profileUpdating}
                             />
                           </label>
                         )
@@ -644,11 +659,23 @@ function ProfileContent() {
 
                 {canEdit && isEditing && (
                   <div className="flex gap-3 pt-4">
-                    <Button type="submit" className="bg-gradient-to-r from-[#FFD700] to-[#FDB931] text-[#0F1B2B] font-bold border-none hover:shadow-lg">
-                      Save Changes
+                    <Button
+                      type="submit"
+                      disabled={profileUpdating}
+                      className="bg-gradient-to-r from-[#FFD700] to-[#FDB931] text-[#0F1B2B] font-bold border-none hover:shadow-lg disabled:opacity-70"
+                    >
+                      {profileUpdating ? (
+                        <span className="flex items-center gap-2">
+                          <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                          Uploading...
+                        </span>
+                      ) : (
+                        'Save Changes'
+                      )}
                     </Button>
                     <Button
                       type="button"
+                      disabled={profileUpdating}
                       className="bg-[rgba(255,255,255,0.1)] text-white hover:bg-[rgba(255,255,255,0.2)] border-none"
                       onClick={() => {
                         setIsEditing(false);
@@ -656,6 +683,7 @@ function ProfileContent() {
                         setAbout(profileUser?.about || '');
                         setLogoPreview(profileUser?.companyLogo || null);
                         setLogoFile(null);
+                        setLogoRemoved(false);
                       }}
                     >
                       Cancel
@@ -668,7 +696,7 @@ function ProfileContent() {
             {/* Company Information (Read-only) */}
             <div className="glass-card p-8">
               <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                <span className="w-1 h-6 bg-[#D4AF37] rounded-full"></span>
+                <span className="w-1 h-6 bg-[#FFD700] rounded-full"></span>
                 Company Information
               </h2>
               <div className="space-y-4">
@@ -720,7 +748,7 @@ function ProfileContent() {
                 {isOwnProfile ? 'My Products' : `${profileUser?.displayName || 'User'}'s Products`}
               </h2>
               {isOwnProfile && (
-                <Button onClick={handleOpenProductModal} className="bg-[#D4AF37] text-[#0F1B2B] hover:bg-white font-bold border-none">
+                <Button onClick={handleOpenProductModal} className="bg-[#FFD700] text-[#0F1B2B] hover:bg-white font-bold border-none">
                   Add Product
                 </Button>
               )}
@@ -744,7 +772,7 @@ function ProfileContent() {
                 {isOwnProfile ? 'My Requests' : `${profileUser?.displayName || 'User'}'s Requests`}
               </h2>
               {isOwnProfile && (
-                <Button onClick={handleOpenRequestModal} className="bg-[#D4AF37] text-[#0F1B2B] hover:bg-white font-bold border-none">
+                <Button onClick={handleOpenRequestModal} className="bg-[#FFD700] text-[#0F1B2B] hover:bg-white font-bold border-none">
                   Create Request
                 </Button>
               )}
@@ -807,7 +835,7 @@ function ProfileContent() {
                   />
                 </div>
                 <div className="pt-4">
-                  <Button type="submit" className="bg-[#D4AF37] text-[#0F1B2B] hover:bg-white font-bold border-none">
+                  <Button type="submit" className="bg-[#FFD700] text-[#0F1B2B] hover:bg-white font-bold border-none">
                     Update Password
                   </Button>
                 </div>
@@ -869,7 +897,7 @@ export default function ProfilePage() {
     <Suspense fallback={
       <div className="min-h-screen flex items-center justify-center bg-radial-navy">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#D4AF37] mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FFD700] mx-auto"></div>
           <p className="mt-4 text-[#A0A0A0]">Loading...</p>
         </div>
       </div>

@@ -36,7 +36,7 @@ const ThumbnailImage = memo(function ThumbnailImage({ src, alt }) {
     <>
       {loading && (
         <div className="absolute inset-0 flex items-center justify-center bg-[#1A283B]">
-          <div className="w-4 h-4 border-2 border-[#D4AF37] border-t-transparent rounded-full animate-spin"></div>
+          <div className="w-4 h-4 border-2 border-[#FFD700] border-t-transparent rounded-full animate-spin"></div>
         </div>
       )}
       <img
@@ -62,7 +62,7 @@ const SellerAvatar = memo(function SellerAvatar({ src, alt }) {
     <>
       {loading && (
         <div className="absolute inset-0 flex items-center justify-center bg-[#1A283B]">
-          <div className="w-4 h-4 border-2 border-[#D4AF37] border-t-transparent rounded-full animate-spin"></div>
+          <div className="w-4 h-4 border-2 border-[#FFD700] border-t-transparent rounded-full animate-spin"></div>
         </div>
       )}
       <img
@@ -90,6 +90,8 @@ export default function ProductDetailPage() {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [imageLoading, setImageLoading] = useState(true);
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [seller, setSeller] = useState(null);
 
   const isOwnProduct = currentUser?.uid === product?.userId;
@@ -127,16 +129,21 @@ export default function ProductDetailPage() {
     setImageLoading(false);
   };
 
-  const handleDelete = async () => {
-    const confirmed = confirm(`Delete "${product.name}"?`);
-    if (confirmed) {
-      try {
-        await deleteProduct(productId);
-        toast.success('Product deleted successfully');
-        router.push(`/profile/${currentUser.uid}?tab=products`);
-      } catch (err) {
-        toast.error('Failed to delete product');
-      }
+  const handleDeleteClick = () => {
+    setDeleteModalOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    setDeleting(true);
+    try {
+      await deleteProduct(productId, currentUser.uid);
+      toast.success('Product deleted successfully');
+      setDeleteModalOpen(false);
+      router.push(`/profile/${currentUser.uid}?tab=products`);
+    } catch (err) {
+      toast.error('Failed to delete product');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -176,7 +183,7 @@ export default function ProductDetailPage() {
   if (productLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-[#0a1628]">
-        <div className="w-12 h-12 border-4 border-[#D4AF37] border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-12 h-12 border-4 border-[#FFD700] border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -202,7 +209,7 @@ export default function ProductDetailPage() {
         {/* Back Button */}
         <button
           onClick={() => router.back()}
-          className="flex items-center gap-2 text-gray-400 hover:text-[#D4AF37] mb-8 transition-colors group"
+          className="flex items-center gap-2 text-gray-400 hover:text-[#FFD700] mb-8 transition-colors group"
         >
           <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
           <span className="font-medium">Back</span>
@@ -217,7 +224,7 @@ export default function ProductDetailPage() {
                 <>
                   {imageLoading && (
                     <div className="absolute inset-0 flex items-center justify-center bg-[#0F1B2B]">
-                      <div className="w-12 h-12 border-4 border-[#D4AF37] border-t-transparent rounded-full animate-spin"></div>
+                      <div className="w-12 h-12 border-4 border-[#FFD700] border-t-transparent rounded-full animate-spin"></div>
                     </div>
                   )}
 
@@ -233,13 +240,13 @@ export default function ProductDetailPage() {
                     <>
                       <button
                         onClick={prevImage}
-                        className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-[#D4AF37] text-white hover:text-[#0F1B2B] rounded-full p-3 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all transform hover:scale-110"
+                        className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-[#FFD700] text-white hover:text-[#0F1B2B] rounded-full p-3 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all transform hover:scale-110"
                       >
                         <ChevronLeft className="w-6 h-6" />
                       </button>
                       <button
                         onClick={nextImage}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-[#D4AF37] text-white hover:text-[#0F1B2B] rounded-full p-3 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all transform hover:scale-110"
+                        className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-[#FFD700] text-white hover:text-[#0F1B2B] rounded-full p-3 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all transform hover:scale-110"
                       >
                         <ChevronRight className="w-6 h-6" />
                       </button>
@@ -275,13 +282,13 @@ export default function ProductDetailPage() {
                       setCurrentImageIndex(index);
                     }}
                     className={`flex-shrink-0 w-24 h-24 rounded-xl border relative overflow-hidden transition-all duration-200 ${index === currentImageIndex
-                      ? 'border-[#D4AF37] shadow-[0_0_15px_rgba(212,175,55,0.3)] scale-105 z-10'
+                      ? 'border-[#FFD700] shadow-[0_0_15px_rgba(255,215,0,0.3)] scale-105 z-10'
                       : 'border-white/10 hover:border-white/30 opacity-70 hover:opacity-100'
                       }`}
                   >
                     <ThumbnailImage src={img} alt={`Thumbnail ${index + 1}`} />
                     {index === currentImageIndex && (
-                      <div className="absolute inset-0 bg-[#D4AF37]/10" />
+                      <div className="absolute inset-0 bg-[#FFD700]/10" />
                     )}
                   </button>
                 ))}
@@ -293,7 +300,7 @@ export default function ProductDetailPage() {
           <div className="space-y-6">
             {/* Header Card */}
             <div className="glass-card p-8 relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-[#D4AF37]/10 blur-[50px] rounded-full pointer-events-none" />
+              <div className="absolute top-0 right-0 w-32 h-32 bg-[#FFD700]/10 blur-[50px] rounded-full pointer-events-none" />
 
               <div className="flex flex-col gap-4 relative z-10">
                 <div className="flex items-start justify-between gap-4">
@@ -319,7 +326,7 @@ export default function ProductDetailPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="glass-card p-6 flex flex-col gap-2">
                 <div className="text-sm uppercase tracking-wider text-gray-500 font-semibold">Category</div>
-                <div className="text-lg font-medium text-[#D4AF37]">{getCategoryName()}</div>
+                <div className="text-lg font-medium text-[#FFD700]">{getCategoryName()}</div>
               </div>
 
               <div className="glass-card p-6 flex flex-col gap-2">
@@ -328,14 +335,24 @@ export default function ProductDetailPage() {
                   <span className={`text-2xl font-bold ${product.stockQuantity > 0 ? 'text-white' : 'text-red-400'}`}>
                     {product.stockQuantity || 0}
                   </span>
-                  <span className="text-sm text-gray-400">units available</span>
+                  <span className="text-sm text-gray-400">{product.unit || 'units'} available</span>
                 </div>
               </div>
+
+              {product.unit && (
+                <div className="glass-card p-6 flex flex-col gap-2">
+                  <div className="text-sm uppercase tracking-wider text-gray-500 font-semibold">Unit</div>
+                  <div className="text-lg font-medium text-white">{product.unit}</div>
+                  {product.unitCategory && (
+                    <div className="text-sm text-gray-400">{product.unitCategory}</div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Description */}
             <div className="glass-card p-8">
-              <div className="text-sm uppercase tracking-wider text-[#D4AF37] font-bold mb-4 flex items-center gap-2">
+              <div className="text-sm uppercase tracking-wider text-[#FFD700] font-bold mb-4 flex items-center gap-2">
                 Description
               </div>
               <p className="text-gray-300 whitespace-pre-wrap leading-relaxed text-lg font-light">
@@ -348,7 +365,7 @@ export default function ProductDetailPage() {
               <div className="glass-card p-6">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#1A283B] to-[#0F1B2B] border border-white/10 flex items-center justify-center text-[#D4AF37] shadow-lg overflow-hidden relative">
+                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#1A283B] to-[#0F1B2B] border border-white/10 flex items-center justify-center text-[#FFD700] shadow-lg overflow-hidden relative">
                       <SellerAvatar
                         src={seller.logoURL || seller.photoURL || seller.image || seller.avatar}
                         alt={seller.companyName || seller.displayName}
@@ -363,7 +380,7 @@ export default function ProductDetailPage() {
                   {!isOwnProduct && (
                     <Button
                       onClick={() => router.push(`/profile/${seller.id}`)}
-                      className="px-6 py-3 rounded-full border border-[#D4AF37]/30 text-[#D4AF37] hover:bg-[#D4AF37] hover:text-[#0F1B2B] transition-all font-semibold text-sm"
+                      className="px-6 py-3 rounded-full border border-[#FFD700]/30 text-[#FFD700] hover:bg-[#FFD700] hover:text-[#0F1B2B] transition-all font-semibold text-sm"
                     >
                       View Profile
                     </Button>
@@ -384,7 +401,7 @@ export default function ProductDetailPage() {
                     Edit Product
                   </Button>
                   <Button
-                    onClick={handleDelete}
+                    onClick={handleDeleteClick}
                     className="flex-1 h-14 rounded-xl bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 text-red-400 flex items-center justify-center gap-2 transition-all"
                   >
                     <Trash2 className="w-5 h-5" />
@@ -418,6 +435,56 @@ export default function ProductDetailPage() {
             onSubmit={handleEditSubmit}
             onCancel={() => setEditModalOpen(false)}
           />
+        </Modal>
+
+        {/* Delete Confirmation Modal */}
+        <Modal
+          isOpen={deleteModalOpen}
+          onClose={() => !deleting && setDeleteModalOpen(false)}
+          title="Delete Product"
+        >
+          <div className="space-y-6">
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0 w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center">
+                <Trash2 className="w-6 h-6 text-red-400" />
+              </div>
+              <div>
+                <p className="text-white font-medium mb-1">
+                  Are you sure you want to delete this product?
+                </p>
+                <p className="text-gray-400 text-sm">
+                  This action cannot be undone. The product "{product.name}" will be permanently removed.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <Button
+                onClick={handleDeleteConfirm}
+                disabled={deleting}
+                className="flex-1 h-12 rounded-xl bg-red-600 hover:bg-red-700 text-white flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+              >
+                {deleting ? (
+                  <>
+                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4" />
+                    Delete Product
+                  </>
+                )}
+              </Button>
+              <Button
+                onClick={() => setDeleteModalOpen(false)}
+                disabled={deleting}
+                className="flex-1 h-12 rounded-xl bg-blue-600 hover:bg-blue-700 text-white transition-all disabled:opacity-50"
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
         </Modal>
       </div>
     </div>

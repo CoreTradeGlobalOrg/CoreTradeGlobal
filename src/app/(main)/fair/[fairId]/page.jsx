@@ -72,7 +72,7 @@ export default function FairDetailPage() {
                 );
             case 'upcoming':
                 return (
-                    <span className="px-4 py-2 text-sm font-bold rounded-full bg-[#D4AF37]/20 text-[#D4AF37] border border-[#D4AF37]/30">
+                    <span className="px-4 py-2 text-sm font-bold rounded-full bg-[#FFD700]/20 text-[#FFD700] border border-[#FFD700]/30">
                         📅 Upcoming
                     </span>
                 );
@@ -90,7 +90,7 @@ export default function FairDetailPage() {
     if (loading) {
         return (
             <div className="flex justify-center items-center min-h-screen bg-[#0a1628]">
-                <div className="w-12 h-12 border-4 border-[#D4AF37] border-t-transparent rounded-full animate-spin"></div>
+                <div className="w-12 h-12 border-4 border-[#FFD700] border-t-transparent rounded-full animate-spin"></div>
             </div>
         );
     }
@@ -116,7 +116,7 @@ export default function FairDetailPage() {
                 {/* Back Button */}
                 <button
                     onClick={() => router.back()}
-                    className="flex items-center gap-2 text-gray-400 hover:text-[#D4AF37] mb-8 transition-colors group"
+                    className="flex items-center gap-2 text-gray-400 hover:text-[#FFD700] mb-8 transition-colors group"
                 >
                     <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
                     <span className="font-medium">Back to Fairs</span>
@@ -127,37 +127,39 @@ export default function FairDetailPage() {
                     <div className="lg:col-span-2 space-y-6">
                         {/* Header Card */}
                         <div className="glass-card p-8 relative overflow-hidden">
-                            <div className="absolute top-0 right-0 w-40 h-40 bg-[#D4AF37]/10 blur-[80px] rounded-full pointer-events-none" />
+                            <div className="absolute top-0 right-0 w-40 h-40 bg-[#FFD700]/10 blur-[80px] rounded-full pointer-events-none" />
 
                             <div className="relative z-10">
-                                {/* Icon and Status */}
-                                <div className="flex items-start justify-between mb-6">
-                                    <div className="w-20 h-20 rounded-2xl bg-[rgba(255,255,255,0.05)] flex items-center justify-center text-5xl">
+                                {/* Status Badge */}
+                                <div className="flex justify-end mb-4">
+                                    {getStatusBadge(fair.status)}
+                                </div>
+
+                                {/* Icon + Title Row */}
+                                <div className="flex items-center gap-5 mb-4">
+                                    <div className="w-16 h-16 rounded-2xl bg-[rgba(255,255,255,0.05)] flex items-center justify-center text-4xl flex-shrink-0">
                                         {fair.icon || fair.image || '🌐'}
                                     </div>
-                                    {getStatusBadge(fair.status)}
+                                    <h1 className="text-3xl md:text-4xl font-bold text-white leading-tight">
+                                        {fair.name}
+                                    </h1>
                                 </div>
 
                                 {/* Category */}
                                 <div className="inline-block mb-4">
-                                    <span className="text-xs font-bold text-[#D4AF37] uppercase tracking-wider bg-[rgba(212,175,55,0.1)] px-4 py-2 rounded-full">
+                                    <span className="text-xs font-bold text-[#FFD700] uppercase tracking-wider bg-[rgba(255,215,0,0.1)] px-4 py-2 rounded-full">
                                         {fair.category || 'Trade Fair'}
                                     </span>
                                 </div>
 
-                                {/* Title */}
-                                <h1 className="text-4xl font-bold text-white mb-4 leading-tight">
-                                    {fair.title}
-                                </h1>
-
                                 {/* Location and Date */}
                                 <div className="flex flex-wrap gap-6 text-[#A0A0A0]">
                                     <div className="flex items-center gap-2">
-                                        <MapPin className="w-5 h-5 text-[#D4AF37]" />
+                                        <MapPin className="w-5 h-5 text-[#FFD700]" />
                                         <span className="text-lg">{fair.location || 'Location TBA'}</span>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <Calendar className="w-5 h-5 text-[#D4AF37]" />
+                                        <Calendar className="w-5 h-5 text-[#FFD700]" />
                                         <span className="text-lg">
                                             {fair.startDate && fair.endDate ? (
                                                 `${formatShortDate(fair.startDate)} - ${formatShortDate(fair.endDate)}`
@@ -174,7 +176,7 @@ export default function FairDetailPage() {
 
                         {/* Description Card */}
                         <div className="glass-card p-8">
-                            <div className="text-sm uppercase tracking-wider text-[#D4AF37] font-bold mb-4 flex items-center gap-2">
+                            <div className="text-sm uppercase tracking-wider text-[#FFD700] font-bold mb-4 flex items-center gap-2">
                                 About This Event
                             </div>
                             <p className="text-gray-300 whitespace-pre-wrap leading-relaxed text-lg font-light">
@@ -185,13 +187,13 @@ export default function FairDetailPage() {
                         {/* Additional Info */}
                         {(fair.venue || fair.organizer || fair.website) && (
                             <div className="glass-card p-8">
-                                <div className="text-sm uppercase tracking-wider text-[#D4AF37] font-bold mb-6">
+                                <div className="text-sm uppercase tracking-wider text-[#FFD700] font-bold mb-6">
                                     Event Details
                                 </div>
                                 <div className="space-y-4">
                                     {fair.venue && (
                                         <div className="flex items-start gap-4">
-                                            <MapPin className="w-5 h-5 text-[#D4AF37] mt-1" />
+                                            <MapPin className="w-5 h-5 text-[#FFD700] mt-1" />
                                             <div>
                                                 <div className="text-xs text-gray-500 uppercase tracking-wider mb-1">Venue</div>
                                                 <div className="text-white">{fair.venue}</div>
@@ -200,7 +202,7 @@ export default function FairDetailPage() {
                                     )}
                                     {fair.organizer && (
                                         <div className="flex items-start gap-4">
-                                            <Users className="w-5 h-5 text-[#D4AF37] mt-1" />
+                                            <Users className="w-5 h-5 text-[#FFD700] mt-1" />
                                             <div>
                                                 <div className="text-xs text-gray-500 uppercase tracking-wider mb-1">Organizer</div>
                                                 <div className="text-white">{fair.organizer}</div>
@@ -209,14 +211,14 @@ export default function FairDetailPage() {
                                     )}
                                     {fair.website && (
                                         <div className="flex items-start gap-4">
-                                            <Globe className="w-5 h-5 text-[#D4AF37] mt-1" />
+                                            <Globe className="w-5 h-5 text-[#FFD700] mt-1" />
                                             <div>
                                                 <div className="text-xs text-gray-500 uppercase tracking-wider mb-1">Website</div>
                                                 <a
                                                     href={fair.website}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
-                                                    className="text-[#D4AF37] hover:underline flex items-center gap-1"
+                                                    className="text-[#FFD700] hover:underline flex items-center gap-1"
                                                 >
                                                     {fair.website}
                                                     <ExternalLink className="w-4 h-4" />
@@ -233,7 +235,7 @@ export default function FairDetailPage() {
                     <div className="space-y-6">
                         {/* Date Card */}
                         <div className="glass-card p-6">
-                            <div className="text-sm uppercase tracking-wider text-[#D4AF37] font-bold mb-4">
+                            <div className="text-sm uppercase tracking-wider text-[#FFD700] font-bold mb-4">
                                 Event Schedule
                             </div>
 
@@ -255,7 +257,7 @@ export default function FairDetailPage() {
                                 <div>
                                     <div className="text-xs text-gray-500 uppercase tracking-wider mb-2">Opening Hours</div>
                                     <div className="flex items-center gap-2 text-white">
-                                        <Clock className="w-4 h-4 text-[#D4AF37]" />
+                                        <Clock className="w-4 h-4 text-[#FFD700]" />
                                         {fair.openingHours}
                                     </div>
                                 </div>
@@ -283,7 +285,7 @@ export default function FairDetailPage() {
 
                         {/* Quick Info */}
                         <div className="glass-card p-6">
-                            <div className="text-sm uppercase tracking-wider text-[#D4AF37] font-bold mb-4">
+                            <div className="text-sm uppercase tracking-wider text-[#FFD700] font-bold mb-4">
                                 Quick Info
                             </div>
                             <div className="space-y-3">
@@ -299,7 +301,7 @@ export default function FairDetailPage() {
                                     <span className="text-gray-500">Status</span>
                                     <span className={`font-medium ${
                                         fair.status === 'ongoing' ? 'text-green-400' :
-                                        fair.status === 'upcoming' ? 'text-[#D4AF37]' : 'text-gray-400'
+                                        fair.status === 'upcoming' ? 'text-[#FFD700]' : 'text-gray-400'
                                     }`}>
                                         {fair.status?.charAt(0).toUpperCase() + fair.status?.slice(1) || 'TBA'}
                                     </span>

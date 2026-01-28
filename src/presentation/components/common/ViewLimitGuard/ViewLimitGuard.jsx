@@ -91,7 +91,7 @@ export function ViewLimitGuard({ itemId, itemType = 'product', children }) {
   if (loading || checking) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#0a1628]">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#D4AF37]"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#FFD700]"></div>
       </div>
     );
   }
@@ -108,8 +108,8 @@ export function ViewLimitGuard({ itemId, itemType = 'product', children }) {
         {/* Overlay with register prompt */}
         <div className="absolute inset-0 flex items-center justify-center bg-[#0a1628]/60 z-50">
           <div className="text-center px-6 py-8 max-w-sm">
-            <div className="w-14 h-14 bg-[rgba(212,175,55,0.15)] rounded-full flex items-center justify-center mx-auto mb-4">
-              <Lock className="w-7 h-7 text-[#D4AF37]" />
+            <div className="w-14 h-14 bg-[rgba(255,215,0,0.15)] rounded-full flex items-center justify-center mx-auto mb-4">
+              <Lock className="w-7 h-7 text-[#FFD700]" />
             </div>
 
             <h3 className="text-xl font-bold text-white mb-2">
@@ -159,14 +159,14 @@ export function ViewLimitGuard({ itemId, itemType = 'product', children }) {
       {!isAuthenticated && remainingViews > 0 && (
         <div className="fixed bottom-4 right-4 z-50 bg-[#0F1B2B] border border-[rgba(255,255,255,0.1)] rounded-xl p-4 shadow-xl max-w-xs">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-[rgba(212,175,55,0.1)] rounded-full flex items-center justify-center">
-              <Eye className="w-5 h-5 text-[#D4AF37]" />
+            <div className="w-10 h-10 bg-[rgba(255,215,0,0.1)] rounded-full flex items-center justify-center">
+              <Eye className="w-5 h-5 text-[#FFD700]" />
             </div>
             <div>
               <p className="text-white text-sm font-medium">
                 {remainingViews} free view{remainingViews !== 1 ? 's' : ''} left
               </p>
-              <Link href={`/register?redirect=${redirectUrl}`} className="text-[#D4AF37] text-xs hover:underline">
+              <Link href={`/register?redirect=${redirectUrl}`} className="text-[#FFD700] text-xs hover:underline">
                 Register for unlimited access
               </Link>
             </div>

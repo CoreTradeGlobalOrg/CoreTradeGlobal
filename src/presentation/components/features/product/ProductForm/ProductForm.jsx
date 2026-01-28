@@ -151,9 +151,17 @@ export function ProductForm({ product, onSubmit, onCancel, userId }) {
     setSubmitting(true);
 
     try {
+      // Get existing images that are still in previews (not removed by user)
+      const existingImageCount = product?.images?.length || 0;
+      const remainingExistingImages = imagePreviews
+        .slice(0, existingImageCount)
+        .filter(img => product?.images?.includes(img));
+
       const productData = {
         ...data,
         userId,
+        // Pass remaining existing images so UseCase knows which ones to keep
+        existingImages: remainingExistingImages,
       };
 
       await onSubmit(productData, imageFiles);
@@ -170,7 +178,7 @@ export function ProductForm({ product, onSubmit, onCancel, userId }) {
       {/* Product Name */}
       <div>
         <label className="block text-sm font-medium text-gray-300 mb-2">
-          Product Name <span className="text-[#D4AF37]">*</span>
+          Product Name <span className="text-[#FFD700]">*</span>
         </label>
         <Input
           type="text"
@@ -178,7 +186,7 @@ export function ProductForm({ product, onSubmit, onCancel, userId }) {
           error={!!errors.name}
           disabled={submitting}
           placeholder="e.g., Steel Pipes"
-          className="bg-[#0F1B2B] border-[rgba(255,255,255,0.1)] text-white placeholder:text-gray-500 focus:border-[#D4AF37] focus:ring-[#D4AF37]/20"
+          className="bg-[#0F1B2B] border-[rgba(255,255,255,0.1)] text-white placeholder:text-gray-500 focus:border-[#FFD700] focus:ring-[#FFD700]/20"
         />
         {errors.name && (
           <p className="mt-1 text-sm text-red-400">{errors.name.message}</p>
@@ -188,7 +196,7 @@ export function ProductForm({ product, onSubmit, onCancel, userId }) {
       {/* Category */}
       <div>
         <label className="block text-sm font-medium text-gray-300 mb-2">
-          Category <span className="text-[#D4AF37]">*</span>
+          Category <span className="text-[#FFD700]">*</span>
         </label>
         <SearchableSelect
           options={categories}
@@ -208,7 +216,7 @@ export function ProductForm({ product, onSubmit, onCancel, userId }) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-2">
-            Stock Quantity <span className="text-[#D4AF37]">*</span>
+            Stock Quantity <span className="text-[#FFD700]">*</span>
           </label>
           <Input
             type="number"
@@ -216,7 +224,7 @@ export function ProductForm({ product, onSubmit, onCancel, userId }) {
             error={!!errors.stockQuantity}
             disabled={submitting}
             min="0"
-            className="bg-[#0F1B2B] border-[rgba(255,255,255,0.1)] text-white placeholder:text-gray-500 focus:border-[#D4AF37] focus:ring-[#D4AF37]/20"
+            className="bg-[#0F1B2B] border-[rgba(255,255,255,0.1)] text-white placeholder:text-gray-500 focus:border-[#FFD700] focus:ring-[#FFD700]/20"
           />
           {errors.stockQuantity && (
             <p className="mt-1 text-sm text-red-400">{errors.stockQuantity.message}</p>
@@ -225,7 +233,7 @@ export function ProductForm({ product, onSubmit, onCancel, userId }) {
 
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-2">
-            Unit Category <span className="text-[#D4AF37]">*</span>
+            Unit Category <span className="text-[#FFD700]">*</span>
           </label>
           <SearchableSelect
             options={UNIT_CATEGORIES}
@@ -253,7 +261,7 @@ export function ProductForm({ product, onSubmit, onCancel, userId }) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-2">
-            Unit <span className="text-[#D4AF37]">*</span>
+            Unit <span className="text-[#FFD700]">*</span>
           </label>
           <SearchableSelect
             options={availableUnits}
@@ -271,7 +279,7 @@ export function ProductForm({ product, onSubmit, onCancel, userId }) {
 
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-2">
-            Price <span className="text-[#D4AF37]">*</span>
+            Price <span className="text-[#FFD700]">*</span>
           </label>
           <Input
             type="number"
@@ -280,7 +288,7 @@ export function ProductForm({ product, onSubmit, onCancel, userId }) {
             error={!!errors.price}
             disabled={submitting}
             min="0.01"
-            className="bg-[#0F1B2B] border-[rgba(255,255,255,0.1)] text-white placeholder:text-gray-500 focus:border-[#D4AF37] focus:ring-[#D4AF37]/20"
+            className="bg-[#0F1B2B] border-[rgba(255,255,255,0.1)] text-white placeholder:text-gray-500 focus:border-[#FFD700] focus:ring-[#FFD700]/20"
           />
           {errors.price && (
             <p className="mt-1 text-sm text-red-400">{errors.price.message}</p>
@@ -292,7 +300,7 @@ export function ProductForm({ product, onSubmit, onCancel, userId }) {
       {/* Currency */}
       <div>
         <label className="block text-sm font-medium text-gray-300 mb-2">
-          Currency <span className="text-[#D4AF37]">*</span>
+          Currency <span className="text-[#FFD700]">*</span>
         </label>
         <SearchableSelect
           options={CURRENCIES}
@@ -311,14 +319,14 @@ export function ProductForm({ product, onSubmit, onCancel, userId }) {
       {/* Description */}
       <div>
         <label className="block text-sm font-medium text-gray-300 mb-2">
-          Description <span className="text-[#D4AF37]">*</span>
+          Description <span className="text-[#FFD700]">*</span>
         </label>
         <textarea
           {...register('description')}
           rows={4}
           className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-4 transition-all duration-200 bg-[#0F1B2B] text-white placeholder:text-gray-500 ${errors.description
             ? 'border-red-500 focus:border-red-600 focus:ring-red-500/20'
-            : 'border-[rgba(255,255,255,0.1)] focus:border-[#D4AF37] focus:ring-[#D4AF37]/20'
+            : 'border-[rgba(255,255,255,0.1)] focus:border-[#FFD700] focus:ring-[#FFD700]/20'
             }`}
           disabled={submitting}
           placeholder="Describe your product..."
@@ -356,10 +364,10 @@ export function ProductForm({ product, onSubmit, onCancel, userId }) {
             ))}
             {/* Loading placeholders for images being processed */}
             {[...Array(imageLoadingCount)].map((_, index) => (
-              <div key={`loading-${index}`} className="relative w-full h-24 rounded-lg border-2 border-dashed border-[#D4AF37] bg-[rgba(212,175,55,0.1)] flex items-center justify-center">
+              <div key={`loading-${index}`} className="relative w-full h-24 rounded-lg border-2 border-dashed border-[#FFD700] bg-[rgba(255,215,0,0.1)] flex items-center justify-center">
                 <div className="flex flex-col items-center gap-1">
-                  <div className="w-6 h-6 border-2 border-[#D4AF37] border-t-transparent rounded-full animate-spin"></div>
-                  <span className="text-xs text-[#D4AF37]">Loading...</span>
+                  <div className="w-6 h-6 border-2 border-[#FFD700] border-t-transparent rounded-full animate-spin"></div>
+                  <span className="text-xs text-[#FFD700]">Loading...</span>
                 </div>
               </div>
             ))}

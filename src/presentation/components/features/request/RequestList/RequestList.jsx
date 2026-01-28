@@ -88,7 +88,7 @@ export function RequestList({ requests = [], loading, isOwnProfile, onEdit, onDe
                       onClick={() => { onEdit(request); setActiveMenu(null); }}
                       className="w-full text-left px-4 py-3 text-sm text-white hover:bg-[rgba(255,255,255,0.05)] flex items-center gap-2"
                     >
-                      <Edit size={14} className="text-[#D4AF37]" /> Edit
+                      <Edit size={14} className="text-[#FFD700]" /> Edit
                     </button>
 
                     {request.status === 'active' ? (

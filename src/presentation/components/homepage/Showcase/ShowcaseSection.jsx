@@ -55,7 +55,7 @@ const CompanyLogoImage = memo(function CompanyLogoImage({ src, alt, fallback }) 
     <>
       {loading && (
         <div className="absolute inset-0 flex items-center justify-center bg-[#1A283B]">
-          <div className="w-5 h-5 border-2 border-[#D4AF37] border-t-transparent rounded-full animate-spin"></div>
+          <div className="w-5 h-5 border-2 border-[#FFD700] border-t-transparent rounded-full animate-spin"></div>
         </div>
       )}
       <img

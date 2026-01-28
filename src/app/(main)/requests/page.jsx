@@ -19,7 +19,7 @@ function RequestsContent() {
     return (
         <>
             <div className="mb-10 text-center max-w-2xl mx-auto">
-                <h1 className="text-4xl font-bold text-white mb-3">Live RFQ Feed</h1>
+                <h1 className="text-4xl font-bold mb-3" style={{ background: 'linear-gradient(180deg, #ffffff 20%, #909090 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Live RFQ Feed</h1>
                 <p className="text-[#A0A0A0] mb-8">Browse active buying requests from vetted companies worldwide.</p>
 
                 <SearchBar

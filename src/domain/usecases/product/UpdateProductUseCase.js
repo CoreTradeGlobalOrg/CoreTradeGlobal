@@ -56,8 +56,16 @@ export class UpdateProductUseCase {
         this.validateDescription(updateData.description);
       }
 
-      // 5. Handle new image uploads
-      let imageUrls = existingProduct.images || [];
+      // 5. Handle image updates (existing images + new uploads)
+      // If existingImages is provided, use it (some images may have been removed)
+      // Otherwise, keep all existing images
+      let imageUrls = updateData.existingImages !== undefined
+        ? updateData.existingImages
+        : (existingProduct.images || []);
+
+      // Remove existingImages from updateData as it's not a product field
+      delete updateData.existingImages;
+
       if (newImageFiles && newImageFiles.length > 0) {
         // Check total image count
         if (imageUrls.length + newImageFiles.length > 5) {

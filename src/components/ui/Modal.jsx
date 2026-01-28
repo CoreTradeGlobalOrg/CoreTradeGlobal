@@ -50,7 +50,7 @@ export function Modal({
                     <h2 className="text-2xl font-bold text-white">{title}</h2>
                     <button
                         onClick={onClose}
-                        className="text-[#D4AF37] hover:text-[#FFD700] hover:bg-[#D4AF37]/10 transition-colors p-2 rounded-full cursor-pointer"
+                        className="text-[#FFD700] hover:text-[#FFD700] hover:bg-[#FFD700]/10 transition-colors p-2 rounded-full cursor-pointer"
                         aria-label="Close modal"
                     >
                         <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">

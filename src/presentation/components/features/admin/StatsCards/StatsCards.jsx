@@ -97,7 +97,7 @@ export function StatsCards({ users = [] }) {
       {stats.map((stat) => (
         <div
           key={stat.title}
-          className="bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.1)] rounded-xl p-6 backdrop-blur-md hover:border-[#D4AF37]/30 transition-all group"
+          className="bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.1)] rounded-xl p-6 backdrop-blur-md hover:border-[#FFD700]/30 transition-all group"
         >
           {/* Icon and Title */}
           <div className="flex items-center justify-between mb-4">
@@ -110,7 +110,7 @@ export function StatsCards({ users = [] }) {
 
           {/* Value */}
           <div className="mb-2">
-            <div className="text-3xl font-bold text-[#D4AF37]">{stat.value}</div>
+            <div className="text-3xl font-bold text-[#FFD700]">{stat.value}</div>
           </div>
 
           {/* Title and Description */}

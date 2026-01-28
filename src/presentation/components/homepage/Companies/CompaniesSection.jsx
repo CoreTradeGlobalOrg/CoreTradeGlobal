@@ -66,7 +66,7 @@ function CompanyCard({ company }) {
             onError={() => setImgError(true)}
           />
         ) : (
-          <div className="text-5xl font-extrabold text-[var(--accent-gold)]" style={{ textShadow: '0 2px 10px rgba(212, 175, 55, 0.3)' }}>
+          <div className="text-5xl font-extrabold text-[var(--accent-gold)]" style={{ textShadow: '0 2px 10px rgba(255, 215, 0, 0.3)' }}>
             {getAbbreviation(company.companyName)}
           </div>
         )}

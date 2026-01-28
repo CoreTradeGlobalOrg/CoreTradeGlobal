@@ -404,7 +404,7 @@ export function RegisterForm() {
                   href="/terms"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="font-medium text-[#D4AF37] hover:underline"
+                  className="font-medium text-[#FFD700] hover:underline"
                   onClick={(e) => e.stopPropagation()}
                 >
                   Terms of Service
@@ -414,7 +414,7 @@ export function RegisterForm() {
                   href="/privacy-policy"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="font-medium text-[#D4AF37] hover:underline"
+                  className="font-medium text-[#FFD700] hover:underline"
                   onClick={(e) => e.stopPropagation()}
                 >
                   Privacy Policy
@@ -424,7 +424,7 @@ export function RegisterForm() {
                   href="/product-listing-policy"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="font-medium text-[#D4AF37] hover:underline"
+                  className="font-medium text-[#FFD700] hover:underline"
                   onClick={(e) => e.stopPropagation()}
                 >
                   Product Listing Policy
@@ -460,7 +460,7 @@ export function RegisterForm() {
         {/* Login Link */}
         <div className="text-center text-sm">
           <span className="text-[#A0A0A0]">Already have an account? </span>
-          <Link href="/login" className="font-semibold text-[#D4AF37] hover:text-white hover:underline transition-colors">
+          <Link href="/login" className="font-semibold text-[#FFD700] hover:text-white hover:underline transition-colors">
             Login
           </Link>
         </div>

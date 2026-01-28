@@ -125,7 +125,7 @@ export function FairsManager() {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
-          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#D4AF37] border-r-transparent"></div>
+          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#FFD700] border-r-transparent"></div>
           <p className="mt-4 text-[#A0A0A0]">Fuarlar yükleniyor...</p>
         </div>
       </div>
@@ -140,14 +140,14 @@ export function FairsManager() {
           <h3 className="text-2xl font-bold text-white">Fuarlar</h3>
           <p className="text-[#A0A0A0] mt-1">Ticaret fuarlarını yönetin</p>
         </div>
-        <Button onClick={handleCreate} className="flex items-center gap-2 bg-[#D4AF37] hover:bg-[#B5952F] text-black font-semibold">
+        <Button onClick={handleCreate} className="flex items-center gap-2 bg-[#FFD700] hover:bg-[#B5952F] text-black font-semibold">
           <Plus className="w-4 h-4" />
           Fuar Ekle
         </Button>
       </div>
 
       {/* Fairs Table */}
-      <div className="bg-[rgba(255,255,255,0.03)] rounded-xl border border-[#D4AF37]/20 backdrop-blur-md overflow-hidden">
+      <div className="bg-[rgba(255,255,255,0.03)] rounded-xl border border-[#FFD700]/20 backdrop-blur-md overflow-hidden">
         <table className="min-w-full divide-y divide-[rgba(255,255,255,0.05)]">
           <thead className="bg-[#0F1B2B]/50">
             <tr>
@@ -155,7 +155,7 @@ export function FairsManager() {
               <th className="px-6 py-4 text-left text-xs font-bold text-[#A0A0A0] uppercase tracking-wider">Konum</th>
               <th className="px-6 py-4 text-left text-xs font-bold text-[#A0A0A0] uppercase tracking-wider">Tarih</th>
               <th className="px-6 py-4 text-left text-xs font-bold text-[#A0A0A0] uppercase tracking-wider">Durum</th>
-              <th className="px-6 py-4 text-right text-xs font-bold text-[#D4AF37] uppercase tracking-wider">İşlemler</th>
+              <th className="px-6 py-4 text-right text-xs font-bold text-[#FFD700] uppercase tracking-wider">İşlemler</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[rgba(255,255,255,0.05)]">
@@ -167,7 +167,7 @@ export function FairsManager() {
                       <img src={fair.imageUrl} alt={fair.name} className="w-10 h-10 rounded object-cover mr-3 border border-[rgba(255,255,255,0.1)]" />
                     )}
                     <div>
-                      <div className="text-sm font-medium text-white group-hover:text-[#D4AF37] transition-colors">{fair.name}</div>
+                      <div className="text-sm font-medium text-white group-hover:text-[#FFD700] transition-colors">{fair.name}</div>
                       {fair.websiteUrl && (
                         <a href={fair.websiteUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1">
                           <Globe className="w-3 h-3" />
@@ -218,7 +218,7 @@ export function FairsManager() {
             <div className="text-6xl mb-4">🎪</div>
             <h3 className="text-lg font-semibold text-white mb-2">Henüz fuar yok</h3>
             <p className="text-[#A0A0A0] mb-6">İlk fuarınızı ekleyerek başlayın</p>
-            <Button onClick={handleCreate} className="bg-[#D4AF37] hover:bg-[#B5952F] text-black">
+            <Button onClick={handleCreate} className="bg-[#FFD700] hover:bg-[#B5952F] text-black">
               <Plus className="w-4 h-4 mr-2" />
               Fuar Ekle
             </Button>
@@ -229,7 +229,7 @@ export function FairsManager() {
       {/* Fair Form Modal */}
       {modalOpen && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-          <div className="bg-[#0F1B2B] rounded-xl shadow-2xl max-w-lg w-full p-6 max-h-[90vh] overflow-y-auto border border-[#D4AF37]/20">
+          <div className="bg-[#0F1B2B] rounded-xl shadow-2xl max-w-lg w-full p-6 max-h-[90vh] overflow-y-auto border border-[#FFD700]/20">
             <h2 className="text-2xl font-bold text-white mb-6">
               {editingFair ? 'Fuarı Düzenle' : 'Yeni Fuar Ekle'}
             </h2>
@@ -241,7 +241,7 @@ export function FairsManager() {
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-3 py-2 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-lg text-white focus:outline-none focus:border-[#D4AF37] transition-colors"
+                  className="w-full px-3 py-2 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-lg text-white focus:outline-none focus:border-[#FFD700] transition-colors"
                   placeholder="Istanbul Trade Expo"
                 />
               </div>
@@ -252,7 +252,7 @@ export function FairsManager() {
                   required
                   value={formData.location}
                   onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                  className="w-full px-3 py-2 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-lg text-white focus:outline-none focus:border-[#D4AF37] transition-colors"
+                  className="w-full px-3 py-2 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-lg text-white focus:outline-none focus:border-[#FFD700] transition-colors"
                   placeholder="İstanbul, Türkiye"
                 />
               </div>
@@ -264,7 +264,7 @@ export function FairsManager() {
                     required
                     value={formData.startDate}
                     onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                    className="w-full px-3 py-2 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-lg text-white focus:outline-none focus:border-[#D4AF37] transition-colors [color-scheme:dark]"
+                    className="w-full px-3 py-2 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-lg text-white focus:outline-none focus:border-[#FFD700] transition-colors [color-scheme:dark]"
                   />
                 </div>
                 <div>
@@ -274,7 +274,7 @@ export function FairsManager() {
                     required
                     value={formData.endDate}
                     onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                    className="w-full px-3 py-2 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-lg text-white focus:outline-none focus:border-[#D4AF37] transition-colors [color-scheme:dark]"
+                    className="w-full px-3 py-2 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-lg text-white focus:outline-none focus:border-[#FFD700] transition-colors [color-scheme:dark]"
                   />
                 </div>
               </div>
@@ -283,7 +283,7 @@ export function FairsManager() {
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full px-3 py-2 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-lg text-white focus:outline-none focus:border-[#D4AF37] transition-colors"
+                  className="w-full px-3 py-2 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-lg text-white focus:outline-none focus:border-[#FFD700] transition-colors"
                   rows={3}
                   placeholder="Fuar hakkında kısa açıklama"
                 />
@@ -294,7 +294,7 @@ export function FairsManager() {
                   type="url"
                   value={formData.imageUrl}
                   onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-                  className="w-full px-3 py-2 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-lg text-white focus:outline-none focus:border-[#D4AF37] transition-colors"
+                  className="w-full px-3 py-2 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-lg text-white focus:outline-none focus:border-[#FFD700] transition-colors"
                   placeholder="https://example.com/image.jpg"
                 />
               </div>
@@ -304,7 +304,7 @@ export function FairsManager() {
                   type="url"
                   value={formData.websiteUrl}
                   onChange={(e) => setFormData({ ...formData, websiteUrl: e.target.value })}
-                  className="w-full px-3 py-2 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-lg text-white focus:outline-none focus:border-[#D4AF37] transition-colors"
+                  className="w-full px-3 py-2 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-lg text-white focus:outline-none focus:border-[#FFD700] transition-colors"
                   placeholder="https://example.com"
                 />
               </div>
@@ -313,7 +313,7 @@ export function FairsManager() {
                 <select
                   value={formData.status}
                   onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                  className="w-full px-3 py-2 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-lg text-white focus:outline-none focus:border-[#D4AF37] transition-colors"
+                  className="w-full px-3 py-2 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-lg text-white focus:outline-none focus:border-[#FFD700] transition-colors"
                 >
                   <option value="upcoming">Yaklaşan</option>
                   <option value="ongoing">Devam Eden</option>
@@ -321,7 +321,7 @@ export function FairsManager() {
                 </select>
               </div>
               <div className="flex gap-3 pt-4">
-                <Button type="submit" className="flex-1 bg-[#D4AF37] hover:bg-[#B5952F] text-black font-bold">
+                <Button type="submit" className="flex-1 bg-[#FFD700] hover:bg-[#B5952F] text-black font-bold">
                   {editingFair ? 'Güncelle' : 'Ekle'}
                 </Button>
                 <Button

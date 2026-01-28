@@ -217,12 +217,13 @@ export function HeroSection({ fetchData = false }) {
             <div className="search-bar-container">
               <form className="search-bar" onSubmit={handleSearch}>
                 <div className="search-switch-container">
-                  {/* Sliding Gold Background */}
+                  {/* Sliding Background - Yellow for Products, Blue for RFQs */}
                   <div
                     className="search-switch-slider"
                     style={{
                       transform: searchType === 'Products' ? 'translateX(0)' : 'translateX(100%)',
-                      width: 'calc(50% - 4px)' // Ensure precise fit
+                      width: 'calc(50% - 4px)',
+                      background: searchType === 'Products' ? '#FFD700' : '#3B82F6'
                     }}
                   />
 
@@ -231,6 +232,7 @@ export function HeroSection({ fetchData = false }) {
                     type="button"
                     className={`search-switch-btn ${searchType === 'Products' ? 'active' : ''}`}
                     onClick={() => setSearchType('Products')}
+                    style={{ color: searchType === 'Products' ? '#0F1B2B' : '#fff' }}
                   >
                     Products
                   </button>
@@ -238,6 +240,7 @@ export function HeroSection({ fetchData = false }) {
                     type="button"
                     className={`search-switch-btn ${searchType === 'RFQs' ? 'active' : ''}`}
                     onClick={() => setSearchType('RFQs')}
+                    style={{ color: searchType === 'RFQs' ? '#fff' : '#fff' }}
                   >
                     RFQs
                   </button>
@@ -368,7 +371,7 @@ export function HeroSection({ fetchData = false }) {
         {/* Right Side Info Cards */}
         <div className="hero-right-cards">
           {/* Fair Card */}
-          <Link href={fetchData && latestFair ? `/fairs/${latestFair.id}` : '/fairs'} className="hero-info-card hero-fair-card">
+          <Link href={fetchData && latestFair ? `/fair/${latestFair.id}` : '/fairs'} className="hero-info-card hero-fair-card">
             <div className="card-icon">🎪</div>
             <div className="card-content">
               <h3>{fetchData ? 'Latest Fair' : 'Trade Fairs'}</h3>

@@ -67,7 +67,7 @@ export default function CategoriesPage() {
         <main className="min-h-screen pt-[120px] pb-20 px-6 bg-radial-navy">
             <div className="max-w-[1400px] mx-auto">
                 <section className="mb-12 text-center">
-                    <h1 className="text-4xl font-bold mb-4 text-white">Browse by Industry</h1>
+                    <h1 className="text-4xl font-bold mb-4" style={{ background: 'linear-gradient(180deg, #ffffff 20%, #909090 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Browse by Industry</h1>
                     <p className="text-[var(--text-grey)] mb-8">Explore thousands of verified suppliers across major sectors.</p>
 
                     {/* Search Bar */}
@@ -96,7 +96,7 @@ export default function CategoriesPage() {
                             >
                                 {/* Icon Area */}
                                 <div className="flex-1 flex items-center justify-center">
-                                    <div className="w-20 h-20 rounded-2xl bg-[rgba(255,255,255,0.05)] flex items-center justify-center group-hover:scale-110 group-hover:bg-[rgba(212,175,55,0.1)] transition-all duration-300">
+                                    <div className="w-20 h-20 rounded-2xl bg-[rgba(255,255,255,0.05)] flex items-center justify-center group-hover:scale-110 group-hover:bg-[rgba(255,215,0,0.1)] transition-all duration-300">
                                         {category.icon && (category.icon.startsWith('http') || category.icon.startsWith('/')) ? (
                                             <img src={category.icon} alt={category.name} className="w-12 h-12 object-contain" />
                                         ) : (
@@ -106,7 +106,7 @@ export default function CategoriesPage() {
                                 </div>
 
                                 {/* Category Name */}
-                                <h3 className="text-lg font-bold text-white text-center group-hover:text-[#D4AF37] transition-colors mb-4">
+                                <h3 className="text-lg font-bold text-white text-center group-hover:text-[#FFD700] transition-colors mb-4">
                                     {category.name}
                                 </h3>
 

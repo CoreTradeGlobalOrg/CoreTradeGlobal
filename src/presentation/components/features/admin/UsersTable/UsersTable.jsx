@@ -173,7 +173,7 @@ export function UsersTable({ users = [], onRefresh }) {
 
   return (
     <div
-      className="bg-[rgba(255,255,255,0.03)] rounded-xl border border-[#D4AF37]/20 backdrop-blur-md shadow-2xl"
+      className="bg-[rgba(255,255,255,0.03)] rounded-xl border border-[#FFD700]/20 backdrop-blur-md shadow-2xl"
     >
       {/* Table Header */}
       <div className="px-6 py-4 border-b border-[rgba(255,255,255,0.1)]">
@@ -191,7 +191,7 @@ export function UsersTable({ users = [], onRefresh }) {
                 placeholder="Search users..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full sm:w-64 px-4 py-2 pl-10 bg-[#0F1B2B] border border-[rgba(255,255,255,0.1)] rounded-lg text-white placeholder:text-gray-500 focus:border-[#D4AF37] focus:outline-none transition-colors"
+                className="w-full sm:w-64 px-4 py-2 pl-10 bg-[#0F1B2B] border border-[rgba(255,255,255,0.1)] rounded-lg text-white placeholder:text-gray-500 focus:border-[#FFD700] focus:outline-none transition-colors"
               />
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
                 🔍
@@ -202,7 +202,7 @@ export function UsersTable({ users = [], onRefresh }) {
             <select
               value={filterVerified}
               onChange={(e) => setFilterVerified(e.target.value)}
-              className="px-4 py-2 bg-[#0F1B2B] border border-[rgba(255,255,255,0.1)] rounded-lg text-white focus:border-[#D4AF37] focus:outline-none cursor-pointer"
+              className="px-4 py-2 bg-[#0F1B2B] border border-[rgba(255,255,255,0.1)] rounded-lg text-white focus:border-[#FFD700] focus:outline-none cursor-pointer"
             >
               <option value="all">All Status</option>
               <option value="verified">Email Verified</option>
@@ -213,7 +213,7 @@ export function UsersTable({ users = [], onRefresh }) {
             <select
               value={filterApproved}
               onChange={(e) => setFilterApproved(e.target.value)}
-              className="px-4 py-2 bg-[#0F1B2B] border border-[rgba(255,255,255,0.1)] rounded-lg text-white focus:border-[#D4AF37] focus:outline-none cursor-pointer"
+              className="px-4 py-2 bg-[#0F1B2B] border border-[rgba(255,255,255,0.1)] rounded-lg text-white focus:border-[#FFD700] focus:outline-none cursor-pointer"
             >
               <option value="all">All Approval</option>
               <option value="approved">Admin Approved</option>
@@ -224,7 +224,7 @@ export function UsersTable({ users = [], onRefresh }) {
             <select
               value={filterRole}
               onChange={(e) => setFilterRole(e.target.value)}
-              className="px-4 py-2 bg-[#0F1B2B] border border-[rgba(255,255,255,0.1)] rounded-lg text-white focus:border-[#D4AF37] focus:outline-none cursor-pointer"
+              className="px-4 py-2 bg-[#0F1B2B] border border-[rgba(255,255,255,0.1)] rounded-lg text-white focus:border-[#FFD700] focus:outline-none cursor-pointer"
             >
               <option value="all">All Roles</option>
               <option value="admin">Admins Only</option>
@@ -257,7 +257,7 @@ export function UsersTable({ users = [], onRefresh }) {
               <th className="px-6 py-4 text-left text-xs font-bold text-[#A0A0A0] uppercase tracking-wider">
                 Registered
               </th>
-              <th className="px-6 py-4 text-left text-xs font-bold text-[#D4AF37] uppercase tracking-wider">
+              <th className="px-6 py-4 text-left text-xs font-bold text-[#FFD700] uppercase tracking-wider">
                 Actions
               </th>
             </tr>
@@ -280,7 +280,7 @@ export function UsersTable({ users = [], onRefresh }) {
                       onClick={() => router.push(`/profile/${user.id}`)}
                       className="cursor-pointer"
                     >
-                      <div className="font-semibold text-white group-hover:text-[#D4AF37] transition-colors">
+                      <div className="font-semibold text-white group-hover:text-[#FFD700] transition-colors">
                         {user.displayName || `${user.firstName} ${user.lastName}` || 'N/A'}
                       </div>
                       <div className="text-sm text-gray-400">{user.email}</div>
@@ -354,9 +354,9 @@ export function UsersTable({ users = [], onRefresh }) {
                   {/* Actions Dropdown */}
                   <td className="px-6 py-4 text-right">
                     <select
-                      className="bg-[#0F1B2B] text-white border border-[#D4AF37]/30 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-[#D4AF37] cursor-pointer hover:bg-[rgba(255,255,255,0.05)] transition-colors appearance-none pr-8 relative"
+                      className="bg-[#0F1B2B] text-white border border-[#FFD700]/30 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-[#FFD700] cursor-pointer hover:bg-[rgba(255,255,255,0.05)] transition-colors appearance-none pr-8 relative"
                       style={{
-                        backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23D4AF37' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
+                        backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23FFD700' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
                         backgroundPosition: `right 0.5rem center`,
                         backgroundRepeat: `no-repeat`,
                         backgroundSize: `1.5em 1.5em`

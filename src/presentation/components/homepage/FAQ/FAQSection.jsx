@@ -78,7 +78,7 @@ export function FAQSection() {
       <div className="faq-container">
         {/* Header */}
         <div className="faq-header">
-          <h2>Frequently Asked Questions</h2>
+          <h2 style={{ background: 'linear-gradient(180deg, #ffffff 20%, #909090 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Frequently Asked Questions</h2>
           <p>Find answers to common questions about CoreTradeGlobal</p>
         </div>
 

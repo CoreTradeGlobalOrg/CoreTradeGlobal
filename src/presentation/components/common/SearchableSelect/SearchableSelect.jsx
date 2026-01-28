@@ -62,17 +62,17 @@ export function SearchableSelect({
           w-full px-4 py-3 text-left
           border-2 rounded-lg
           ${className.includes('dark-select')
-            ? 'bg-[#0F1B2B] border-[rgba(255,255,255,0.1)] text-white hover:border-[#D4AF37]/50'
+            ? 'bg-[#0F1B2B] border-[rgba(255,255,255,0.1)] text-white hover:border-[#FFD700]/50'
             : 'bg-white border-slate-300 text-slate-900'}
           ${error
             ? 'border-red-500 focus:border-red-600'
-            : (className.includes('dark-select') ? 'focus:border-[#D4AF37]' : 'focus:border-blue-600')
+            : (className.includes('dark-select') ? 'focus:border-[#FFD700]' : 'focus:border-blue-600')
           }
           ${disabled ? 'opacity-50 cursor-not-allowed bg-slate-50' : 'cursor-pointer'}
           focus:outline-none focus:ring-4
           ${error
             ? 'focus:ring-red-200'
-            : (className.includes('dark-select') ? 'focus:ring-[#D4AF37]/20' : 'focus:ring-blue-200')
+            : (className.includes('dark-select') ? 'focus:ring-[#FFD700]/20' : 'focus:ring-blue-200')
           }
           transition-all duration-200
           flex items-center justify-between
@@ -100,7 +100,7 @@ export function SearchableSelect({
       {/* Dropdown menu */}
       {isOpen && (
         <div className={`absolute z-50 w-full mt-2 rounded-lg shadow-xl max-h-80 overflow-hidden border-2 ${className.includes('dark-select')
-          ? 'bg-[#0F1B2B] border-[#D4AF37]/30 text-white'
+          ? 'bg-[#0F1B2B] border-[#FFD700]/30 text-white'
           : 'bg-white border-slate-200 text-slate-900'
           }`}>
           {/* Search input */}
@@ -112,7 +112,7 @@ export function SearchableSelect({
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder={searchPlaceholder}
               className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${className.includes('dark-select')
-                ? 'bg-[rgba(255,255,255,0.05)] border-white/10 text-white focus:ring-[#D4AF37] placeholder:text-gray-500'
+                ? 'bg-[rgba(255,255,255,0.05)] border-white/10 text-white focus:ring-[#FFD700] placeholder:text-gray-500'
                 : 'bg-white border-slate-300 text-slate-900 focus:ring-blue-500'
                 }`}
               autoFocus
@@ -131,7 +131,7 @@ export function SearchableSelect({
                     w-full px-4 py-3 text-left
                     transition-colors duration-150
                     ${option.value === value
-                      ? (className.includes('dark-select') ? 'bg-[#D4AF37]/20 text-[#D4AF37] font-medium' : 'bg-blue-100 text-blue-900 font-medium')
+                      ? (className.includes('dark-select') ? 'bg-[#FFD700]/20 text-[#FFD700] font-medium' : 'bg-blue-100 text-blue-900 font-medium')
                       : (className.includes('dark-select') ? 'text-gray-300 hover:bg-white/5 hover:text-white' : 'text-slate-700 hover:bg-blue-50')
                     }
                   `}

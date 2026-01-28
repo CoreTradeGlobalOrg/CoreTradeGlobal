@@ -3,7 +3,7 @@
     /* Renk Paleti */
     --bg-deep-navy: #18202a;
     --bg-accent-navy: #1a283b;
-    --accent-gold: #D4AF37;
+    --accent-gold: #FFD700;
     --accent-bright-gold: #FFD700;
     --text-white: #F5F5F5;
     --text-grey: #A0A0A0;
@@ -261,15 +261,15 @@ html {
 }
 
 .btn-hero-secondary {
-    background-color: rgba(212, 175, 55, 0.2);
-    color: #D4AF37;
+    background-color: rgba(255, 215, 0, 0.2);
+    color: #FFD700;
     padding: 16px 48px;
     border-radius: 100px;
     font-size: 18px;
     font-weight: 700;
     text-decoration: none;
-    border: 2px solid rgba(212, 175, 55, 0.4);
-    box-shadow: 0 8px 30px rgba(212, 175, 55, 0.1);
+    border: 2px solid rgba(255, 215, 0, 0.4);
+    box-shadow: 0 8px 30px rgba(255, 215, 0, 0.1);
     transition: 0.2s;
     cursor: pointer;
     display: inline-flex;
@@ -278,10 +278,10 @@ html {
 }
 
 .btn-hero-secondary:hover {
-    background-color: rgba(212, 175, 55, 0.35);
-    border-color: rgba(212, 175, 55, 0.6);
+    background-color: rgba(255, 215, 0, 0.35);
+    border-color: rgba(255, 215, 0, 0.6);
     transform: translateY(-3px);
-    box-shadow: 0 12px 40px rgba(212, 175, 55, 0.2);
+    box-shadow: 0 12px 40px rgba(255, 215, 0, 0.2);
     gap: 12px;
 }
 
@@ -515,7 +515,7 @@ html {
     background: linear-gradient(135deg, rgba(26, 27, 43, 0.9) 0%, rgba(15, 27, 43, 0.95) 100%);
     -webkit-backdrop-filter: blur(15px);
     backdrop-filter: blur(15px);
-    border: 1px solid rgba(212, 175, 55, 0.4);
+    border: 1px solid rgba(255, 215, 0, 0.4);
     border-radius: 16px;
     padding: 18px;
     display: flex;
@@ -523,7 +523,7 @@ html {
     align-items: center;
     transition: all 0.3s ease;
     cursor: pointer;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(212, 175, 55, 0.05);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(255, 215, 0, 0.05);
     width: 100%;
     box-sizing: border-box;
     min-height: 120px;
@@ -533,9 +533,9 @@ html {
 
 .hero-info-card:hover {
     background: linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 27, 43, 0.98) 100%);
-    border-color: rgba(212, 175, 55, 0.7);
+    border-color: rgba(255, 215, 0, 0.7);
     transform: translateY(-3px);
-    box-shadow: 0 12px 40px rgba(212, 175, 55, 0.2), inset 0 0 20px rgba(212, 175, 55, 0.08);
+    box-shadow: 0 12px 40px rgba(255, 215, 0, 0.2), inset 0 0 20px rgba(255, 215, 0, 0.08);
 }
 
 .hero-product-card {
@@ -746,7 +746,7 @@ html {
 .live-feed-title {
     font-size: 16px;
     font-weight: 700;
-    color: #D4AF37;
+    color: #FFD700;
     text-transform: uppercase;
     letter-spacing: 1px;
 }
@@ -1032,7 +1032,7 @@ html {
 
 .card:hover {
     transform: translateY(-3px);
-    border-color: rgba(212, 175, 55, 0.3);
+    border-color: rgba(255, 215, 0, 0.3);
 }
 
 .card-img-area {
@@ -1095,7 +1095,7 @@ html {
     display: inline-block;
     font-size: 8px;
     font-weight: 700;
-    background: linear-gradient(135deg, #D4AF37 0%, #FFD700 100%);
+    background: linear-gradient(135deg, #FFD700 0%, #FFD700 100%);
     color: #0F1B2B;
     padding: 2px 6px;
     border-radius: 8px;
@@ -1193,12 +1193,12 @@ html {
 }
 
 .cat-card-more {
-    background: rgba(212, 175, 55, 0.05);
-    border: 1px dashed rgba(212, 175, 55, 0.3);
+    background: rgba(255, 215, 0, 0.05);
+    border: 1px dashed rgba(255, 215, 0, 0.3);
 }
 
 .cat-card-more:hover {
-    background: rgba(212, 175, 55, 0.15);
+    background: rgba(255, 215, 0, 0.15);
     border-color: var(--accent-gold);
     border-style: solid;
 }
@@ -1378,7 +1378,7 @@ html {
     display: flex;
     flex-direction: column;
     background: linear-gradient(145deg, rgba(18, 28, 40, 0.55) 0%, rgba(11, 20, 32, 0.6) 100%);
-    border: 1px solid rgba(212, 175, 55, 0.16);
+    border: 1px solid rgba(255, 215, 0, 0.16);
     box-shadow: 0 8px 30px rgba(8, 12, 20, 0.45);
 }
 
@@ -1426,9 +1426,9 @@ html {
 }
 
 .product-card:hover {
-    border-color: rgba(212, 175, 55, 0.5);
+    border-color: rgba(255, 215, 0, 0.5);
     transform: translateY(-6px);
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45), 0 0 28px rgba(212, 175, 55, 0.03) inset;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45), 0 0 28px rgba(255, 215, 0, 0.03) inset;
 }
 
 .product-card-image {
@@ -1455,7 +1455,7 @@ html {
 .product-card:focus-visible,
 .card:focus-visible,
 .floating-widget:focus-visible {
-    outline: 3px solid rgba(212, 175, 55, 0.14);
+    outline: 3px solid rgba(255, 215, 0, 0.14);
     outline-offset: 2px;
 }
 
@@ -1524,13 +1524,20 @@ html {
     flex: 1 1 auto;
 }
 
+.product-card-price {
+    font-size: 20px;
+    font-weight: 800;
+    color: #FFD700;
+    margin: 8px 0;
+}
+
 /* Primary product CTA (styled below - keep only the larger variant) */
 
 .product-card-btn {
     width: 100%;
     margin-top: 16px;
     padding: 14px 18px;
-    background: linear-gradient(135deg, #D4A745 0%, #E0B555 100%);
+    background: linear-gradient(135deg, #FFD700 0%, #FDB931 100%);
     color: #0F1B2B;
     border: none;
     border-radius: 28px;
@@ -1538,13 +1545,13 @@ html {
     font-weight: 800;
     cursor: pointer;
     transition: all 0.22s ease;
-    box-shadow: 0 8px 28px rgba(212, 175, 55, 0.12);
+    box-shadow: 0 8px 28px rgba(255, 215, 0, 0.12);
 }
 
 .product-card-btn:hover {
     filter: brightness(1.03);
     transform: translateY(-3px);
-    box-shadow: 0 12px 34px rgba(212, 175, 55, 0.18);
+    box-shadow: 0 12px 34px rgba(255, 215, 0, 0.18);
 }
 
 .product-card-btn:active {
@@ -1590,7 +1597,7 @@ html {
 /* RFQ card visual (restore gradient & gold border) */
 #requests .card {
     background: linear-gradient(145deg, rgba(26, 40, 59, 0.4) 0%, rgba(15, 27, 43, 0.65) 100%);
-    border: 1px solid rgba(212, 175, 55, 0.18);
+    border: 1px solid rgba(255, 215, 0, 0.18);
     border-radius: 16px;
     padding: 16px;
     width: 280px;
@@ -1607,7 +1614,7 @@ html {
 #requests .card:hover {
     transform: translateY(-8px);
     box-shadow: 0 15px 40px rgba(0, 0, 0, 0.35);
-    border-color: rgba(212, 175, 55, 0.4);
+    border-color: rgba(255, 215, 0, 0.4);
 }
 
 /* Keep inner parts transparent only when needed; avoid forcing all descendants */
@@ -1632,7 +1639,7 @@ html {
     display: flex;
     flex-direction: column;
     background: linear-gradient(145deg, rgba(18, 28, 40, 0.55) 0%, rgba(11, 20, 32, 0.6) 100%);
-    border: 1px solid rgba(212, 175, 55, 0.16);
+    border: 1px solid rgba(255, 215, 0, 0.16);
     box-shadow: 0 8px 30px rgba(8, 12, 20, 0.45);
 }
 
@@ -1962,7 +1969,7 @@ html {
     align-items: center;
     justify-content: center;
     font-weight: 800;
-    color: #D4AF37;
+    color: #FFD700;
     font-size: 1.2rem;
 }
 
@@ -2118,7 +2125,7 @@ html {
 }
 
 .faq-item:hover {
-    border-color: rgba(212, 175, 55, 0.3);
+    border-color: rgba(255, 215, 0, 0.3);
     transform: translateY(-2px);
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
 }
@@ -2126,7 +2133,7 @@ html {
 .faq-item.active {
     border-color: var(--faq-accent-gold);
     background: linear-gradient(160deg, var(--faq-bg-card-active-start) 0%, var(--faq-bg-card-active-end) 100%);
-    box-shadow: 0 0 20px rgba(212, 175, 55, 0.1);
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.1);
 }
 
 .faq-question {
@@ -2226,7 +2233,7 @@ html {
     position: absolute;
     width: 800px;
     height: 600px;
-    background: radial-gradient(circle, rgba(212, 175, 55, 0.04) 0%, transparent 60%);
+    background: radial-gradient(circle, rgba(255, 215, 0, 0.04) 0%, transparent 60%);
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
@@ -2317,7 +2324,7 @@ html {
 
 .news-card:hover {
     transform: translateY(-8px);
-    border-color: rgba(212, 175, 55, 0.4);
+    border-color: rgba(255, 215, 0, 0.4);
     box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
 }
 
@@ -2367,7 +2374,7 @@ html {
     left: 16px;
     background: rgba(15, 27, 43, 0.85);
     backdrop-filter: blur(10px);
-    border: 1px solid rgba(212, 175, 55, 0.3);
+    border: 1px solid rgba(255, 215, 0, 0.3);
     color: var(--accent-gold);
     padding: 5px 10px;
     border-radius: 50px;
@@ -2682,7 +2689,7 @@ html {
 
 .hp-news-card:hover {
     transform: translateY(-8px);
-    border-color: rgba(212, 175, 55, 0.4);
+    border-color: rgba(255, 215, 0, 0.4);
     box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
 }
 

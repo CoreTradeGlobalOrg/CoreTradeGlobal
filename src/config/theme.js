@@ -15,11 +15,11 @@ export const theme = {
     },
     border: {
       default: 'border-white/10',
-      focus: 'focus:border-[#D4AF37]', // Gold
+      focus: 'focus:border-[#FFD700]', // Gold
     },
     button: {
-      primary: 'bg-[#D4AF37] hover:bg-[#FFD700] text-[#0F1B2B]', // Gold bg, Navy text
-      ring: 'focus:ring-[#D4AF37]',
+      primary: 'bg-[#FFD700] hover:bg-[#FFD700] text-[#0F1B2B]', // Gold bg, Navy text
+      ring: 'focus:ring-[#FFD700]',
     },
   },
 

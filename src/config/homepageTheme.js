@@ -16,10 +16,10 @@ export const homepageTheme = {
 
     // Accent colors
     accent: {
-      gold: '#D4AF37',         // Primary gold
+      gold: '#FFD700',         // Primary gold
       goldLight: '#FFD700',    // Bright gold
       goldDark: '#B8860B',     // Dark gold
-      goldGradient: 'linear-gradient(135deg, #D4AF37 0%, #FFD700 50%, #D4AF37 100%)',
+      goldGradient: 'linear-gradient(135deg, #FFD700 0%, #FFD700 50%, #FFD700 100%)',
     },
 
     // Text colors
@@ -28,7 +28,7 @@ export const homepageTheme = {
       secondary: '#D1D5DB',    // Light gray
       muted: '#9CA3AF',        // Muted gray
       dark: '#6B7280',         // Darker gray
-      accent: '#D4AF37',       // Gold text
+      accent: '#FFD700',       // Gold text
     },
 
     // UI element colors
@@ -64,21 +64,21 @@ export const homepageTheme = {
     border: '1px solid rgba(255, 255, 255, 0.1)',
     borderRadius: '16px',
     shadow: '0 4px 24px rgba(0, 0, 0, 0.2)',
-    hoverShadow: '0 8px 40px rgba(212, 175, 55, 0.15)',
+    hoverShadow: '0 8px 40px rgba(255, 215, 0, 0.15)',
   },
 
   // Button styles
   button: {
     primary: {
-      background: 'linear-gradient(135deg, #D4AF37 0%, #FFD700 100%)',
+      background: 'linear-gradient(135deg, #FFD700 0%, #FFD700 100%)',
       text: '#18202a',
-      hover: 'linear-gradient(135deg, #FFD700 0%, #D4AF37 100%)',
+      hover: 'linear-gradient(135deg, #FFD700 0%, #FFD700 100%)',
     },
     secondary: {
       background: 'transparent',
-      border: '2px solid #D4AF37',
-      text: '#D4AF37',
-      hover: 'rgba(212, 175, 55, 0.1)',
+      border: '2px solid #FFD700',
+      text: '#FFD700',
+      hover: 'rgba(255, 215, 0, 0.1)',
     },
     ghost: {
       background: 'transparent',

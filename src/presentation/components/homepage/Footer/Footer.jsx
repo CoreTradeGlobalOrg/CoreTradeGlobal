@@ -33,10 +33,9 @@ export function Footer() {
           {/* Company Links */}
           <div className="footer-col">
             <h4>Company</h4>
-            <Link href="/about">About Us</Link>
-            <Link href="/careers">Careers</Link>
+            <Link href="/about-us">About Us</Link>
             <Link href="/contact">Contact Support</Link>
-            <Link href="/success-stories">Success Stories</Link>
+            <Link href="/faq">FAQ</Link>
           </div>
 
           {/* Newsletter */}

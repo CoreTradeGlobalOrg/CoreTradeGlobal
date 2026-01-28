@@ -214,7 +214,7 @@ function ProductCard({ product }) {
                     <>
                         {imageLoading && (
                             <div className="absolute inset-0 flex items-center justify-center bg-[#1A283B] z-10">
-                                <div className="w-8 h-8 border-2 border-[#D4AF37] border-t-transparent rounded-full animate-spin"></div>
+                                <div className="w-8 h-8 border-2 border-[#FFD700] border-t-transparent rounded-full animate-spin"></div>
                             </div>
                         )}
                         <img
@@ -228,7 +228,7 @@ function ProductCard({ product }) {
                     <div className="text-4xl">📦</div>
                 )}
                 <div className="absolute top-3 right-3 bg-[rgba(15,27,43,0.8)] backdrop-blur-md px-3 py-1 rounded-full border border-[rgba(255,255,255,0.1)] z-20">
-                    <span className="text-xs font-bold text-[#D4AF37] uppercase tracking-wider">{product.category || 'Product'}</span>
+                    <span className="text-xs font-bold text-[#FFD700] uppercase tracking-wider">{product.category || 'Product'}</span>
                 </div>
             </div>
 
@@ -248,12 +248,12 @@ function ProductCard({ product }) {
                 <div className="mt-auto pt-4 border-t border-[rgba(255,255,255,0.05)] flex justify-between items-end">
                     <div>
                         <span className="block text-xs text-[#A0A0A0] mb-1">Price</span>
-                        <div className="text-[#D4AF37] font-bold text-xl">
+                        <div className="text-[#FFD700] font-bold text-xl">
                             {product.currency || '$'}{product.price}
                             <span className="text-sm text-[#A0A0A0] font-normal ml-1">/ {product.unit}</span>
                         </div>
                     </div>
-                    <button className="w-10 h-10 rounded-full bg-[rgba(255,255,255,0.05)] flex items-center justify-center text-[#D4AF37] group-hover:bg-[#D4AF37] group-hover:text-[#0F1B2B] transition-all">
+                    <button className="w-10 h-10 rounded-full bg-[rgba(255,255,255,0.05)] flex items-center justify-center text-[#FFD700] group-hover:bg-[#FFD700] group-hover:text-[#0F1B2B] transition-all">
                         →
                     </button>
                 </div>

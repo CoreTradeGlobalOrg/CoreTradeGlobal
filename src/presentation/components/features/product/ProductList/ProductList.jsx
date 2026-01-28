@@ -26,7 +26,7 @@ const ProductCardImage = memo(function ProductCardImage({ src, alt, inactive }) 
     <>
       {loading && (
         <div className="absolute inset-0 flex items-center justify-center bg-[#1A283B] z-10">
-          <div className="w-8 h-8 border-2 border-[#D4AF37] border-t-transparent rounded-full animate-spin"></div>
+          <div className="w-8 h-8 border-2 border-[#FFD700] border-t-transparent rounded-full animate-spin"></div>
         </div>
       )}
       <img
@@ -141,7 +141,7 @@ export function ProductList({ products = [], loading, isOwnProfile, onEdit, onDe
                       onClick={() => { onEdit(product); setActiveMenu(null); }}
                       className="w-full text-left px-4 py-3 text-sm text-white hover:bg-[rgba(255,255,255,0.05)] flex items-center gap-2"
                     >
-                      <Edit size={14} className="text-[#D4AF37]" /> Edit
+                      <Edit size={14} className="text-[#FFD700]" /> Edit
                     </button>
                     <button
                       onClick={() => { onToggleStatus(product.id, product.status === 'active' ? 'draft' : 'active'); setActiveMenu(null); }}
@@ -180,7 +180,7 @@ export function ProductList({ products = [], loading, isOwnProfile, onEdit, onDe
                 )}
 
                 <div className="absolute top-3 right-3 bg-[rgba(15,27,43,0.8)] backdrop-blur-md px-3 py-1 rounded-full border border-[rgba(255,255,255,0.1)]">
-                  <span className="text-xs font-bold text-[#D4AF37] uppercase tracking-wider">{product.category || 'Product'}</span>
+                  <span className="text-xs font-bold text-[#FFD700] uppercase tracking-wider">{product.category || 'Product'}</span>
                 </div>
               </div>
 
@@ -198,7 +198,7 @@ export function ProductList({ products = [], loading, isOwnProfile, onEdit, onDe
                 <div className="mt-auto pt-4 border-t border-[rgba(255,255,255,0.05)] flex justify-between items-end">
                   <div>
                     <span className="block text-xs text-[#A0A0A0] mb-1">Price</span>
-                    <div className="text-[#D4AF37] font-bold text-xl">
+                    <div className="text-[#FFD700] font-bold text-xl">
                       {currencySymbol} {product.price}
                       <span className="text-sm text-[#A0A0A0] font-normal ml-1">/ {product.unit}</span>
                     </div>

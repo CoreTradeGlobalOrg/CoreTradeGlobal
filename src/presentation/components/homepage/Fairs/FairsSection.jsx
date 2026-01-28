@@ -61,23 +61,19 @@ function FairCard({ fair }) {
   const startDateInfo = formatDate(fair.startDate);
 
   return (
-    <div className="fair-card">
+    <Link href={`/fair/${fair.id}`} className="fair-card">
       <div className="fair-content">
         {/* Fair Title */}
-        <h3 className="text-xl font-bold text-white mb-2 line-clamp-2">
-          {fair.name}
-        </h3>
+        <h3 className="fair-card-title">{fair.name}</h3>
 
         {/* Location */}
-        <div className="flex items-center gap-2 text-[var(--text-grey)] text-sm mb-2">
+        <div className="fair-card-location">
           <MapPin className="w-4 h-4" />
           <span>{fair.location}</span>
         </div>
 
         {/* Description */}
-        <p className="text-sm text-[var(--text-grey)] line-clamp-2 mb-4">
-          {fair.description}
-        </p>
+        <p className="fair-card-desc">{fair.description}</p>
 
         {/* Visual Area with Date */}
         <div className="fair-visual-area">
@@ -87,7 +83,7 @@ function FairCard({ fair }) {
           </div>
         </div>
       </div>
-    </div>
+    </Link>
   );
 }
 

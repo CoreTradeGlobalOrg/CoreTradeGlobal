@@ -37,17 +37,14 @@ export function LoginForm() {
         return;
       }
 
-      // Success - redirect to intended page or profile
+      // Success - redirect to homepage or intended page (from URL param only)
       toast.success('Login successful!');
 
-      // Check localStorage for redirect (from registration flow)
-      const storedRedirect = localStorage.getItem('ctg_auth_redirect');
-      if (storedRedirect) {
-        localStorage.removeItem('ctg_auth_redirect');
-        router.push(storedRedirect);
-      } else {
-        router.push(redirectTo || '/');
-      }
+      // Clear any stored redirect from ViewLimitGuard
+      localStorage.removeItem('ctg_auth_redirect');
+
+      // Only use URL redirect param, otherwise go to homepage
+      router.push(redirectTo || '/');
     } catch (err) {
       console.error('Login failed:', err);
       toast.error(error || 'Login failed. Please check your credentials.');
@@ -88,10 +85,10 @@ export function LoginForm() {
 
         <div className="flex justify-between items-center mb-8">
           <div className="flex items-center gap-2">
-            <input type="checkbox" id="remember" className="w-4 h-4 accent-[#D4AF37] cursor-pointer" />
+            <input type="checkbox" id="remember" className="w-4 h-4 accent-[#FFD700] cursor-pointer" />
             <label htmlFor="remember" className="text-[13px] text-[#A0A0A0] cursor-pointer">Remember me</label>
           </div>
-          <Link href="/forgot-password" className="text-[13px] text-[#D4AF37] font-medium hover:text-white hover:underline transition-colors">
+          <Link href="/forgot-password" className="text-[13px] text-[#FFD700] font-medium hover:text-white hover:underline transition-colors">
             Forgot Password?
           </Link>
         </div>
@@ -111,7 +108,7 @@ export function LoginForm() {
         </button>
 
         <p className="mt-6 text-center text-sm text-[#A0A0A0]">
-          Don't have an account? <Link href="/register" className="text-[#D4AF37] font-semibold hover:text-white transition-colors">Register Now</Link>
+          Don't have an account? <Link href="/register" className="text-[#FFD700] font-semibold hover:text-white transition-colors">Register Now</Link>
         </p>
       </form>
     </div>

@@ -8,12 +8,12 @@ html, body {
 
 :root {
   /* Primary Colors - Gold/Yellow from Homepage */
-  --color-primary: #D4AF37;
-  /* Accent Gold */
-  --color-primary-dark: #B59325;
-  /* Darker Gold */
-  --color-primary-light: #FFD700;
+  --color-primary: #FFD700;
   /* Bright Gold */
+  --color-primary-dark: #E5C100;
+  /* Darker Gold */
+  --color-primary-light: #FFE44D;
+  /* Lighter Gold */
 
   /* Background Colors - Deep Navy */
   --color-bg-base: #0F1B2B;
@@ -44,11 +44,11 @@ html, body {
   /* Border Colors */
   --color-border: #1e293b;
   /* Slate 800 */
-  --color-border-focus: #D4AF37;
+  --color-border-focus: #FFD700;
   /* Gold */
 
   /* Homepage Component Variables (hp-*) */
-  --hp-gold: #D4AF37;
+  --hp-gold: #FFD700;
   --hp-gold-light: #FFD700;
   --hp-text-primary: #F5F5F5;
   --hp-text-secondary: #A0A0A0;
@@ -59,7 +59,7 @@ html, body {
   /* Legacy variables used in homepage.css */
   --bg-deep-navy: #0F1B2B;
   --bg-accent-navy: #1A283B;
-  --accent-gold: #D4AF37;
+  --accent-gold: #FFD700;
   --accent-bright-gold: #FFD700;
   --text-white: #F5F5F5;
   --text-grey: #A0A0A0;
@@ -178,7 +178,7 @@ a:hover {
 
 .product-grid-card:hover {
   transform: translateY(-8px);
-  border-color: rgba(212, 175, 55, 0.4);
+  border-color: rgba(255, 215, 0, 0.4);
   box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
 }
 
@@ -199,7 +199,7 @@ a:hover {
 
 .rfq-card:hover {
   transform: translateY(-8px);
-  border-color: rgba(212, 175, 55, 0.4);
+  border-color: rgba(255, 215, 0, 0.4);
   box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
 }
 
@@ -219,7 +219,7 @@ a:hover {
 .form-input-anasyf:focus {
   border-color: var(--color-primary);
   background: rgba(15, 27, 43, 0.9);
-  box-shadow: 0 0 15px rgba(212, 175, 55, 0.1);
+  box-shadow: 0 0 15px rgba(255, 215, 0, 0.1);
 }
 
 /* --- NAVBAR STYLES (Moved from homepage.css) --- */
@@ -429,7 +429,7 @@ a:hover {
 }
 
 .hp-rfq-card:hover {
-  border-color: rgba(212, 175, 55, 0.3);
+  border-color: rgba(255, 215, 0, 0.3);
   transform: translateY(-4px);
   box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
 }
@@ -640,7 +640,7 @@ a:hover {
   align-items: center;
   background: rgba(15, 27, 43, 0.75);
   backdrop-filter: blur(20px);
-  border: 1px solid rgba(212, 175, 55, 0.4);
+  border: 1px solid rgba(255, 215, 0, 0.4);
   border-radius: 100px;
   padding: 8px 12px;
   /* Adjusted padding */
@@ -697,4 +697,266 @@ a:hover {
   .search-bar {
     padding: 6px 10px;
   }
+}
+
+/* --- FAIRS SECTION (from HTML template) --- */
+.fairs-wrapper {
+  width: 100%;
+  background: #0F1B2B;
+  display: flex;
+  justify-content: center;
+  padding: 60px 0;
+  border-top: 1px solid rgba(255,255,255,0.05);
+}
+
+.exhibitions-container {
+  width: 100%;
+  max-width: 1200px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: visible;
+}
+
+.fair-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 30px;
+  padding: 0 10px;
+}
+
+.fair-title-group h2 {
+  font-size: 24px;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+}
+
+.fair-title-group p {
+  font-size: 14px;
+  color: #A0A0A0;
+  margin: 5px 0 0 0;
+}
+
+.fair-scroll-row {
+  display: flex;
+  gap: 24px;
+  overflow-x: auto;
+  padding: 10px 25px 30px 25px;
+  scroll-behavior: smooth;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.fair-scroll-row::-webkit-scrollbar {
+  display: none;
+}
+
+/* Fair Card - exact from HTML template */
+.fair-card {
+  width: 280px;
+  min-width: 280px;
+  height: 380px;
+  background: linear-gradient(160deg, rgba(26,28,32,0.6) 0%, rgba(15,27,43,0.8) 100%);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 20px;
+  padding: 20px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  transition: 0.3s;
+  cursor: pointer;
+  flex-shrink: 0;
+  text-decoration: none;
+}
+
+.fair-card:hover {
+  transform: translateY(-8px);
+  border-color: #FFD700;
+}
+
+.fair-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.fair-card-title {
+  color: #fff;
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.fair-card-location {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #A0A0A0;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+.fair-card-desc {
+  color: #94a3b8;
+  font-size: 13px;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin-bottom: auto;
+}
+
+.fair-visual-area {
+  margin-top: auto;
+  width: 100%;
+  height: 160px;
+  background: rgba(0,0,0,0.3);
+  border-radius: 12px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fair-date-box {
+  text-align: center;
+  border: 1px solid rgba(255,255,255,0.15);
+  padding: 12px 20px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.05);
+  backdrop-filter: blur(5px);
+}
+
+.fair-date-day {
+  font-size: 28px;
+  font-weight: 700;
+  color: #fff;
+  display: block;
+  line-height: 1;
+  margin-bottom: 2px;
+}
+
+.fair-date-month {
+  font-size: 11px;
+  color: #FFD700;
+  font-weight: 600;
+  display: block;
+  text-transform: uppercase;
+}
+
+/* Fair card for list page (larger - grid layout) */
+.fair-card.fair-card-large {
+  width: 100% !important;
+  min-width: 100% !important;
+  height: 420px;
+  flex-shrink: 1;
+}
+
+.fair-card.fair-card-large .fair-visual-area {
+  height: 180px;
+}
+
+.fair-card.fair-card-large .fair-card-title {
+  font-size: 22px;
+}
+
+@media (max-width: 768px) {
+  .fair-card {
+    width: 260px;
+    min-width: 260px;
+    height: 340px;
+  }
+
+  .fair-visual-area {
+    height: 120px;
+  }
+}
+
+/* Scroll Arrows (from HTML template) */
+.scroll-arrow-btn {
+  position: absolute;
+  width: 50px;
+  height: 50px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 50;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  opacity: 0;
+  pointer-events: none;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.scroll-arrow-btn.visible {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.scroll-arrow-btn:hover {
+  background: #FFD700;
+  color: #0F1B2B;
+  transform: translateY(-50%) scale(1.1);
+}
+
+.scroll-arrow-btn.scroll-right {
+  right: -25px;
+  left: auto;
+}
+
+.scroll-arrow-btn:not(.scroll-right) {
+  left: -25px;
+  right: auto;
+}
+
+#fair-left {
+  left: -25px;
+}
+
+#fair-right {
+  right: -25px;
+}
+
+/* Section Action Button (from HTML template) */
+.btn-section-action {
+  background: linear-gradient(135deg, #FFD700 0%, #FDB931 100%);
+  color: #0F1B2B;
+  padding: 12px 32px;
+  border-radius: 100px;
+  font-size: 15px;
+  font-weight: 700;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  display: inline-block;
+  box-shadow: 0 4px 20px rgba(255, 215, 0, 0.25);
+  transition: all 0.2s ease;
+}
+
+.btn-section-action:hover {
+  transform: translateY(-2px);
+  background: #fff;
+  box-shadow: 0 6px 25px rgba(255, 215, 0, 0.4);
+}
+
+.btn-section-action:active {
+  transform: scale(0.95);
 }

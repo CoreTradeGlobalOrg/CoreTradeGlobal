@@ -62,7 +62,7 @@ export function CategoriesManager() {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
-          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#D4AF37] border-r-transparent"></div>
+          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#FFD700] border-r-transparent"></div>
           <p className="mt-4 text-[#A0A0A0]">Loading categories...</p>
         </div>
       </div>
@@ -77,7 +77,7 @@ export function CategoriesManager() {
           <h3 className="text-2xl font-bold text-white">Categories</h3>
           <p className="text-[#A0A0A0] mt-1">Manage product and request categories</p>
         </div>
-        <Button onClick={handleCreate} className="flex items-center gap-2 bg-[#D4AF37] hover:bg-[#B5952F] text-black font-semibold">
+        <Button onClick={handleCreate} className="flex items-center gap-2 bg-[#FFD700] hover:bg-[#B5952F] text-black font-semibold">
           <Plus className="w-4 h-4" />
           Add Category
         </Button>
@@ -88,12 +88,12 @@ export function CategoriesManager() {
         {categories.map((category) => (
           <div
             key={category.value}
-            className="bg-[rgba(255,255,255,0.03)] border border-[#D4AF37]/20 rounded-lg p-4 hover:border-[#D4AF37] transition-colors group backdrop-blur-md"
+            className="bg-[rgba(255,255,255,0.03)] border border-[#FFD700]/20 rounded-lg p-4 hover:border-[#FFD700] transition-colors group backdrop-blur-md"
           >
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <span className="text-2xl">{category.icon}</span>
-                <span className="font-medium text-white group-hover:text-[#D4AF37] transition-colors">{category.name}</span>
+                <span className="font-medium text-white group-hover:text-[#FFD700] transition-colors">{category.name}</span>
               </div>
             </div>
 
@@ -122,7 +122,7 @@ export function CategoriesManager() {
           <div className="text-6xl mb-4">📦</div>
           <h3 className="text-lg font-semibold text-white mb-2">No categories yet</h3>
           <p className="text-[#A0A0A0] mb-6">Start by creating your first category</p>
-          <Button onClick={handleCreate} className="bg-[#D4AF37] hover:bg-[#B5952F] text-black">
+          <Button onClick={handleCreate} className="bg-[#FFD700] hover:bg-[#B5952F] text-black">
             <Plus className="w-4 h-4 mr-2" />
             Add Category
           </Button>
@@ -132,7 +132,7 @@ export function CategoriesManager() {
       {/* Category Form Modal */}
       {modalOpen && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-          <div className="bg-[#0F1B2B] rounded-xl shadow-2xl max-w-md w-full p-6 border border-[#D4AF37]/20">
+          <div className="bg-[#0F1B2B] rounded-xl shadow-2xl max-w-md w-full p-6 border border-[#FFD700]/20">
             <h2 className="text-2xl font-bold text-white mb-6">
               {editingCategory ? 'Edit Category' : 'Add Category'}
             </h2>

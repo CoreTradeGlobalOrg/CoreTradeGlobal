@@ -44,7 +44,7 @@ function ProductsContent() {
     return (
         <>
             <div className="mb-10 text-center max-w-2xl mx-auto">
-                <h1 className="text-4xl font-bold text-white mb-3">Explore Premium Products</h1>
+                <h1 className="text-4xl font-bold mb-3" style={{ background: 'linear-gradient(180deg, #ffffff 20%, #909090 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Explore Premium Products</h1>
                 <p className="text-[#A0A0A0] mb-8">Source high-quality materials from verified global suppliers.</p>
 
                 <div className="max-w-2xl mx-auto">
@@ -59,7 +59,7 @@ function ProductsContent() {
             {(initialCategory || initialCategoryId) && (
                 <div className="mb-6 flex items-center gap-2">
                     <span className="text-[#A0A0A0]">Filtering by category:</span>
-                    <span className="bg-[#D4AF37] text-[#0F1B2B] px-3 py-1 rounded-full text-sm font-bold capitalize">
+                    <span className="bg-[#FFD700] text-[#0F1B2B] px-3 py-1 rounded-full text-sm font-bold capitalize">
                         {displayName}
                     </span>
                 </div>

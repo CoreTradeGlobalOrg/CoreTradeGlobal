@@ -65,7 +65,7 @@ export default function RequestDetailsPage() {
     return (
       <div className="min-h-screen pt-[120px] pb-20 px-6 bg-radial-navy flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#D4AF37] mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FFD700] mx-auto"></div>
           <p className="mt-4 text-[#A0A0A0]">Loading request details...</p>
         </div>
       </div>
@@ -132,21 +132,21 @@ export default function RequestDetailsPage() {
                 <div className="bg-[rgba(255,255,255,0.05)] rounded-lg px-4 py-2 border border-[rgba(255,255,255,0.1)]">
                   <span className="block text-xs text-[#A0A0A0] mb-1">Quantity/Volume</span>
                   <div className="flex items-center gap-2 text-white font-semibold">
-                    <Package size={16} className="text-[#D4AF37]" />
+                    <Package size={16} className="text-[#FFD700]" />
                     {request.quantity} {request.unit}
                   </div>
                 </div>
                 <div className="bg-[rgba(255,255,255,0.05)] rounded-lg px-4 py-2 border border-[rgba(255,255,255,0.1)]">
                   <span className="block text-xs text-[#A0A0A0] mb-1">Target Budget</span>
                   <div className="flex items-center gap-2 text-white font-semibold">
-                    <DollarSign size={16} className="text-[#D4AF37]" />
+                    <DollarSign size={16} className="text-[#FFD700]" />
                     {request.budget || 'Negotiable'}
                   </div>
                 </div>
                 <div className="bg-[rgba(255,255,255,0.05)] rounded-lg px-4 py-2 border border-[rgba(255,255,255,0.1)]">
                   <span className="block text-xs text-[#A0A0A0] mb-1">Destination</span>
                   <div className="flex items-center gap-2 text-white font-semibold">
-                    <MapPin size={16} className="text-[#D4AF37]" />
+                    <MapPin size={16} className="text-[#FFD700]" />
                     <CountryFlag countryCode={countryCode} size={18} />
                     {countryName}
                   </div>
@@ -168,13 +168,13 @@ export default function RequestDetailsPage() {
                 <div className="space-y-4">
                   {request.requirements && (
                     <div>
-                      <span className="text-[#D4AF37] font-semibold block mb-1">Technical Specs:</span>
+                      <span className="text-[#FFD700] font-semibold block mb-1">Technical Specs:</span>
                       <p className="text-[#A0A0A0]">{request.requirements}</p>
                     </div>
                   )}
                   {request.paymentTerms && (
                     <div>
-                      <span className="text-[#D4AF37] font-semibold block mb-1">Payment Terms:</span>
+                      <span className="text-[#FFD700] font-semibold block mb-1">Payment Terms:</span>
                       <p className="text-[#A0A0A0]">{request.paymentTerms}</p>
                     </div>
                   )}
@@ -185,7 +185,7 @@ export default function RequestDetailsPage() {
 
           {/* Sidebar (Buyer Info) */}
           <div className="lg:col-span-1 space-y-6">
-            <div className="glass-card p-6 border-t-4 border-t-[#D4AF37]">
+            <div className="glass-card p-6 border-t-4 border-t-[#FFD700]">
               <h3 className="text-lg font-bold text-white mb-4">Buyer Information</h3>
 
               <div className="flex items-center gap-4 mb-6">
@@ -224,7 +224,7 @@ export default function RequestDetailsPage() {
 
               <button
                 onClick={handleQuoteClick}
-                className="w-full py-3 bg-gradient-to-r from-[#D4AF37] to-[#FDB931] text-[#0F1B2B] font-bold rounded-full shadow-[0_4px_14px_rgba(212,175,55,0.3)] hover:shadow-[0_6px_20px_rgba(212,175,55,0.4)] hover:transform hover:-translate-y-0.5 transition-all"
+                className="w-full py-3 bg-gradient-to-r from-[#FFD700] to-[#FDB931] text-[#0F1B2B] font-bold rounded-full shadow-[0_4px_14px_rgba(255,215,0,0.3)] hover:shadow-[0_6px_20px_rgba(255,215,0,0.4)] hover:transform hover:-translate-y-0.5 transition-all"
               >
                 Submit Quote
               </button>
@@ -239,13 +239,13 @@ export default function RequestDetailsPage() {
               <h3 className="text-lg font-bold text-white mb-4">Safety Tips</h3>
               <ul className="space-y-2 text-sm text-[#A0A0A0]">
                 <li className="flex gap-2">
-                  <span className="text-[#D4AF37]">•</span> Verify buyer identity before shipping.
+                  <span className="text-[#FFD700]">•</span> Verify buyer identity before shipping.
                 </li>
                 <li className="flex gap-2">
-                  <span className="text-[#D4AF37]">•</span> Use secure payment methods (LC/Escrow).
+                  <span className="text-[#FFD700]">•</span> Use secure payment methods (LC/Escrow).
                 </li>
                 <li className="flex gap-2">
-                  <span className="text-[#D4AF37]">•</span> Report suspicious behavior instantly.
+                  <span className="text-[#FFD700]">•</span> Report suspicious behavior instantly.
                 </li>
               </ul>
             </div>

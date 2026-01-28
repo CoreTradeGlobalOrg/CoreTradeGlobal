@@ -153,7 +153,7 @@ export function NewsManager() {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
-          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#D4AF37] border-r-transparent"></div>
+          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#FFD700] border-r-transparent"></div>
           <p className="mt-4 text-[#A0A0A0]">Haberler yükleniyor...</p>
         </div>
       </div>
@@ -168,14 +168,14 @@ export function NewsManager() {
           <h3 className="text-2xl font-bold text-white">Haberler</h3>
           <p className="text-[#A0A0A0] mt-1">Ticaret haberlerini yönetin</p>
         </div>
-        <Button onClick={handleCreate} className="flex items-center gap-2 bg-[#D4AF37] hover:bg-[#B5952F] text-black font-semibold">
+        <Button onClick={handleCreate} className="flex items-center gap-2 bg-[#FFD700] hover:bg-[#B5952F] text-black font-semibold">
           <Plus className="w-4 h-4" />
           Haber Ekle
         </Button>
       </div>
 
       {/* News Table */}
-      <div className="bg-[rgba(255,255,255,0.03)] rounded-xl border border-[#D4AF37]/20 backdrop-blur-md overflow-hidden">
+      <div className="bg-[rgba(255,255,255,0.03)] rounded-xl border border-[#FFD700]/20 backdrop-blur-md overflow-hidden">
         <table className="min-w-full divide-y divide-[rgba(255,255,255,0.05)]">
           <thead className="bg-[#0F1B2B]/50">
             <tr>
@@ -184,7 +184,7 @@ export function NewsManager() {
               <th className="px-6 py-4 text-left text-xs font-bold text-[#A0A0A0] uppercase tracking-wider">Tarih</th>
               <th className="px-6 py-4 text-left text-xs font-bold text-[#A0A0A0] uppercase tracking-wider">Durum</th>
               <th className="px-6 py-4 text-left text-xs font-bold text-[#A0A0A0] uppercase tracking-wider">Görüntüleme</th>
-              <th className="px-6 py-4 text-right text-xs font-bold text-[#D4AF37] uppercase tracking-wider">İşlemler</th>
+              <th className="px-6 py-4 text-right text-xs font-bold text-[#FFD700] uppercase tracking-wider">İşlemler</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[rgba(255,255,255,0.05)]">
@@ -196,7 +196,7 @@ export function NewsManager() {
                       <img src={item.imageUrl} alt={item.title} className="w-16 h-12 rounded object-cover mr-3 flex-shrink-0 border border-[rgba(255,255,255,0.1)]" />
                     )}
                     <div className="min-w-0">
-                      <div className="text-sm font-medium text-white group-hover:text-[#D4AF37] transition-colors truncate max-w-xs">{item.title}</div>
+                      <div className="text-sm font-medium text-white group-hover:text-[#FFD700] transition-colors truncate max-w-xs">{item.title}</div>
                       <div className="text-xs text-[#A0A0A0] truncate max-w-xs mt-1">{item.excerpt}</div>
                       {item.sourceUrl && (
                         <a href={item.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1 mt-1">
@@ -252,7 +252,7 @@ export function NewsManager() {
             <div className="text-6xl mb-4">📰</div>
             <h3 className="text-lg font-semibold text-white mb-2">Henüz haber yok</h3>
             <p className="text-[#A0A0A0] mb-6">İlk haberinizi ekleyerek başlayın</p>
-            <Button onClick={handleCreate} className="bg-[#D4AF37] hover:bg-[#B5952F] text-black">
+            <Button onClick={handleCreate} className="bg-[#FFD700] hover:bg-[#B5952F] text-black">
               <Plus className="w-4 h-4 mr-2" />
               Haber Ekle
             </Button>
@@ -263,7 +263,7 @@ export function NewsManager() {
       {/* News Form Modal */}
       {modalOpen && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-          <div className="bg-[#0F1B2B] rounded-xl shadow-2xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto border border-[#D4AF37]/20">
+          <div className="bg-[#0F1B2B] rounded-xl shadow-2xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto border border-[#FFD700]/20">
             <h2 className="text-2xl font-bold text-white mb-6">
               {editingNews ? 'Haberi Düzenle' : 'Yeni Haber Ekle'}
             </h2>
@@ -275,7 +275,7 @@ export function NewsManager() {
                   required
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  className="w-full px-3 py-2 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-lg text-white focus:outline-none focus:border-[#D4AF37] transition-colors"
+                  className="w-full px-3 py-2 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-lg text-white focus:outline-none focus:border-[#FFD700] transition-colors"
                   placeholder="Haber başlığı"
                 />
               </div>
@@ -285,7 +285,7 @@ export function NewsManager() {
                   required
                   value={formData.excerpt}
                   onChange={(e) => setFormData({ ...formData, excerpt: e.target.value })}
-                  className="w-full px-3 py-2 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-lg text-white focus:outline-none focus:border-[#D4AF37] transition-colors"
+                  className="w-full px-3 py-2 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-lg text-white focus:outline-none focus:border-[#FFD700] transition-colors"
                   rows={2}
                   placeholder="Kısa özet (liste görünümünde gösterilecek)"
                 />
@@ -295,7 +295,7 @@ export function NewsManager() {
                 <textarea
                   value={formData.content}
                   onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                  className="w-full px-3 py-2 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-lg text-white focus:outline-none focus:border-[#D4AF37] transition-colors"
+                  className="w-full px-3 py-2 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-lg text-white focus:outline-none focus:border-[#FFD700] transition-colors"
                   rows={6}
                   placeholder="Haberin tam içeriği"
                 />
@@ -306,7 +306,7 @@ export function NewsManager() {
                   <select
                     value={formData.category}
                     onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                    className="w-full px-3 py-2 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-lg text-white focus:outline-none focus:border-[#D4AF37] transition-colors"
+                    className="w-full px-3 py-2 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-lg text-white focus:outline-none focus:border-[#FFD700] transition-colors"
                   >
                     {NEWS_CATEGORIES.map((cat) => (
                       <option key={cat} value={cat}>{cat}</option>
@@ -318,7 +318,7 @@ export function NewsManager() {
                   <select
                     value={formData.status}
                     onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                    className="w-full px-3 py-2 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-lg text-white focus:outline-none focus:border-[#D4AF37] transition-colors"
+                    className="w-full px-3 py-2 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-lg text-white focus:outline-none focus:border-[#FFD700] transition-colors"
                   >
                     <option value="draft">Taslak</option>
                     <option value="published">Yayında</option>
@@ -331,7 +331,7 @@ export function NewsManager() {
                   type="url"
                   value={formData.imageUrl}
                   onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-                  className="w-full px-3 py-2 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-lg text-white focus:outline-none focus:border-[#D4AF37] transition-colors"
+                  className="w-full px-3 py-2 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-lg text-white focus:outline-none focus:border-[#FFD700] transition-colors"
                   placeholder="https://example.com/image.jpg"
                 />
               </div>
@@ -342,7 +342,7 @@ export function NewsManager() {
                     type="url"
                     value={formData.sourceUrl}
                     onChange={(e) => setFormData({ ...formData, sourceUrl: e.target.value })}
-                    className="w-full px-3 py-2 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-lg text-white focus:outline-none focus:border-[#D4AF37] transition-colors"
+                    className="w-full px-3 py-2 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-lg text-white focus:outline-none focus:border-[#FFD700] transition-colors"
                     placeholder="https://example.com/news"
                   />
                 </div>
@@ -352,13 +352,13 @@ export function NewsManager() {
                     type="text"
                     value={formData.sourceName}
                     onChange={(e) => setFormData({ ...formData, sourceName: e.target.value })}
-                    className="w-full px-3 py-2 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-lg text-white focus:outline-none focus:border-[#D4AF37] transition-colors"
+                    className="w-full px-3 py-2 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-lg text-white focus:outline-none focus:border-[#FFD700] transition-colors"
                     placeholder="Kaynak site adı"
                   />
                 </div>
               </div>
               <div className="flex gap-3 pt-4">
-                <Button type="submit" className="flex-1 bg-[#D4AF37] hover:bg-[#B5952F] text-black font-bold">
+                <Button type="submit" className="flex-1 bg-[#FFD700] hover:bg-[#B5952F] text-black font-bold">
                   {editingNews ? 'Güncelle' : 'Ekle'}
                 </Button>
                 <Button

@@ -44,7 +44,7 @@ export default function AdminPage() {
     return (
       <div className="flex items-center justify-center min-h-screen bg-[#0F1B2B]">
         <div className="text-center">
-          <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-[#D4AF37] border-r-transparent"></div>
+          <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-[#FFD700] border-r-transparent"></div>
           <p className="mt-4 text-[#A0A0A0]">Checking permissions...</p>
         </div>
       </div>
@@ -60,7 +60,7 @@ export default function AdminPage() {
     return (
       <div className="flex items-center justify-center min-h-[400px] bg-[#0F1B2B]">
         <div className="text-center">
-          <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-[#D4AF37] border-r-transparent"></div>
+          <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-[#FFD700] border-r-transparent"></div>
           <p className="mt-4 text-[#A0A0A0]">Loading users data...</p>
         </div>
       </div>
@@ -76,7 +76,7 @@ export default function AdminPage() {
           <p className="text-[#A0A0A0] mb-4">{error}</p>
           <button
             onClick={refetch}
-            className="px-6 py-3 bg-[#D4AF37] hover:bg-[#B59325] text-[#0F1B2B] rounded-lg font-semibold transition-colors"
+            className="px-6 py-3 bg-[#FFD700] hover:bg-[#B59325] text-[#0F1B2B] rounded-lg font-semibold transition-colors"
           >
             Try Again
           </button>
@@ -86,7 +86,7 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0F1B2B] p-8">
+    <div className="min-h-screen bg-[#0F1B2B] p-8 pt-[120px]">
       {/* Page Header */}
       <div className="mb-8">
         <h2 className="text-3xl font-bold text-white mb-2">Admin Dashboard</h2>
@@ -103,7 +103,7 @@ export default function AdminPage() {
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={`${activeTab === tab
-                  ? 'border-[#D4AF37] text-[#D4AF37]'
+                  ? 'border-[#FFD700] text-[#FFD700]'
                   : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
                 } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm capitalize transition-colors`}
             >

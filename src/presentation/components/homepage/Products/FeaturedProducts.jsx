@@ -160,7 +160,7 @@ const ProductCardImage = memo(function ProductCardImage({ src, alt }) {
     <>
       {loading && (
         <div className="absolute inset-0 flex items-center justify-center bg-[#1A283B] z-10">
-          <div className="w-8 h-8 border-2 border-[#D4AF37] border-t-transparent rounded-full animate-spin"></div>
+          <div className="w-8 h-8 border-2 border-[#FFD700] border-t-transparent rounded-full animate-spin"></div>
         </div>
       )}
       <img

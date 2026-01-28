@@ -13,7 +13,7 @@ import { Canvas, useThree, useFrame } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 
-const ROUTE_COLORS = [0xFFD700, 0xD4AF37, 0xFDB931, 0xFFE5B4]; // Premium Gold tones
+const ROUTE_COLORS = [0xFFD700, 0xFFD700, 0xFDB931, 0xFFE5B4]; // Premium Gold tones
 
 // Water sphere component
 function WaterSphere({ waterColor }) {
