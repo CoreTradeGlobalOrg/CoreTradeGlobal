@@ -23,7 +23,8 @@ export function NotificationListener() {
     // Only run on client
     if (typeof window === 'undefined') return;
     if (!isAuthenticated || !user?.uid) return;
-    if (Notification.permission !== 'granted') return;
+    // Check if Notification API exists and permission is granted
+    if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
 
     let unsubscribe = () => {};
 

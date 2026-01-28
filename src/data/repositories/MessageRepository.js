@@ -3,9 +3,12 @@
  *
  * Manages messages in Firestore subcollection
  * Messages are stored in: conversations/{conversationId}/messages
+ * Attachments are stored in: conversations/attachments/{conversationId}/{senderId}_{timestamp}.{ext}
  */
 
 import { COLLECTIONS } from '@/core/constants/collections';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { storage } from '@/core/config/firebase.config';
 
 const MESSAGES_SUBCOLLECTION = 'messages';
 
@@ -188,6 +191,53 @@ export class MessageRepository {
     return messages.filter(
       (msg) => !msg.readBy?.includes(userId) && msg.senderId !== userId
     ).length;
+  }
+
+  /**
+   * Upload an attachment to Firebase Storage
+   * @param {string} conversationId
+   * @param {string} senderId
+   * @param {File} file
+   * @returns {Promise<Object>} - { url, name, type, size }
+   */
+  async uploadAttachment(conversationId, senderId, file) {
+    // Keep original filename with timestamp prefix to avoid collisions
+    const timestamp = Date.now();
+    const filename = `${timestamp}_${file.name}`;
+
+    // Storage path: conversations/attachments/{conversationId}/{filename}
+    const storagePath = `conversations/attachments/${conversationId}/${filename}`;
+    const storageRef = ref(storage, storagePath);
+
+    // Upload file
+    const snapshot = await uploadBytes(storageRef, file, {
+      contentType: file.type,
+    });
+
+    // Get download URL
+    const downloadURL = await getDownloadURL(snapshot.ref);
+
+    return {
+      url: downloadURL,
+      name: file.name,
+      type: file.type,
+      size: file.size,
+      storagePath,
+    };
+  }
+
+  /**
+   * Upload multiple attachments
+   * @param {string} conversationId
+   * @param {string} senderId
+   * @param {Array<File>} files
+   * @returns {Promise<Array>}
+   */
+  async uploadAttachments(conversationId, senderId, files) {
+    const uploadPromises = files.map((file) =>
+      this.uploadAttachment(conversationId, senderId, file)
+    );
+    return await Promise.all(uploadPromises);
   }
 }
 

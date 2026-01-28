@@ -101,6 +101,7 @@ export default function ConversationPage() {
         name: conversation.metadata?.contactName || 'Contact Inquiry',
         subtitle: conversation.metadata?.contactEmail,
         isContact: true,
+        userId: null,
       };
     }
 
@@ -110,9 +111,11 @@ export default function ConversationPage() {
     if (otherUser) {
       return {
         name: otherUser.displayName || otherUser.email || 'Unknown',
+        companyName: otherUser.companyName || null,
         subtitle: otherUser.email,
         photoURL: otherUser.photoURL,
         isContact: false,
+        userId: otherUserId,
       };
     }
 
@@ -130,34 +133,77 @@ export default function ConversationPage() {
             <ArrowLeft className="w-5 h-5" />
           </Link>
 
-          <div className="conversation-header-avatar">
-            {displayInfo.photoURL ? (
-              <img src={displayInfo.photoURL} alt={displayInfo.name} />
-            ) : (
-              <span>{displayInfo.name.charAt(0).toUpperCase()}</span>
-            )}
-          </div>
+          {displayInfo.userId ? (
+            <Link href={`/profile/${displayInfo.userId}`} className="conversation-header-profile-link">
+              <div className="conversation-header-avatar">
+                {displayInfo.photoURL ? (
+                  <img src={displayInfo.photoURL} alt={displayInfo.name} />
+                ) : (
+                  <span>{displayInfo.name.charAt(0).toUpperCase()}</span>
+                )}
+              </div>
 
-          <div className="conversation-header-info">
-            <h1>{displayInfo.name}</h1>
-            {displayInfo.subtitle && (
-              <span className="conversation-header-subtitle">
-                {displayInfo.isContact && <Mail className="w-3 h-3" />}
-                {displayInfo.subtitle}
-              </span>
-            )}
-          </div>
+              <div className="conversation-header-info">
+                {displayInfo.companyName && (
+                  <h1>{displayInfo.companyName}</h1>
+                )}
+                <span className={`conversation-header-name ${displayInfo.companyName ? 'secondary' : 'primary'}`}>
+                  {displayInfo.name}
+                </span>
+              </div>
+            </Link>
+          ) : (
+            <>
+              <div className="conversation-header-avatar">
+                {displayInfo.photoURL ? (
+                  <img src={displayInfo.photoURL} alt={displayInfo.name} />
+                ) : (
+                  <span>{displayInfo.name.charAt(0).toUpperCase()}</span>
+                )}
+              </div>
+
+              <div className="conversation-header-info">
+                <h1>{displayInfo.name}</h1>
+                {displayInfo.subtitle && (
+                  <span className="conversation-header-subtitle">
+                    {displayInfo.isContact && <Mail className="w-3 h-3" />}
+                    {displayInfo.subtitle}
+                  </span>
+                )}
+              </div>
+            </>
+          )}
         </div>
 
-        {/* Subject banner for contact inquiries */}
-        {conversation.type === 'contact' && conversation.metadata?.subject && (
-          <div className="conversation-subject-banner">
-            <strong>Subject:</strong> {conversation.metadata.subject}
-          </div>
-        )}
-
-        {/* Messages */}
+        {/* Messages area with sticky banners */}
         <div className="conversation-messages">
+          {/* Subject banner for contact inquiries */}
+          {conversation.type === 'contact' && conversation.metadata?.subject && (
+            <div className="conversation-subject-banner">
+              <strong>Subject:</strong> {conversation.metadata.subject}
+            </div>
+          )}
+
+          {/* Product context banner */}
+          {conversation.metadata?.productId && (
+            <Link
+              href={`/product/${conversation.metadata.productId}`}
+              className="conversation-product-banner"
+            >
+              {conversation.metadata.productImage && (
+                <img
+                  src={conversation.metadata.productImage}
+                  alt={conversation.metadata.productName}
+                  className="conversation-product-image"
+                />
+              )}
+              <div className="conversation-product-info">
+                <span className="conversation-product-label">About product</span>
+                <span className="conversation-product-name">{conversation.metadata.productName}</span>
+              </div>
+            </Link>
+          )}
+
           <MessageThread
             conversationId={conversationId}
             participantDetails={conversation?.participantDetails}

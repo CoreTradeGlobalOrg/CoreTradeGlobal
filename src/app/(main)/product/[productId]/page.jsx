@@ -209,8 +209,13 @@ export default function ProductDetailPage() {
         // Conversation exists - navigate with draft
         router.push(`/messages/${existingConversation.id}?draft=${encodeURIComponent(draftMessage)}`);
       } else {
-        // New conversation - create and navigate with draft
-        const conversation = await startDirectConversation(seller.id);
+        // New conversation - create with product context and navigate with draft
+        const conversation = await startDirectConversation(seller.id, {
+          source: 'product_inquiry',
+          productId: product.id,
+          productName: product.name,
+          productImage: images.length > 0 ? images[0] : null,
+        });
         router.push(`/messages/${conversation.id}?draft=${encodeURIComponent(draftMessage)}`);
       }
     } catch (err) {

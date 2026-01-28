@@ -17,7 +17,7 @@ export function Footer() {
         <div className="footer-grid">
           {/* Brand Column */}
           <div className="footer-col brand-col">
-            <img src="/Core-png.png" alt="CoreTradeGlobal" className="nav-logo-img" />
+            <img src="/icons/ctg-logo.png" alt="CoreTradeGlobal" className="nav-logo-img" />
             <p>CoreTradeGlobal is the world&apos;s leading premium B2B marketplace matched with AI-driven connections.</p>
           </div>
 

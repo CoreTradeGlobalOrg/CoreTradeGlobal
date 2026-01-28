@@ -48,16 +48,18 @@ export class CreateConversationUseCase {
       }
     }
 
-    // 3. Fetch participant details for denormalization
+    // 3. Fetch participant details for denormalization (including company info)
     const participantDetails = {};
     for (const participantId of participantIds) {
       const user = await this.userRepository.getById(participantId);
       if (user) {
         participantDetails[participantId] = {
           displayName: user.displayName || user.email,
-          photoURL: user.photoURL || null,
+          photoURL: user.companyLogo || user.photoURL || null,
           email: user.email,
           role: user.role,
+          companyId: user.companyId || null,
+          companyName: user.companyName || null,
         };
       }
     }
@@ -74,6 +76,10 @@ export class CreateConversationUseCase {
         subject: metadata.subject || null,
         contactName: metadata.contactName || null,
         contactEmail: metadata.contactEmail || null,
+        // Product context (when conversation starts from a product page)
+        productId: metadata.productId || null,
+        productName: metadata.productName || null,
+        productImage: metadata.productImage || null,
       },
     };
 

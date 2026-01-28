@@ -13,9 +13,10 @@ export class Message {
    * @param {string} senderId - Sender's user ID (or 'anonymous' for anonymous contact)
    * @param {string} senderName - Sender's display name
    * @param {string} content - Message content
-   * @param {string} type - Message type: 'text' | 'contact_inquiry'
+   * @param {string} type - Message type: 'text' | 'contact_inquiry' | 'attachment'
    * @param {Object} metadata - Additional metadata (subject, contactEmail, etc.)
    * @param {Array<string>} readBy - Array of user IDs who have read this message
+   * @param {Array<Object>} attachments - Array of file attachments { url, name, type, size }
    * @param {Date} createdAt - Creation timestamp
    */
   constructor(
@@ -27,6 +28,7 @@ export class Message {
     type = 'text',
     metadata = {},
     readBy = [],
+    attachments = [],
     createdAt = null
   ) {
     this.id = id;
@@ -37,6 +39,7 @@ export class Message {
     this.type = type;
     this.metadata = metadata;
     this.readBy = readBy;
+    this.attachments = attachments;
     this.createdAt = createdAt || new Date();
   }
 
@@ -55,6 +58,7 @@ export class Message {
       data.type || 'text',
       data.metadata || {},
       data.readBy || [],
+      data.attachments || [],
       data.createdAt?.toDate?.() || data.createdAt || new Date()
     );
   }
@@ -72,6 +76,7 @@ export class Message {
       type: this.type,
       metadata: this.metadata,
       readBy: this.readBy,
+      attachments: this.attachments,
     };
   }
 

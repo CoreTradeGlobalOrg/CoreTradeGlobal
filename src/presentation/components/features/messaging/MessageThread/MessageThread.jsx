@@ -6,11 +6,90 @@
 
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useMessages } from '@/presentation/contexts/MessagesContext';
 import { useAuth } from '@/presentation/contexts/AuthContext';
 import { useMarkAsRead } from '@/presentation/hooks/messaging/useMarkAsRead';
+import { FileText, Download, X } from 'lucide-react';
 import './MessageThread.css';
+
+// Lightbox for viewing images
+function ImageLightbox({ src, alt, onClose }) {
+  return (
+    <div className="image-lightbox" onClick={onClose}>
+      <button className="lightbox-close" onClick={onClose}>
+        <X className="w-6 h-6" />
+      </button>
+      <img src={src} alt={alt} onClick={(e) => e.stopPropagation()} />
+    </div>
+  );
+}
+
+// Attachment display component
+function AttachmentDisplay({ attachment, isOwn, onImageLoad }) {
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [imageLoading, setImageLoading] = useState(true);
+  const isImage = attachment.type?.startsWith('image/');
+
+  const formatFileSize = (bytes) => {
+    if (!bytes) return '';
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  };
+
+  if (isImage) {
+    return (
+      <>
+        <div
+          className={`message-attachment-image ${imageLoading ? 'loading' : 'loaded'}`}
+          onClick={() => !imageLoading && setLightboxOpen(true)}
+        >
+          {imageLoading && (
+            <div className="attachment-image-loader">
+              <span className="attachment-spinner" />
+            </div>
+          )}
+          <img
+            src={attachment.url}
+            alt={attachment.name}
+            onLoad={() => {
+              setImageLoading(false);
+              // Small delay to ensure DOM updates with new image size before scrolling
+              setTimeout(() => onImageLoad?.(), 50);
+            }}
+            className={imageLoading ? 'hidden' : 'visible'}
+          />
+        </div>
+        {lightboxOpen && (
+          <ImageLightbox
+            src={attachment.url}
+            alt={attachment.name}
+            onClose={() => setLightboxOpen(false)}
+          />
+        )}
+      </>
+    );
+  }
+
+  return (
+    <a
+      href={attachment.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={`message-attachment-file ${isOwn ? 'own' : 'other'}`}
+    >
+      <div className="attachment-file-icon">
+        <FileText className="w-5 h-5" />
+      </div>
+      <div className="attachment-file-info">
+        <span className="attachment-file-name">{attachment.name}</span>
+        <span className="attachment-file-size">{formatFileSize(attachment.size)}</span>
+      </div>
+      <Download className="w-4 h-4 attachment-download-icon" />
+    </a>
+  );
+}
 
 export function MessageThread({ conversationId, participantDetails = {} }) {
   const { user } = useAuth();
@@ -19,11 +98,16 @@ export function MessageThread({ conversationId, participantDetails = {} }) {
   const messagesEndRef = useRef(null);
   const hasMarkedAsRead = useRef(false);
 
-  // Scroll to bottom when messages change
-  useEffect(() => {
+  // Scroll to bottom function
+  const scrollToBottom = () => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
+  };
+
+  // Scroll to bottom when messages change
+  useEffect(() => {
+    scrollToBottom();
   }, [activeMessages]);
 
   // Mark messages as read when viewing
@@ -118,7 +202,47 @@ export function MessageThread({ conversationId, participantDetails = {} }) {
                       {showAvatar && (
                         <div className="message-sender-name">{message.senderName}</div>
                       )}
-                      <div className={`message-bubble other`}>
+                      {/* Attachments */}
+                      {message.attachments?.length > 0 && (
+                        <div className="message-attachments">
+                          {message.attachments.map((attachment, idx) => (
+                            <AttachmentDisplay key={idx} attachment={attachment} isOwn={false} onImageLoad={scrollToBottom} />
+                          ))}
+                        </div>
+                      )}
+                      {/* Text content */}
+                      {message.content && (
+                        <div className={`message-bubble other`}>
+                          {message.type === 'contact_inquiry' && message.metadata?.subject && (
+                            <div className="message-subject">
+                              Re: {message.metadata.subject}
+                            </div>
+                          )}
+                          <p className="message-content">{message.content}</p>
+                          <span className="message-time">{formatTime(message.createdAt)}</span>
+                        </div>
+                      )}
+                      {/* Time for attachment-only messages */}
+                      {!message.content && message.attachments?.length > 0 && (
+                        <span className="message-time-standalone">{formatTime(message.createdAt)}</span>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {isOwn && (
+                  <div className="message-own-wrapper">
+                    {/* Attachments */}
+                    {message.attachments?.length > 0 && (
+                      <div className="message-attachments own">
+                        {message.attachments.map((attachment, idx) => (
+                          <AttachmentDisplay key={idx} attachment={attachment} isOwn={true} onImageLoad={scrollToBottom} />
+                        ))}
+                      </div>
+                    )}
+                    {/* Text content */}
+                    {message.content && (
+                      <div className={`message-bubble own`}>
                         {message.type === 'contact_inquiry' && message.metadata?.subject && (
                           <div className="message-subject">
                             Re: {message.metadata.subject}
@@ -127,19 +251,11 @@ export function MessageThread({ conversationId, participantDetails = {} }) {
                         <p className="message-content">{message.content}</p>
                         <span className="message-time">{formatTime(message.createdAt)}</span>
                       </div>
-                    </div>
-                  </div>
-                )}
-
-                {isOwn && (
-                  <div className={`message-bubble own`}>
-                    {message.type === 'contact_inquiry' && message.metadata?.subject && (
-                      <div className="message-subject">
-                        Re: {message.metadata.subject}
-                      </div>
                     )}
-                    <p className="message-content">{message.content}</p>
-                    <span className="message-time">{formatTime(message.createdAt)}</span>
+                    {/* Time for attachment-only messages */}
+                    {!message.content && message.attachments?.length > 0 && (
+                      <span className="message-time-standalone own">{formatTime(message.createdAt)}</span>
+                    )}
                   </div>
                 )}
               </div>

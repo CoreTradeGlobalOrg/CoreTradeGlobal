@@ -85,15 +85,14 @@ export function Navbar() {
       <div className="nav-logo-container">
         <Link href="/">
           <Image
-            src="/Core-png.png"
+            src="/icons/ctg-logo.png"
             alt="CoreTradeGlobal"
-            width={120}
-            height={120}
+            width={180}
+            height={180}
             className="nav-logo-img"
             priority
           />
         </Link>
-        <Link href="/" className="nav-brand-text">CoreTG</Link>
       </div>
 
       {/* Desktop Navigation Links */}

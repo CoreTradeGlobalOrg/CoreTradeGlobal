@@ -10,6 +10,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { MessageCircle, X, ArrowLeft, Minimize2 } from 'lucide-react';
+import Link from 'next/link';
 import { useMessages } from '@/presentation/contexts/MessagesContext';
 import { useAuth } from '@/presentation/contexts/AuthContext';
 import ConversationList from '@/presentation/components/features/messaging/ConversationList/ConversationList';
@@ -54,15 +55,35 @@ export function MessagesWidget() {
     closeConversation();
   };
 
-  const getConversationTitle = () => {
-    if (!activeConversation || !user?.uid) return 'Conversation';
-
-    if (activeConversation.type === 'contact') {
-      return activeConversation.metadata?.contactName || 'Contact Inquiry';
+  const getConversationInfo = () => {
+    if (!activeConversation || !user?.uid) {
+      return { name: 'Conversation', companyName: null, photoURL: null, userId: null };
     }
 
-    return activeConversation.getDisplayName(user.uid);
+    if (activeConversation.type === 'contact') {
+      return {
+        name: activeConversation.metadata?.contactName || 'Contact Inquiry',
+        companyName: null,
+        photoURL: null,
+        userId: null,
+        isContact: true,
+        email: activeConversation.metadata?.contactEmail,
+      };
+    }
+
+    const otherUserId = activeConversation.participants.find((id) => id !== user.uid);
+    const otherUser = otherUserId ? activeConversation.participantDetails?.[otherUserId] : null;
+
+    return {
+      name: otherUser?.displayName || otherUser?.email || 'Unknown',
+      companyName: otherUser?.companyName || null,
+      photoURL: otherUser?.photoURL || null,
+      userId: otherUserId,
+      isContact: false,
+    };
   };
+
+  const conversationInfo = activeConversationId ? getConversationInfo() : null;
 
   return (
     <>
@@ -90,7 +111,7 @@ export function MessagesWidget() {
         >
           {/* Header */}
           <div className="messages-widget-header">
-            {activeConversationId ? (
+            {activeConversationId && conversationInfo ? (
               <>
                 <button
                   className="messages-widget-back"
@@ -98,14 +119,37 @@ export function MessagesWidget() {
                 >
                   <ArrowLeft className="w-5 h-5" />
                 </button>
-                <div className="messages-widget-title">
-                  <h3>{getConversationTitle()}</h3>
-                  {activeConversation?.type === 'contact' && (
-                    <span className="messages-widget-subtitle">
-                      {activeConversation.metadata?.contactEmail}
-                    </span>
-                  )}
-                </div>
+
+                {conversationInfo.userId ? (
+                  <Link
+                    href={`/profile/${conversationInfo.userId}`}
+                    className="messages-widget-profile-link"
+                    onClick={() => setIsWidgetOpen(false)}
+                  >
+                    <div className="messages-widget-avatar">
+                      {conversationInfo.photoURL ? (
+                        <img src={conversationInfo.photoURL} alt={conversationInfo.name} />
+                      ) : (
+                        <span>{conversationInfo.name.charAt(0).toUpperCase()}</span>
+                      )}
+                    </div>
+                    <div className="messages-widget-title">
+                      {conversationInfo.companyName && (
+                        <h3>{conversationInfo.companyName}</h3>
+                      )}
+                      <span className={`messages-widget-name ${conversationInfo.companyName ? 'secondary' : 'primary'}`}>
+                        {conversationInfo.name}
+                      </span>
+                    </div>
+                  </Link>
+                ) : (
+                  <div className="messages-widget-title">
+                    <h3>{conversationInfo.name}</h3>
+                    {conversationInfo.isContact && conversationInfo.email && (
+                      <span className="messages-widget-subtitle">{conversationInfo.email}</span>
+                    )}
+                  </div>
+                )}
               </>
             ) : (
               <div className="messages-widget-title">
@@ -124,10 +168,33 @@ export function MessagesWidget() {
           <div className="messages-widget-content">
             {activeConversationId ? (
               <>
-                <MessageThread
-                  conversationId={activeConversationId}
-                  participantDetails={activeConversation?.participantDetails}
-                />
+                {/* Product Banner */}
+                {activeConversation?.metadata?.productId && (
+                  <Link
+                    href={`/product/${activeConversation.metadata.productId}`}
+                    className="messages-widget-product-banner"
+                    onClick={() => setIsWidgetOpen(false)}
+                  >
+                    {activeConversation.metadata.productImage && (
+                      <img
+                        src={activeConversation.metadata.productImage}
+                        alt={activeConversation.metadata.productName}
+                        className="messages-widget-product-image"
+                      />
+                    )}
+                    <div className="messages-widget-product-info">
+                      <span className="messages-widget-product-label">About product</span>
+                      <span className="messages-widget-product-name">{activeConversation.metadata.productName}</span>
+                    </div>
+                  </Link>
+                )}
+
+                <div className="messages-widget-messages">
+                  <MessageThread
+                    conversationId={activeConversationId}
+                    participantDetails={activeConversation?.participantDetails}
+                  />
+                </div>
                 <MessageInput conversationId={activeConversationId} />
               </>
             ) : (

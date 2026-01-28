@@ -3,8 +3,6 @@
 .conversation-page {
   min-height: 100vh;
   padding-top: 80px;
-  background: radial-gradient(ellipse at 50% 0%, rgba(20, 40, 80, 0.3) 0%, transparent 70%),
-    linear-gradient(180deg, #0a0f1a 0%, #0f1b2b 100%);
   display: flex;
   flex-direction: column;
 }
@@ -27,8 +25,9 @@
   align-items: center;
   gap: 16px;
   padding: 16px 24px;
-  background: rgba(0, 0, 0, 0.2);
+  background: rgba(0, 0, 0, 0.3);
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
 }
 
 .conversation-back-link {
@@ -80,6 +79,23 @@
   min-width: 0;
 }
 
+.conversation-header-profile-link {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+  min-width: 0;
+  text-decoration: none;
+  padding: 4px 8px;
+  margin: -4px -8px;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+
+.conversation-header-profile-link:hover {
+  background: rgba(255, 215, 0, 0.05);
+}
+
 .conversation-header-info h1 {
   font-size: 18px;
   font-weight: 600;
@@ -88,6 +104,25 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.conversation-header-name {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.conversation-header-name.primary {
+  font-size: 18px;
+  font-weight: 600;
+  color: white;
+}
+
+.conversation-header-name.secondary {
+  font-size: 13px;
+  color: #94a3b8;
+  margin-top: 2px;
 }
 
 .conversation-header-subtitle {
@@ -101,16 +136,71 @@
 
 /* Subject Banner */
 .conversation-subject-banner {
-  padding: 12px 24px;
-  background: rgba(255, 215, 0, 0.1);
+  padding: 10px 24px;
+  background: rgba(255, 215, 0, 0.15);
+  backdrop-filter: blur(10px);
   border-bottom: 1px solid rgba(255, 215, 0, 0.2);
   font-size: 14px;
   color: #FFD700;
+  position: sticky;
+  top: 0;
+  z-index: 5;
 }
 
 .conversation-subject-banner strong {
   color: white;
   font-weight: 600;
+}
+
+/* Product Banner */
+.conversation-product-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 24px;
+  background: rgba(15, 27, 43, 0.95);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  text-decoration: none;
+  transition: all 0.2s ease;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+
+.conversation-product-banner:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.conversation-product-image {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.conversation-product-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.conversation-product-label {
+  font-size: 11px;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.conversation-product-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #FFD700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Messages Area */
@@ -172,7 +262,22 @@
   }
 
   .conversation-subject-banner {
-    padding: 10px 16px;
+    padding: 8px 16px;
     font-size: 13px;
+    top: 0;
+  }
+
+  .conversation-product-banner {
+    padding: 8px 16px;
+    top: 0;
+  }
+
+  .conversation-product-image {
+    width: 36px;
+    height: 36px;
+  }
+
+  .conversation-header-name.primary {
+    font-size: 16px;
   }
 }

@@ -2,7 +2,7 @@
 
 /* Immediate base styles to prevent FOUC */
 html, body {
-  background-color: #0F1B2B;
+  background-color: #0a0f1a;
   color: #F5F5F5;
 }
 
@@ -16,7 +16,7 @@ html, body {
   /* Lighter Gold */
 
   /* Background Colors - Deep Navy */
-  --color-bg-base: #0F1B2B;
+  --color-bg-base: #0f1b2b;
   /* Deep Navy */
   --color-bg-secondary: #1A283B;
   /* Accent Navy */
@@ -57,7 +57,7 @@ html, body {
   --hp-card-bg: rgba(26, 40, 59, 0.6);
 
   /* Legacy variables used in homepage.css */
-  --bg-deep-navy: #0F1B2B;
+  --bg-deep-navy: #0f1b2b;
   --bg-accent-navy: #1A283B;
   --accent-gold: #FFD700;
   --accent-bright-gold: #FFD700;
@@ -71,11 +71,14 @@ html, body {
 }
 
 body {
-  background: var(--color-bg-base);
+  background: radial-gradient(ellipse at 50% 0%, rgba(20, 40, 80, 0.3) 0%, transparent 70%),
+    linear-gradient(180deg, #0a0f1a 0%, #0f1b2b 100%);
+  background-attachment: fixed;
   color: var(--color-text-primary);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
 }
 
 /* Headings */
@@ -322,16 +325,15 @@ a:hover {
 }
 
 .nav-logo-img {
-  height: 95px;
+  height: 140px;
   width: auto;
   object-fit: contain;
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
   transition: 0.3s;
-  /* Removed transform: translateY(2px) - let's align text instead */
 }
 
 .navbar.scrolled .nav-logo-img {
-  height: 70px;
+  height: 100px;
 }
 
 .nav-brand-text {
@@ -549,7 +551,7 @@ a:hover {
   }
 
   .nav-logo-img {
-    height: 50px;
+    height: 70px;
   }
 
   .nav-brand-text {
@@ -563,7 +565,7 @@ a:hover {
   }
 
   .navbar.scrolled .nav-logo-img {
-    height: 40px;
+    height: 55px;
   }
 
   .navbar.scrolled .nav-brand-text {
@@ -703,7 +705,7 @@ a:hover {
 /* --- FAIRS SECTION (from HTML template) --- */
 .fairs-wrapper {
   width: 100%;
-  background: #0F1B2B;
+  background: transparent;
   display: flex;
   justify-content: center;
   padding: 60px 0;

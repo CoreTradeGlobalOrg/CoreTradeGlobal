@@ -4,8 +4,6 @@
   min-height: 100vh;
   padding-top: 100px;
   padding-bottom: 60px;
-  background: radial-gradient(ellipse at 50% 0%, rgba(20, 40, 80, 0.3) 0%, transparent 70%),
-    linear-gradient(180deg, #0a0f1a 0%, #0f1b2b 100%);
 }
 
 .messages-container {

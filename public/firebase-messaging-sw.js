@@ -32,7 +32,7 @@ messaging.onBackgroundMessage((payload) => {
   const notificationOptions = {
     body: payload.notification?.body || 'You have a new message',
     icon: '/icons/icon-192x192.png',
-    badge: '/icons/icon-72x72.png',
+    badge: '/icons/icon-192x192.png',
     tag: payload.data?.conversationId || 'message',
     data: payload.data,
     vibrate: [100, 50, 100],
@@ -61,19 +61,22 @@ self.addEventListener('notificationclick', (event) => {
     return;
   }
 
-  // Open the conversation or messages page
+  // Build full URL to open
   const conversationId = event.notification.data?.conversationId;
-  const urlToOpen = conversationId
-    ? `/messages/${conversationId}`
-    : '/messages';
+  const path = conversationId ? `/messages/${conversationId}` : '/messages';
+  const urlToOpen = new URL(path, self.location.origin).href;
+
+  console.log('[firebase-messaging-sw.js] Opening URL:', urlToOpen);
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-      // Check if there's already an open window
+      // Check if there's already an open window on our origin
       for (const client of clientList) {
-        if (client.url.includes(self.location.origin) && 'focus' in client) {
-          client.navigate(urlToOpen);
-          return client.focus();
+        if (client.url.startsWith(self.location.origin) && 'focus' in client) {
+          // Navigate existing window to the conversation
+          return client.focus().then(() => {
+            return client.navigate(urlToOpen);
+          });
         }
       }
       // Open new window if none exists

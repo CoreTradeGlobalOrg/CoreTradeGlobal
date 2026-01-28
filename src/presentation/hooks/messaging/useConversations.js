@@ -22,10 +22,11 @@ export function useConversations() {
   /**
    * Start a new direct conversation with another user
    * @param {string} otherUserId - The other user's ID
+   * @param {Object} metadata - Optional metadata (productId, productName, productImage, source)
    * @returns {Promise<Object>} The conversation
    */
   const startDirectConversation = useCallback(
-    async (otherUserId) => {
+    async (otherUserId, metadata = {}) => {
       if (!user?.uid) {
         throw new Error('You must be logged in to start a conversation');
       }
@@ -50,6 +51,7 @@ export function useConversations() {
           type: 'direct',
           participantIds: [user.uid, otherUserId],
           creatorId: user.uid,
+          metadata,
         });
 
         // Open the conversation in the widget
