@@ -73,12 +73,19 @@ html, body {
 body {
   background: radial-gradient(ellipse at 50% 0%, rgba(20, 40, 80, 0.3) 0%, transparent 70%),
     linear-gradient(180deg, #0a0f1a 0%, #0f1b2b 100%);
-  background-attachment: fixed;
   color: var(--color-text-primary);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Fixed background only on desktop - causes issues on mobile */
+@media (min-width: 769px) {
+  body {
+    background-attachment: fixed;
+  }
 }
 
 /* Headings */
@@ -239,6 +246,7 @@ a:hover {
   z-index: 1000;
   background: linear-gradient(to bottom, rgba(15, 27, 43, 0.95) 0%, rgba(15, 27, 43, 0) 100%);
   transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: visible;
 }
 
 .navbar.scrolled {
@@ -325,7 +333,7 @@ a:hover {
 }
 
 .nav-logo-img {
-  height: 140px;
+  height: 80px;
   width: auto;
   object-fit: contain;
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
@@ -333,7 +341,7 @@ a:hover {
 }
 
 .navbar.scrolled .nav-logo-img {
-  height: 100px;
+  height: 60px;
 }
 
 .nav-brand-text {
@@ -547,29 +555,34 @@ a:hover {
   /* Navbar Adjustments */
   .navbar {
     height: 70px;
-    padding: 0 20px;
+    padding: 0 16px;
+  }
+
+  .nav-logo-container {
+    flex-shrink: 0;
+    max-width: 60%;
   }
 
   .nav-logo-img {
-    height: 70px;
+    height: 50px;
   }
 
   .nav-brand-text {
-    font-size: 24px;
+    font-size: 20px;
     transform: translateY(-2px);
   }
 
   .navbar.scrolled {
     height: 60px;
-    padding: 0 20px;
+    padding: 0 16px;
   }
 
   .navbar.scrolled .nav-logo-img {
-    height: 55px;
+    height: 40px;
   }
 
   .navbar.scrolled .nav-brand-text {
-    font-size: 20px;
+    font-size: 18px;
   }
 
   /* Sticky Search adjustments for Mobile */

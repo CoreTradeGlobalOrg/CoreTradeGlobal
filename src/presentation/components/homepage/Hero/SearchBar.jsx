@@ -25,9 +25,9 @@ export function SearchBar({ className = '' }) {
 
   return (
     <form onSubmit={handleSearch} className={`w-full max-w-2xl ${className}`}>
-      <div className="relative">
-        {/* Search Type Selector */}
-        <div className="absolute left-0 top-0 bottom-0 flex items-center">
+      <div className="relative flex flex-col sm:block">
+        {/* Search Type Selector - Hidden on mobile, shown as separate row */}
+        <div className="hidden sm:flex absolute left-0 top-0 bottom-0 items-center">
           <select
             value={searchType}
             onChange={(e) => setSearchType(e.target.value)}
@@ -45,28 +45,48 @@ export function SearchBar({ className = '' }) {
           </select>
         </div>
 
-        {/* Search Input */}
-        <input
-          type="text"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder={
-            searchType === 'products'
-              ? 'Ürün ara... (örn: elektronik, tekstil)'
-              : searchType === 'rfqs'
-              ? 'RFQ ara... (örn: hammadde, makine)'
-              : 'Ürün veya RFQ ara...'
-          }
-          className="w-full py-4 pl-32 pr-14 bg-[var(--hp-bg-secondary)] border border-[var(--hp-border)] rounded-xl text-[var(--hp-text-primary)] placeholder:text-[var(--hp-text-muted)] focus:outline-none focus:border-[var(--hp-gold)] transition-colors"
-        />
+        {/* Mobile: Search Type as separate row */}
+        <div className="sm:hidden flex gap-2 mb-2">
+          {['products', 'rfqs', 'all'].map((type) => (
+            <button
+              key={type}
+              type="button"
+              onClick={() => setSearchType(type)}
+              className={`flex-1 py-2 px-3 rounded-lg text-xs font-medium transition-colors ${
+                searchType === type
+                  ? 'bg-[var(--hp-gold)] text-[var(--hp-bg-primary)]'
+                  : 'bg-[var(--hp-bg-secondary)] text-[var(--hp-text-secondary)] border border-[var(--hp-border)]'
+              }`}
+            >
+              {type === 'products' ? 'Ürünler' : type === 'rfqs' ? 'RFQ' : 'Tümü'}
+            </button>
+          ))}
+        </div>
 
-        {/* Search Button */}
-        <button
-          type="submit"
-          className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-[var(--hp-gold)] rounded-lg flex items-center justify-center hover:bg-[var(--hp-gold-light)] transition-colors"
-        >
-          <Search className="w-5 h-5 text-[var(--hp-bg-primary)]" />
-        </button>
+        {/* Search Input */}
+        <div className="relative">
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={
+              searchType === 'products'
+                ? 'Ürün ara...'
+                : searchType === 'rfqs'
+                ? 'RFQ ara...'
+                : 'Ürün veya RFQ ara...'
+            }
+            className="w-full py-3 sm:py-4 pl-4 sm:pl-32 pr-14 bg-[var(--hp-bg-secondary)] border border-[var(--hp-border)] rounded-xl text-[var(--hp-text-primary)] placeholder:text-[var(--hp-text-muted)] focus:outline-none focus:border-[var(--hp-gold)] transition-colors text-sm sm:text-base"
+          />
+
+          {/* Search Button */}
+          <button
+            type="submit"
+            className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-[var(--hp-gold)] rounded-lg flex items-center justify-center hover:bg-[var(--hp-gold-light)] transition-colors"
+          >
+            <Search className="w-5 h-5 text-[var(--hp-bg-primary)]" />
+          </button>
+        </div>
       </div>
 
       {/* Quick Search Tags */}

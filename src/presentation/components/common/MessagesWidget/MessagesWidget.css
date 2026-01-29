@@ -81,6 +81,9 @@
   width: 100%;
   height: 100%;
   border-radius: 0;
+  z-index: 9999;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 /* Header */
@@ -280,11 +283,28 @@
 }
 
 /* Mobile responsiveness */
-@media (max-width: 420px) {
+@media (max-width: 768px) {
   .messages-widget-button {
     bottom: 16px;
     right: 16px;
     width: 56px;
     height: 56px;
+  }
+
+  .messages-widget-header {
+    padding: 12px 16px;
+    padding-top: calc(12px + env(safe-area-inset-top));
+  }
+
+  .messages-widget-close {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+  }
+
+  .messages-widget-back {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
   }
 }
