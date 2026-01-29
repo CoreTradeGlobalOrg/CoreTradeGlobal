@@ -2015,27 +2015,30 @@ html {
 
 .company-info {
     text-align: left;
-    margin-bottom: auto;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
 }
 
 .name-row {
     display: flex;
     align-items: center;
-    gap: 6px;
-    margin-bottom: 0.5rem;
+    gap: 5px;
 }
 
 .company-name {
-    font-size: 1.25rem;
+    font-size: 1.1rem;
     font-weight: 600;
     color: #ffffff;
+    line-height: 1.3;
 }
 
 .verified-badge {
-    width: 18px;
-    height: 18px;
-    color: #d4a345;
+    width: 16px;
+    height: 16px;
     flex-shrink: 0;
+    color: #d4a345;
 }
 
 .company-category {
@@ -2110,6 +2113,51 @@ html {
 
 .company-card.active .card-action:hover {
     background: rgba(212, 163, 69, 0.25);
+}
+
+/* View Profile Button Inside Card */
+.card-profile-btn {
+    margin-top: auto;
+    width: 100%;
+    padding: 10px 16px;
+    text-align: center;
+    font-size: 0.85rem;
+    font-weight: 600;
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.15) 0%, rgba(255, 215, 0, 0.05) 100%);
+    color: #FFD700;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    border: 1px solid rgba(255, 215, 0, 0.2);
+}
+
+.company-card.active .card-profile-btn {
+    background: linear-gradient(135deg, #FFD700 0%, #FDB931 100%);
+    color: #0f1b2b;
+    border-color: transparent;
+}
+
+.card-profile-btn:hover {
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.25) 0%, rgba(255, 215, 0, 0.1) 100%);
+}
+
+.company-card.active .card-profile-btn:hover {
+    background: linear-gradient(135deg, #fff 0%, #FFD700 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+}
+
+/* Company Description */
+.company-description {
+    font-size: 0.75rem;
+    color: #94a3b8;
+    line-height: 1.4;
+    margin: 0;
+    flex: 1;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
 }
 
 /* --- 13. FAQ (SIKÇA SORULAN SORULAR) --- */

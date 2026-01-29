@@ -11,18 +11,7 @@ import { useState, useEffect, useRef, memo } from 'react';
 import Link from 'next/link';
 import { container } from '@/core/di/container';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { COUNTRIES } from '@/core/constants/countries';
-import { CountryFlag } from '@/presentation/components/common/CountryFlag/CountryFlag';
-
-// Helper to get country name from ISO code
-const getCountryName = (countryCode) => {
-  if (!countryCode) return 'Global';
-  const country = COUNTRIES.find(c => c.value === countryCode);
-  if (country) {
-    return country.label.replace(/^[\u{1F1E0}-\u{1F1FF}]{2}\s*/u, '').trim();
-  }
-  return countryCode;
-};
+import { useCategories } from '@/presentation/hooks/category/useCategories';
 
 // Default products for initial display - country is ISO code
 const DEFAULT_PRODUCTS = [
@@ -174,14 +163,18 @@ const ProductCardImage = memo(function ProductCardImage({ src, alt }) {
   );
 });
 
-function ProductCard({ product }) {
+function ProductCard({ product, categories }) {
   // Get first image from images array
   const imageUrl = product.images?.[0] || product.imageUrl;
-  const countryCode = product.country || product.origin || '';
 
   // Resolve Currency Symbol
   const code = product.currency || 'USD';
   const currencySymbol = CURRENCY_SYMBOLS[code] || code;
+
+  // Resolve Category Name and Icon
+  const category = categories?.find(c => c.value === product.categoryId);
+  const categoryName = product.category || category?.label?.replace(/^[^\s]+\s/, '') || '';
+  const categoryIcon = category?.icon || '';
 
   return (
     <Link href={`/product/${product.id}`} className="product-card block no-underline text-inherit hover:no-underline">
@@ -192,17 +185,41 @@ function ProductCard({ product }) {
 
       {/* Product Content */}
       <div className="product-card-content">
-        <div className="flex items-center gap-2 mb-2 text-sm text-[var(--color-text-secondary)]">
-          <CountryFlag countryCode={countryCode} size={16} />
-          <span>{getCountryName(countryCode)}</span>
-        </div>
-
-        <h3 className="product-card-name">{product.name}</h3>
+        <h3
+          className="product-card-name"
+          style={{
+            background: 'linear-gradient(180deg, #ffffff 20%, #909090 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text'
+          }}
+        >
+          {product.name}
+        </h3>
+        {categoryName && (
+          <span className="text-sm text-[#FFD700] font-bold flex items-center gap-2">
+            {categoryIcon && <span>{categoryIcon}</span>}
+            <span>{categoryName}</span>
+          </span>
+        )}
         <p className="product-card-description">{truncateText(product.description, 80)}</p>
 
         {product.price && (
           <p className="product-card-price">
             {currencySymbol} {product.price}
+            {product.unit && (
+              <span
+                className="font-semibold text-sm ml-1"
+                style={{
+                  background: 'linear-gradient(180deg, #ffffff 20%, #909090 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text'
+                }}
+              >
+                / {product.unit.replace(/^\/\s*/, '')}
+              </span>
+            )}
           </p>
         )}
 
@@ -220,14 +237,16 @@ export function FeaturedProducts() {
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(true);
   const scrollRef = useRef(null);
+  const { categories } = useCategories();
 
   useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        // Use simple query without index, filter client-side
-        const firestoreDS = container.getFirestoreDataSource();
-        const allProducts = await firestoreDS.query('products', { limit: 30 });
+    const firestoreDS = container.getFirestoreDataSource();
 
+    // Real-time subscription to products
+    const unsubscribe = firestoreDS.subscribeToQuery(
+      'products',
+      { limit: 30 },
+      (allProducts) => {
         if (allProducts && allProducts.length > 0) {
           // Filter active products and sort by createdAt client-side
           const active = allProducts.filter(p => p.status === 'active');
@@ -236,18 +255,17 @@ export function FeaturedProducts() {
             const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
             return dateB - dateA;
           });
-
           setProducts(sorted.slice(0, 12));
         }
-      } catch (error) {
+        setLoading(false);
+      },
+      (error) => {
         console.error('Error fetching products:', error);
-        // Keep default products on error
-      } finally {
         setLoading(false);
       }
-    };
+    );
 
-    fetchProducts();
+    return () => unsubscribe();
   }, []);
 
   const handleScroll = () => {
@@ -327,7 +345,7 @@ export function FeaturedProducts() {
                 </>
               ) : (
                 products.map((product) => (
-                  <ProductCard key={product.id} product={product} />
+                  <ProductCard key={product.id} product={product} categories={categories} />
                 ))
               )}
             </div>

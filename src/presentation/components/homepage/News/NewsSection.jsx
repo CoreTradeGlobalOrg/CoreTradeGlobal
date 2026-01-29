@@ -97,19 +97,20 @@ export function NewsSection() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchNews = async () => {
-      try {
-        // Use simple query without index, filter client-side
-        const firestoreDS = container.getFirestoreDataSource();
-        const allNews = await firestoreDS.query('news', { limit: 20 });
+    const firestoreDS = container.getFirestoreDataSource();
 
+    // Real-time subscription to news
+    const unsubscribe = firestoreDS.subscribeToQuery(
+      'news',
+      { limit: 20 },
+      (allNews) => {
         if (allNews && allNews.length > 0) {
           // Filter published news and sort by publishedAt client-side
           const published = allNews.filter(n => n.status === 'published');
           const sorted = published.sort((a, b) => {
             const dateA = a.publishedAt?.toDate ? a.publishedAt.toDate() : new Date(a.publishedAt || 0);
             const dateB = b.publishedAt?.toDate ? b.publishedAt.toDate() : new Date(b.publishedAt || 0);
-            return dateB - dateA; // Descending - newest first
+            return dateB - dateA;
           });
 
           if (sorted.length > 0) {
@@ -121,15 +122,15 @@ export function NewsSection() {
             );
           }
         }
-      } catch (error) {
+        setLoading(false);
+      },
+      (error) => {
         console.error('Error fetching news:', error);
-        // Keep default news on error
-      } finally {
         setLoading(false);
       }
-    };
+    );
 
-    fetchNews();
+    return () => unsubscribe();
   }, []);
 
   return (

@@ -5,7 +5,7 @@
   bottom: 100px;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 998;
+  z-index: 9998;
   animation: slideUp 0.3s ease-out;
 }
 

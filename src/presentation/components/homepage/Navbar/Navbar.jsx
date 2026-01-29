@@ -20,6 +20,7 @@ const NAV_LINKS = [
   { label: 'RFQs', href: '/requests' },
   { label: 'Categories', href: '/categories' },
   { label: 'Fairs', href: '/fairs' },
+  { label: 'News', href: '/news' },
   { label: 'FAQ', href: '/faq' },
   { label: 'About Us', href: '/about-us' },
 ];

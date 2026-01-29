@@ -23,17 +23,8 @@ const getCountryName = (countryCode) => {
   return countryCode;
 };
 
-// Default companies data (Fallback) - country is ISO code
-const DEFAULT_COMPANIES = [
-  { name: 'EuroLogistics', logo: 'EL', country: 'DE', category: 'Logistics & Shipping', rating: 4.9, volume: '€50M+' },
-  { name: 'AsiaTech Mfg', logo: 'AT', country: 'CN', category: 'Electronics Mfg', rating: 4.8, volume: '$120M+' },
-  { name: 'Nordic Supply', logo: 'NS', country: 'SE', category: 'Raw Materials', rating: 5.0, volume: '€85M+' },
-  { name: 'Anatolia Tex', logo: 'AX', country: 'TR', category: 'Textiles & Fabrics', rating: 4.9, volume: '$40M+' },
-  { name: 'US Polymers', logo: 'UP', country: 'US', category: 'Chemical Products', rating: 4.7, volume: '$200M+' },
-  { name: 'Koto Automotive', logo: 'KA', country: 'JP', category: 'Auto Spare Parts', rating: 4.9, volume: '¥900M+' },
-  { name: 'Brasilia Coffee', logo: 'BC', country: 'BR', category: 'Food Exports', rating: 4.6, volume: '$30M+' },
-  { name: 'Royal Steel', logo: 'RS', country: 'GB', category: 'Industrial Metals', rating: 4.8, volume: '£60M+' },
-];
+// No default fallback companies
+const DEFAULT_COMPANIES = [];
 
 // Verified icon SVG
 const VerifiedIcon = () => (
@@ -104,30 +95,23 @@ function CompanyCard({ company, isActive, style }) {
         {/* Company Info */}
         <div className="company-info">
           <div className="name-row">
-            <h3 className="company-name line-clamp-1">{company.name}</h3>
             <VerifiedIcon />
+            <h3 className="company-name">{company.name}</h3>
           </div>
-          <div className="company-category">{company.category}</div>
-          <div className="rating-box">
-            <StarIcon />
-            <span>{company.rating}</span>
-          </div>
+          {company.category && company.category !== 'Global Trade' && (
+            <div className="company-category">{company.category}</div>
+          )}
+          {company.description && (
+            <p className="company-description">
+              {company.description}
+            </p>
+          )}
 
-          {/* Metrics */}
-          <div className="metrics">
-            <div className="metric-item">
-              <span className="metric-value">{company.volume}</span>
-              <span className="metric-label">Trade Vol.</span>
-            </div>
-            <div className="metric-item">
-              <span className="metric-value">&lt; 24h</span>
-              <span className="metric-label">Response</span>
-            </div>
-          </div>
+          {/* View Profile Button - Inside Card */}
+          <button className="card-profile-btn">
+            View Profile
+          </button>
         </div>
-
-        {/* Action */}
-        <div className="card-action">View Profile</div>
       </div>
     </Link>
   );
@@ -144,7 +128,7 @@ export function ShowcaseSection() {
   const [currentRotation, setCurrentRotation] = useState(0);
   const targetRotationRef = useRef(0);
   const currentRotationRef = useRef(0);
-  const currentSpeedRef = useRef(0.0012);
+  const currentSpeedRef = useRef(0.002);
   const velocityRef = useRef(0);
 
   // Drag state
@@ -154,8 +138,8 @@ export function ShowcaseSection() {
   const radius = 550;
   const totalCards = companies.length; // Use dynamic length
   const angleStep = (2 * Math.PI) / (totalCards || 1); // Avoid division by zero
-  const defaultSpeed = 0.0012;
-  const slowSpeed = defaultSpeed / 3;
+  const defaultSpeed = 0.002;
+  const slowSpeed = 0.001;
 
   // Fetch Featured Companies
   useEffect(() => {
@@ -171,13 +155,12 @@ export function ShowcaseSection() {
         if (featuredUsers && featuredUsers.length > 0) {
           const mappedCompanies = featuredUsers.map(user => {
             return {
-              id: user.id, // Store ID for linking
+              id: user.id,
               name: user.companyName || user.displayName || 'Unknown Company',
               logo: user.companyLogo || user.photoURL || (user.companyName ? user.companyName.substring(0, 2).toUpperCase() : 'CO'),
-              country: user.country || '', // ISO code
-              category: user.industry || 'Global Trade',
-              rating: (4.5 + Math.random() * 0.5).toFixed(1), // Mock rating until we have real ones
-              volume: '$10M+' // Mock volume
+              country: user.country || '',
+              category: user.industry || '',
+              description: user.about || ''
             };
           });
           setCompanies(mappedCompanies);
@@ -286,7 +269,10 @@ export function ShowcaseSection() {
     }
   };
   const handleMouseUp = () => handleEnd();
-  const handleMouseLeave = () => handleEnd();
+  const handleMouseLeave = () => {
+    handleEnd();
+    currentSpeedRef.current = defaultSpeed;
+  };
 
   // Touch events
   const handleTouchStart = (e) => handleStart(e.touches[0].clientX);
@@ -302,9 +288,10 @@ export function ShowcaseSection() {
     currentSpeedRef.current = slowSpeed;
   };
 
-  const handleContainerMouseLeave = () => {
-    currentSpeedRef.current = defaultSpeed;
-  };
+  // Hide section if no featured companies
+  if (!loading && companies.length === 0) {
+    return null;
+  }
 
   return (
     <section className="showcase-section" id="showcase-section">

@@ -507,15 +507,20 @@ a:hover {
   width: 100%;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 12px 14px;
+  padding: 12px 20px;
   border-radius: 8px;
   color: #fff;
   outline: none;
+  transition: border-color 0.2s;
+}
+
+.footer-input:focus {
+  border-color: var(--accent-gold);
 }
 
 .footer-btn {
   position: absolute;
-  right: 4px;
+  right: 10px;
   top: 50%;
   transform: translateY(-50%);
   background: var(--accent-gold);

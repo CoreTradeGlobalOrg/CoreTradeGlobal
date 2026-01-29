@@ -138,12 +138,13 @@ export function FeaturedRFQs() {
   const scrollRef = useRef(null);
 
   useEffect(() => {
-    const fetchRFQs = async () => {
-      try {
-        // Use simple query without index, filter client-side
-        const firestoreDS = container.getFirestoreDataSource();
-        const allRequests = await firestoreDS.query('requests', { limit: 30 });
+    const firestoreDS = container.getFirestoreDataSource();
 
+    // Real-time subscription to requests
+    const unsubscribe = firestoreDS.subscribeToQuery(
+      'requests',
+      { limit: 30 },
+      (allRequests) => {
         if (allRequests && allRequests.length > 0) {
           // Filter active requests and sort by createdAt client-side
           const active = allRequests.filter(r => r.status === 'active');
@@ -163,15 +164,15 @@ export function FeaturedRFQs() {
             }))
           );
         }
-      } catch (error) {
+        setLoading(false);
+      },
+      (error) => {
         console.error('Error fetching RFQs:', error);
-        // Keep default RFQs on error
-      } finally {
         setLoading(false);
       }
-    };
+    );
 
-    fetchRFQs();
+    return () => unsubscribe();
   }, []);
 
   const handleScroll = () => {

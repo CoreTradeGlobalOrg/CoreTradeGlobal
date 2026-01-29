@@ -5,7 +5,7 @@
   bottom: 100px;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 997;
+  z-index: 9997;
   animation: installSlideUp 0.3s ease-out;
 }
 
@@ -130,4 +130,147 @@
     justify-content: flex-end;
     margin-top: 8px;
   }
+}
+
+/* iOS Instructions Modal */
+.install-prompt-ios-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10001;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.install-prompt-ios-modal {
+  position: relative;
+  max-width: 360px;
+  width: 100%;
+  padding: 24px;
+  background: linear-gradient(135deg, rgba(26, 40, 59, 0.98) 0%, rgba(15, 27, 43, 0.98) 100%);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 30px rgba(59, 130, 246, 0.15);
+  animation: scaleIn 0.25s ease-out;
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.install-prompt-ios-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: #a0a0a0;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.install-prompt-ios-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.install-prompt-ios-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.install-prompt-ios-header h3 {
+  font-size: 20px;
+  font-weight: 700;
+  color: white;
+  margin: 0;
+}
+
+.install-prompt-ios-subtitle {
+  font-size: 14px;
+  color: #a0a0a0;
+  text-align: center;
+  margin: 0 0 24px;
+}
+
+.install-prompt-ios-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.install-prompt-ios-step {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.install-prompt-ios-step-number {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(59, 130, 246, 0.15);
+  border-radius: 50%;
+  color: #3b82f6;
+  font-size: 14px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.install-prompt-ios-step-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: #e0e0e0;
+}
+
+.install-prompt-ios-step-content strong {
+  color: white;
+}
+
+.install-prompt-ios-done {
+  width: 100%;
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  border: none;
+  border-radius: 12px;
+  color: white;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.install-prompt-ios-done:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
 }

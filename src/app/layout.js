@@ -31,16 +31,25 @@ export const metadata = {
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: 'https://yourdomain.com',
+    url: 'https://coretradeglobal.com',
     title: 'CoreTradeGlobal | B2B Trading Platform',
     description: 'B2B Trading Platform - Connect with businesses worldwide',
     siteName: 'CoreTradeGlobal',
+    images: [
+      {
+        url: 'https://coretradeglobal.com/Core-png.png',
+        width: 1200,
+        height: 630,
+        alt: 'Core Trade Global',
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'CoreTradeGlobal | B2B Trading Platform',
     description: 'B2B Trading Platform - Connect with businesses worldwide',
     creator: '@CoreTradeGlobal',
+    images: ['https://coretradeglobal.com/Core-png.png'],
   },
 };
 

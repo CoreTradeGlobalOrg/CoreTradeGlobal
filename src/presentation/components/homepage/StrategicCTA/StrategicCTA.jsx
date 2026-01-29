@@ -19,7 +19,6 @@ import { ProductForm } from '@/presentation/components/features/product/ProductF
 import { RequestForm } from '@/presentation/components/features/request/RequestForm/RequestForm';
 import { useCreateProduct } from '@/presentation/hooks/product/useCreateProduct';
 import { useCreateRequest } from '@/presentation/hooks/request/useCreateRequest';
-import toast from 'react-hot-toast';
 
 export function StrategicCTA() {
   const { user, isAuthenticated, loading } = useAuth();
@@ -48,23 +47,19 @@ export function StrategicCTA() {
 
   const handleProductSubmit = async (data, imageFiles) => {
     try {
-      await createProduct(user.uid, data, imageFiles);
+      await createProduct(data, imageFiles);
       setProductModalOpen(false);
-      toast.success('Product created successfully!');
     } catch (error) {
       console.error('Error creating product:', error);
-      toast.error(error.message || 'Failed to create product');
     }
   };
 
   const handleRequestSubmit = async (data) => {
     try {
-      await createRequest(user.uid, data);
+      await createRequest(data);
       setRequestModalOpen(false);
-      toast.success('Request created successfully!');
     } catch (error) {
       console.error('Error creating request:', error);
-      toast.error(error.message || 'Failed to create request');
     }
   };
 
@@ -135,6 +130,7 @@ export function StrategicCTA() {
         title="Create New RFQ"
       >
         <RequestForm
+          userId={user?.uid}
           onSubmit={handleRequestSubmit}
           onCancel={() => setRequestModalOpen(false)}
         />

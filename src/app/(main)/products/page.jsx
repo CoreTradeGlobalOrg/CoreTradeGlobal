@@ -44,7 +44,7 @@ function ProductsContent() {
     return (
         <>
             <div className="mb-10 text-center max-w-2xl mx-auto">
-                <h1 className="text-4xl font-bold mb-3" style={{ background: 'linear-gradient(180deg, #ffffff 20%, #909090 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Explore Premium Products</h1>
+                <h1 className="text-4xl font-bold mb-3" style={{ background: 'linear-gradient(180deg, #ffffff 20%, #909090 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Explore Latest Products</h1>
                 <p className="text-[#A0A0A0] mb-8">Source high-quality materials from verified global suppliers.</p>
 
                 <div className="max-w-2xl mx-auto">

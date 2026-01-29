@@ -22,7 +22,6 @@ import { ProductForm } from '@/presentation/components/features/product/ProductF
 import { RequestForm } from '@/presentation/components/features/request/RequestForm/RequestForm';
 import { useCreateProduct } from '@/presentation/hooks/product/useCreateProduct';
 import { useCreateRequest } from '@/presentation/hooks/request/useCreateRequest';
-import toast from 'react-hot-toast';
 
 // Helper to get country name from ISO code
 const getCountryName = (countryCode) => {
@@ -34,6 +33,14 @@ const getCountryName = (countryCode) => {
   return countryCode;
 };
 
+// Map currency codes to symbols
+const CURRENCY_SYMBOLS = {
+  'USD': '$', 'EUR': '€', 'GBP': '£', 'TRY': '₺', 'JPY': '¥', 'CNY': '¥',
+  'AUD': 'A$', 'CAD': 'C$', 'CHF': 'CHF', 'SEK': 'kr', 'NZD': 'NZ$',
+  'SGD': 'S$', 'HKD': 'HK$', 'NOK': 'kr', 'KRW': '₩', 'MXN': '$',
+  'INR': '₹', 'RUB': '₽', 'BRL': 'R$', 'ZAR': 'R'
+};
+
 // Dynamic import for 3D globe to avoid SSR issues
 const GlobeCanvas = dynamic(
   () => import('../Globe/GlobeCanvas').then((mod) => mod.GlobeCanvas),
@@ -43,7 +50,7 @@ const GlobeCanvas = dynamic(
   }
 );
 
-const SEARCH_TAGS = ['Marble', 'Steel', 'Textile', 'Germany', 'Electronics'];
+const SEARCH_TAGS = ['Marble', 'Steel', 'Textile', 'Machinery', 'Cotton'];
 
 export function HeroSection({ fetchData = false }) {
   const { user, isAuthenticated, loading } = useAuth();
@@ -168,23 +175,19 @@ export function HeroSection({ fetchData = false }) {
 
   const handleProductSubmit = async (data, imageFiles) => {
     try {
-      await createProduct(user.uid, data, imageFiles);
+      await createProduct(data, imageFiles);
       setProductModalOpen(false);
-      toast.success('Product created successfully!');
     } catch (error) {
       console.error('Error creating product:', error);
-      toast.error(error.message || 'Failed to create product');
     }
   };
 
   const handleRequestSubmit = async (data) => {
     try {
-      await createRequest(user.uid, data);
+      await createRequest(data);
       setRequestModalOpen(false);
-      toast.success('Request created successfully!');
     } catch (error) {
       console.error('Error creating request:', error);
-      toast.error(error.message || 'Failed to create request');
     }
   };
 
@@ -341,10 +344,23 @@ export function HeroSection({ fetchData = false }) {
               <p className="card-product-name">
                 {fetchData && latestProduct ? latestProduct.name : 'Browse Products'}
               </p>
-              <p className="card-specs">
-                {fetchData && latestProduct
-                  ? `${latestProduct.price ? `${latestProduct.currency || '$'}${latestProduct.price}` : 'Price on request'}`
-                  : 'From verified suppliers'}
+              <p
+                className="card-specs"
+                style={{
+                  background: 'linear-gradient(180deg, #ffffff 20%, #909090 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text'
+                }}
+              >
+                {fetchData && latestProduct ? (
+                  latestProduct.price ? (
+                    <>
+                      {CURRENCY_SYMBOLS[latestProduct.currency] || latestProduct.currency || '$'} {latestProduct.price}
+                      {latestProduct.unit && ` / ${latestProduct.unit}`}
+                    </>
+                  ) : 'Price on request'
+                ) : 'From verified suppliers'}
               </p>
               <p className="card-price">{fetchData ? 'See Details ▼' : 'Explore →'}</p>
             </div>
@@ -358,10 +374,24 @@ export function HeroSection({ fetchData = false }) {
               <p className="card-product-name">
                 {fetchData && latestRequest ? (latestRequest.productName || latestRequest.title) : 'Active Requests'}
               </p>
-              <p className="card-specs">
-                {fetchData && latestRequest
-                  ? `Qty: ${latestRequest.quantity || '-'} • ${latestRequest.targetCountry || 'Worldwide'}`
-                  : 'Find business opportunities'}
+              <p
+                className="card-specs"
+                style={{
+                  background: 'linear-gradient(180deg, #ffffff 20%, #909090 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                {fetchData && latestRequest ? (
+                  <>
+                    {latestRequest.targetCountry && <CountryFlag countryCode={latestRequest.targetCountry} size={14} />}
+                    <span>Qty: {latestRequest.quantity || '-'} {latestRequest.unit && `${latestRequest.unit}`}</span>
+                  </>
+                ) : 'Find business opportunities'}
               </p>
               <p className="card-budget">{fetchData ? 'Check Details ▼' : 'View All →'}</p>
             </div>
@@ -378,7 +408,15 @@ export function HeroSection({ fetchData = false }) {
               <p className="card-product-name">
                 {fetchData && latestFair ? latestFair.name : 'Upcoming Events'}
               </p>
-              <p className="card-specs">
+              <p
+                className="card-specs"
+                style={{
+                  background: 'linear-gradient(180deg, #ffffff 20%, #909090 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text'
+                }}
+              >
                 {fetchData && latestFair
                   ? `${formatDate(latestFair.startDate)} • ${latestFair.location || ''}`
                   : 'Connect in person'}
@@ -390,21 +428,29 @@ export function HeroSection({ fetchData = false }) {
           {/* Supplier Card */}
           <Link href={fetchData && latestSupplier ? `/profile/${latestSupplier.id}` : '/companies'} className="hero-info-card hero-supplier-card">
             <div className="card-icon">🏭</div>
-            <div className="card-content">
+            <div className="card-content" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
               <h3>{fetchData ? 'Latest Supplier' : 'Suppliers'}</h3>
-              <p className="card-product-name">
-                {fetchData && latestSupplier ? latestSupplier.companyName : 'Verified Companies'}
-              </p>
-              <p className="card-specs">
-                {fetchData && latestSupplier ? (
-                  <span className="flex items-center gap-1">
-                    <CountryFlag countryCode={latestSupplier.country} size={14} />
-                    <span>{getCountryName(latestSupplier.country)}</span>
-                    <span>•</span>
-                    <span>{latestSupplier.industry || ''}</span>
-                  </span>
-                ) : 'Worldwide network'}
-              </p>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                <p className="card-product-name" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  {fetchData && latestSupplier ? (
+                    <>
+                      <CountryFlag countryCode={latestSupplier.country} size={18} />
+                      <span>{latestSupplier.companyName}</span>
+                    </>
+                  ) : 'Verified Companies'}
+                </p>
+                <p
+                  className="card-specs"
+                  style={{
+                    background: 'linear-gradient(180deg, #ffffff 20%, #909090 100%)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text'
+                  }}
+                >
+                  {fetchData && latestSupplier ? (latestSupplier.industry || '') : 'Worldwide network'}
+                </p>
+              </div>
               <p className="card-budget">{fetchData ? 'Verified Member' : 'Browse →'}</p>
             </div>
           </Link>
@@ -436,6 +482,7 @@ export function HeroSection({ fetchData = false }) {
         title="Create New RFQ"
       >
         <RequestForm
+          userId={user?.uid}
           onSubmit={handleRequestSubmit}
           onCancel={() => setRequestModalOpen(false)}
         />

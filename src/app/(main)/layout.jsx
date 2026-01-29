@@ -6,6 +6,7 @@ import { MessagesWidget } from '@/presentation/components/common/MessagesWidget/
 import { NotificationPrompt } from '@/presentation/components/common/NotificationPrompt/NotificationPrompt';
 import { NotificationListener } from '@/presentation/components/common/NotificationListener/NotificationListener';
 import { InstallPrompt } from '@/presentation/components/common/InstallPrompt/InstallPrompt';
+import { CookieConsent } from '@/presentation/components/common/CookieConsent/CookieConsent';
 import './homepage.css';
 
 export default function MainLayout({ children }) {
@@ -18,6 +19,7 @@ export default function MainLayout({ children }) {
       <NotificationPrompt />
       <NotificationListener />
       <InstallPrompt />
+      <CookieConsent />
     </>
   );
 }

@@ -27,14 +27,27 @@ export function NotificationPrompt() {
   const [requesting, setRequesting] = useState(false);
 
   // Check if user has dismissed the prompt before
+  // But if permission was reset to 'default', show prompt again
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const wasDismissed = localStorage.getItem('notification-prompt-dismissed');
-      if (wasDismissed) {
+      const lastKnownPermission = localStorage.getItem('notification-last-permission');
+
+      // If permission changed back to 'default' (user reset it), clear dismiss state
+      if (permission === 'default' && lastKnownPermission && lastKnownPermission !== 'default') {
+        localStorage.removeItem('notification-prompt-dismissed');
+        localStorage.setItem('notification-last-permission', 'default');
+        setDismissed(false);
+      } else if (wasDismissed && permission === 'default') {
         setDismissed(true);
       }
+
+      // Store current permission for future comparison
+      if (permission) {
+        localStorage.setItem('notification-last-permission', permission);
+      }
     }
-  }, []);
+  }, [permission]);
 
   // Don't show if:
   // - Not authenticated
