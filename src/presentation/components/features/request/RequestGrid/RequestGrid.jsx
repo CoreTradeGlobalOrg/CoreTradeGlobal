@@ -175,41 +175,41 @@ export function RequestGrid({ searchQuery, categoryFilter }) {
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredRequests.map((rfq) => (
-                <div key={rfq.id} className="rfq-card">
-                    <div className="flex justify-between items-start mb-4">
-                        <span className={`text-[11px] font-bold uppercase tracking-wider px-2 py-1 rounded-md ${rfq.badge === 'Urgent' ? 'bg-[rgba(239,68,68,0.15)] text-[#f87171] border border-[rgba(239,68,68,0.3)]' : 'bg-[rgba(16,185,129,0.15)] text-[#34d399] border border-[rgba(16,185,129,0.3)]'}`}>
-                            {rfq.badge || 'New'}
-                        </span>
-                        <span className="text-xs text-[var(--text-grey)]">{rfq.deadline}</span>
-                    </div>
-
-                    <h3 className="text-lg font-bold text-white mb-3 leading-snug">{rfq.title}</h3>
-
-                    <div className="bg-[rgba(255,255,255,0.03)] rounded-xl p-4 mb-4 flex flex-col gap-2">
-                        <div className="flex justify-between text-[13px]">
-                            <span className="text-[var(--text-grey)]">Quantity:</span>
-                            <span className="text-white font-semibold">{rfq.quantity}</span>
+                <Link key={rfq.id} href={`/request/${rfq.id}`} className="block">
+                    <div className="rfq-card cursor-pointer hover:border-[#3b82f6]/50 hover:shadow-[0_0_30px_rgba(59,130,246,0.15)] transition-all duration-300">
+                        <div className="flex justify-between items-start mb-4">
+                            <span className={`text-[11px] font-bold uppercase tracking-wider px-2 py-1 rounded-md ${rfq.badge === 'Urgent' ? 'bg-[rgba(239,68,68,0.15)] text-[#f87171] border border-[rgba(239,68,68,0.3)]' : 'bg-[rgba(16,185,129,0.15)] text-[#34d399] border border-[rgba(16,185,129,0.3)]'}`}>
+                                {rfq.badge || 'New'}
+                            </span>
+                            <span className="text-xs text-[var(--text-grey)]">{rfq.deadline}</span>
                         </div>
-                        <div className="flex justify-between text-[13px]">
-                            <span className="text-[var(--text-grey)]">Budget:</span>
-                            <span className="text-white font-semibold">{rfq.budget}</span>
+
+                        <h3 className="text-lg font-bold text-white mb-3 leading-snug">{rfq.title}</h3>
+
+                        <div className="bg-[rgba(255,255,255,0.03)] rounded-xl p-4 mb-4 flex flex-col gap-2">
+                            <div className="flex justify-between text-[13px]">
+                                <span className="text-[var(--text-grey)]">Quantity:</span>
+                                <span className="text-white font-semibold">{rfq.quantity}</span>
+                            </div>
+                            <div className="flex justify-between text-[13px]">
+                                <span className="text-[var(--text-grey)]">Budget:</span>
+                                <span className="text-white font-semibold">{rfq.budget}</span>
+                            </div>
+                        </div>
+
+                        {rfq.description && (
+                            <p className="text-[13px] text-[#94a3b8] leading-relaxed mb-5 line-clamp-2 overflow-hidden">{rfq.description}</p>
+                        )}
+
+                        <div className="mt-auto pt-4 border-t border-[rgba(255,255,255,0.05)] flex justify-between items-center">
+                            <div className="flex items-center gap-1.5 text-[13px] text-white">
+                                <CountryFlag countryCode={rfq.country} size={16} />
+                                <span>{getCountryName(rfq.country)}</span>
+                            </div>
+                            <span className="bg-gradient-to-br from-[#3b82f6] to-[#2563eb] text-white border-0 px-5 py-2 rounded-full text-[13px] font-semibold shadow-lg hover:bg-blue-400 hover:-translate-y-0.5 transition-all">Quote Now</span>
                         </div>
                     </div>
-
-                    {rfq.description && (
-                        <p className="text-[13px] text-[#94a3b8] leading-relaxed mb-5 line-clamp-2 overflow-hidden">{rfq.description}</p>
-                    )}
-
-                    <div className="mt-auto pt-4 border-t border-[rgba(255,255,255,0.05)] flex justify-between items-center">
-                        <div className="flex items-center gap-1.5 text-[13px] text-white">
-                            <CountryFlag countryCode={rfq.country} size={16} />
-                            <span>{getCountryName(rfq.country)}</span>
-                        </div>
-                        <Link href={`/request/${rfq.id}`}>
-                            <button className="bg-gradient-to-br from-[#3b82f6] to-[#2563eb] text-white border-0 px-5 py-2 rounded-full text-[13px] font-semibold shadow-lg hover:bg-blue-400 hover:-translate-y-0.5 transition-all">Quote Now</button>
-                        </Link>
-                    </div>
-                </div>
+                </Link>
             ))}
         </div>
     );

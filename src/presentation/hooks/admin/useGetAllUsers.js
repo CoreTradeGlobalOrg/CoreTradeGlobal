@@ -25,7 +25,7 @@ export function useGetAllUsers() {
     fetchUsers();
   }, []);
 
-  const fetchUsers = async () => {
+  const fetchUsers = async (includeBanned = true) => {
     try {
       setLoading(true);
       setError(null);
@@ -33,10 +33,13 @@ export function useGetAllUsers() {
       const authRepo = container.getAuthRepository();
       const allUsers = await authRepo.getAllUsers();
 
-      // Filter out deleted users
-      const activeUsers = allUsers.filter(user => !user.isDeleted);
+      // Include banned users for admin management, but filter out permanently deleted
+      // Banned users have isDeleted: true but still exist in the database
+      const filteredUsers = includeBanned
+        ? allUsers // Show all including banned for admin management
+        : allUsers.filter(user => !user.isDeleted);
 
-      setUsers(activeUsers);
+      setUsers(filteredUsers);
     } catch (err) {
       console.error('Failed to fetch users:', err);
       setError(err.message || 'Failed to fetch users');

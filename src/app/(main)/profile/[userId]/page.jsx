@@ -11,7 +11,7 @@
 import { useAuth } from '@/presentation/contexts/AuthContext';
 import { useLogout } from '@/presentation/hooks/auth/useLogout';
 import { useDeleteAccount } from '@/presentation/hooks/auth/useDeleteAccount';
-import { useRouter, useParams, useSearchParams } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { useEffect, useState, Suspense } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -32,19 +32,18 @@ import { useCreateRequest } from '@/presentation/hooks/request/useCreateRequest'
 import { useUpdateRequest } from '@/presentation/hooks/request/useUpdateRequest';
 import { useDeleteRequest } from '@/presentation/hooks/request/useDeleteRequest';
 import { useCategories } from '@/presentation/hooks/category/useCategories';
+import { ConfirmDialog } from '@/presentation/components/common/ConfirmDialog/ConfirmDialog';
 
 function ProfileContent() {
   const { user: currentUser, loading: authLoading, isAuthenticated } = useAuth();
   const { logout } = useLogout();
-  const { deleteAccount } = useDeleteAccount();
+  const { deleteAccount, loading: deleteLoading } = useDeleteAccount();
   const router = useRouter();
   const params = useParams();
-  const searchParams = useSearchParams();
   const userId = params.userId;
 
   const [profileUser, setProfileUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'profile');
   const [isEditing, setIsEditing] = useState(false);
 
   // Delete account modal state
@@ -58,6 +57,13 @@ function ProfileContent() {
   // Request modal state
   const [requestModalOpen, setRequestModalOpen] = useState(false);
   const [editingRequest, setEditingRequest] = useState(null);
+
+  // Pagination state
+  const [productPage, setProductPage] = useState(1);
+  const [requestPage, setRequestPage] = useState(1);
+  const ITEMS_PER_PAGE = 3;
+  const [categoryName, setCategoryName] = useState(null);
+  const [showStickyHeader, setShowStickyHeader] = useState(false);
 
   // Product hooks
   const { products, loading: productsLoading, refetch: refetchProducts } = useProducts(userId);
@@ -136,6 +142,42 @@ function ProfileContent() {
     }
   }, [authLoading, isAuthenticated, router, userId]);
 
+  // Handle scroll for sticky header
+  useEffect(() => {
+    const handleScroll = () => {
+      // Show sticky header after scrolling past 300px
+      setShowStickyHeader(window.scrollY > 300);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Fetch category name from Firebase
+  useEffect(() => {
+    const fetchCategory = async () => {
+      if (!profileUser?.companyCategory) {
+        setCategoryName(null);
+        return;
+      }
+
+      try {
+        const firestoreDS = container.getFirestoreDataSource();
+        const categoryDoc = await firestoreDS.getById('categories', profileUser.companyCategory);
+        if (categoryDoc && categoryDoc.name) {
+          setCategoryName(categoryDoc.name);
+        } else {
+          setCategoryName(profileUser.companyCategory);
+        }
+      } catch (error) {
+        console.error('Error fetching category:', error);
+        setCategoryName(profileUser.companyCategory);
+      }
+    };
+
+    fetchCategory();
+  }, [profileUser?.companyCategory]);
+
   // Show loading
   if (authLoading || loading) {
     return (
@@ -165,6 +207,7 @@ function ProfileContent() {
     if (!role) return 'Member';
     return role.charAt(0).toUpperCase() + role.slice(1);
   };
+
 
   const handleLogoChange = (e) => {
     const file = e.target.files?.[0];
@@ -280,24 +323,24 @@ function ProfileContent() {
   };
 
   const handleDeleteAccount = async () => {
+    // Check if user typed DELETE
+    if (deleteConfirmText !== 'DELETE') {
+      toast.error('Please type DELETE to confirm');
+      return;
+    }
+
     try {
-      // Call cloud function to hard delete user (Auth + Firestore)
-      await deleteAccount(userId);
+      // Call cloud function to soft delete user (15-day recovery)
+      const result = await deleteAccount(userId);
 
       // Close modal
       setDeleteModalOpen(false);
       setDeleteConfirmText('');
 
-      // If deleting own account, logout and redirect
-      if (isOwnProfile) {
-        await logout();
-        toast.success('Your account has been permanently deleted');
-        router.push('/');
-      } else {
-        // Admin deleted another user's account
-        toast.success('User account has been permanently deleted');
-        router.push('/admin');
-      }
+      // Logout and redirect
+      await logout();
+      toast.success('Your account has been scheduled for deletion. You can recover it within 15 days by logging in.');
+      router.push('/');
     } catch (error) {
       console.error('Failed to delete account:', error);
       toast.error(error.message || 'Failed to delete account');
@@ -311,14 +354,6 @@ function ProfileContent() {
     } catch (error) {
       toast.error('Failed to logout');
     }
-  };
-
-  // Handle tab change with URL update
-  const handleTabChange = (tab) => {
-    setActiveTab(tab);
-    const url = new URL(window.location.href);
-    url.searchParams.set('tab', tab);
-    window.history.pushState({}, '', url);
   };
 
   // Product handlers
@@ -338,6 +373,7 @@ function ProfileContent() {
         await updateProduct(editingProduct.id, userId, productData, imageFiles);
       } else {
         await createProduct(productData, imageFiles);
+        setProductPage(1); // Go to first page to see new product
       }
       setProductModalOpen(false);
       setEditingProduct(null);
@@ -351,6 +387,10 @@ function ProfileContent() {
   const handleDeleteProduct = async (productId) => {
     try {
       await deleteProduct(productId, userId);
+      // Adjust page if current page becomes empty
+      const newTotal = (products?.length || 1) - 1;
+      const maxPage = Math.ceil(newTotal / ITEMS_PER_PAGE) || 1;
+      if (productPage > maxPage) setProductPage(maxPage);
       refetchProducts();
     } catch (error) {
       // Error already shown by hook
@@ -386,6 +426,7 @@ function ProfileContent() {
         await updateRequest(editingRequest.id, userId, requestData);
       } else {
         await createRequest(requestData);
+        setRequestPage(1); // Go to first page to see new request
       }
       setRequestModalOpen(false);
       setEditingRequest(null);
@@ -399,6 +440,10 @@ function ProfileContent() {
   const handleDeleteRequest = async (requestId) => {
     try {
       await deleteRequest(requestId, userId);
+      // Adjust page if current page becomes empty
+      const newTotal = (requests?.length || 1) - 1;
+      const maxPage = Math.ceil(newTotal / ITEMS_PER_PAGE) || 1;
+      if (requestPage > maxPage) setRequestPage(maxPage);
       refetchRequests();
     } catch (error) {
       // Error already shown by hook
@@ -436,53 +481,53 @@ function ProfileContent() {
 
   return (
     <div className="min-h-screen bg-radial-navy pb-20">
-      {/* Header */}
-      <header className="border-b border-[rgba(255,255,255,0.1)] bg-[rgba(15,27,43,0.6)] backdrop-blur-md sticky top-0 z-50 pt-[100px] pb-6">
+      {/* Sticky Header - appears on scroll */}
+      <header className={`border-b border-[rgba(255,255,255,0.1)] bg-[rgba(15,27,43,0.95)] backdrop-blur-md fixed top-[80px] left-0 right-0 z-40 py-4 transition-all duration-300 ${showStickyHeader ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0 pointer-events-none'}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             {/* User Info with Logo */}
-            <div className="flex items-center gap-6">
+            <div className="flex items-center gap-4 sm:gap-6">
               {/* Company Logo or Building Icon */}
               {profileUser?.companyLogo ? (
                 <img
                   src={profileUser.companyLogo}
                   alt="Company logo"
-                  className="w-20 h-20 rounded-2xl object-cover border-2 border-[rgba(255,215,0,0.3)] shadow-[0_0_20px_rgba(0,0,0,0.3)]"
+                  className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover border-2 border-[rgba(255,215,0,0.3)] shadow-[0_0_20px_rgba(0,0,0,0.3)]"
                 />
               ) : (
-                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#1c304a] to-[#0F1B2B] border border-[rgba(255,255,255,0.1)] flex items-center justify-center shadow-[0_0_20px_rgba(0,0,0,0.3)]">
-                  <span className="text-3xl">🏭</span>
+                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-[#1c304a] to-[#0F1B2B] border border-[rgba(255,255,255,0.1)] flex items-center justify-center shadow-[0_0_20px_rgba(0,0,0,0.3)]">
+                  <span className="text-2xl sm:text-3xl">🏭</span>
                 </div>
               )}
 
               {/* User Name and Position */}
-              <div>
-                <h1 className="text-3xl font-bold text-white mb-1">
+              <div className="min-w-0">
+                <h1 className="text-xl sm:text-3xl font-bold text-white mb-1 truncate">
                   {profileUser?.displayName || profileUser?.email || 'User'}
                 </h1>
-                <p className="text-[#A0A0A0] flex items-center gap-2">
-                  <span className="text-[#FFD700] font-medium">{profileUser?.companyName || 'No company'}</span>
-                  {profileUser?.position && <span className="w-1 h-1 rounded-full bg-[#A0A0A0]"></span>}
-                  {profileUser?.position && <span>{profileUser.position}</span>}
+                <p className="text-[#A0A0A0] flex items-center gap-2 text-sm sm:text-base flex-wrap">
+                  <span className="text-[#FFD700] font-medium truncate">{profileUser?.companyName || 'No company'}</span>
+                  {profileUser?.position && <span className="w-1 h-1 rounded-full bg-[#A0A0A0] hidden sm:block"></span>}
+                  {profileUser?.position && <span className="hidden sm:inline truncate">{profileUser.position}</span>}
                 </p>
               </div>
             </div>
 
             {/* Action Buttons */}
-            <div className="flex gap-3">
+            <div className="flex gap-2 sm:gap-3 w-full sm:w-auto">
               {isOwnProfile && currentUser?.role === 'admin' && (
                 <button
                   onClick={() => router.push('/admin')}
-                  className="px-6 py-2.5 rounded-full bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] text-white hover:bg-[rgba(255,255,255,0.1)] transition-all font-medium"
+                  className="flex-1 sm:flex-none px-4 sm:px-6 py-2 sm:py-2.5 rounded-full bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] text-white hover:bg-[rgba(255,255,255,0.1)] transition-all font-medium text-sm sm:text-base"
                 >
-                  Admin Dashboard
+                  Admin
                 </button>
               )}
               <button
                 onClick={() => router.push('/')}
-                className="px-6 py-2.5 rounded-full bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] text-white hover:bg-[rgba(255,255,255,0.1)] transition-all font-medium"
+                className="flex-1 sm:flex-none px-4 sm:px-6 py-2 sm:py-2.5 rounded-full bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] text-white hover:bg-[rgba(255,255,255,0.1)] transition-all font-medium text-sm sm:text-base"
               >
-                Back to Home
+                Home
               </button>
             </div>
           </div>
@@ -490,371 +535,358 @@ function ProfileContent() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto py-8 sm:px-6 lg:px-8">
-        {/* Tabs */}
-        <div className="mb-8 border-b border-[rgba(255,255,255,0.1)]">
-          <nav className="-mb-px flex space-x-8">
-            {['profile', 'products', 'requests', isOwnProfile && 'security'].filter(Boolean).map((tab) => (
-              <button
-                key={tab}
-                onClick={() => handleTabChange(tab)}
-                className={`${activeTab === tab
-                  ? 'border-[#FFD700] text-[#FFD700]'
-                  : 'border-transparent text-[#A0A0A0] hover:text-white hover:border-[rgba(255,255,255,0.3)]'
-                  } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm capitalize transition-colors`}
-              >
-                {tab === 'products' ? (isOwnProfile ? 'My Products' : 'Products') :
-                  tab === 'requests' ? (isOwnProfile ? 'My Requests' : 'Requests') : tab}
-              </button>
-            ))}
-          </nav>
-        </div>
-
-        {/* Profile Tab */}
-        {activeTab === 'profile' && (
-          <div className="space-y-6">
-            {/* Personal Information */}
-            <div className="glass-card p-8">
-              <div className="flex justify-between items-center mb-8">
-                <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                  <span className="w-1 h-6 bg-[#FFD700] rounded-full"></span>
-                  Personal Information
-                </h2>
-                {canEdit && !isEditing && (
-                  <button
-                    onClick={() => setIsEditing(true)}
-                    className="text-[#FFD700] hover:text-white text-sm font-semibold transition-colors uppercase tracking-wider"
-                  >
-                    Edit Details
-                  </button>
+      <main className="max-w-7xl mx-auto pt-[140px] pb-8 px-4 sm:px-6 lg:px-8 space-y-6">
+        {/* Profile Card - Combined */}
+        <div className="glass-card p-6">
+          <form onSubmit={handleProfileUpdate}>
+            {/* Header Row: Logo + Name + Edit Button */}
+            <div className="flex flex-col sm:flex-row items-start gap-6 mb-6">
+              {/* Logo Section */}
+              <div className="flex-shrink-0">
+                {logoLoading ? (
+                  <div className="w-24 h-24 rounded-2xl border-2 border-dashed border-[#FFD700] bg-[rgba(255,215,0,0.1)] flex items-center justify-center">
+                    <div className="w-6 h-6 border-2 border-[#FFD700] border-t-transparent rounded-full animate-spin"></div>
+                  </div>
+                ) : logoPreview ? (
+                  <div className="relative">
+                    <img
+                      src={logoPreview}
+                      alt="Company logo"
+                      className="w-24 h-24 object-cover rounded-2xl border-2 border-[rgba(255,215,0,0.3)]"
+                    />
+                    {isOwnProfile && isEditing && (
+                      <div className="absolute -bottom-2 left-0 right-0 flex justify-center gap-2">
+                        <label className="cursor-pointer bg-[#FFD700] text-[#0F1B2B] text-xs px-2 py-1 rounded font-medium hover:bg-white transition-colors">
+                          Change
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleLogoChange}
+                            className="sr-only"
+                            disabled={profileUpdating}
+                          />
+                        </label>
+                        <button
+                          type="button"
+                          onClick={handleRemoveLogo}
+                          disabled={profileUpdating}
+                          className="bg-red-500 text-white text-xs px-2 py-1 rounded font-medium hover:bg-red-400 transition-colors"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="relative">
+                    <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-[#1c304a] to-[#0F1B2B] border border-[rgba(255,255,255,0.1)] flex items-center justify-center">
+                      <span className="text-4xl">🏭</span>
+                    </div>
+                    {isOwnProfile && isEditing && (
+                      <label className="absolute -bottom-2 left-0 right-0 flex justify-center cursor-pointer">
+                        <span className="bg-[#FFD700] text-[#0F1B2B] text-xs px-3 py-1 rounded font-medium hover:bg-white transition-colors">
+                          Upload
+                        </span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleLogoChange}
+                          className="sr-only"
+                          disabled={profileUpdating}
+                        />
+                      </label>
+                    )}
+                  </div>
                 )}
               </div>
 
-              <form onSubmit={handleProfileUpdate} className="space-y-6">
-                {/* Display Name (Read-only) */}
-                <div>
-                  <label className="block text-xs text-[#A0A0A0] font-semibold tracking-wider uppercase mb-2">
-                    Full Name
-                  </label>
-                  <input
-                    type="text"
-                    value={profileUser?.displayName || ''}
-                    disabled
-                    className="form-input-anasyf opacity-60 cursor-not-allowed"
-                  />
-                </div>
-
-                {/* Email (Read-only) */}
-                <div>
-                  <label className="block text-xs text-[#A0A0A0] font-semibold tracking-wider uppercase mb-2">
-                    Email
-                  </label>
-                  <input
-                    type="email"
-                    value={profileUser?.email || ''}
-                    disabled
-                    className="form-input-anasyf opacity-60 cursor-not-allowed"
-                  />
-                </div>
-
-                {/* Phone Number */}
-                <div>
-                  <label className="block text-xs text-[#A0A0A0] font-semibold tracking-wider uppercase mb-2">
-                    Phone Number
-                  </label>
-                  <input
-                    type="tel"
-                    value={canEdit && isEditing ? phone : (profileUser?.phone || 'Not set')}
-                    onChange={(e) => setPhone(e.target.value)}
-                    disabled={!canEdit || !isEditing}
-                    placeholder="+1 234 567 8900"
-                    className={`form-input-anasyf ${!canEdit || !isEditing ? 'opacity-80' : ''}`}
-                  />
-                </div>
-
-                {/* About / Bio */}
-                <div>
-                  <label className="block text-xs text-[#A0A0A0] font-semibold tracking-wider uppercase mb-2">
-                    About / Bio
-                  </label>
-                  <textarea
-                    value={canEdit && isEditing ? about : (profileUser?.about || 'No bio available')}
-                    onChange={(e) => setAbout(e.target.value)}
-                    disabled={!canEdit || !isEditing}
-                    rows={4}
-                    className={`form-input-anasyf ${!canEdit || !isEditing ? 'opacity-80 text-[#A0A0A0]' : 'text-white'
-                      }`}
-                    placeholder="Tell us about yourself..."
-                  />
-                </div>
-
-                {/* Company Logo */}
-                <div>
-                  <label className="block text-xs text-[#A0A0A0] font-semibold tracking-wider uppercase mb-2">
-                    Company Logo
-                  </label>
-
-                  {logoLoading ? (
-                    <div className="w-24 h-24 rounded-lg border-2 border-dashed border-[#FFD700] bg-[rgba(255,215,0,0.1)] flex items-center justify-center">
-                      <div className="flex flex-col items-center gap-1">
-                        <div className="w-6 h-6 border-2 border-[#FFD700] border-t-transparent rounded-full animate-spin"></div>
-                        <span className="text-xs text-[#FFD700]">Loading...</span>
-                      </div>
-                    </div>
-                  ) : logoPreview ? (
-                    <div className="flex items-center gap-4">
-                      <img
-                        src={logoPreview}
-                        alt="Company logo"
-                        className="w-24 h-24 object-cover rounded-lg border border-[rgba(255,255,255,0.1)]"
-                      />
-                      {canEdit && isEditing && (
-                        <div className="flex gap-3">
-                          <label className="cursor-pointer">
-                            <span className="inline-flex items-center justify-center px-5 py-2 bg-gradient-to-r from-[#FFD700] to-[#FDB931] text-white font-bold rounded-lg hover:shadow-lg transition-all">
-                              Change
-                            </span>
-                            <input
-                              type="file"
-                              accept="image/*"
-                              onChange={handleLogoChange}
-                              className="sr-only"
-                              disabled={profileUpdating}
-                            />
-                          </label>
-                          <button
-                            type="button"
-                            onClick={handleRemoveLogo}
-                            disabled={profileUpdating}
-                            className="inline-flex items-center justify-center px-5 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-all disabled:opacity-50"
-                          >
-                            Remove
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <>
-                      {!canEdit ? (
-                        <p className="text-sm text-[#A0A0A0]">No logo uploaded</p>
-                      ) : (
-                        isEditing && (
-                          <label className="cursor-pointer inline-block">
-                            <span className="inline-flex items-center justify-center px-5 py-2 bg-gradient-to-r from-[#FFD700] to-[#FDB931] text-white font-bold rounded-lg hover:shadow-lg transition-all">
-                              Upload Logo
-                            </span>
-                            <input
-                              type="file"
-                              accept="image/*"
-                              onChange={handleLogoChange}
-                              className="sr-only"
-                              disabled={profileUpdating}
-                            />
-                          </label>
-                        )
-                      )}
-                    </>
+              {/* Name & Bio Section */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <h2 className="text-2xl font-bold text-white mb-1">
+                      {profileUser?.displayName || 'User'}
+                    </h2>
+                    <p className="text-[#FFD700] font-medium">
+                      {profileUser?.companyName || 'No company'}
+                      {profileUser?.position && <span className="text-[#A0A0A0]"> • {profileUser.position}</span>}
+                    </p>
+                  </div>
+                  {isOwnProfile && !isEditing && (
+                    <button
+                      type="button"
+                      onClick={() => setIsEditing(true)}
+                      className="flex-shrink-0 px-5 py-2 text-sm font-bold bg-[#FFD700] text-[#0F1B2B] rounded-lg hover:bg-white transition-all"
+                    >
+                      Edit Profile
+                    </button>
                   )}
                 </div>
 
-                {canEdit && isEditing && (
-                  <div className="flex gap-3 pt-4">
-                    <Button
-                      type="submit"
-                      disabled={profileUpdating}
-                      className="bg-gradient-to-r from-[#FFD700] to-[#FDB931] text-[#0F1B2B] font-bold border-none hover:shadow-lg disabled:opacity-70"
-                    >
-                      {profileUpdating ? (
-                        <span className="flex items-center gap-2">
-                          <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                          Uploading...
-                        </span>
-                      ) : (
-                        'Save Changes'
-                      )}
-                    </Button>
-                    <Button
-                      type="button"
-                      disabled={profileUpdating}
-                      className="bg-[rgba(255,255,255,0.1)] text-white hover:bg-[rgba(255,255,255,0.2)] border-none"
-                      onClick={() => {
-                        setIsEditing(false);
-                        setPhone(profileUser?.phone || '');
-                        setAbout(profileUser?.about || '');
-                        setLogoPreview(profileUser?.companyLogo || null);
-                        setLogoFile(null);
-                        setLogoRemoved(false);
-                      }}
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                )}
-              </form>
-            </div>
-
-            {/* Company Information (Read-only) */}
-            <div className="glass-card p-8">
-              <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                <span className="w-1 h-6 bg-[#FFD700] rounded-full"></span>
-                Company Information
-              </h2>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-xs text-[#A0A0A0] font-semibold tracking-wider uppercase mb-2">
-                    Company Name
-                  </label>
-                  <input
-                    type="text"
-                    value={profileUser?.companyName || 'Not set'}
-                    disabled
-                    className="form-input-anasyf opacity-60 cursor-not-allowed"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs text-[#A0A0A0] font-semibold tracking-wider uppercase mb-2">
-                    Role
-                  </label>
-                  <input
-                    type="text"
-                    value={formatRole(profileUser?.role)}
-                    disabled
-                    className="form-input-anasyf opacity-60 cursor-not-allowed"
-                  />
-                </div>
-                {profileUser?.country && (
-                  <div>
-                    <label className="block text-xs text-[#A0A0A0] font-semibold tracking-wider uppercase mb-2">
-                      Country
-                    </label>
-                    <input
-                      type="text"
-                      value={getCountryLabel(profileUser.country)}
-                      disabled
-                      className="form-input-anasyf opacity-60 cursor-not-allowed"
+                {/* Bio */}
+                <div className="mt-4">
+                  {isEditing ? (
+                    <textarea
+                      value={about}
+                      onChange={(e) => setAbout(e.target.value)}
+                      rows={2}
+                      placeholder="Tell us about yourself..."
+                      className="w-full bg-[rgba(255,255,255,0.05)] border-2 border-[#FFD700]/50 rounded-xl p-3 text-white text-sm placeholder-[#A0A0A0] focus:outline-none focus:border-[#FFD700] resize-none shadow-[0_0_15px_rgba(255,215,0,0.2)] animate-pulse-glow"
                     />
-                  </div>
-                )}
+                  ) : (
+                    <p className="text-[#A0A0A0] text-sm leading-relaxed">
+                      {profileUser?.about || 'No bio available'}
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        )}
 
-        {/* Products Tab */}
-        {activeTab === 'products' && (
-          <div className="glass-card p-8">
-            <div className="flex items-center justify-between mb-8">
-              <h2 className="text-xl font-bold text-white">
-                {isOwnProfile ? 'My Products' : `${profileUser?.displayName || 'User'}'s Products`}
-              </h2>
+            {/* Details Grid - 2x2 */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-6 border-t border-[rgba(255,255,255,0.1)]">
+              {/* Company */}
+              <div className="bg-[rgba(255,255,255,0.04)] rounded-2xl p-5 border border-[rgba(255,255,255,0.05)]">
+                <p className="text-sm font-semibold uppercase tracking-wider mb-2 bg-gradient-to-r from-[#C0C0C0] via-[#FFFFFF] to-[#C0C0C0] bg-clip-text text-transparent">Company</p>
+                <p className="text-white font-semibold text-lg truncate">{profileUser?.companyName || 'Not set'}</p>
+              </div>
+
+              {/* Category */}
+              <div className="bg-[rgba(255,255,255,0.04)] rounded-2xl p-5 border border-[rgba(255,255,255,0.05)]">
+                <p className="text-sm font-semibold uppercase tracking-wider mb-2 bg-gradient-to-r from-[#C0C0C0] via-[#FFFFFF] to-[#C0C0C0] bg-clip-text text-transparent">Category</p>
+                <p className="text-white font-semibold text-lg truncate">{categoryName || 'Not set'}</p>
+              </div>
+
+              {/* Role */}
+              <div className="bg-[rgba(255,255,255,0.04)] rounded-2xl p-5 border border-[rgba(255,255,255,0.05)]">
+                <p className="text-sm font-semibold uppercase tracking-wider mb-2 bg-gradient-to-r from-[#C0C0C0] via-[#FFFFFF] to-[#C0C0C0] bg-clip-text text-transparent">Role</p>
+                <p className="text-white font-semibold text-lg">{formatRole(profileUser?.role)}</p>
+              </div>
+
+              {/* Country */}
+              <div className="bg-[rgba(255,255,255,0.04)] rounded-2xl p-5 border border-[rgba(255,255,255,0.05)]">
+                <p className="text-sm font-semibold uppercase tracking-wider mb-2 bg-gradient-to-r from-[#C0C0C0] via-[#FFFFFF] to-[#C0C0C0] bg-clip-text text-transparent">Country</p>
+                <p className="text-white font-semibold text-lg truncate">{getCountryLabel(profileUser?.country)}</p>
+              </div>
+
+              {/* Email - Only for own profile */}
               {isOwnProfile && (
-                <Button onClick={handleOpenProductModal} className="bg-[#FFD700] text-[#0F1B2B] hover:bg-white font-bold border-none">
-                  Add Product
-                </Button>
+                <div className="bg-[rgba(255,255,255,0.04)] rounded-2xl p-5 border border-[rgba(255,255,255,0.05)]">
+                  <div className="flex items-center gap-2 mb-2">
+                    <p className="text-sm font-semibold uppercase tracking-wider bg-gradient-to-r from-[#C0C0C0] via-[#FFFFFF] to-[#C0C0C0] bg-clip-text text-transparent">Email</p>
+                    <span className="text-[10px] text-[#A0A0A0]/60">(Private)</span>
+                  </div>
+                  <p className="text-white font-semibold text-lg truncate">{profileUser?.email || 'Not set'}</p>
+                </div>
+              )}
+
+              {/* Phone - Only for own profile */}
+              {isOwnProfile && (
+                <div className="bg-[rgba(255,255,255,0.04)] rounded-2xl p-5 border border-[rgba(255,255,255,0.05)]">
+                  <div className="flex items-center gap-2 mb-2">
+                    <p className="text-sm font-semibold uppercase tracking-wider bg-gradient-to-r from-[#C0C0C0] via-[#FFFFFF] to-[#C0C0C0] bg-clip-text text-transparent">Phone</p>
+                    <span className="text-[10px] text-[#A0A0A0]/60">(Private)</span>
+                  </div>
+                  {isEditing ? (
+                    <input
+                      type="tel"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      placeholder="+1 234 567 8900"
+                      className="w-full bg-[rgba(255,255,255,0.05)] text-white font-semibold text-lg focus:outline-none focus:border-[#FFD700] border-2 border-[#FFD700]/50 rounded-xl px-3 py-2 shadow-[0_0_15px_rgba(255,215,0,0.2)] animate-pulse-glow"
+                    />
+                  ) : (
+                    <p className="text-white font-semibold text-lg truncate">{profileUser?.phone || 'Not set'}</p>
+                  )}
+                </div>
               )}
             </div>
-            <ProductList
-              products={products}
-              loading={productsLoading}
-              isOwnProfile={isOwnProfile}
-              onEdit={handleEditProduct}
-              onDelete={handleDeleteProduct}
-              onToggleStatus={handleToggleProductStatus}
-            />
-          </div>
-        )}
 
-        {/* Requests Tab */}
-        {activeTab === 'requests' && (
-          <div className="glass-card p-8">
-            <div className="flex items-center justify-between mb-8">
-              <h2 className="text-xl font-bold text-white">
-                {isOwnProfile ? 'My Requests' : `${profileUser?.displayName || 'User'}'s Requests`}
-              </h2>
-              {isOwnProfile && (
-                <Button onClick={handleOpenRequestModal} className="bg-[#FFD700] text-[#0F1B2B] hover:bg-white font-bold border-none">
-                  Create Request
+            {/* Save/Cancel Buttons */}
+            {isEditing && (
+              <div className="flex gap-3 mt-6 pt-4 border-t border-[rgba(255,255,255,0.1)]">
+                <Button
+                  type="submit"
+                  disabled={profileUpdating}
+                  className="!bg-gradient-to-r !from-[#FFD700] !to-[#FDB931] !text-black font-bold border-none hover:shadow-lg disabled:opacity-70 text-sm px-6"
+                >
+                  {profileUpdating ? 'Saving...' : 'Save Changes'}
                 </Button>
-              )}
-            </div>
-            <RequestList
-              requests={requests}
-              categories={categories}
-              loading={requestsLoading}
-              isOwnProfile={isOwnProfile}
-              onEdit={handleEditRequest}
-              onDelete={handleDeleteRequest}
-              onClose={handleCloseRequest}
-              onReopen={handleReopenRequest}
-              onSendMessage={handleSendMessage}
-            />
-          </div>
-        )}
+                <Button
+                  type="button"
+                  disabled={profileUpdating}
+                  className="bg-[rgba(255,255,255,0.1)] text-white hover:bg-[rgba(255,255,255,0.2)] border-none text-sm"
+                  onClick={() => {
+                    setIsEditing(false);
+                    setPhone(profileUser?.phone || '');
+                    setAbout(profileUser?.about || '');
+                    setLogoPreview(profileUser?.companyLogo || null);
+                    setLogoFile(null);
+                    setLogoRemoved(false);
+                  }}
+                >
+                  Cancel
+                </Button>
+              </div>
+            )}
+          </form>
+        </div>
 
-        {/* Security Tab - Only for own profile */}
-        {isOwnProfile && activeTab === 'security' && (
-          <div className="space-y-6">
-            {/* Change Password */}
-            <div className="glass-card p-8">
-              <h2 className="text-xl font-bold text-white mb-6">Change Password</h2>
-              <form onSubmit={handlePasswordChange} className="space-y-4 max-w-md">
-                <div>
-                  <label className="block text-xs text-[#A0A0A0] font-semibold tracking-wider uppercase mb-2">
-                    Current Password
-                  </label>
+        {/* Products Section */}
+        <div className="glass-card p-6">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <span className="w-1 h-5 bg-[#FFD700] rounded-full"></span>
+              <h3 className="text-lg font-bold text-white">
+                {isOwnProfile ? 'My Products' : 'Products'}
+              </h3>
+              <span className="text-sm text-[#A0A0A0]">({products?.length || 0})</span>
+            </div>
+            {isOwnProfile && (
+              <Button onClick={handleOpenProductModal} className="bg-[#FFD700] text-[#0F1B2B] hover:bg-white font-bold border-none text-sm px-4 py-2">
+                + Add Product
+              </Button>
+            )}
+          </div>
+          <ProductList
+            products={products?.slice((productPage - 1) * ITEMS_PER_PAGE, productPage * ITEMS_PER_PAGE)}
+            loading={productsLoading}
+            isOwnProfile={isOwnProfile}
+            onEdit={handleEditProduct}
+            onDelete={handleDeleteProduct}
+            onToggleStatus={handleToggleProductStatus}
+          />
+          {/* Products Pagination */}
+          {products && products.length > ITEMS_PER_PAGE && (
+            <div className="flex items-center justify-center gap-4 mt-6 pt-4 border-t border-[rgba(255,255,255,0.1)]">
+              <button
+                onClick={() => setProductPage(p => Math.max(1, p - 1))}
+                disabled={productPage === 1}
+                className="px-4 py-2 rounded-lg bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] text-white text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[rgba(255,255,255,0.1)] transition-all"
+              >
+                ← Previous
+              </button>
+              <span className="text-sm text-[#A0A0A0]">
+                Page <span className="text-white font-medium">{productPage}</span> of <span className="text-white font-medium">{Math.ceil(products.length / ITEMS_PER_PAGE)}</span>
+              </span>
+              <button
+                onClick={() => setProductPage(p => Math.min(Math.ceil(products.length / ITEMS_PER_PAGE), p + 1))}
+                disabled={productPage >= Math.ceil(products.length / ITEMS_PER_PAGE)}
+                className="px-4 py-2 rounded-lg bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] text-white text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[rgba(255,255,255,0.1)] transition-all"
+              >
+                Next →
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Requests Section */}
+        <div className="glass-card p-6">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <span className="w-1 h-5 bg-[#3b82f6] rounded-full"></span>
+              <h3 className="text-lg font-bold text-white">
+                {isOwnProfile ? 'My Requests (RFQs)' : 'Requests (RFQs)'}
+              </h3>
+              <span className="text-sm text-[#A0A0A0]">({requests?.length || 0})</span>
+            </div>
+            {isOwnProfile && (
+              <Button onClick={handleOpenRequestModal} className="bg-[#3b82f6] text-white hover:bg-blue-400 font-bold border-none text-sm px-4 py-2">
+                + Create Request
+              </Button>
+            )}
+          </div>
+          <RequestList
+            requests={requests?.slice((requestPage - 1) * ITEMS_PER_PAGE, requestPage * ITEMS_PER_PAGE)}
+            categories={categories}
+            loading={requestsLoading}
+            isOwnProfile={isOwnProfile}
+            onEdit={handleEditRequest}
+            onDelete={handleDeleteRequest}
+            onClose={handleCloseRequest}
+            onReopen={handleReopenRequest}
+            onSendMessage={handleSendMessage}
+          />
+          {/* Requests Pagination */}
+          {requests && requests.length > ITEMS_PER_PAGE && (
+            <div className="flex items-center justify-center gap-4 mt-6 pt-4 border-t border-[rgba(255,255,255,0.1)]">
+              <button
+                onClick={() => setRequestPage(p => Math.max(1, p - 1))}
+                disabled={requestPage === 1}
+                className="px-4 py-2 rounded-lg bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] text-white text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[rgba(255,255,255,0.1)] transition-all"
+              >
+                ← Previous
+              </button>
+              <span className="text-sm text-[#A0A0A0]">
+                Page <span className="text-white font-medium">{requestPage}</span> of <span className="text-white font-medium">{Math.ceil(requests.length / ITEMS_PER_PAGE)}</span>
+              </span>
+              <button
+                onClick={() => setRequestPage(p => Math.min(Math.ceil(requests.length / ITEMS_PER_PAGE), p + 1))}
+                disabled={requestPage >= Math.ceil(requests.length / ITEMS_PER_PAGE)}
+                className="px-4 py-2 rounded-lg bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] text-white text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[rgba(255,255,255,0.1)] transition-all"
+              >
+                Next →
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Security Section - Only for own profile */}
+        {isOwnProfile && (
+          <div className="glass-card p-6">
+            <div className="flex items-center gap-3 mb-6">
+              <span className="w-1 h-5 bg-red-500 rounded-full"></span>
+              <h3 className="text-lg font-bold text-white">Account Settings</h3>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Change Password */}
+              <div className="bg-[rgba(255,255,255,0.03)] rounded-xl p-5">
+                <h4 className="text-white font-semibold mb-4">Change Password</h4>
+                <form onSubmit={handlePasswordChange} className="space-y-3">
                   <input
                     type="password"
                     value={currentPassword}
                     onChange={(e) => setCurrentPassword(e.target.value)}
+                    placeholder="Current Password"
                     required
-                    className="form-input-anasyf"
+                    className="w-full bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-lg px-4 py-2.5 text-white text-sm placeholder-[#A0A0A0] focus:outline-none focus:border-[#FFD700]/50"
                   />
-                </div>
-                <div>
-                  <label className="block text-xs text-[#A0A0A0] font-semibold tracking-wider uppercase mb-2">
-                    New Password
-                  </label>
                   <input
                     type="password"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="New Password"
                     required
-                    className="form-input-anasyf"
+                    className="w-full bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-lg px-4 py-2.5 text-white text-sm placeholder-[#A0A0A0] focus:outline-none focus:border-[#FFD700]/50"
                   />
-                </div>
-                <div>
-                  <label className="block text-xs text-[#A0A0A0] font-semibold tracking-wider uppercase mb-2">
-                    Confirm Password
-                  </label>
                   <input
                     type="password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Confirm New Password"
                     required
-                    className="form-input-anasyf"
+                    className="w-full bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-lg px-4 py-2.5 text-white text-sm placeholder-[#A0A0A0] focus:outline-none focus:border-[#FFD700]/50"
                   />
-                </div>
-                <div className="pt-4">
-                  <Button type="submit" className="bg-[#FFD700] text-[#0F1B2B] hover:bg-white font-bold border-none">
+                  <Button type="submit" className="w-full bg-[#FFD700] text-[#0F1B2B] hover:bg-white font-bold border-none text-sm py-2.5">
                     Update Password
                   </Button>
-                </div>
-              </form>
-            </div>
+                </form>
+              </div>
 
-            {/* Delete Account */}
-            <div className="glass-card p-8 border border-red-900/30 bg-red-900/10">
-              <h2 className="text-xl font-bold text-red-400 mb-4">Danger Zone</h2>
-              <p className="text-[#A0A0A0] mb-6">
-                Once you delete your account, there is no going back. Please be certain.
-              </p>
-              <Button
-                variant="destructive"
-                onClick={handleOpenDeleteModal}
-                className="bg-red-600 hover:bg-red-700 text-white border-none"
-              >
-                Delete Account
-              </Button>
+              {/* Danger Zone */}
+              <div className="bg-[rgba(239,68,68,0.05)] border border-red-900/30 rounded-xl p-5">
+                <h4 className="text-red-400 font-semibold mb-3">Danger Zone</h4>
+                <p className="text-[#A0A0A0] text-sm mb-4">
+                  Your account will be scheduled for deletion with a 15-day recovery period.
+                </p>
+                <Button
+                  variant="destructive"
+                  onClick={handleOpenDeleteModal}
+                  className="w-full bg-red-600 hover:bg-red-700 text-white border-none text-sm py-2.5"
+                >
+                  Delete Account
+                </Button>
+              </div>
             </div>
           </div>
         )}
@@ -887,6 +919,32 @@ function ProfileContent() {
             userId={userId}
           />
         </Modal>
+
+        {/* Delete Account Confirmation Modal */}
+        <ConfirmDialog
+          isOpen={deleteModalOpen}
+          onClose={handleCloseDeleteModal}
+          onConfirm={handleDeleteAccount}
+          title="Delete Your Account?"
+          message="Your account will be scheduled for deletion. You have 15 days to recover it by logging in again. After 15 days, all your data will be permanently deleted."
+          confirmText="Delete Account"
+          cancelText="Cancel"
+          variant="danger"
+          loading={deleteLoading}
+        >
+          <div className="space-y-3">
+            <p className="text-sm text-gray-400">
+              Type <span className="font-bold text-white">DELETE</span> to confirm:
+            </p>
+            <input
+              type="text"
+              value={deleteConfirmText}
+              onChange={(e) => setDeleteConfirmText(e.target.value)}
+              placeholder="Type DELETE"
+              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-red-500/50"
+            />
+          </div>
+        </ConfirmDialog>
       </main>
     </div>
   );

@@ -30,6 +30,7 @@ export class AuthRepository {
    * @param {string} email
    * @param {string} password
    * @returns {Promise<Object>} User data with profile
+   * @throws {Object} Error with deletionInfo if account is deleted
    */
   async login(email, password) {
     // 1. Authenticate with Firebase Auth
@@ -48,11 +49,20 @@ export class AuthRepository {
       throw new Error('Account not found. Please contact support.');
     }
 
-    // 4. Check if user is deleted
+    // 4. Check if user is deleted/banned
     if (userProfile.isDeleted === true) {
-      // Logout and throw error
+      // Logout but return deletion info for the UI to handle
       await this.authDataSource.logout();
-      throw new Error('This account has been deleted. Please contact support if you believe this is an error.');
+
+      const error = new Error('ACCOUNT_DELETED');
+      error.deletionInfo = {
+        userId: authUser.uid,
+        deletionType: userProfile.deletionType || 'unknown',
+        deletedAt: userProfile.deletedAt,
+        canRecoverUntil: userProfile.canRecoverUntil,
+        banReason: userProfile.banReason,
+      };
+      throw error;
     }
 
     // 5. Combine auth data with profile

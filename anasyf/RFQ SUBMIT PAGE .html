@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CoreTG - Professional B2B Quotation System</title>
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --card-bg: #1e293b;
+            --card-hover: #263349;
+            --input-bg: #0f172a;
+            --yellow: #facc15;
+            --blue: #3b82f6;
+            --blue-light: #60a5fa;
+            --text-muted: #94a3b8;
+            --border: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            font-family: 'Inter', -apple-system, sans-serif;
+            color: white;
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            max-width: 1100px;
+            width: 100%;
+        }
+
+        /* RFQ OVERVIEW CARD */
+        .rfq-summary-card {
+            background-color: var(--card-bg);
+            border-radius: 24px;
+            padding: 35px;
+            margin-bottom: 24px;
+            border: 1px solid var(--border);
+            transition: background-color 0.3s ease;
+        }
+
+        .rfq-summary-card:hover { background-color: var(--card-hover); }
+
+        .rfq-badge {
+            background: rgba(250, 204, 21, 0.1);
+            color: var(--yellow);
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 15px;
+            display: inline-block;
+        }
+
+        .rfq-summary-card h1 { font-size: 28px; margin: 0 0 10px 0; }
+
+        .data-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-top: 25px;
+            padding-top: 25px;
+            border-top: 1px solid var(--border);
+        }
+
+        .data-item span { display: block; font-size: 11px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px; }
+        .data-item strong { font-size: 16px; color: white; }
+
+        /* FULL QUOTATION FORM */
+        .offer-card {
+            background-color: var(--card-bg);
+            border-radius: 24px;
+            padding: 45px;
+            border: 1px solid var(--border);
+        }
+
+        .section-title {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 35px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--blue);
+            display: inline-block;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 25px;
+        }
+
+        .form-group { margin-bottom: 10px; }
+        .span-2 { grid-column: span 2; }
+        .span-3 { grid-column: span 3; }
+
+        label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 15px;
+            background-color: var(--input-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: white;
+            font-size: 14px;
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--blue);
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.2);
+        }
+
+        .action-highlight {
+            display: block;
+            margin-top: 12px;
+            color: #ffffff;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        /* BLUE SUBMIT BUTTON */
+        .btn-submit {
+            width: 100%;
+            padding: 22px;
+            background-color: var(--blue);
+            color: #ffffff;
+            border: none;
+            border-radius: 50px;
+            font-size: 18px;
+            font-weight: 800;
+            cursor: pointer;
+            margin-top: 40px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+
+        .btn-submit:hover {
+            background-color: var(--blue-light);
+            box-shadow: 0 0 40px rgba(59, 130, 246, 0.5);
+            transform: translateY(-3px);
+        }
+
+        @media (max-width: 900px) {
+            .form-grid { grid-template-columns: 1fr 1fr; }
+            .span-3 { grid-column: span 2; }
+            .data-grid { grid-template-columns: 1fr 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        
+        <div class="rfq-summary-card">
+            <span class="rfq-badge">RFQ: CORE-7721-TG</span>
+            <h1>Stainless Steel Industrial Valves</h1>
+            <p style="color: var(--text-muted); font-size: 15px;">Required for a petrochemical project in Dubai. High corrosion resistance is a must.</p>
+            
+            <div class="data-grid">
+                <div class="data-item"><span>Target Qty</span><strong>2,500 Pieces</strong></div>
+                <div class="data-item"><span>Destination</span><strong>Jebel Ali, UAE</strong></div>
+                <div class="data-item"><span>Required Date</span><strong>May 20, 2026</strong></div>
+                <div class="data-item"><span>Certificates</span><strong>ISO 9001, CE</strong></div>
+            </div>
+        </div>
+
+        <div class="offer-card">
+            <div class="section-title">Submit Your Final Proposal</div>
+
+            <form>
+                <div class="form-grid">
+                    
+                    <div class="form-group">
+                        <label>Unit Price</label>
+                        <input type="number" step="0.01" placeholder="0.00" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Currency</label>
+                        <select>
+                            <option>USD - US Dollar</option>
+                            <option>EUR - Euro</option>
+                            <option>GBP - British Pound</option>
+                            <option>TRY - Turkish Lira</option>
+                            <option>CNY - Chinese Yuan</option>
+                            <option>JPY - Japanese Yen</option>
+                            <option>AED - UAE Dirham</option>
+                            <option>SAR - Saudi Riyal</option>
+                            <option>CAD - Canadian Dollar</option>
+                            <option>AUD - Australian Dollar</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Unit Type</label>
+                        <select>
+                            <option>Pieces (pcs)</option>
+                            <option>Kilograms (kg)</option>
+                            <option>Tons (t)</option>
+                            <option>Meters (m)</option>
+                            <option>Square Meters (sqm)</option>
+                            <option>Liters (L)</option>
+                            <option>Sets</option>
+                            <option>Pallets</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Incoterms 2020 (Full Set)</label>
+                        <select>
+                            <option>EXW - Ex Works</option>
+                            <option>FCA - Free Carrier</option>
+                            <option>CPT - Carriage Paid To</option>
+                            <option>CIP - Carriage & Insurance Paid</option>
+                            <option>DAP - Delivered At Place</option>
+                            <option>DPU - Delivered at Place Unloaded</option>
+                            <option>DDP - Delivered Duty Paid</option>
+                            <option>FAS - Free Alongside Ship</option>
+                            <option>FOB - Free On Board</option>
+                            <option>CFR - Cost and Freight</option>
+                            <option>CIF - Cost, Insurance and Freight</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Shipping Method</label>
+                        <select>
+                            <option>Sea Freight (FCL)</option>
+                            <option>Sea Freight (LCL)</option>
+                            <option>Air Freight</option>
+                            <option>Express Courier (DHL/FedEx)</option>
+                            <option>Road Transport</option>
+                            <option>Rail Freight</option>
+                            <option>Multimodal</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Port of Loading</label>
+                        <input type="text" placeholder="e.g. Istanbul, Shanghai...">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Lead Time (Production)</label>
+                        <input type="text" placeholder="e.g. 15-20 Days">
+                    </div>
+                    <div class="form-group">
+                        <label>Min. Order Quantity (MOQ)</label>
+                        <input type="number" placeholder="Min amount">
+                    </div>
+                    <div class="form-group">
+                        <label>Supply Capacity / Month</label>
+                        <input type="text" placeholder="e.g. 10,000 pcs/mo">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Payment Terms</label>
+                        <select>
+                            <option>T/T - 100% Advance</option>
+                            <option>T/T - 30% Deposit / 70% Balance</option>
+                            <option>L/C - Irrevocable Letter of Credit</option>
+                            <option>D/P - Documents Against Payment</option>
+                            <option>CAD - Cash Against Documents</option>
+                            <option>OA - Open Account (30/60 Days)</option>
+                            <option>Escrow Service</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Product Warranty</label>
+                        <select>
+                            <option>No Warranty</option>
+                            <option>6 Months</option>
+                            <option>12 Months</option>
+                            <option>24 Months</option>
+                            <option>Lifetime (Limited)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Price Validity Until</label>
+                        <input type="date">
+                    </div>
+
+                    <div class="form-group span-3">
+                        <label>Technical Specifications & Competitive Advantages</label>
+                        <textarea rows="5" placeholder="Mention ISO/CE certifications, material grades, packaging details (e.g. seaworthy wooden boxes), and why the buyer should choose you..."></textarea>
+                        <span class="action-highlight">Highlight your unique selling points to stand out:</span>
+                    </div>
+
+                    <div class="form-group span-3">
+                        <label>Attachments (Certificates, Technical Drawings, Catalog)</label>
+                        <input type="file" multiple style="padding: 10px; font-size: 13px; border-style: dashed;">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-submit">Transmit Offer to Buyer</button>
+            </form>
+        </div>
+    </div>
+
+</body>
+</html>

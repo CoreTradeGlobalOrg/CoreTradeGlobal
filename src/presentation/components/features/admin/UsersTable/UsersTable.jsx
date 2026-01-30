@@ -1,25 +1,49 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
-import { Star, MoreVertical, Check, Ban, Trash2, Eye, Shield } from 'lucide-react';
+import { Star, MoreVertical, Check, Ban, Trash2, Eye, Shield, ShieldX } from 'lucide-react';
 import { container } from '@/core/di/container';
 import { COUNTRIES } from '@/core/constants/countries';
 import { useApproveUser } from '@/presentation/hooks/admin/useApproveUser';
 import { useSuspendUser } from '@/presentation/hooks/admin/useSuspendUser';
 import { useDeleteUser } from '@/presentation/hooks/admin/useDeleteUser';
+import { useBanUser } from '@/presentation/hooks/admin/useBanUser';
+import { useUnbanUser } from '@/presentation/hooks/admin/useUnbanUser';
+import { ConfirmDialog } from '@/presentation/components/common/ConfirmDialog/ConfirmDialog';
 
 export function UsersTable({ users = [], onRefresh }) {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterVerified, setFilterVerified] = useState('all'); // 'all', 'verified', 'unverified'
-  const [filterApproved, setFilterApproved] = useState('all'); // 'all', 'approved', 'pending'
+  const [filterApproved, setFilterApproved] = useState('all'); // 'all', 'approved', 'pending', 'banned'
   const [filterRole, setFilterRole] = useState('all'); // 'all', 'admin', 'member'
   const [actionLoading, setActionLoading] = useState(null); // Track which user action is loading
   const [activeActionMenu, setActiveActionMenu] = useState(null); // Track open menu
+  const [banReasonInput, setBanReasonInput] = useState('Violation of terms of service'); // For ban reason input
+
+  // Dialog states
+  const [confirmDialog, setConfirmDialog] = useState({
+    isOpen: false,
+    type: null, // 'delete' | 'ban' | 'unban' | 'suspend' | 'approve' | 'admin'
+    user: null,
+  });
 
   const { approveUser } = useApproveUser();
   const { suspendUser } = useSuspendUser();
   const { deleteUser } = useDeleteUser();
+  const { banUser } = useBanUser();
+  const { unbanUser } = useUnbanUser();
+
+  // Open confirm dialog
+  const openDialog = (type, user) => {
+    setConfirmDialog({ isOpen: true, type, user });
+    if (type === 'ban') setBanReasonInput('Violation of terms of service');
+  };
+
+  // Close confirm dialog
+  const closeDialog = () => {
+    setConfirmDialog({ isOpen: false, type: null, user: null });
+  };
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -57,18 +81,16 @@ export function UsersTable({ users = [], onRefresh }) {
   };
 
   // Handle toggle admin role
-  const handleToggleAdmin = async (userId, currentRole, userName) => {
-    const isCurrentlyAdmin = currentRole === 'admin';
+  const handleToggleAdmin = async (user) => {
+    const isCurrentlyAdmin = user.role === 'admin';
     const newRole = isCurrentlyAdmin ? 'member' : 'admin';
-    const action = isCurrentlyAdmin ? 'remove admin rights from' : 'grant admin rights to';
 
-    if (!confirm(`⚠️ Are you sure you want to ${action} ${userName}?`)) return;
-
-    setActionLoading(userId);
+    setActionLoading(user.id);
     try {
       const userRepository = container.getUserRepository();
-      await userRepository.update(userId, { role: newRole });
-      toast.success(`${userName} is ${isCurrentlyAdmin ? 'no longer an admin' : 'now an admin'}!`);
+      await userRepository.update(user.id, { role: newRole });
+      toast.success(`${user.displayName} is ${isCurrentlyAdmin ? 'no longer an admin' : 'now an admin'}!`);
+      closeDialog();
       if (onRefresh) onRefresh();
     } catch (error) {
       console.error('Toggle admin error:', error);
@@ -79,13 +101,12 @@ export function UsersTable({ users = [], onRefresh }) {
   };
 
   // Handle approve user
-  const handleApprove = async (userId, userName) => {
-    if (!confirm(`Are you sure you want to approve ${userName}?`)) return;
-
-    setActionLoading(userId);
+  const handleApprove = async (user) => {
+    setActionLoading(user.id);
     try {
-      await approveUser(userId);
-      toast.success(`${userName} has been approved!`);
+      await approveUser(user.id);
+      toast.success(`${user.displayName} has been approved!`);
+      closeDialog();
       if (onRefresh) onRefresh();
     } catch (error) {
       toast.error(`Failed to approve user: ${error.message}`);
@@ -95,14 +116,14 @@ export function UsersTable({ users = [], onRefresh }) {
   };
 
   // Handle suspend/unsuspend user
-  const handleSuspend = async (userId, userName, currentStatus) => {
-    const action = currentStatus ? 'unsuspend' : 'suspend';
-    if (!confirm(`Are you sure you want to ${action} ${userName}?`)) return;
+  const handleSuspend = async (user) => {
+    const action = user.isSuspended ? 'unsuspend' : 'suspend';
 
-    setActionLoading(userId);
+    setActionLoading(user.id);
     try {
-      await suspendUser(userId, !currentStatus);
-      toast.success(`${userName} has been ${action}ed!`);
+      await suspendUser(user.id, !user.isSuspended);
+      toast.success(`${user.displayName} has been ${action}ed!`);
+      closeDialog();
       if (onRefresh) onRefresh();
     } catch (error) {
       toast.error(`Failed to ${action} user: ${error.message}`);
@@ -111,20 +132,127 @@ export function UsersTable({ users = [], onRefresh }) {
     }
   };
 
-  // Handle delete user
-  const handleDelete = async (userId, userName) => {
-    if (!confirm(`⚠️ WARNING: Are you sure you want to DELETE ${userName}? This action cannot be undone!`)) return;
-
-    setActionLoading(userId);
+  // Handle delete user (permanent - admin only)
+  const handleDelete = async (user) => {
+    setActionLoading(user.id);
     try {
-      await deleteUser(userId);
-      toast.success(`${userName} has been deleted`);
+      await deleteUser(user.id);
+      toast.success(`${user.displayName} has been permanently deleted`);
+      closeDialog();
       if (onRefresh) onRefresh();
     } catch (error) {
       toast.error(`Failed to delete user: ${error.message}`);
     } finally {
       setActionLoading(null);
     }
+  };
+
+  // Handle ban user
+  const handleBan = async (user) => {
+    setActionLoading(user.id);
+    try {
+      await banUser(user.id, banReasonInput);
+      toast.success(`${user.displayName} has been banned`);
+      closeDialog();
+      if (onRefresh) onRefresh();
+    } catch (error) {
+      toast.error(`Failed to ban user: ${error.message}`);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  // Handle unban user
+  const handleUnban = async (user) => {
+    setActionLoading(user.id);
+    try {
+      await unbanUser(user.id);
+      toast.success(`${user.displayName} has been unbanned`);
+      closeDialog();
+      if (onRefresh) onRefresh();
+    } catch (error) {
+      toast.error(`Failed to unban user: ${error.message}`);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  // Handle confirm dialog action
+  const handleConfirmAction = async () => {
+    const { type, user } = confirmDialog;
+    if (!user) return;
+
+    switch (type) {
+      case 'delete':
+        await handleDelete(user);
+        break;
+      case 'ban':
+        await handleBan(user);
+        break;
+      case 'unban':
+        await handleUnban(user);
+        break;
+      case 'suspend':
+        await handleSuspend(user);
+        break;
+      case 'approve':
+        await handleApprove(user);
+        break;
+      case 'admin':
+        await handleToggleAdmin(user);
+        break;
+    }
+  };
+
+  // Get dialog config based on type
+  const getDialogConfig = () => {
+    const { type, user } = confirmDialog;
+    if (!user) return {};
+
+    const configs = {
+      delete: {
+        title: 'Permanently Delete User',
+        message: `Are you sure you want to permanently delete ${user.displayName}? This action cannot be undone and will remove all their data.`,
+        confirmText: 'Delete Permanently',
+        variant: 'danger',
+      },
+      ban: {
+        title: 'Ban User',
+        message: `Are you sure you want to ban ${user.displayName}? They will not be able to log in until unbanned.`,
+        confirmText: 'Ban User',
+        variant: 'ban',
+      },
+      unban: {
+        title: 'Unban User',
+        message: `Are you sure you want to unban ${user.displayName}? They will be able to log in again.`,
+        confirmText: 'Unban User',
+        variant: 'success',
+      },
+      suspend: {
+        title: user.isSuspended ? 'Unsuspend User' : 'Suspend User',
+        message: user.isSuspended
+          ? `Are you sure you want to unsuspend ${user.displayName}?`
+          : `Are you sure you want to suspend ${user.displayName}?`,
+        confirmText: user.isSuspended ? 'Unsuspend' : 'Suspend',
+        variant: user.isSuspended ? 'success' : 'warning',
+      },
+      approve: {
+        title: 'Approve User',
+        message: `Are you sure you want to approve ${user.displayName}?`,
+        confirmText: 'Approve',
+        variant: 'success',
+      },
+      admin: {
+        title: user.role === 'admin' ? 'Remove Admin Rights' : 'Grant Admin Rights',
+        message: user.role === 'admin'
+          ? `Are you sure you want to remove admin rights from ${user.displayName}?`
+          : `Are you sure you want to grant admin rights to ${user.displayName}?`,
+        confirmText: user.role === 'admin' ? 'Remove Admin' : 'Make Admin',
+        variant: user.role === 'admin' ? 'warning' : 'success',
+      },
+    };
+
+    return configs[type] || {};
   };
 
   // Format date
@@ -156,11 +284,19 @@ export function UsersTable({ users = [], onRefresh }) {
       (filterVerified === 'verified' && user.emailVerified === true) ||
       (filterVerified === 'unverified' && user.emailVerified === false);
 
-    // Approval filter
+    // Approval filter (includes banned status)
+    // Check if self-delete recovery period has expired
+    const isExpiredSelfDelete = user.isDeleted &&
+      user.deletionType === 'self' &&
+      user.canRecoverUntil &&
+      new Date() > new Date(user.canRecoverUntil.seconds * 1000);
+
     const matchesApproval =
       filterApproved === 'all' ||
-      (filterApproved === 'approved' && user.adminApproved === true) ||
-      (filterApproved === 'pending' && user.adminApproved !== true);
+      (filterApproved === 'approved' && user.adminApproved === true && !user.isDeleted) ||
+      (filterApproved === 'pending' && user.adminApproved !== true && !user.isDeleted) ||
+      (filterApproved === 'banned' && user.isDeleted === true && user.deletionType === 'admin_ban') ||
+      (filterApproved === 'expired' && isExpiredSelfDelete);
 
     // Role filter
     const matchesRole =
@@ -218,6 +354,8 @@ export function UsersTable({ users = [], onRefresh }) {
               <option value="all">All Approval</option>
               <option value="approved">Admin Approved</option>
               <option value="pending">Pending Approval</option>
+              <option value="banned">Banned Users</option>
+              <option value="expired">Expired Self-Delete</option>
             </select>
 
             {/* Role Filter */}
@@ -273,7 +411,7 @@ export function UsersTable({ users = [], onRefresh }) {
               </tr>
             ) : (
               filteredUsers.map((user) => (
-                <tr key={user.id} className={`group hover:bg-[rgba(255,255,255,0.03)] transition-colors ${user.isSuspended ? 'bg-red-900/10' : ''}`}>
+                <tr key={user.id} className={`group hover:bg-[rgba(255,255,255,0.03)] transition-colors ${user.isDeleted ? 'bg-red-900/20 opacity-75' : user.isSuspended ? 'bg-red-900/10' : ''}`}>
                   {/* User Info */}
                   <td className="px-6 py-4">
                     <div
@@ -322,28 +460,65 @@ export function UsersTable({ users = [], onRefresh }) {
 
                   {/* Admin Approval Status + Role */}
                   <td className="px-6 py-4">
-                    <div className="flex flex-col gap-1.5">
-                      {/* Admin Badge */}
-                      {user.role === 'admin' && (
-                        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-purple-500/10 text-purple-400 border border-purple-500/20 w-fit">
-                          <Shield size={12} /> Admin
-                        </span>
-                      )}
-                      {/* Status Badge */}
-                      {user.isSuspended ? (
-                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-500/10 text-red-400 border border-red-500/20 w-fit">
-                          Suspended
-                        </span>
-                      ) : user.adminApproved ? (
-                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-500/10 text-green-400 border border-green-500/20 w-fit">
-                          Approved
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-orange-500/10 text-orange-400 border border-orange-500/20 w-fit">
-                          Pending
-                        </span>
-                      )}
-                    </div>
+                    {(() => {
+                      // Check if self-delete recovery period has expired
+                      const isExpired = user.isDeleted &&
+                        user.deletionType === 'self' &&
+                        user.canRecoverUntil &&
+                        new Date() > new Date(user.canRecoverUntil.seconds * 1000);
+
+                      return (
+                        <div className="flex flex-col gap-1.5">
+                          {/* Admin Badge */}
+                          {user.role === 'admin' && (
+                            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-purple-500/10 text-purple-400 border border-purple-500/20 w-fit">
+                              <Shield size={12} /> Admin
+                            </span>
+                          )}
+                          {/* Status Badge - Priority: Expired > Banned > Suspended > Approved/Pending */}
+                          {user.isDeleted ? (
+                            isExpired ? (
+                              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-gray-600/20 text-gray-400 border border-gray-500/30 w-fit">
+                                ⏱️ Expired
+                              </span>
+                            ) : user.deletionType === 'admin_ban' ? (
+                              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-red-600/20 text-red-400 border border-red-500/30 w-fit">
+                                <ShieldX size={12} /> Banned
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-yellow-600/20 text-yellow-400 border border-yellow-500/30 w-fit">
+                                🗑️ Self-Deleted
+                              </span>
+                            )
+                          ) : user.isSuspended ? (
+                            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-500/10 text-red-400 border border-red-500/20 w-fit">
+                              Suspended
+                            </span>
+                          ) : user.adminApproved ? (
+                            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-500/10 text-green-400 border border-green-500/20 w-fit">
+                              Approved
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-orange-500/10 text-orange-400 border border-orange-500/20 w-fit">
+                              Pending
+                            </span>
+                          )}
+                          {/* Show ban reason if banned */}
+                          {user.isDeleted && user.banReason && (
+                            <span className="text-xs text-gray-500 truncate max-w-[150px]" title={user.banReason}>
+                              {user.banReason}
+                            </span>
+                          )}
+                          {/* Show recovery deadline for self-deleted */}
+                          {user.isDeleted && user.deletionType === 'self' && user.canRecoverUntil && (
+                            <span className="text-xs text-gray-500">
+                              {isExpired ? 'Expired: ' : 'Expires: '}
+                              {new Date(user.canRecoverUntil.seconds * 1000).toLocaleDateString()}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </td>
 
                   {/* Registration Date */}
@@ -370,40 +545,58 @@ export function UsersTable({ users = [], onRefresh }) {
                         // Reset immediately by not changing state (value is fixed to "")
 
                         if (value === 'feature') handleAction(handleToggleFeatured, user.id, user.featured, user.displayName);
-                        else if (value === 'admin') handleAction(handleToggleAdmin, user.id, user.role, user.displayName);
-                        else if (value === 'approve') handleAction(handleApprove, user.id, user.displayName);
-                        else if (value === 'suspend') handleAction(handleSuspend, user.id, user.displayName, user.isSuspended);
+                        else if (value === 'admin') openDialog('admin', user);
+                        else if (value === 'approve') openDialog('approve', user);
+                        else if (value === 'suspend') openDialog('suspend', user);
+                        else if (value === 'ban') openDialog('ban', user);
+                        else if (value === 'unban') openDialog('unban', user);
                         else if (value === 'profile') router.push(`/profile/${user.id}`);
-                        else if (value === 'delete') handleAction(handleDelete, user.id, user.displayName);
+                        else if (value === 'delete') openDialog('delete', user);
                       }}
                       onClick={(e) => e.stopPropagation()}
                     >
                       <option value="" disabled>Actions</option>
 
-                      {!user.isSuspended && user.adminApproved && (
-                        <option value="feature" className="text-black">
-                          {user.featured ? 'Unfeature User' : 'Feature User'}
-                        </option>
+                      {/* Show unban option for banned users */}
+                      {user.isDeleted ? (
+                        <>
+                          <option value="unban" className="text-green-600 font-medium">✅ Unban User</option>
+                          <option value="profile" className="text-black">View Profile</option>
+                          <option value="delete" className="text-red-600 font-bold">🗑️ Permanently Delete</option>
+                        </>
+                      ) : (
+                        <>
+                          {!user.isSuspended && user.adminApproved && (
+                            <option value="feature" className="text-black">
+                              {user.featured ? 'Unfeature User' : 'Feature User'}
+                            </option>
+                          )}
+
+                          {/* Admin Toggle - Only for approved, non-suspended users */}
+                          {!user.isSuspended && user.adminApproved && (
+                            <option value="admin" className="text-purple-600 font-medium">
+                              {user.role === 'admin' ? '🛡️ Remove Admin' : '🛡️ Make Admin'}
+                            </option>
+                          )}
+
+                          {!user.adminApproved && !user.isSuspended && (
+                            <option value="approve" className="text-green-600 font-medium">Approve User</option>
+                          )}
+
+                          <option value="suspend" className="text-black">
+                            {user.isSuspended ? 'Unsuspend User' : 'Suspend User'}
+                          </option>
+
+                          {/* Ban option - not available for admins */}
+                          {user.role !== 'admin' && (
+                            <option value="ban" className="text-red-500 font-medium">🚫 Ban User</option>
+                          )}
+
+                          <option value="profile" className="text-black">View Profile</option>
+
+                          <option value="delete" className="text-red-600 font-bold">🗑️ Permanently Delete</option>
+                        </>
                       )}
-
-                      {/* Admin Toggle - Only for approved, non-suspended users */}
-                      {!user.isSuspended && user.adminApproved && (
-                        <option value="admin" className="text-purple-600 font-medium">
-                          {user.role === 'admin' ? '🛡️ Remove Admin' : '🛡️ Make Admin'}
-                        </option>
-                      )}
-
-                      {!user.adminApproved && !user.isSuspended && (
-                        <option value="approve" className="text-green-600 font-medium">Approve User</option>
-                      )}
-
-                      <option value="suspend" className="text-black">
-                        {user.isSuspended ? 'Unsuspend User' : 'Suspend User'}
-                      </option>
-
-                      <option value="profile" className="text-black">View Profile</option>
-
-                      <option value="delete" className="text-red-600 font-bold">Delete User</option>
                     </select>
                   </td>
                 </tr>
@@ -421,6 +614,29 @@ export function UsersTable({ users = [], onRefresh }) {
           </p>
         </div>
       )}
+
+      {/* Confirm Dialog */}
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        onClose={closeDialog}
+        onConfirm={handleConfirmAction}
+        loading={actionLoading === confirmDialog.user?.id}
+        {...getDialogConfig()}
+      >
+        {/* Ban reason input for ban action */}
+        {confirmDialog.type === 'ban' && (
+          <div>
+            <label className="block text-sm text-gray-400 mb-2">Ban Reason:</label>
+            <input
+              type="text"
+              value={banReasonInput}
+              onChange={(e) => setBanReasonInput(e.target.value)}
+              className="w-full px-4 py-2 bg-[#0F1B2B] border border-white/10 rounded-lg text-white placeholder:text-gray-500 focus:border-red-500 focus:outline-none"
+              placeholder="Enter reason for ban..."
+            />
+          </div>
+        )}
+      </ConfirmDialog>
     </div>
   );
 }

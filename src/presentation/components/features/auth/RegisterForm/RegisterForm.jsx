@@ -296,6 +296,7 @@ export function RegisterForm() {
                 placeholder="Select category"
                 disabled={loading}
                 error={!!errors.companyCategory}
+                className="dark-select"
               />
               {errors.companyCategory && (
                 <p className="mt-1 text-sm text-red-600">{errors.companyCategory.message}</p>
@@ -313,6 +314,8 @@ export function RegisterForm() {
                 placeholder="Select country"
                 disabled={loading}
                 error={!!errors.country}
+                className="dark-select"
+                showFlags={true}
               />
               {errors.country && (
                 <p className="mt-1 text-sm text-red-600">{errors.country.message}</p>

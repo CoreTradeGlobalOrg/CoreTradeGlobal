@@ -16,6 +16,7 @@ import Link from 'next/link';
 import { ArrowLeft, Calendar, MapPin, Package, DollarSign, Building } from 'lucide-react';
 import { ViewLimitGuard } from '@/presentation/components/common/ViewLimitGuard/ViewLimitGuard';
 import { CountryFlag } from '@/presentation/components/common/CountryFlag/CountryFlag';
+import { SubmitQuoteDialog } from '@/presentation/components/features/request/SubmitQuoteDialog/SubmitQuoteDialog';
 import toast from 'react-hot-toast';
 
 export default function RequestDetailsPage() {
@@ -26,6 +27,7 @@ export default function RequestDetailsPage() {
   const [request, setRequest] = useState(null);
   const [loading, setLoading] = useState(true);
   const [author, setAuthor] = useState(null);
+  const [quoteDialogOpen, setQuoteDialogOpen] = useState(false);
 
   useEffect(() => {
     const fetchRequestDetails = async () => {
@@ -93,7 +95,7 @@ export default function RequestDetailsPage() {
       router.push('/login?redirect=/request/' + request.id);
       return;
     }
-    toast.success('Quote feature coming soon! Contact the buyer directly.');
+    setQuoteDialogOpen(true);
   };
 
   return (
@@ -153,9 +155,9 @@ export default function RequestDetailsPage() {
                 </div>
               </div>
 
-              <div className="prose prose-invert max-w-none">
+              <div className="prose prose-invert max-w-none overflow-hidden">
                 <h3 className="text-lg font-bold text-white mb-2">Description</h3>
-                <p className="text-[#A0A0A0] leading-relaxed whitespace-pre-line">
+                <p className="text-[#A0A0A0] leading-relaxed whitespace-pre-line break-words" style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}>
                   {request.description || 'No detailed description provided.'}
                 </p>
               </div>
@@ -167,15 +169,15 @@ export default function RequestDetailsPage() {
                 <h3 className="text-xl font-bold text-white mb-4">Specific Requirements</h3>
                 <div className="space-y-4">
                   {request.requirements && (
-                    <div>
+                    <div className="overflow-hidden">
                       <span className="text-[#FFD700] font-semibold block mb-1">Technical Specs:</span>
-                      <p className="text-[#A0A0A0]">{request.requirements}</p>
+                      <p className="text-[#A0A0A0] break-words" style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}>{request.requirements}</p>
                     </div>
                   )}
                   {request.paymentTerms && (
-                    <div>
+                    <div className="overflow-hidden">
                       <span className="text-[#FFD700] font-semibold block mb-1">Payment Terms:</span>
-                      <p className="text-[#A0A0A0]">{request.paymentTerms}</p>
+                      <p className="text-[#A0A0A0] break-words" style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}>{request.paymentTerms}</p>
                     </div>
                   )}
                 </div>
@@ -252,6 +254,13 @@ export default function RequestDetailsPage() {
           </div>
         </div>
       </div>
+
+      {/* Submit Quote Dialog */}
+      <SubmitQuoteDialog
+        isOpen={quoteDialogOpen}
+        onClose={() => setQuoteDialogOpen(false)}
+        request={request}
+      />
     </main>
     </ViewLimitGuard>
   );

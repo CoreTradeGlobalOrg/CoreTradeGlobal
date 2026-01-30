@@ -14,10 +14,13 @@ import { useLogin } from '@/presentation/hooks/auth/useLogin';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
 import { container } from '@/core/di/container';
+import { DeletedAccountDialog } from '@/presentation/components/features/auth/DeletedAccountDialog/DeletedAccountDialog';
 
 export function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showDeletedDialog, setShowDeletedDialog] = useState(false);
+  const [deletionInfo, setDeletionInfo] = useState(null);
   const { login, loading, error } = useLogin();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -47,8 +50,23 @@ export function LoginForm() {
       router.push(redirectTo || '/');
     } catch (err) {
       console.error('Login failed:', err);
+
+      // Check if account is deleted/banned
+      if (err.message === 'ACCOUNT_DELETED' && err.deletionInfo) {
+        setDeletionInfo(err.deletionInfo);
+        setShowDeletedDialog(true);
+        return;
+      }
+
       toast.error(error || 'Login failed. Please check your credentials.');
     }
+  };
+
+  const handleAccountRecovered = () => {
+    // Clear form and show success message
+    setEmail('');
+    setPassword('');
+    toast.success('Your account has been recovered. Please log in again.');
   };
 
   return (
@@ -111,6 +129,14 @@ export function LoginForm() {
           Don't have an account? <Link href="/register" className="text-[#FFD700] font-semibold hover:text-white transition-colors">Register Now</Link>
         </p>
       </form>
+
+      {/* Deleted/Banned Account Dialog */}
+      <DeletedAccountDialog
+        isOpen={showDeletedDialog}
+        onClose={() => setShowDeletedDialog(false)}
+        deletionInfo={deletionInfo}
+        onRecovered={handleAccountRecovered}
+      />
     </div>
   );
 }

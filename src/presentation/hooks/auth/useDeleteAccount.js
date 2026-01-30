@@ -2,7 +2,7 @@
  * useDeleteAccount Hook
  *
  * Hook for deleting user account using Cloud Function
- * This performs a HARD DELETE - removes user from both Firebase Auth and Firestore
+ * This performs a SOFT DELETE - marks account for deletion with 15-day recovery period
  */
 
 'use client';
@@ -16,20 +16,20 @@ export function useDeleteAccount() {
   const [error, setError] = useState(null);
 
   /**
-   * Delete user account (hard delete)
+   * Delete user account (soft delete with 15-day recovery)
    * @param {string} userId - User ID to delete
-   * @returns {Promise<void>}
+   * @returns {Promise<Object>} Result with canRecoverUntil date
    */
   const deleteAccount = async (userId) => {
     setLoading(true);
     setError(null);
 
     try {
-      // Call the cloud function
-      const deleteUser = httpsCallable(functions, 'deleteUser');
-      const result = await deleteUser({ userId });
+      // Call the soft delete cloud function
+      const softDeleteUser = httpsCallable(functions, 'softDeleteUser');
+      const result = await softDeleteUser({ userId });
 
-      console.log('✅ Account deleted:', result.data);
+      console.log('✅ Account scheduled for deletion:', result.data);
       return result.data;
     } catch (err) {
       console.error('❌ Failed to delete account:', err);

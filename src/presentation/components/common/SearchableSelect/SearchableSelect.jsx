@@ -3,11 +3,41 @@
  *
  * Dropdown with search functionality
  * Used for Country and Category selection
+ * Supports SVG flags for country selection (showFlags prop)
  */
 
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+
+// Inline flag component to avoid circular dependency issues
+function FlagImage({ countryCode, size = 20 }) {
+  const [error, setError] = useState(false);
+
+  if (!countryCode || typeof countryCode !== 'string' || countryCode.length !== 2) {
+    return null;
+  }
+
+  const code = countryCode.toLowerCase();
+
+  if (error) {
+    return null;
+  }
+
+  return (
+    <img
+      src={`https://flagcdn.com/w40/${code}.png`}
+      srcSet={`https://flagcdn.com/w80/${code}.png 2x`}
+      width={size}
+      height={Math.round(size * 0.75)}
+      alt=""
+      className="inline-block object-cover rounded-sm flex-shrink-0"
+      style={{ verticalAlign: 'middle' }}
+      loading="lazy"
+      onError={() => setError(true)}
+    />
+  );
+}
 
 export function SearchableSelect({
   options = [],
@@ -18,6 +48,7 @@ export function SearchableSelect({
   error = false,
   disabled = false,
   className = '',
+  showFlags = false,
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -28,9 +59,8 @@ export function SearchableSelect({
     option.label.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Get selected option label
+  // Get selected option
   const selectedOption = options.find((opt) => opt.value === value);
-  const displayValue = selectedOption ? selectedOption.label : placeholder;
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -51,6 +81,19 @@ export function SearchableSelect({
     setSearchTerm('');
   };
 
+  // Render option content (with or without flag)
+  const renderOptionContent = (option, isSelected = false) => {
+    if (showFlags) {
+      return (
+        <span className="flex items-center gap-2">
+          <FlagImage countryCode={option.value} size={18} />
+          <span>{option.label}</span>
+        </span>
+      );
+    }
+    return option.label;
+  };
+
   return (
     <div ref={dropdownRef} className={`relative ${className}`}>
       {/* Selected value button */}
@@ -59,30 +102,20 @@ export function SearchableSelect({
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
         className={`
-          w-full px-4 py-3 text-left
-          border-2 rounded-lg
+          w-full text-left flex items-center justify-between transition-all duration-300
           ${className.includes('dark-select')
-            ? 'bg-[#0F1B2B] border-[rgba(255,255,255,0.1)] text-white hover:border-[#FFD700]/50'
-            : 'bg-white border-slate-300 text-slate-900'}
-          ${error
-            ? 'border-red-500 focus:border-red-600'
-            : (className.includes('dark-select') ? 'focus:border-[#FFD700]' : 'focus:border-blue-600')
-          }
-          ${disabled ? 'opacity-50 cursor-not-allowed bg-slate-50' : 'cursor-pointer'}
-          focus:outline-none focus:ring-4
-          ${error
-            ? 'focus:ring-red-200'
-            : (className.includes('dark-select') ? 'focus:ring-[#FFD700]/20' : 'focus:ring-blue-200')
-          }
-          transition-all duration-200
-          flex items-center justify-between
+            ? 'px-[14px] py-[14px] bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-[12px] text-white text-[15px] hover:border-[#FFD700]/50 focus:border-[#FFD700] focus:bg-[rgba(15,27,43,0.9)] focus:shadow-[0_0_15px_rgba(255,215,0,0.1)]'
+            : 'px-4 py-3 bg-white border-2 border-slate-300 rounded-lg text-slate-900'}
+          ${error ? 'border-red-500 focus:border-red-600' : ''}
+          ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+          focus:outline-none
         `}
       >
-        <span className={selectedOption ? (className.includes('dark-select') ? 'text-white' : 'text-slate-900') : (className.includes('dark-select') ? 'text-gray-500' : 'text-slate-400')}>
-          {displayValue}
+        <span className={selectedOption ? (className.includes('dark-select') ? 'text-white' : 'text-slate-900') : (className.includes('dark-select') ? 'text-[#A0A0A0]' : 'text-slate-400')}>
+          {selectedOption ? renderOptionContent(selectedOption, true) : placeholder}
         </span>
         <svg
-          className={`w-5 h-5 transition-transform ${isOpen ? 'rotate-180' : ''
+          className={`w-5 h-5 transition-transform flex-shrink-0 ${isOpen ? 'rotate-180' : ''
             } ${className.includes('dark-select') ? 'text-gray-400' : 'text-slate-400'}`}
           fill="none"
           stroke="currentColor"
@@ -99,21 +132,21 @@ export function SearchableSelect({
 
       {/* Dropdown menu */}
       {isOpen && (
-        <div className={`absolute z-50 w-full mt-2 rounded-lg shadow-xl max-h-80 overflow-hidden border-2 ${className.includes('dark-select')
-          ? 'bg-[#0F1B2B] border-[#FFD700]/30 text-white'
-          : 'bg-white border-slate-200 text-slate-900'
+        <div className={`absolute z-50 w-full mt-2 rounded-[12px] shadow-xl max-h-80 overflow-hidden ${className.includes('dark-select')
+          ? 'bg-[#0F1B2B] border border-[rgba(255,255,255,0.1)] text-white'
+          : 'bg-white border-2 border-slate-200 text-slate-900'
           }`}>
           {/* Search input */}
-          <div className={`p-2 border-b ${className.includes('dark-select') ? 'border-white/10' : 'border-slate-200'
+          <div className={`p-2 border-b ${className.includes('dark-select') ? 'border-[rgba(255,255,255,0.1)]' : 'border-slate-200'
             }`}>
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder={searchPlaceholder}
-              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${className.includes('dark-select')
-                ? 'bg-[rgba(255,255,255,0.05)] border-white/10 text-white focus:ring-[#FFD700] placeholder:text-gray-500'
-                : 'bg-white border-slate-300 text-slate-900 focus:ring-blue-500'
+              className={`w-full px-3 py-2 rounded-lg focus:outline-none ${className.includes('dark-select')
+                ? 'bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] text-white focus:border-[#FFD700] placeholder:text-[#A0A0A0]'
+                : 'bg-white border border-slate-300 text-slate-900 focus:ring-2 focus:ring-blue-500'
                 }`}
               autoFocus
             />
@@ -128,19 +161,19 @@ export function SearchableSelect({
                   type="button"
                   onClick={() => handleSelect(option)}
                   className={`
-                    w-full px-4 py-3 text-left
+                    w-full px-4 py-3 text-left text-[15px]
                     transition-colors duration-150
                     ${option.value === value
-                      ? (className.includes('dark-select') ? 'bg-[#FFD700]/20 text-[#FFD700] font-medium' : 'bg-blue-100 text-blue-900 font-medium')
-                      : (className.includes('dark-select') ? 'text-gray-300 hover:bg-white/5 hover:text-white' : 'text-slate-700 hover:bg-blue-50')
+                      ? (className.includes('dark-select') ? 'bg-[rgba(255,215,0,0.15)] text-[#FFD700] font-medium' : 'bg-blue-100 text-blue-900 font-medium')
+                      : (className.includes('dark-select') ? 'text-[#A0A0A0] hover:bg-[rgba(255,255,255,0.05)] hover:text-white' : 'text-slate-700 hover:bg-blue-50')
                     }
                   `}
                 >
-                  {option.label}
+                  {renderOptionContent(option)}
                 </button>
               ))
             ) : (
-              <div className={`px-4 py-8 text-center ${className.includes('dark-select') ? 'text-gray-500' : 'text-slate-500'}`}>
+              <div className={`px-4 py-8 text-center ${className.includes('dark-select') ? 'text-[#A0A0A0]' : 'text-slate-500'}`}>
                 No results found
               </div>
             )}
