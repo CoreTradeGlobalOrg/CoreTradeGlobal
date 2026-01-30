@@ -6,7 +6,7 @@
 
 'use client';
 
-import { useEffect } from 'react';
+import { Suspense, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { MessageSquare } from 'lucide-react';
 import Link from 'next/link';
@@ -14,7 +14,7 @@ import { useAuth } from '@/presentation/contexts/AuthContext';
 import { useMessages } from '@/presentation/contexts/MessagesContext';
 import './messages.css';
 
-export default function MessagesPage() {
+function MessagesPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, isAuthenticated, loading: authLoading } = useAuth();
@@ -209,4 +209,21 @@ function formatTime(date) {
   if (diffHours < 24) return `${diffHours}h ago`;
   if (diffDays < 7) return `${diffDays}d ago`;
   return msgDate.toLocaleDateString();
+}
+
+export default function MessagesPage() {
+  return (
+    <Suspense fallback={
+      <main className="min-h-screen pt-[120px] pb-20 px-6 bg-radial-navy">
+        <div className="max-w-[900px] mx-auto">
+          <div className="messages-loading">
+            <div className="loading-spinner" />
+            <p>Loading...</p>
+          </div>
+        </div>
+      </main>
+    }>
+      <MessagesPageContent />
+    </Suspense>
+  );
 }
