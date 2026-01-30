@@ -94,10 +94,26 @@ export function useMarkAsRead() {
     }
   }, [user?.uid]);
 
+  /**
+   * Delete all notifications
+   * @returns {Promise<void>}
+   */
+  const deleteAllNotifications = useCallback(async () => {
+    if (!user?.uid) return;
+
+    try {
+      const notificationRepository = container.getNotificationRepository();
+      await notificationRepository.deleteAll(user.uid);
+    } catch (err) {
+      console.error('Error deleting all notifications:', err);
+    }
+  }, [user?.uid]);
+
   return {
     markConversationAsRead,
     markNotificationAsRead,
     markAllNotificationsAsRead,
+    deleteAllNotifications,
   };
 }
 

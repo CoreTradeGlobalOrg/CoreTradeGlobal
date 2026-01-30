@@ -36,11 +36,18 @@ export class CreateConversationUseCase {
     // 1. Validate inputs
     this.validateInputs(type, participantIds, creatorId);
 
-    // 2. For direct conversations, check if one already exists
+    // 2. For direct conversations, check if one already exists with the same context
     if (type === 'direct' && participantIds.length === 2) {
+      // Build context for matching - each product/RFQ gets its own conversation
+      const context = {
+        productId: metadata.productId || null,
+        requestId: metadata.requestId || null,
+      };
+
       const existingConversation = await this.conversationRepository.findDirectConversation(
         participantIds[0],
-        participantIds[1]
+        participantIds[1],
+        context
       );
 
       if (existingConversation) {
@@ -80,6 +87,14 @@ export class CreateConversationUseCase {
         productId: metadata.productId || null,
         productName: metadata.productName || null,
         productImage: metadata.productImage || null,
+        // RFQ context (when conversation starts from an RFQ/quote)
+        requestId: metadata.requestId || null,
+        requestName: metadata.requestName || null,
+        requestQuantity: metadata.requestQuantity || null,
+        requestUnit: metadata.requestUnit || null,
+        requestBudget: metadata.requestBudget || null,
+        requestCountry: metadata.requestCountry || null,
+        requestDescription: metadata.requestDescription || null,
       },
     };
 
@@ -99,8 +114,8 @@ export class CreateConversationUseCase {
         content: initialMessage,
         type: type === 'contact' ? 'contact_inquiry' : 'text',
         metadata: {
-          subject: metadata.subject,
-          contactEmail: metadata.contactEmail,
+          subject: metadata.subject || null,
+          contactEmail: metadata.contactEmail || null,
         },
         readBy: [creatorId],
       };

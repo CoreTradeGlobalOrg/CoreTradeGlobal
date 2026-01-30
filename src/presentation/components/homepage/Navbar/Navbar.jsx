@@ -69,6 +69,18 @@ export function Navbar() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Lock body scroll when mobile menu is open
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isMobileMenuOpen]);
+
   const handleNavClick = (href, e) => {
     if (href.startsWith('#')) {
       e.preventDefault();
@@ -128,6 +140,13 @@ export function Navbar() {
           <div className="w-20 h-8 bg-[rgba(255,255,255,0.1)] rounded-full animate-pulse" />
         ) : isAuthenticated && user ? (
           <div className="flex items-center gap-3">
+            {/* Messages Link */}
+            <Link
+              href="/messages"
+              className="nav-link hover:text-[#3b82f6] transition-colors"
+            >
+              Messages
+            </Link>
             <NotificationBell />
             <div className="relative group">
               <button
@@ -180,65 +199,91 @@ export function Navbar() {
         )}
       </div>
 
-      {/* Mobile Menu Button */}
-      <button
-        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-        className="md:hidden w-10 h-10 flex items-center justify-center text-white hover:bg-[rgba(255,255,255,0.1)] rounded-lg transition-colors"
-      >
-        {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-      </button>
+      {/* Mobile Menu Button & Notification */}
+      <div className="md:hidden flex items-center gap-2">
+        {isAuthenticated && user && <NotificationBell />}
+        <button
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          className="w-10 h-10 flex items-center justify-center text-white hover:bg-[rgba(255,255,255,0.1)] rounded-lg transition-colors"
+        >
+          {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+        </button>
+      </div>
 
       {/* Mobile Menu */}
       {isMobileMenuOpen && (
         <div className="md:hidden absolute top-full left-0 right-0 bg-[#0F1B2B] border-t border-[rgba(255,255,255,0.1)] shadow-lg">
-          <div className="px-6 py-4 space-y-3">
+          <div className="px-6 py-4 space-y-1">
             {NAV_LINKS.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className="block text-white hover:text-[#FFD700] py-2 transition-colors"
+                className="block py-3 transition-colors hover:text-[#FFD700]"
+                style={{ color: isActive(link.href) ? '#FFD700' : '#FFFFFF', fontWeight: isActive(link.href) ? 600 : 400 }}
                 onClick={(e) => handleNavClick(link.href, e)}
               >
                 {link.label}
               </Link>
             ))}
 
-            <div className="pt-4 border-t border-[rgba(255,255,255,0.1)] space-y-3">
+            <div className="pt-4 mt-2 border-t border-[rgba(255,255,255,0.1)] space-y-1">
               {loading ? (
                 <div className="w-full h-10 bg-[rgba(255,255,255,0.1)] rounded-full animate-pulse" />
               ) : isAuthenticated && user ? (
                 <>
                   <Link
-                    href={`/profile/${user.uid}`}
-                    className="btn-signup w-full flex items-center justify-center gap-2"
+                    href="/messages"
+                    className="block py-3 transition-colors hover:text-[#FFD700]"
+                    style={{ color: isActive('/messages') ? '#FFD700' : '#FFFFFF', fontWeight: isActive('/messages') ? 600 : 400 }}
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
-                    <User className="w-4 h-4" />
+                    Messages
+                  </Link>
+                  <Link
+                    href={`/profile/${user.uid}`}
+                    className="block py-3 transition-colors hover:text-[#FFD700]"
+                    style={{ color: isActive(`/profile/${user.uid}`) ? '#FFD700' : '#FFFFFF', fontWeight: isActive(`/profile/${user.uid}`) ? 600 : 400 }}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
                     My Profile
                   </Link>
+                  {user.role === 'admin' && (
+                    <Link
+                      href="/admin"
+                      className="block py-3 transition-colors hover:text-[#FFD700]"
+                      style={{ color: isActive('/admin') ? '#FFD700' : '#FFFFFF', fontWeight: isActive('/admin') ? 600 : 400 }}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      Admin Dashboard
+                    </Link>
+                  )}
                   <button
                     onClick={handleLogout}
-                    className="w-full py-2 text-center text-red-400 hover:text-red-300 font-medium"
+                    className="w-full py-3 text-left text-red-400 hover:text-red-300 font-medium"
                   >
                     Log Out
                   </button>
                 </>
               ) : (
                 <>
-                  <Link
-                    href="/login"
-                    className="block text-center text-white hover:text-[#FFD700] py-2 transition-colors"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    Log In
-                  </Link>
-                  <Link
-                    href="/register"
-                    className="btn-signup block text-center w-full"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    Register
-                  </Link>
+                  <div className="flex flex-col gap-3 mt-4">
+                    <Link
+                      href="/login"
+                      className="btn-hero-secondary w-full text-center justify-center"
+                      style={{ padding: '14px 24px', fontSize: '16px' }}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      Log In
+                    </Link>
+                    <Link
+                      href="/register"
+                      className="btn-hero-white w-full text-center"
+                      style={{ padding: '14px 24px', fontSize: '16px' }}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      Register
+                    </Link>
+                  </div>
                 </>
               )}
             </div>

@@ -27,6 +27,8 @@ import { ViewLimitGuard } from '@/presentation/components/common/ViewLimitGuard/
 import { ChevronLeft, ChevronRight, ArrowLeft, Pencil, Trash2, Power, User, MessageCircle } from 'lucide-react';
 import { container } from '@/core/di/container';
 import { useConversations } from '@/presentation/hooks/messaging/useConversations';
+import { useRecommendedProducts } from '@/presentation/hooks/product/useRecommendedProducts';
+import { ProductCard } from '@/presentation/components/homepage/Products/FeaturedProducts';
 import toast from 'react-hot-toast';
 
 // Thumbnail image with loading state
@@ -95,8 +97,16 @@ export default function ProductDetailPage() {
   const [deleting, setDeleting] = useState(false);
   const [seller, setSeller] = useState(null);
   const [sendingMessage, setSendingMessage] = useState(false);
+  const [descriptionExpanded, setDescriptionExpanded] = useState(false);
 
   const { startDirectConversation } = useConversations();
+
+  // Get recommended products
+  const { products: recommendedProducts, loading: recommendedLoading } = useRecommendedProducts(
+    productId,
+    product?.categoryId,
+    3
+  );
 
   const isOwnProduct = currentUser?.uid === product?.userId;
   const images = product?.images || [];
@@ -198,26 +208,22 @@ export default function ProductDetailPage() {
 
     setSendingMessage(true);
     try {
-      // Check if conversation already exists
-      const conversationRepo = container.getConversationRepository();
-      const existingConversation = await conversationRepo.findDirectConversation(currentUser.uid, seller.id);
+      // Prepare initial message about this specific product
+      const initialMessage = `Hi, I'm interested in your product "${product.name}" (${product.currency} ${product.price?.toLocaleString() || '0'}). Is it still available?`;
 
-      // Prepare draft message
-      const draftMessage = `Hi, I'm interested in your product "${product.name}" (${product.currency} ${product.price?.toLocaleString() || '0'}). Is it still available?`;
-
-      if (existingConversation) {
-        // Conversation exists - navigate with draft
-        router.push(`/messages/${existingConversation.id}?draft=${encodeURIComponent(draftMessage)}`);
-      } else {
-        // New conversation - create with product context and navigate with draft
-        const conversation = await startDirectConversation(seller.id, {
+      // Create/find conversation with product context - each product gets its own conversation
+      const conversation = await startDirectConversation(
+        seller.id,
+        {
           source: 'product_inquiry',
           productId: product.id,
           productName: product.name,
           productImage: images.length > 0 ? images[0] : null,
-        });
-        router.push(`/messages/${conversation.id}?draft=${encodeURIComponent(draftMessage)}`);
-      }
+        },
+        initialMessage // Send initial message automatically
+      );
+
+      // Conversation opened via startDirectConversation (widget opens automatically)
     } catch (err) {
       console.error('Error opening conversation:', err);
       toast.error('Failed to open conversation. Please try again.');
@@ -371,49 +377,74 @@ export default function ProductDetailPage() {
             {/* Info Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="glass-card p-6 flex flex-col gap-2">
-                <div className="text-sm uppercase tracking-wider text-gray-500 font-semibold">Category</div>
-                <div className="text-lg font-medium text-[#FFD700]">{getCategoryName()}</div>
+                <div className="text-sm uppercase tracking-wider text-[#FFD700] font-semibold">Category</div>
+                <div className="text-lg font-medium bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">{getCategoryName()}</div>
               </div>
 
               <div className="glass-card p-6 flex flex-col gap-2">
-                <div className="text-sm uppercase tracking-wider text-gray-500 font-semibold">Stock Quantity</div>
+                <div className="text-sm uppercase tracking-wider text-[#FFD700] font-semibold">Stock Quantity</div>
                 <div className="flex items-center gap-3">
-                  <span className={`text-2xl font-bold ${product.stockQuantity > 0 ? 'text-white' : 'text-red-400'}`}>
-                    {product.stockQuantity || 0}
+                  <span className={`text-2xl font-bold ${product.stockQuantity > 0 ? 'bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent' : 'text-red-400'}`}>
+                    {product.stockQuantity || 0} {product.unit || 'units'}
                   </span>
-                  <span className="text-sm text-gray-400">{product.unit || 'units'} available</span>
+                  <span className="text-sm text-gray-400">available</span>
                 </div>
               </div>
-
-              {product.unit && (
-                <div className="glass-card p-6 flex flex-col gap-2">
-                  <div className="text-sm uppercase tracking-wider text-gray-500 font-semibold">Unit</div>
-                  <div className="text-lg font-medium text-white">{product.unit}</div>
-                  {product.unitCategory && (
-                    <div className="text-sm text-gray-400">{product.unitCategory}</div>
-                  )}
-                </div>
-              )}
             </div>
 
             {/* Description */}
-            <div className="glass-card p-8">
-              <div className="text-sm uppercase tracking-wider text-[#FFD700] font-bold mb-4 flex items-center gap-2">
-                Description
+            <div
+              className="glass-card p-8 cursor-pointer transition-all duration-300 hover:border-[#FFD700]/30"
+              onClick={() => product.description?.length > 400 && setDescriptionExpanded(!descriptionExpanded)}
+            >
+              <div className="text-sm uppercase tracking-wider text-[#FFD700] font-bold mb-4 flex items-center justify-between">
+                <span>Description</span>
+                {product.description?.length > 400 && (
+                  <span className="text-xs normal-case tracking-normal font-medium text-gray-400">
+                    {descriptionExpanded ? 'Click to collapse' : 'Click to expand'}
+                  </span>
+                )}
               </div>
-              <p className="text-gray-300 whitespace-pre-wrap leading-relaxed text-lg font-light">
-                {product.description}
-              </p>
+              <div className={`overflow-hidden transition-all duration-300 ${descriptionExpanded ? 'max-h-[2000px]' : 'max-h-[180px]'}`}>
+                <p className="text-gray-300 whitespace-pre-wrap leading-relaxed text-lg font-light">
+                  {product.description}
+                </p>
+              </div>
+              {product.description?.length > 400 && (
+                <button
+                  className="mt-4 text-[#FFD700] font-semibold text-sm hover:text-white transition-colors flex items-center gap-2"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setDescriptionExpanded(!descriptionExpanded);
+                  }}
+                >
+                  {descriptionExpanded ? (
+                    <>
+                      Show Less
+                      <svg className="w-4 h-4 rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </>
+                  ) : (
+                    <>
+                      Read More
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </>
+                  )}
+                </button>
+              )}
             </div>
 
             {/* Seller Info */}
             {seller && (
               <div className="glass-card p-6">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                   <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#1A283B] to-[#0F1B2B] border border-white/10 flex items-center justify-center text-[#FFD700] shadow-lg overflow-hidden relative">
+                    <div className="w-16 h-16 flex-shrink-0 rounded-2xl bg-gradient-to-br from-[#1A283B] to-[#0F1B2B] border border-white/10 flex items-center justify-center text-[#FFD700] shadow-lg overflow-hidden relative">
                       <SellerAvatar
-                        src={seller.logoURL || seller.photoURL || seller.image || seller.avatar}
+                        src={seller.companyLogo || seller.photoURL || seller.logoURL || seller.image || seller.avatar}
                         alt={seller.companyName || seller.displayName}
                       />
                     </div>
@@ -428,25 +459,27 @@ export default function ProductDetailPage() {
                       <Button
                         onClick={handleSendMessage}
                         disabled={sendingMessage}
-                        className="px-6 py-3 rounded-full bg-gradient-to-r from-[#FFD700] to-[#FDB931] !text-black hover:shadow-[0_0_20px_rgba(255,215,0,0.3)] transition-all font-semibold text-sm flex items-center gap-2 disabled:opacity-50"
+                        className="flex-1 md:flex-none px-4 md:px-6 py-3 rounded-full bg-gradient-to-r from-[#FFD700] to-[#FDB931] !text-black hover:shadow-[0_0_20px_rgba(255,215,0,0.3)] transition-all font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50"
                       >
                         {sendingMessage ? (
                           <>
                             <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></span>
-                            Opening...
+                            <span className="hidden sm:inline">Opening...</span>
                           </>
                         ) : (
                           <>
                             <MessageCircle className="w-4 h-4" />
-                            Contact Seller
+                            <span className="hidden sm:inline">Contact Seller</span>
+                            <span className="sm:hidden">Contact</span>
                           </>
                         )}
                       </Button>
                       <Button
                         onClick={() => router.push(`/profile/${seller.id}`)}
-                        className="px-6 py-3 rounded-full border border-[#FFD700]/30 text-[#FFD700] hover:bg-[#FFD700] hover:text-[#0F1B2B] transition-all font-semibold text-sm"
+                        className="flex-1 md:flex-none px-4 md:px-6 py-3 rounded-full border border-[#FFD700]/30 text-[#FFD700] hover:bg-[#FFD700] hover:text-[#0F1B2B] transition-all font-semibold text-sm text-center"
                       >
-                        View Profile
+                        <span className="hidden sm:inline">View Profile</span>
+                        <span className="sm:hidden">Profile</span>
                       </Button>
                     </div>
                   )}
@@ -487,6 +520,41 @@ export default function ProductDetailPage() {
             )}
           </div>
         </div>
+
+        {/* Recommended Products */}
+        {(recommendedLoading || recommendedProducts.length > 0) && (
+          <div className="mt-16">
+            <div className="flex items-center gap-3 mb-8">
+              <div className="h-px flex-1 bg-gradient-to-r from-transparent via-[#FFD700]/30 to-transparent"></div>
+              <h2 className="text-2xl font-bold text-white">Similar Products</h2>
+              <div className="h-px flex-1 bg-gradient-to-r from-transparent via-[#FFD700]/30 to-transparent"></div>
+            </div>
+
+            <div id="products" className="flex md:justify-center gap-6 overflow-x-auto pt-2 pb-4 px-4 md:px-0">
+              {recommendedLoading ? (
+                // Loading skeleton
+                [...Array(3)].map((_, index) => (
+                  <div key={index} className="product-card" style={{ background: 'rgba(255,255,255,0.05)', width: '280px', height: '480px', flexShrink: 0 }}>
+                    <div className="product-card-image animate-pulse" style={{ height: '280px' }} />
+                    <div className="product-card-content">
+                      <div className="h-4 bg-[rgba(255,255,255,0.1)] rounded animate-pulse mb-3" />
+                      <div className="h-6 bg-[rgba(255,255,255,0.1)] rounded animate-pulse mb-2" />
+                      <div className="h-4 bg-[rgba(255,255,255,0.1)] rounded animate-pulse" />
+                    </div>
+                  </div>
+                ))
+              ) : (
+                recommendedProducts.map((recProduct) => (
+                  <ProductCard
+                    key={recProduct.id}
+                    product={recProduct}
+                    categories={categories}
+                  />
+                ))
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Edit Modal */}
         <Modal

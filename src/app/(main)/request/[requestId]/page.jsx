@@ -17,12 +17,13 @@ import { ArrowLeft, Calendar, MapPin, Package, DollarSign, Building } from 'luci
 import { ViewLimitGuard } from '@/presentation/components/common/ViewLimitGuard/ViewLimitGuard';
 import { CountryFlag } from '@/presentation/components/common/CountryFlag/CountryFlag';
 import { SubmitQuoteDialog } from '@/presentation/components/features/request/SubmitQuoteDialog/SubmitQuoteDialog';
+import { QuotesSection } from '@/presentation/components/features/request/QuotesSection/QuotesSection';
 import toast from 'react-hot-toast';
 
 export default function RequestDetailsPage() {
   const params = useParams();
   const router = useRouter();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
 
   const [request, setRequest] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -61,6 +62,18 @@ export default function RequestDetailsPage() {
 
     fetchRequestDetails();
   }, [params.requestId, router]);
+
+  // Scroll to quotes section if hash is present
+  useEffect(() => {
+    if (!loading && request && window.location.hash === '#quotes') {
+      const quotesElement = document.getElementById('quotes');
+      if (quotesElement) {
+        setTimeout(() => {
+          quotesElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
+      }
+    }
+  }, [loading, request]);
 
   // Loading State
   if (loading) {
@@ -183,6 +196,14 @@ export default function RequestDetailsPage() {
                 </div>
               </div>
             )}
+
+            {/* Quotes/Offers Section - Only visible to RFQ owner */}
+            <div id="quotes">
+              <QuotesSection
+                request={request}
+                isOwner={user?.uid === request.userId}
+              />
+            </div>
           </div>
 
           {/* Sidebar (Buyer Info) */}

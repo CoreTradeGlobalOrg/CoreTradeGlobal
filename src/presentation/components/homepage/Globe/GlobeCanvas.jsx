@@ -246,7 +246,7 @@ function PlaneRoutes({ landPositions, config }) {
 }
 
 // Scene setup
-function Scene({ isMobile }) {
+function Scene({ isMobile, disableInteraction }) {
   const { camera } = useThree();
   const [landPositions, setLandPositions] = useState(null);
 
@@ -259,13 +259,15 @@ function Scene({ isMobile }) {
     waterColor: 0x0A1628,
     mapUrl: 'https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/earth_specular_2048.jpg',
     maxRoutes: isMobile ? 4 : 8, // Further reduced for a cleaner look
-    tubeSegments: isMobile ? 32 : 64
+    tubeSegments: isMobile ? 32 : 64,
+    cameraZ: isMobile ? 22 : 35,
+    cameraY: isMobile ? 22 : 35
   }), [isMobile]);
 
   useEffect(() => {
-    camera.position.z = 35;
-    camera.position.y = 35;
-  }, [camera]);
+    camera.position.z = config.cameraZ;
+    camera.position.y = config.cameraY;
+  }, [camera, config.cameraZ, config.cameraY]);
 
   // Generate Land Points
   useEffect(() => {
@@ -328,6 +330,7 @@ function Scene({ isMobile }) {
         dampingFactor={0.02}
         enableZoom={false}
         enablePan={false}
+        enableRotate={!isMobile}
         autoRotate
         autoRotateSpeed={2}
       />
@@ -350,7 +353,10 @@ export function GlobeCanvas({ className = '' }) {
   if (!mounted) return null;
 
   return (
-    <div className={`relative w-full h-full ${className}`}>
+    <div
+      className={`relative w-full h-full ${className}`}
+      style={isMobile ? { pointerEvents: 'none', touchAction: 'auto' } : {}}
+    >
       <Canvas
         camera={{ fov: 45, near: 0.1, far: 1000 }}
         gl={{
@@ -360,6 +366,7 @@ export function GlobeCanvas({ className = '' }) {
         }}
         dpr={isMobile ? [1, 1.5] : [1, 2]} // Cap DPR on mobile
         frameloop="always"
+        style={isMobile ? { pointerEvents: 'none', touchAction: 'auto' } : {}}
       >
         <Scene isMobile={isMobile} />
       </Canvas>

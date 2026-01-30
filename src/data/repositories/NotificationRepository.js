@@ -68,16 +68,22 @@ export class NotificationRepository {
    * @returns {Promise<Array>}
    */
   async getUnreadByUserId(userId, limitCount = 50) {
-    return await this.firestoreDataSource.querySubcollection(
+    // Query without orderBy to avoid composite index requirement
+    const notifications = await this.firestoreDataSource.querySubcollection(
       COLLECTIONS.USERS,
       userId,
       SUBCOLLECTIONS.NOTIFICATIONS,
       {
         where: [['isRead', '==', false]],
-        orderBy: [['createdAt', 'desc']],
         limit: limitCount,
       }
     );
+    // Sort client-side
+    return notifications.sort((a, b) => {
+      const dateA = a.createdAt?.toDate?.() || new Date(a.createdAt);
+      const dateB = b.createdAt?.toDate?.() || new Date(b.createdAt);
+      return dateB - dateA;
+    });
   }
 
   /**

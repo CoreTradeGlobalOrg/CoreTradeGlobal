@@ -134,6 +134,108 @@ export class Notification {
       isRead: false,
     };
   }
+
+  /**
+   * Create a quote received notification
+   * @param {string} requestId - RFQ ID
+   * @param {string} quoteId - Quote ID
+   * @param {string} quoterId - ID of user who submitted the quote
+   * @param {string} quoterName - Name/company of quoter
+   * @param {string} productName - Product name from RFQ
+   * @param {number} unitPrice - Quoted unit price
+   * @param {string} currency - Currency code
+   * @returns {Object} Notification data for Firestore
+   */
+  static createQuoteNotification(requestId, quoteId, quoterId, quoterName, productName, unitPrice, currency) {
+    return {
+      type: 'quote_received',
+      title: `New Quote Received`,
+      body: `${quoterName} submitted a quote for "${productName}" at ${unitPrice} ${currency}`,
+      data: {
+        requestId,
+        quoteId,
+        quoterId,
+        quoterName,
+        productName,
+        unitPrice,
+        currency,
+      },
+      isRead: false,
+    };
+  }
+
+  /**
+   * Create a quote accepted notification
+   * @param {string} requestId - RFQ ID
+   * @param {string} quoteId - Quote ID
+   * @param {string} productName - Product name from RFQ
+   * @param {string} buyerName - Name/company of buyer who accepted
+   * @returns {Object} Notification data for Firestore
+   */
+  static createQuoteAcceptedNotification(requestId, quoteId, productName, buyerName) {
+    return {
+      type: 'quote_accepted',
+      title: `Quote Accepted!`,
+      body: `${buyerName} has accepted your quote for "${productName}"`,
+      data: {
+        requestId,
+        quoteId,
+        productName,
+        buyerName,
+      },
+      isRead: false,
+    };
+  }
+
+  /**
+   * Create a quote rejected notification
+   * @param {string} requestId - RFQ ID
+   * @param {string} quoteId - Quote ID
+   * @param {string} productName - Product name from RFQ
+   * @param {string} buyerName - Name/company of buyer who rejected
+   * @param {string} reason - Optional rejection reason
+   * @returns {Object} Notification data for Firestore
+   */
+  static createQuoteRejectedNotification(requestId, quoteId, productName, buyerName, reason = null) {
+    return {
+      type: 'quote_rejected',
+      title: `Quote Not Selected`,
+      body: reason
+        ? `${buyerName} did not select your quote for "${productName}". Reason: ${reason}`
+        : `${buyerName} did not select your quote for "${productName}"`,
+      data: {
+        requestId,
+        quoteId,
+        productName,
+        buyerName,
+        reason,
+      },
+      isRead: false,
+    };
+  }
+
+  /**
+   * Create a new user approval request notification (for admins)
+   * @param {string} userId - New user's ID
+   * @param {string} userName - New user's display name
+   * @param {string} companyName - New user's company name
+   * @param {string} email - New user's email
+   * @returns {Object} Notification data for Firestore
+   */
+  static createNewUserApprovalNotification(userId, userName, companyName, email) {
+    return {
+      type: 'new_user_approval',
+      title: `New User Awaiting Approval`,
+      body: `${userName} from "${companyName}" has registered and needs approval`,
+      data: {
+        userId,
+        userName,
+        companyName,
+        email,
+      },
+      isRead: false,
+    };
+  }
 }
 
 export default Notification;

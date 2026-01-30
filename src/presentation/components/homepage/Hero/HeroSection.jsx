@@ -55,6 +55,7 @@ const SEARCH_TAGS = ['Marble', 'Steel', 'Textile', 'Machinery', 'Cotton'];
 export function HeroSection({ fetchData = false }) {
   const { user, isAuthenticated, loading } = useAuth();
   const [mounted, setMounted] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const [searchType, setSearchType] = useState('Products');
   const [searchQuery, setSearchQuery] = useState('');
   const [globeLoaded, setGlobeLoaded] = useState(false);
@@ -75,8 +76,14 @@ export function HeroSection({ fetchData = false }) {
 
   useEffect(() => {
     setMounted(true);
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
     const timer = setTimeout(() => setGlobeLoaded(true), 1500);
-    return () => clearTimeout(timer);
+    return () => {
+      window.removeEventListener('resize', checkMobile);
+      clearTimeout(timer);
+    };
   }, []);
 
   // Fetch data only if fetchData prop is true
@@ -253,8 +260,8 @@ export function HeroSection({ fetchData = false }) {
                   className="search-input"
                   id="search-input"
                   placeholder={searchType === 'Products'
-                    ? "Search for products, companies, or RFQs..."
-                    : "Search for active RFQs..."}
+                    ? (isMobile ? "Search products..." : "Search for products, companies, or RFQs...")
+                    : (isMobile ? "Search RFQs..." : "Search for active RFQs...")}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
@@ -265,7 +272,7 @@ export function HeroSection({ fetchData = false }) {
                 </button>
               </form>
               <div className="search-tags">
-                {SEARCH_TAGS.map((tag) => (
+                {(isMobile ? SEARCH_TAGS.slice(0, 3) : SEARCH_TAGS).map((tag) => (
                   <span
                     key={tag}
                     className="search-tag-pill"
@@ -427,7 +434,15 @@ export function HeroSection({ fetchData = false }) {
 
           {/* Supplier Card */}
           <Link href={fetchData && latestSupplier ? `/profile/${latestSupplier.id}` : '/companies'} className="hero-info-card hero-supplier-card">
-            <div className="card-icon">🏭</div>
+            <div className="card-icon">
+              {fetchData && (latestSupplier?.companyLogo || latestSupplier?.photoURL) ? (
+                <img
+                  src={latestSupplier.companyLogo || latestSupplier.photoURL}
+                  alt={latestSupplier.companyName}
+                  className="w-full h-full object-cover rounded-lg"
+                />
+              ) : '🏭'}
+            </div>
             <div className="card-content" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
               <h3>{fetchData ? 'Latest Supplier' : 'Suppliers'}</h3>
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>

@@ -33,6 +33,7 @@ import { useUpdateRequest } from '@/presentation/hooks/request/useUpdateRequest'
 import { useDeleteRequest } from '@/presentation/hooks/request/useDeleteRequest';
 import { useCategories } from '@/presentation/hooks/category/useCategories';
 import { ConfirmDialog } from '@/presentation/components/common/ConfirmDialog/ConfirmDialog';
+import { CompanyDocuments } from '@/presentation/components/features/profile/CompanyDocuments/CompanyDocuments';
 
 function ProfileContent() {
   const { user: currentUser, loading: authLoading, isAuthenticated } = useAuth();
@@ -89,6 +90,8 @@ function ProfileContent() {
   // Profile form state
   const [phone, setPhone] = useState('');
   const [about, setAbout] = useState('');
+  const [linkedinProfile, setLinkedinProfile] = useState('');
+  const [companyWebsite, setCompanyWebsite] = useState('');
   const [logoFile, setLogoFile] = useState(null);
   const [logoPreview, setLogoPreview] = useState(null);
   const [logoLoading, setLogoLoading] = useState(false);
@@ -122,6 +125,8 @@ function ProfileContent() {
         if (isOwnProfile) {
           setPhone(userData.phone || '');
           setAbout(userData.about || '');
+          setLinkedinProfile(userData.linkedinProfile || '');
+          setCompanyWebsite(userData.companyWebsite || '');
           setLogoPreview(userData.companyLogo || null);
         }
       } catch (error) {
@@ -208,6 +213,11 @@ function ProfileContent() {
     return role.charAt(0).toUpperCase() + role.slice(1);
   };
 
+  const formatCategory = (name) => {
+    if (!name) return 'Not set';
+    return name.toUpperCase();
+  };
+
 
   const handleLogoChange = (e) => {
     const file = e.target.files?.[0];
@@ -269,6 +279,8 @@ function ProfileContent() {
       await userRepository.update(userId, {
         phone,
         about,
+        linkedinProfile,
+        companyWebsite,
         companyLogo: logoUrl,
         updatedAt: new Date(),
       });
@@ -653,7 +665,7 @@ function ProfileContent() {
               {/* Category */}
               <div className="bg-[rgba(255,255,255,0.04)] rounded-2xl p-5 border border-[rgba(255,255,255,0.05)]">
                 <p className="text-sm font-semibold uppercase tracking-wider mb-2 bg-gradient-to-r from-[#C0C0C0] via-[#FFFFFF] to-[#C0C0C0] bg-clip-text text-transparent">Category</p>
-                <p className="text-white font-semibold text-lg truncate">{categoryName || 'Not set'}</p>
+                <p className="text-white font-semibold text-lg truncate">{formatCategory(categoryName)}</p>
               </div>
 
               {/* Role */}
@@ -699,6 +711,56 @@ function ProfileContent() {
                   )}
                 </div>
               )}
+
+              {/* LinkedIn Profile */}
+              <div className="bg-[rgba(255,255,255,0.04)] rounded-2xl p-5 border border-[rgba(255,255,255,0.05)]">
+                <p className="text-sm font-semibold uppercase tracking-wider mb-2 bg-gradient-to-r from-[#C0C0C0] via-[#FFFFFF] to-[#C0C0C0] bg-clip-text text-transparent">LinkedIn</p>
+                {isOwnProfile && isEditing ? (
+                  <input
+                    type="url"
+                    value={linkedinProfile}
+                    onChange={(e) => setLinkedinProfile(e.target.value)}
+                    placeholder="https://linkedin.com/in/yourprofile"
+                    className="w-full bg-[rgba(255,255,255,0.05)] text-white font-semibold text-base focus:outline-none focus:border-[#FFD700] border-2 border-[#FFD700]/50 rounded-xl px-3 py-2 shadow-[0_0_15px_rgba(255,215,0,0.2)] animate-pulse-glow"
+                  />
+                ) : profileUser?.linkedinProfile ? (
+                  <a
+                    href={profileUser.linkedinProfile}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[#0A66C2] font-semibold text-base truncate block hover:underline"
+                  >
+                    {profileUser.linkedinProfile.replace(/^https?:\/\/(www\.)?/, '')}
+                  </a>
+                ) : (
+                  <p className="text-[#A0A0A0] font-semibold text-lg">{isOwnProfile ? 'Not set - Add your LinkedIn' : 'Not set'}</p>
+                )}
+              </div>
+
+              {/* Company Website */}
+              <div className="bg-[rgba(255,255,255,0.04)] rounded-2xl p-5 border border-[rgba(255,255,255,0.05)]">
+                <p className="text-sm font-semibold uppercase tracking-wider mb-2 bg-gradient-to-r from-[#C0C0C0] via-[#FFFFFF] to-[#C0C0C0] bg-clip-text text-transparent">Website</p>
+                {isOwnProfile && isEditing ? (
+                  <input
+                    type="url"
+                    value={companyWebsite}
+                    onChange={(e) => setCompanyWebsite(e.target.value)}
+                    placeholder="https://www.company.com"
+                    className="w-full bg-[rgba(255,255,255,0.05)] text-white font-semibold text-base focus:outline-none focus:border-[#FFD700] border-2 border-[#FFD700]/50 rounded-xl px-3 py-2 shadow-[0_0_15px_rgba(255,215,0,0.2)] animate-pulse-glow"
+                  />
+                ) : profileUser?.companyWebsite ? (
+                  <a
+                    href={profileUser.companyWebsite}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[#FFD700] font-semibold text-base truncate block hover:underline"
+                  >
+                    {profileUser.companyWebsite.replace(/^https?:\/\/(www\.)?/, '')}
+                  </a>
+                ) : (
+                  <p className="text-[#A0A0A0] font-semibold text-lg">{isOwnProfile ? 'Not set - Add your website' : 'Not set'}</p>
+                )}
+              </div>
             </div>
 
             {/* Save/Cancel Buttons */}
@@ -719,6 +781,8 @@ function ProfileContent() {
                     setIsEditing(false);
                     setPhone(profileUser?.phone || '');
                     setAbout(profileUser?.about || '');
+                    setLinkedinProfile(profileUser?.linkedinProfile || '');
+                    setCompanyWebsite(profileUser?.companyWebsite || '');
                     setLogoPreview(profileUser?.companyLogo || null);
                     setLogoFile(null);
                     setLogoRemoved(false);
@@ -729,6 +793,18 @@ function ProfileContent() {
               </div>
             )}
           </form>
+        </div>
+
+        {/* Company Documents Section */}
+        <div className="glass-card p-6">
+          <CompanyDocuments
+            userId={userId}
+            documents={profileUser?.companyDocuments || []}
+            isOwnProfile={isOwnProfile}
+            onDocumentsChange={(newDocs) => {
+              setProfileUser(prev => ({ ...prev, companyDocuments: newDocs }));
+            }}
+          />
         </div>
 
         {/* Products Section */}

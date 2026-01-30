@@ -163,7 +163,7 @@ const ProductCardImage = memo(function ProductCardImage({ src, alt }) {
   );
 });
 
-function ProductCard({ product, categories }) {
+export function ProductCard({ product, categories }) {
   // Get first image from images array
   const imageUrl = product.images?.[0] || product.imageUrl;
 

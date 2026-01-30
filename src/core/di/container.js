@@ -106,7 +106,10 @@ export const container = {
    */
   getUserRepository() {
     if (!userRepository) {
-      userRepository = new UserRepository(this.getFirestoreDataSource());
+      userRepository = new UserRepository(
+        this.getFirestoreDataSource(),
+        this.getFirebaseStorageDataSource()
+      );
     }
     return userRepository;
   },

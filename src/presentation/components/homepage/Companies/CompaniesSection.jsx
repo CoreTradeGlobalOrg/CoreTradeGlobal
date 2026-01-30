@@ -82,14 +82,16 @@ function CompanyCard({ company }) {
         <h3 className="product-card-name">{company.companyName}</h3>
 
         <p className="product-card-description">
-          {company.industry || 'Verified Supplier'}
+          {company.industry || 'Member'}
         </p>
 
-        <div className="flex items-center gap-2 mt-2">
-          <span className="inline-flex items-center gap-1 bg-[rgba(16,185,129,0.15)] text-[#34d399] border border-[rgba(16,185,129,0.3)] px-2.5 py-1 rounded-full text-[11px] font-semibold uppercase tracking-wider">
-            ✓ Verified
-          </span>
-        </div>
+        {company.emailVerified && company.adminApproved && (
+          <div className="flex items-center gap-2 mt-2">
+            <span className="inline-flex items-center gap-1 bg-[rgba(16,185,129,0.15)] text-[#34d399] border border-[rgba(16,185,129,0.3)] px-2.5 py-1 rounded-full text-[11px] font-semibold uppercase tracking-wider">
+              ✓ Verified
+            </span>
+          </div>
+        )}
 
         <div className="w-full">
           <div className="product-card-btn w-full mt-3 text-center">View Profile</div>
@@ -113,15 +115,13 @@ export function CompaniesSection() {
         const allUsers = await firestoreDS.query('users', { limit: 50 });
 
         if (allUsers && allUsers.length > 0) {
-          // Filter: must have company name, email verified, admin approved, and not suspended
-          const verifiedCompanies = allUsers.filter(u =>
+          // Filter: must have company name and not suspended
+          const validCompanies = allUsers.filter(u =>
             u.companyName &&
-            u.emailVerified === true &&
-            u.adminApproved === true &&
             !u.isSuspended
           );
 
-          const sorted = verifiedCompanies.sort((a, b) => {
+          const sorted = validCompanies.sort((a, b) => {
             const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
             const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
             return dateB - dateA;
@@ -130,7 +130,7 @@ export function CompaniesSection() {
           if (sorted.length > 0) {
             setCompanies(sorted.slice(0, 12));
           }
-          // If no verified companies found, keep showing default companies
+          // If no companies found, keep showing default companies
         }
       } catch (error) {
         console.error('Error fetching companies:', error);

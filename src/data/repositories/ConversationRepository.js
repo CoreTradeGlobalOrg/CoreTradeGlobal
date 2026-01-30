@@ -101,9 +101,10 @@ export class ConversationRepository {
    * Find existing direct conversation between two users
    * @param {string} userId1
    * @param {string} userId2
+   * @param {Object} context - Optional context { productId, requestId }
    * @returns {Promise<Object|null>}
    */
-  async findDirectConversation(userId1, userId2) {
+  async findDirectConversation(userId1, userId2, context = {}) {
     // Query for conversations where both users are participants
     const conversations = await this.firestoreDataSource.query(
       COLLECTIONS.CONVERSATIONS,
@@ -115,8 +116,24 @@ export class ConversationRepository {
       }
     );
 
-    // Find the one that also includes userId2
-    return conversations.find((conv) => conv.participants.includes(userId2)) || null;
+    // Find the one that also includes userId2 AND matches context (if provided)
+    return conversations.find((conv) => {
+      // Must include both users
+      if (!conv.participants.includes(userId2)) return false;
+
+      // If productId is specified, must match
+      if (context.productId) {
+        return conv.metadata?.productId === context.productId;
+      }
+
+      // If requestId is specified, must match
+      if (context.requestId) {
+        return conv.metadata?.requestId === context.requestId;
+      }
+
+      // No context specified - find conversation without product/RFQ context
+      return !conv.metadata?.productId && !conv.metadata?.requestId;
+    }) || null;
   }
 
   /**

@@ -12,6 +12,7 @@ import { useForm } from 'react-hook-form';
 import { Modal } from '@/components/ui/Modal';
 import { useAuth } from '@/presentation/contexts/AuthContext';
 import { useSubmitQuote } from '@/presentation/hooks/request/useSubmitQuote';
+import { getUnitLabel } from '@/core/constants/units';
 import { Upload, Send, Loader2 } from 'lucide-react';
 
 // Constants for select options
@@ -26,17 +27,6 @@ const CURRENCIES = [
   { value: 'SAR', label: 'SAR - Saudi Riyal' },
   { value: 'CAD', label: 'CAD - Canadian Dollar' },
   { value: 'AUD', label: 'AUD - Australian Dollar' },
-];
-
-const UNIT_TYPES = [
-  { value: 'pcs', label: 'Pieces (pcs)' },
-  { value: 'kg', label: 'Kilograms (kg)' },
-  { value: 't', label: 'Tons (t)' },
-  { value: 'm', label: 'Meters (m)' },
-  { value: 'sqm', label: 'Square Meters (sqm)' },
-  { value: 'L', label: 'Liters (L)' },
-  { value: 'sets', label: 'Sets' },
-  { value: 'pallets', label: 'Pallets' },
 ];
 
 const INCOTERMS = [
@@ -90,6 +80,9 @@ const labelClass = "block text-xs font-semibold tracking-wider uppercase mb-2 bg
 // Select class with padding for arrow
 const selectClass = "w-full bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] p-3.5 pr-10 rounded-xl text-white text-sm outline-none transition-all focus:border-[#3b82f6] focus:bg-[rgba(15,27,43,0.9)] appearance-none cursor-pointer bg-[url('data:image/svg+xml;charset=UTF-8,%3csvg%20xmlns%3d%22http%3a%2f%2fwww.w3.org%2f2000%2fsvg%22%20width%3d%2224%22%20height%3d%2224%22%20viewBox%3d%220%200%2024%2024%22%20fill%3d%22none%22%20stroke%3d%22white%22%20stroke-width%3d%222%22%20stroke-linecap%3d%22round%22%20stroke-linejoin%3d%22round%22%3e%3cpolyline%20points%3d%226%209%2012%2015%2018%209%22%3e%3c%2fpolyline%3e%3c%2fsvg%3e')] bg-[length:20px] bg-[right_12px_center] bg-no-repeat";
 
+// Date input class with blue calendar icon
+const dateInputClass = "w-full bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] p-3.5 rounded-xl text-white text-sm outline-none transition-all focus:border-[#3b82f6] focus:bg-[rgba(15,27,43,0.9)] focus:shadow-[0_0_15px_rgba(59,130,246,0.15)] placeholder:text-white/70 [&::-webkit-calendar-picker-indicator]:brightness-0 [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:sepia [&::-webkit-calendar-picker-indicator]:saturate-[5000%] [&::-webkit-calendar-picker-indicator]:hue-rotate-[190deg] [&::-webkit-calendar-picker-indicator]:cursor-pointer";
+
 export function SubmitQuoteDialog({ isOpen, onClose, request }) {
   const { user } = useAuth();
   const { submitQuote, loading } = useSubmitQuote();
@@ -104,7 +97,6 @@ export function SubmitQuoteDialog({ isOpen, onClose, request }) {
     defaultValues: {
       unitPrice: '',
       currency: 'USD',
-      unitType: 'pcs',
       incoterms: 'FOB',
       shippingMethod: 'sea_fcl',
       portOfLoading: '',
@@ -136,6 +128,7 @@ export function SubmitQuoteDialog({ isOpen, onClose, request }) {
         quoteData: {
           ...data,
           unitPrice: parseFloat(data.unitPrice),
+          unitType: request.unit, // Use the unit from RFQ
           moq: data.moq ? parseInt(data.moq) : null,
         },
         attachments,
@@ -236,16 +229,15 @@ export function SubmitQuoteDialog({ isOpen, onClose, request }) {
                 </select>
               </div>
 
-              {/* Unit Type */}
+              {/* Unit Type - From RFQ (Read-only) */}
               <div>
                 <label className={labelClass}>
                   Unit Type
                 </label>
-                <select {...register('unitType')} className={selectClass}>
-                  {UNIT_TYPES.map(u => (
-                    <option key={u.value} value={u.value}>{u.label}</option>
-                  ))}
-                </select>
+                <div className={`${inputClass} flex items-center bg-[rgba(255,255,255,0.03)] cursor-not-allowed`}>
+                  <span className="text-white/90">{getUnitLabel(request.unit)}</span>
+                </div>
+                <span className="block mt-1 text-[10px] text-[#94a3b8]">Based on RFQ requirement</span>
               </div>
 
               {/* Incoterms */}
@@ -356,7 +348,7 @@ export function SubmitQuoteDialog({ isOpen, onClose, request }) {
                 <input
                   type="date"
                   {...register('priceValidUntil')}
-                  className={inputClass}
+                  className={dateInputClass}
                 />
               </div>
 

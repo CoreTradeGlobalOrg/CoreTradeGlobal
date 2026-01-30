@@ -7,18 +7,21 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { MessageSquare, ArrowLeft } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { MessageSquare } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/presentation/contexts/AuthContext';
 import { useMessages } from '@/presentation/contexts/MessagesContext';
-import ConversationList from '@/presentation/components/features/messaging/ConversationList/ConversationList';
 import './messages.css';
 
 export default function MessagesPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, isAuthenticated, loading: authLoading } = useAuth();
   const { conversations, loading, openConversation } = useMessages();
+
+  // Get conversation ID from URL if present
+  const conversationIdFromUrl = searchParams.get('conversation');
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -27,6 +30,16 @@ export default function MessagesPage() {
     }
   }, [authLoading, isAuthenticated, router]);
 
+  // Open conversation from URL parameter
+  useEffect(() => {
+    if (conversationIdFromUrl && !loading && conversations.length > 0) {
+      const conversationExists = conversations.find(c => c.id === conversationIdFromUrl);
+      if (conversationExists) {
+        router.push(`/messages/${conversationIdFromUrl}`);
+      }
+    }
+  }, [conversationIdFromUrl, loading, conversations, router]);
+
   // Handle conversation click - navigate to conversation page
   const handleConversationClick = (conversationId) => {
     router.push(`/messages/${conversationId}`);
@@ -34,27 +47,29 @@ export default function MessagesPage() {
 
   if (authLoading || !isAuthenticated) {
     return (
-      <main className="messages-page">
-        <div className="messages-loading">
-          <div className="loading-spinner" />
-          <p>Loading...</p>
+      <main className="min-h-screen pt-[120px] pb-20 px-6 bg-radial-navy">
+        <div className="max-w-[900px] mx-auto">
+          <div className="messages-loading">
+            <div className="loading-spinner" />
+            <p>Loading...</p>
+          </div>
         </div>
       </main>
     );
   }
 
   return (
-    <main className="messages-page">
-      <div className="messages-container">
+    <main className="min-h-screen pt-[120px] pb-20 px-6 bg-radial-navy">
+      <div className="max-w-[900px] mx-auto">
         {/* Header */}
-        <div className="messages-header">
-          <Link href="/" className="messages-back-link">
-            <ArrowLeft className="w-5 h-5" />
-          </Link>
-          <div className="messages-header-title">
-            <MessageSquare className="w-6 h-6 text-[#FFD700]" />
-            <h1>Messages</h1>
+        <div className="mb-10 text-center max-w-2xl mx-auto">
+          <div className="flex items-center justify-center gap-3 mb-3">
+            <MessageSquare className="w-10 h-10 text-[#FFD700]" />
+            <h1 className="text-4xl font-bold" style={{ background: 'linear-gradient(180deg, #ffffff 20%, #909090 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+              Messages
+            </h1>
           </div>
+          <p className="text-[#A0A0A0]">Your conversations with suppliers and buyers.</p>
         </div>
 
         {/* Conversations List */}
@@ -66,12 +81,19 @@ export default function MessagesPage() {
             </div>
           ) : conversations.length === 0 ? (
             <div className="messages-empty">
-              <MessageSquare className="w-16 h-16 text-[#64748b]" />
+              <div className="messages-empty-icon">
+                <MessageSquare className="w-12 h-12" />
+              </div>
               <h2>No messages yet</h2>
-              <p>Start a conversation by contacting another user or visiting the contact page.</p>
-              <Link href="/contact" className="messages-cta-button">
-                Contact Us
-              </Link>
+              <p>Start a conversation by contacting a supplier on a product page or submitting an RFQ.</p>
+              <div className="messages-empty-actions">
+                <Link href="/products" className="messages-cta-button">
+                  Browse Products
+                </Link>
+                <Link href="/requests" className="messages-cta-button secondary">
+                  View RFQs
+                </Link>
+              </div>
             </div>
           ) : (
             <div className="messages-list">
@@ -145,11 +167,13 @@ function getConversationDisplay(conversation, userId) {
   const otherUser = otherUserId ? conversation.participantDetails?.[otherUserId] : null;
 
   if (otherUser) {
-    const name = otherUser.displayName || otherUser.email || 'Unknown';
+    const name = otherUser.companyName || otherUser.displayName || otherUser.email || 'Unknown';
+    const subtitle = otherUser.companyName ? (otherUser.displayName || otherUser.email) : null;
     return {
       name,
       initial: name.charAt(0).toUpperCase(),
       photoURL: otherUser.photoURL,
+      subtitle,
       isContact: false,
     };
   }
@@ -159,8 +183,22 @@ function getConversationDisplay(conversation, userId) {
 
 function formatTime(date) {
   if (!date) return '';
+
+  // Handle Firestore Timestamp
+  let msgDate;
+  if (date?.toDate && typeof date.toDate === 'function') {
+    msgDate = date.toDate();
+  } else if (date instanceof Date) {
+    msgDate = date;
+  } else if (date?.seconds) {
+    msgDate = new Date(date.seconds * 1000);
+  } else {
+    msgDate = new Date(date);
+  }
+
+  if (isNaN(msgDate.getTime())) return '';
+
   const now = new Date();
-  const msgDate = new Date(date);
   const diffMs = now - msgDate;
   const diffMins = Math.floor(diffMs / 60000);
   const diffHours = Math.floor(diffMs / 3600000);

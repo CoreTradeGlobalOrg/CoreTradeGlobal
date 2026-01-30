@@ -389,9 +389,15 @@ a:hover {
 }
 
 .nav-links {
-  display: flex;
+  display: none;
   align-items: center;
   gap: 24px;
+}
+
+@media (min-width: 768px) {
+  .nav-links {
+    display: flex;
+  }
 }
 
 .nav-link {
@@ -677,12 +683,16 @@ a:hover {
 
 .search-input {
   flex: 1;
+  min-width: 0;
   background: transparent;
   border: none;
   outline: none;
   color: #fff;
   padding: 12px 20px;
   font-size: 16px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .search-input::placeholder {

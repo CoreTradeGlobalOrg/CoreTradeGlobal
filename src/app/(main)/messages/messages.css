@@ -1,71 +1,12 @@
 /* Messages Page Styles */
 
-.messages-page {
-  min-height: 100vh;
-  padding-top: 100px;
-  padding-bottom: 60px;
-}
-
-.messages-container {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 0 20px;
-}
-
-/* Header */
-.messages-header {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  margin-bottom: 24px;
-}
-
-.messages-back-link {
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  color: white;
-  transition: all 0.2s ease;
-}
-
-.messages-back-link:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 215, 0, 0.3);
-}
-
-.messages-header-title {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.messages-header-title h1 {
-  font-size: 28px;
-  font-weight: 700;
-  color: white;
-  margin: 0;
-}
-
-/* List Container */
-.messages-list-container {
-  background: linear-gradient(180deg, rgba(26, 28, 32, 0.6) 0%, rgba(15, 27, 43, 0.8) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 20px;
-  overflow: hidden;
-}
-
 /* Loading State */
 .messages-loading {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 60px 20px;
+  padding: 80px 20px;
   gap: 16px;
 }
 
@@ -90,6 +31,15 @@
   }
 }
 
+/* List Container */
+.messages-list-container {
+  background: linear-gradient(180deg, rgba(26, 28, 32, 0.6) 0%, rgba(15, 27, 43, 0.8) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 24px;
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+}
+
 /* Empty State */
 .messages-empty {
   display: flex;
@@ -100,40 +50,71 @@
   text-align: center;
 }
 
+.messages-empty-icon {
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 215, 0, 0.05));
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  border-radius: 24px;
+  color: #FFD700;
+  margin-bottom: 24px;
+}
+
 .messages-empty h2 {
-  font-size: 20px;
-  font-weight: 600;
+  font-size: 24px;
+  font-weight: 700;
   color: white;
-  margin: 24px 0 12px;
+  margin: 0 0 12px;
 }
 
 .messages-empty p {
-  color: #64748b;
-  font-size: 14px;
-  max-width: 300px;
-  margin: 0 0 24px;
+  color: #94a3b8;
+  font-size: 15px;
+  max-width: 360px;
+  margin: 0 0 32px;
   line-height: 1.6;
 }
 
+.messages-empty-actions {
+  display: flex;
+  gap: 12px;
+}
+
 .messages-cta-button {
-  padding: 12px 24px;
+  padding: 14px 28px;
   background: linear-gradient(135deg, #FFD700, #FDB931);
-  border-radius: 12px;
+  border-radius: 14px;
   color: #0f1b2b;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 700;
   text-decoration: none;
   transition: all 0.2s ease;
+  border: none;
 }
 
 .messages-cta-button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(255, 215, 0, 0.3);
+  box-shadow: 0 8px 24px rgba(255, 215, 0, 0.3);
+}
+
+.messages-cta-button.secondary {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.messages-cta-button.secondary:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 215, 0, 0.3);
+  box-shadow: none;
 }
 
 /* Messages List */
 .messages-list {
-  /* Styles for the list */
+  /* Container for list items */
 }
 
 /* Message List Item */
@@ -143,8 +124,9 @@
   gap: 16px;
   padding: 20px 24px;
   cursor: pointer;
-  transition: background 0.2s ease;
+  transition: all 0.2s ease;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  position: relative;
 }
 
 .message-list-item:last-child {
@@ -152,15 +134,20 @@
 }
 
 .message-list-item:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.03);
 }
 
 .message-list-item.unread {
-  background: rgba(255, 215, 0, 0.05);
+  background: rgba(255, 215, 0, 0.03);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 16px;
+  margin: 8px 12px;
+  padding: 16px 20px;
 }
 
 .message-list-item.unread:hover {
-  background: rgba(255, 215, 0, 0.08);
+  background: rgba(255, 215, 0, 0.06);
+  border-color: rgba(255, 215, 0, 0.5);
 }
 
 /* Avatar */
@@ -168,12 +155,13 @@
   width: 56px;
   height: 56px;
   flex-shrink: 0;
+  border-radius: 16px;
+  overflow: hidden;
 }
 
 .message-list-avatar img {
   width: 100%;
   height: 100%;
-  border-radius: 50%;
   object-fit: cover;
 }
 
@@ -184,9 +172,9 @@
   align-items: center;
   justify-content: center;
   background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 215, 0, 0.1));
-  border-radius: 50%;
+  border: 1px solid rgba(255, 215, 0, 0.15);
   font-size: 20px;
-  font-weight: 600;
+  font-weight: 700;
   color: #FFD700;
 }
 
@@ -201,17 +189,21 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
 }
 
 .message-list-name {
   font-size: 16px;
   font-weight: 600;
   color: white;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .message-list-item.unread .message-list-name {
   color: #FFD700;
+  font-weight: 700;
 }
 
 .message-list-time {
@@ -220,16 +212,24 @@
   flex-shrink: 0;
 }
 
-.message-list-subtitle {
-  font-size: 12px;
+.message-list-item.unread .message-list-time {
   color: #FFD700;
+  font-weight: 600;
+}
+
+.message-list-subtitle {
+  font-size: 13px;
+  color: #94a3b8;
   display: block;
   margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .message-list-preview {
   font-size: 14px;
-  color: #a0a0a0;
+  color: #64748b;
   margin: 0;
   white-space: nowrap;
   overflow: hidden;
@@ -237,11 +237,11 @@
 }
 
 .message-list-preview span {
-  color: #64748b;
+  color: #94a3b8;
 }
 
 .message-list-item.unread .message-list-preview {
-  color: white;
+  color: #a0a0a0;
   font-weight: 500;
 }
 
@@ -263,12 +263,8 @@
 
 /* Responsive */
 @media (max-width: 640px) {
-  .messages-page {
-    padding-top: 80px;
-  }
-
-  .messages-header-title h1 {
-    font-size: 24px;
+  .messages-list-container {
+    border-radius: 20px;
   }
 
   .message-list-item {
@@ -279,9 +275,25 @@
   .message-list-avatar {
     width: 48px;
     height: 48px;
+    border-radius: 14px;
   }
 
   .message-list-avatar span {
     font-size: 18px;
+  }
+
+  .message-list-name {
+    font-size: 15px;
+  }
+
+  .messages-empty-actions {
+    flex-direction: column;
+    width: 100%;
+    max-width: 280px;
+  }
+
+  .messages-cta-button {
+    width: 100%;
+    text-align: center;
   }
 }

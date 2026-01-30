@@ -15,10 +15,12 @@ import Link from 'next/link';
 import toast from 'react-hot-toast';
 import { container } from '@/core/di/container';
 import { DeletedAccountDialog } from '@/presentation/components/features/auth/DeletedAccountDialog/DeletedAccountDialog';
+import { Eye, EyeOff } from 'lucide-react';
 
 export function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [showDeletedDialog, setShowDeletedDialog] = useState(false);
   const [deletionInfo, setDeletionInfo] = useState(null);
   const { login, loading, error } = useLogin();
@@ -90,15 +92,25 @@ export function LoginForm() {
 
         <div className="mb-5">
           <label className="block text-xs text-[#A0A0A0] font-semibold tracking-wider uppercase mb-2">Password</label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••"
-            className="form-input-anasyf"
-            required
-            disabled={loading}
-          />
+          <div className="relative">
+            <input
+              type={showPassword ? 'text' : 'password'}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              className="form-input-anasyf pr-12"
+              required
+              disabled={loading}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-[#A0A0A0] hover:text-white transition-colors"
+              tabIndex={-1}
+            >
+              {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+            </button>
+          </div>
         </div>
 
         <div className="flex justify-between items-center mb-8">

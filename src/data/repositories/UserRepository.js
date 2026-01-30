@@ -14,9 +14,11 @@ export class UserRepository {
   /**
    * Constructor
    * @param {FirestoreDataSource} firestoreDataSource
+   * @param {FirebaseStorageDataSource} storageDataSource
    */
-  constructor(firestoreDataSource) {
+  constructor(firestoreDataSource, storageDataSource = null) {
     this.firestoreDataSource = firestoreDataSource;
+    this.storageDataSource = storageDataSource;
   }
 
   /**
@@ -93,6 +95,78 @@ export class UserRepository {
    */
   async exists(userId) {
     return await this.firestoreDataSource.exists(COLLECTIONS.USERS, userId);
+  }
+
+  /**
+   * Upload company document
+   * @param {string} userId
+   * @param {File} file
+   * @returns {Promise<Object>} Document metadata with URL
+   */
+  async uploadCompanyDocument(userId, file) {
+    if (!this.storageDataSource) {
+      throw new Error('Storage data source not configured');
+    }
+
+    const timestamp = Date.now();
+    const fileExtension = file.name.split('.').pop();
+    const safeFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+    const storagePath = `users/${userId}/documents/${timestamp}_${safeFileName}`;
+
+    const downloadUrl = await this.storageDataSource.uploadFile(storagePath, file, {
+      userId,
+      uploadType: 'company-document',
+      originalName: file.name,
+    });
+
+    const documentMeta = {
+      id: `${timestamp}_${safeFileName}`,
+      name: file.name,
+      url: downloadUrl,
+      storagePath,
+      size: file.size,
+      type: file.type,
+      uploadedAt: new Date().toISOString(),
+    };
+
+    // Get current documents and add new one
+    const user = await this.getById(userId);
+    const currentDocs = user?.companyDocuments || [];
+
+    await this.update(userId, {
+      companyDocuments: [...currentDocs, documentMeta],
+    });
+
+    return documentMeta;
+  }
+
+  /**
+   * Delete company document
+   * @param {string} userId
+   * @param {string} documentId
+   * @returns {Promise<void>}
+   */
+  async deleteCompanyDocument(userId, documentId) {
+    if (!this.storageDataSource) {
+      throw new Error('Storage data source not configured');
+    }
+
+    const user = await this.getById(userId);
+    const currentDocs = user?.companyDocuments || [];
+    const docToDelete = currentDocs.find(doc => doc.id === documentId);
+
+    if (docToDelete && docToDelete.storagePath) {
+      try {
+        await this.storageDataSource.deleteFile(docToDelete.storagePath);
+      } catch (error) {
+        console.warn('Failed to delete document from storage:', error.message);
+      }
+    }
+
+    const updatedDocs = currentDocs.filter(doc => doc.id !== documentId);
+    await this.update(userId, {
+      companyDocuments: updatedDocs,
+    });
   }
 }
 

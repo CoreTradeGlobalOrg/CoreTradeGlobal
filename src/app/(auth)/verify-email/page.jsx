@@ -2,15 +2,17 @@
  * Email Verification Pending Page
  *
  * Shown after registration - user needs to verify email
+ * Dark theme with glassmorphism design
  */
 
 'use client';
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useAuth } from '@/presentation/contexts/AuthContext';
 import { container } from '@/core/di/container';
-import { Button } from '@/components/ui/Button';
+import { Mail, RefreshCw, CheckCircle, Loader2, ArrowRight } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function VerifyEmailPage() {
@@ -80,8 +82,8 @@ export default function VerifyEmailPage() {
   if (loading) {
     return (
       <div className="text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-        <p className="mt-4 text-gray-600">Loading...</p>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FFD700] mx-auto"></div>
+        <p className="mt-4 text-[#A0A0A0]">Loading...</p>
       </div>
     );
   }
@@ -92,85 +94,107 @@ export default function VerifyEmailPage() {
   }
 
   return (
-    <div className="max-w-md mx-auto text-center">
-      {/* Icon */}
-      <div className="mb-6">
-        <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto">
-          <svg
-            className="w-10 h-10 text-blue-600"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-            />
-          </svg>
+    <div className="w-full max-w-[500px] mx-auto">
+      <div className="glass-card w-full p-8">
+        {/* Icon */}
+        <div className="mb-6 text-center">
+          <div className="w-24 h-24 bg-gradient-to-br from-[rgba(59,130,246,0.2)] to-[rgba(59,130,246,0.05)] rounded-2xl flex items-center justify-center mx-auto border border-[rgba(59,130,246,0.3)] relative">
+            <Mail className="w-12 h-12 text-[#3b82f6]" />
+            <div className="absolute -top-2 -right-2 w-8 h-8 bg-[#FFD700] rounded-full flex items-center justify-center">
+              <span className="text-[#0F1B2B] text-lg font-bold">!</span>
+            </div>
+          </div>
         </div>
-      </div>
 
-      {/* Title */}
-      <h1 className="text-2xl font-bold text-gray-900 mb-2">
-        Verify Your Email
-      </h1>
+        {/* Title */}
+        <h1 className="text-2xl font-bold text-center text-white mb-2">
+          Verify Your Email
+        </h1>
 
-      {/* Message */}
-      <p className="text-gray-600 mb-6">
-        We've sent a verification email to:{' '}
-        <span className="font-medium text-gray-900">{user.email}</span>
-      </p>
+        {/* Message */}
+        <p className="text-[#A0A0A0] text-center mb-2">
+          We've sent a verification email to:
+        </p>
+        <p className="text-[#FFD700] text-center font-semibold mb-6">
+          {user.email}
+        </p>
 
-      <p className="text-sm text-gray-500 mb-8">
-        Please check your inbox and click the verification link to activate your
-        account.
-      </p>
+        <p className="text-sm text-[#64748b] text-center mb-8">
+          Please check your inbox and click the verification link to activate your account.
+        </p>
 
-      {/* Actions */}
-      <div className="space-y-3">
-        <Button
-          onClick={handleCheckVerification}
-          disabled={checking}
-          className="w-full"
-          variant="primary"
-        >
-          {checking ? 'Checking...' : "I've Verified My Email"}
-        </Button>
+        {/* Actions */}
+        <div className="space-y-3">
+          <button
+            onClick={handleCheckVerification}
+            disabled={checking}
+            className="w-full p-4 bg-gradient-to-br from-[#FFD700] to-[#FDB931] text-[#0F1B2B] font-bold text-base rounded-full shadow-[0_4px_20px_rgba(255,215,0,0.2)] hover:-translate-y-0.5 hover:shadow-[0_6px_30px_rgba(255,215,0,0.4)] active:scale-[0.98] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          >
+            {checking ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                Checking...
+              </>
+            ) : (
+              <>
+                <CheckCircle className="w-5 h-5" />
+                I've Verified My Email
+              </>
+            )}
+          </button>
 
-        <Button
-          onClick={handleResendEmail}
-          disabled={sending || countdown > 0}
-          className="w-full"
-          variant="secondary"
-        >
-          {sending
-            ? 'Sending...'
-            : countdown > 0
-            ? `Resend Email (${countdown}s)`
-            : 'Resend Verification Email'}
-        </Button>
-      </div>
+          <button
+            onClick={handleResendEmail}
+            disabled={sending || countdown > 0}
+            className="w-full p-4 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] text-white font-semibold rounded-full hover:bg-[rgba(255,255,255,0.1)] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          >
+            {sending ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                Sending...
+              </>
+            ) : countdown > 0 ? (
+              <>
+                <RefreshCw className="w-5 h-5" />
+                Resend Email ({countdown}s)
+              </>
+            ) : (
+              <>
+                <RefreshCw className="w-5 h-5" />
+                Resend Verification Email
+              </>
+            )}
+          </button>
+        </div>
 
-      {/* Help Text */}
-      <div className="mt-8 pt-6 border-t border-gray-200">
-        <p className="text-sm text-gray-500 mb-2">Didn't receive the email?</p>
-        <ul className="text-xs text-gray-500 space-y-1">
-          <li>• Check your spam or junk folder</li>
-          <li>• Make sure {user.email} is correct</li>
-          <li>• Wait a few minutes and try again</li>
-        </ul>
-      </div>
+        {/* Help Text */}
+        <div className="mt-8 pt-6 border-t border-[rgba(255,255,255,0.1)]">
+          <p className="text-sm text-[#A0A0A0] text-center mb-3">
+            Didn't receive the email?
+          </p>
+          <ul className="text-xs text-[#64748b] space-y-2 pl-4">
+            <li className="list-disc marker:text-[#FFD700]">
+              Check your spam or junk folder
+            </li>
+            <li className="list-disc marker:text-[#FFD700]">
+              Make sure <span className="text-white">{user.email}</span> is correct
+            </li>
+            <li className="list-disc marker:text-[#FFD700]">
+              Wait a few minutes and try again
+            </li>
+          </ul>
+        </div>
 
-      {/* Logout */}
-      <div className="mt-6">
-        <button
-          onClick={() => router.push('/login')}
-          className="text-sm text-blue-600 hover:underline"
-        >
-          Use a different email
-        </button>
+        {/* Different Email Link */}
+        <div className="mt-6 text-center">
+          <Link
+            href="/login"
+            className="inline-flex items-center gap-2 text-sm text-[#A0A0A0] hover:text-[#FFD700] transition-colors"
+          >
+            Use a different email
+            <ArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
       </div>
     </div>
   );

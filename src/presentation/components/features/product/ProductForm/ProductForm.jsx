@@ -338,7 +338,7 @@ export function ProductForm({ product, onSubmit, onCancel, userId }) {
 
       {/* Images */}
       <div>
-        <label className="block text-sm font-medium text-slate-700 mb-2">
+        <label className="block text-sm font-medium text-gray-300 mb-2">
           Product Images (max 5)
         </label>
 
@@ -350,7 +350,7 @@ export function ProductForm({ product, onSubmit, onCancel, userId }) {
                 <img
                   src={preview}
                   alt={`Preview ${index + 1}`}
-                  className="w-full h-24 object-cover rounded-lg border-2 border-gray-200"
+                  className="w-full h-24 object-cover rounded-lg border-2 border-[rgba(255,215,0,0.3)]"
                 />
                 <button
                   type="button"
@@ -382,8 +382,8 @@ export function ProductForm({ product, onSubmit, onCancel, userId }) {
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
             className={`relative border-2 border-dashed rounded-lg p-8 text-center transition-all ${isDragging
-              ? 'border-blue-500 bg-blue-50'
-              : 'border-gray-300 hover:border-gray-400'
+              ? 'border-[#FFD700] bg-[rgba(255,215,0,0.1)]'
+              : 'border-[rgba(255,215,0,0.4)] hover:border-[#FFD700]'
               } ${submitting ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
           >
             <input
@@ -398,7 +398,7 @@ export function ProductForm({ product, onSubmit, onCancel, userId }) {
 
             <div className="flex flex-col items-center gap-3">
               <svg
-                className={`w-12 h-12 ${isDragging ? 'text-blue-500' : 'text-gray-400'}`}
+                className={`w-12 h-12 ${isDragging ? 'text-[#FFD700]' : 'text-[rgba(255,215,0,0.6)]'}`}
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -412,15 +412,15 @@ export function ProductForm({ product, onSubmit, onCancel, userId }) {
               </svg>
 
               <div>
-                <p className="text-sm font-medium text-gray-700">
+                <p className="text-sm font-medium text-white">
                   {isDragging ? 'Drop images here' : 'Drag & drop images here'}
                 </p>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-[#A0A0A0] mt-1">
                   or click to browse ({imagePreviews.length}/5)
                 </p>
               </div>
 
-              <div className="text-xs text-gray-400">
+              <div className="text-xs text-[#64748b]">
                 PNG, JPG, GIF up to 5MB each
               </div>
             </div>
@@ -430,15 +430,20 @@ export function ProductForm({ product, onSubmit, onCancel, userId }) {
 
       {/* Actions */}
       <div className="flex gap-3 pt-4">
-        <Button type="submit" disabled={submitting || imageLoadingCount > 0}>
+        <Button type="submit" variant="gold" disabled={submitting || imageLoadingCount > 0}>
           {submitting ? (
             <span className="flex items-center gap-2">
-              <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+              <span className="w-4 h-4 border-2 border-[#0F1B2B] border-t-transparent rounded-full animate-spin"></span>
               Uploading...
             </span>
           ) : isEditing ? 'Update Product' : 'Create Product'}
         </Button>
-        <Button type="button" variant="secondary" onClick={onCancel} disabled={submitting || imageLoadingCount > 0}>
+        <Button
+          type="button"
+          variant="white"
+          onClick={onCancel}
+          disabled={submitting || imageLoadingCount > 0}
+        >
           Cancel
         </Button>
       </div>

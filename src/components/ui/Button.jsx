@@ -35,6 +35,18 @@ export function Button({
       text-white
       shadow-sm hover:shadow-md
     `,
+    gold: `
+      bg-gradient-to-br from-[#FFD700] to-[#FDB931]
+      text-[#0F1B2B]
+      shadow-[0_4px_20px_rgba(255,215,0,0.2)]
+      hover:shadow-[0_6px_30px_rgba(255,215,0,0.4)]
+      font-bold
+    `,
+    white: `
+      bg-white hover:bg-gray-100
+      text-black
+      shadow-sm
+    `,
   };
 
   return (

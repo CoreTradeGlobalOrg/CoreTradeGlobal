@@ -3,10 +3,12 @@
  *
  * Handles quote submission to Firebase Firestore.
  * Quotes are stored as a subcollection under the request document.
+ * Sends notification to RFQ owner when quote is submitted.
  */
 
 import { useState } from 'react';
 import { container } from '@/core/di/container';
+import { Notification } from '@/domain/entities/Notification';
 import toast from 'react-hot-toast';
 
 export function useSubmitQuote() {
@@ -24,6 +26,7 @@ export function useSubmitQuote() {
     try {
       const firestoreDS = container.getFirestoreDataSource();
       const storageDS = container.getFirebaseStorageDataSource();
+      const notificationRepository = container.getNotificationRepository();
 
       // Upload attachments to Firebase Storage
       const attachmentUrls = [];
@@ -63,11 +66,12 @@ export function useSubmitQuote() {
       };
 
       // Save to Firestore as subcollection: requests/{requestId}/quotes/{quoteId}
-      await firestoreDS.createInSubcollection('requests', requestId, 'quotes', quoteDocument);
+      const createdQuote = await firestoreDS.createInSubcollection('requests', requestId, 'quotes', quoteDocument);
 
-      // Update request document with quote count (optional)
+      // Fetch request to get owner info and product name
+      let requestDoc = null;
       try {
-        const requestDoc = await firestoreDS.getById('requests', requestId);
+        requestDoc = await firestoreDS.getById('requests', requestId);
         const currentQuoteCount = requestDoc?.quoteCount || 0;
         await firestoreDS.update('requests', requestId, {
           quoteCount: currentQuoteCount + 1,
@@ -76,6 +80,29 @@ export function useSubmitQuote() {
       } catch (updateError) {
         // Non-critical, don't fail the whole operation
         console.warn('Could not update quote count:', updateError);
+      }
+
+      // Send notification to RFQ owner
+      if (requestDoc?.userId && requestDoc.userId !== userId) {
+        try {
+          const quoterName = userInfo.companyName || userInfo.displayName || 'A supplier';
+          const productName = requestDoc.productName || requestDoc.title || 'your RFQ';
+
+          const notificationData = Notification.createQuoteNotification(
+            requestId,
+            createdQuote.id,
+            userId,
+            quoterName,
+            productName,
+            quoteData.unitPrice,
+            quoteData.currency || 'USD'
+          );
+
+          await notificationRepository.create(requestDoc.userId, notificationData);
+        } catch (notificationError) {
+          // Non-critical, don't fail the whole operation
+          console.warn('Could not send notification to RFQ owner:', notificationError);
+        }
       }
 
       toast.success('Your quote has been submitted successfully!');

@@ -5,7 +5,7 @@ export default function AuthLayout({ children }) {
   return (
     <div className="min-h-screen bg-radial-auth flex flex-col">
       <Navbar />
-      <main className="flex-1 pt-[100px] pb-20 px-4 flex items-center justify-center">
+      <main className="flex-1 pt-[132px] pb-8 px-4 flex items-start justify-center">
         {children}
       </main>
       <Footer />

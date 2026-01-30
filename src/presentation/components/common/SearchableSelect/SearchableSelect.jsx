@@ -102,16 +102,16 @@ export function SearchableSelect({
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
         className={`
-          w-full text-left flex items-center justify-between transition-all duration-300
+          w-full text-left flex items-center justify-between transition-all duration-200
           ${className.includes('dark-select')
-            ? 'px-[14px] py-[14px] bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-[12px] text-white text-[15px] hover:border-[#FFD700]/50 focus:border-[#FFD700] focus:bg-[rgba(15,27,43,0.9)] focus:shadow-[0_0_15px_rgba(255,215,0,0.1)]'
+            ? 'px-4 py-3 bg-[#0F1B2B] border border-[rgba(255,255,255,0.1)] rounded-lg text-white text-base hover:border-[rgba(255,255,255,0.2)] focus:border-[#FFD700] focus:ring-4 focus:ring-[#FFD700]/20'
             : 'px-4 py-3 bg-white border-2 border-slate-300 rounded-lg text-slate-900'}
           ${error ? 'border-red-500 focus:border-red-600' : ''}
           ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
           focus:outline-none
         `}
       >
-        <span className={selectedOption ? (className.includes('dark-select') ? 'text-white' : 'text-slate-900') : (className.includes('dark-select') ? 'text-[#A0A0A0]' : 'text-slate-400')}>
+        <span className={selectedOption ? (className.includes('dark-select') ? 'text-white' : 'text-slate-900') : (className.includes('dark-select') ? 'text-gray-500' : 'text-slate-400')}>
           {selectedOption ? renderOptionContent(selectedOption, true) : placeholder}
         </span>
         <svg
@@ -132,7 +132,7 @@ export function SearchableSelect({
 
       {/* Dropdown menu */}
       {isOpen && (
-        <div className={`absolute z-50 w-full mt-2 rounded-[12px] shadow-xl max-h-80 overflow-hidden ${className.includes('dark-select')
+        <div className={`absolute z-50 w-full mt-2 rounded-lg shadow-xl max-h-80 overflow-hidden ${className.includes('dark-select')
           ? 'bg-[#0F1B2B] border border-[rgba(255,255,255,0.1)] text-white'
           : 'bg-white border-2 border-slate-200 text-slate-900'
           }`}>
@@ -145,7 +145,7 @@ export function SearchableSelect({
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder={searchPlaceholder}
               className={`w-full px-3 py-2 rounded-lg focus:outline-none ${className.includes('dark-select')
-                ? 'bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] text-white focus:border-[#FFD700] placeholder:text-[#A0A0A0]'
+                ? 'bg-[#0F1B2B] border border-[rgba(255,255,255,0.1)] text-white focus:border-[#FFD700] focus:ring-2 focus:ring-[#FFD700]/20 placeholder:text-gray-500'
                 : 'bg-white border border-slate-300 text-slate-900 focus:ring-2 focus:ring-blue-500'
                 }`}
               autoFocus

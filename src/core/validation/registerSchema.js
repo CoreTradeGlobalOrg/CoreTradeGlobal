@@ -71,32 +71,6 @@ export const registerSchema = z
       .string()
       .min(1, 'Please select a company category'),
 
-    companyWebsite: z
-      .string()
-      .refine((val) => {
-        if (!val || val === '') return true;
-        try {
-          new URL(val);
-          return true;
-        } catch {
-          return false;
-        }
-      }, 'Invalid website URL')
-      .optional(),
-
-    linkedinProfile: z
-      .string()
-      .refine((val) => {
-        if (!val || val === '') return true;
-        try {
-          const url = new URL(val);
-          return url.hostname.includes('linkedin.com');
-        } catch {
-          return false;
-        }
-      }, 'Invalid LinkedIn URL')
-      .optional(),
-
     country: z
       .string()
       .min(1, 'Please select a country'),
