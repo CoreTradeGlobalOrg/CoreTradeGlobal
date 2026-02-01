@@ -223,8 +223,8 @@ export function ProductCard({ product, categories }) {
           </p>
         )}
 
-        <div className="w-full">
-          <div className="product-card-btn w-full mt-3 text-center">View Details</div>
+        <div className="w-full mt-auto pt-3">
+          <div className="product-card-btn w-full text-center">View Details</div>
         </div>
       </div>
     </Link>

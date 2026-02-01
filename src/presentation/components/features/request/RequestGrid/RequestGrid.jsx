@@ -13,6 +13,7 @@ import Link from 'next/link';
 import { container } from '@/core/di/container';
 import { COUNTRIES } from '@/core/constants/countries';
 import { CountryFlag } from '@/presentation/components/common/CountryFlag/CountryFlag';
+import { useCategories } from '@/presentation/hooks/category/useCategories';
 
 // Helper to get country name from ISO code
 const getCountryName = (countryCode) => {
@@ -22,6 +23,26 @@ const getCountryName = (countryCode) => {
         return country.label.replace(/^[\u{1F1E0}-\u{1F1FF}]{2}\s*/u, '').trim();
     }
     return countryCode;
+};
+
+// Helper to format relative time
+const getRelativeTime = (date) => {
+    if (!date) return '';
+
+    const now = new Date();
+    const past = date?.toDate ? date.toDate() : new Date(date);
+    const diffMs = now - past;
+
+    const minutes = Math.floor(diffMs / (1000 * 60));
+    const hours = Math.floor(diffMs / (1000 * 60 * 60));
+    const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    const months = Math.floor(days / 30);
+
+    if (minutes < 1) return 'Just now';
+    if (minutes < 60) return `${minutes} min ago`;
+    if (hours < 24) return `${hours} hr${hours > 1 ? 's' : ''} ago`;
+    if (days < 30) return `${days} day${days > 1 ? 's' : ''} ago`;
+    return `${months} month${months > 1 ? 's' : ''} ago`;
 };
 
 // Default RFQs - country is ISO code
@@ -92,6 +113,7 @@ export function RequestGrid({ searchQuery, categoryFilter }) {
     const [requests, setRequests] = useState(DEFAULT_RFQS);
     const [filteredRequests, setFilteredRequests] = useState(DEFAULT_RFQS);
     const [loading, setLoading] = useState(true);
+    const { categories } = useCategories();
 
     // Fetch RFQs
     useEffect(() => {
@@ -115,8 +137,8 @@ export function RequestGrid({ searchQuery, categoryFilter }) {
                                     ...r,
                                     title: r.productName || r.title,
                                     country: r.targetCountry || r.country, // ISO code
-                                    deadline: r.deadline || 'ASAP',
-                                    budget: r.budget || 'Negotiable',
+                                    timeAgo: getRelativeTime(r.updatedAt || r.createdAt),
+                                    budget: r.budget ?? 'Negotiable',
                                 };
                             })
                         );
@@ -132,24 +154,29 @@ export function RequestGrid({ searchQuery, categoryFilter }) {
         fetchRequests();
     }, []);
 
-    // Filter Logic
+    // Filter Logic and resolve category names
     useEffect(() => {
-        let result = requests;
+        let result = requests.map(r => {
+            // Resolve category name from categoryId
+            const category = categories?.find(c => c.value === r.categoryId);
+            return {
+                ...r,
+                categoryName: category?.name || r.category || ''
+            };
+        });
 
         if (searchQuery) {
             const lowerQ = searchQuery.toLowerCase();
             result = result.filter(r =>
                 r.title.toLowerCase().includes(lowerQ) ||
                 (r.description && r.description.toLowerCase().includes(lowerQ)) ||
-                (r.category && r.category.toLowerCase().includes(lowerQ)) ||
+                (r.categoryName && r.categoryName.toLowerCase().includes(lowerQ)) ||
                 (r.country && r.country.toLowerCase().includes(lowerQ))
             );
         }
 
-        // We can add category filtering here too if requests have category field
-
         setFilteredRequests(result);
-    }, [requests, searchQuery]);
+    }, [requests, searchQuery, categories]);
 
 
     if (loading) {
@@ -178,22 +205,42 @@ export function RequestGrid({ searchQuery, categoryFilter }) {
                 <Link key={rfq.id} href={`/request/${rfq.id}`} className="block">
                     <div className="rfq-card cursor-pointer hover:border-[#3b82f6]/50 hover:shadow-[0_0_30px_rgba(59,130,246,0.15)] transition-all duration-300">
                         <div className="flex justify-between items-start mb-4">
-                            <span className={`text-[11px] font-bold uppercase tracking-wider px-2 py-1 rounded-md ${rfq.badge === 'Urgent' ? 'bg-[rgba(239,68,68,0.15)] text-[#f87171] border border-[rgba(239,68,68,0.3)]' : 'bg-[rgba(16,185,129,0.15)] text-[#34d399] border border-[rgba(16,185,129,0.3)]'}`}>
-                                {rfq.badge || 'New'}
-                            </span>
-                            <span className="text-xs text-[var(--text-grey)]">{rfq.deadline}</span>
+                            <div className="flex items-center gap-1.5 text-[13px] text-white">
+                                <CountryFlag countryCode={rfq.country} size={16} />
+                                <span>{getCountryName(rfq.country)}</span>
+                            </div>
+                            <span className="text-xs text-[var(--text-grey)]">{rfq.timeAgo || rfq.deadline}</span>
                         </div>
 
-                        <h3 className="text-lg font-bold text-white mb-3 leading-snug">{rfq.title}</h3>
+                        <h3 className="text-lg font-bold text-white mb-1 leading-snug">{rfq.title}</h3>
+                        {rfq.categoryName && (
+                            <span className="text-sm text-[#3b82f6] font-bold mb-3 block">{rfq.categoryName}</span>
+                        )}
 
                         <div className="bg-[rgba(255,255,255,0.03)] rounded-xl p-4 mb-4 flex flex-col gap-2">
                             <div className="flex justify-between text-[13px]">
                                 <span className="text-[var(--text-grey)]">Quantity:</span>
-                                <span className="text-white font-semibold">{rfq.quantity}</span>
+                                <span
+                                    className="font-semibold"
+                                    style={{
+                                        background: 'linear-gradient(180deg, #ffffff 20%, #909090 100%)',
+                                        WebkitBackgroundClip: 'text',
+                                        WebkitTextFillColor: 'transparent',
+                                        backgroundClip: 'text'
+                                    }}
+                                >{rfq.quantity} {rfq.unit || 'PCE'}</span>
                             </div>
                             <div className="flex justify-between text-[13px]">
                                 <span className="text-[var(--text-grey)]">Budget:</span>
-                                <span className="text-white font-semibold">{rfq.budget}</span>
+                                <span
+                                    className="font-semibold"
+                                    style={{
+                                        background: 'linear-gradient(180deg, #ffffff 20%, #909090 100%)',
+                                        WebkitBackgroundClip: 'text',
+                                        WebkitTextFillColor: 'transparent',
+                                        backgroundClip: 'text'
+                                    }}
+                                >{rfq.budget === 0 || rfq.budget === '0' ? 'Negotiable' : `$ ${rfq.budget}`}</span>
                             </div>
                         </div>
 
@@ -201,11 +248,7 @@ export function RequestGrid({ searchQuery, categoryFilter }) {
                             <p className="text-[13px] text-[#94a3b8] leading-relaxed mb-5 line-clamp-2 overflow-hidden">{rfq.description}</p>
                         )}
 
-                        <div className="mt-auto pt-4 border-t border-[rgba(255,255,255,0.05)] flex justify-between items-center">
-                            <div className="flex items-center gap-1.5 text-[13px] text-white">
-                                <CountryFlag countryCode={rfq.country} size={16} />
-                                <span>{getCountryName(rfq.country)}</span>
-                            </div>
+                        <div className="mt-auto pt-4 border-t border-[rgba(255,255,255,0.05)] flex justify-end items-center">
                             <span className="bg-gradient-to-br from-[#3b82f6] to-[#2563eb] text-white border-0 px-5 py-2 rounded-full text-[13px] font-semibold shadow-lg hover:bg-blue-400 hover:-translate-y-0.5 transition-all">Quote Now</span>
                         </div>
                     </div>

@@ -13,6 +13,7 @@ import { container } from '@/core/di/container';
 import { ChevronLeft, ChevronRight, FileText } from 'lucide-react';
 import { COUNTRIES } from '@/core/constants/countries';
 import { CountryFlag } from '@/presentation/components/common/CountryFlag/CountryFlag';
+import { useCategories } from '@/presentation/hooks/category/useCategories';
 
 // Helper to get country name from ISO code
 const getCountryName = (countryCode) => {
@@ -24,6 +25,26 @@ const getCountryName = (countryCode) => {
   }
 
   return countryCode;
+};
+
+// Helper to format relative time
+const getRelativeTime = (date) => {
+  if (!date) return '';
+
+  const now = new Date();
+  const past = date?.toDate ? date.toDate() : new Date(date);
+  const diffMs = now - past;
+
+  const minutes = Math.floor(diffMs / (1000 * 60));
+  const hours = Math.floor(diffMs / (1000 * 60 * 60));
+  const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  const months = Math.floor(days / 30);
+
+  if (minutes < 1) return 'Just now';
+  if (minutes < 60) return `${minutes} min ago`;
+  if (hours < 24) return `${hours} hr${hours > 1 ? 's' : ''} ago`;
+  if (days < 30) return `${days} day${days > 1 ? 's' : ''} ago`;
+  return `${months} month${months > 1 ? 's' : ''} ago`;
 };
 
 // Default RFQs for initial display (country = ISO code)
@@ -92,24 +113,28 @@ const DEFAULT_RFQS = [
 
 function RFQCard({ rfq }) {
   return (
-    <Link href={`/request/${rfq.id}`} className="rfq-card min-w-[320px] h-[380px] flex flex-col block no-underline hover:no-underline">
+    <Link href={`/request/${rfq.id}`} className="rfq-card min-w-[320px] block no-underline hover:no-underline">
       <div className="flex justify-between items-start mb-4">
-        <span className={`text-[11px] font-bold uppercase tracking-wider px-2 py-1 rounded-md ${rfq.badge === 'Urgent' ? 'bg-[rgba(239,68,68,0.15)] text-[#f87171] border border-[rgba(239,68,68,0.3)]' : 'bg-[rgba(16,185,129,0.15)] text-[#34d399] border border-[rgba(16,185,129,0.3)]'}`}>
-          {rfq.badge || 'New'}
-        </span>
-        <span className="text-xs text-[var(--text-grey)]">{rfq.deadline}</span>
+        <div className="flex items-center gap-1.5 text-[13px] text-white">
+          <CountryFlag countryCode={rfq.country} size={16} />
+          <span>{getCountryName(rfq.country)}</span>
+        </div>
+        <span className="text-xs text-[var(--text-grey)]">{rfq.timeAgo || rfq.deadline}</span>
       </div>
 
-      <h3 className="text-lg font-bold text-white mb-3 leading-snug">{rfq.title}</h3>
+      <h3 className="text-lg font-bold text-white mb-1 leading-snug">{rfq.title}</h3>
+      {rfq.categoryName && (
+        <span className="text-sm text-[#3b82f6] font-bold mb-3 block">{rfq.categoryName}</span>
+      )}
 
       <div className="bg-[rgba(255,255,255,0.03)] rounded-xl p-4 mb-4 flex flex-col gap-2">
         <div className="flex justify-between text-[13px]">
           <span className="text-[var(--text-grey)]">Quantity:</span>
-          <span className="text-white font-semibold">{rfq.quantity}</span>
+          <span className="text-white font-semibold">{rfq.quantity} {rfq.unit || 'PCE'}</span>
         </div>
         <div className="flex justify-between text-[13px]">
           <span className="text-[var(--text-grey)]">Budget:</span>
-          <span className="text-white font-semibold">{rfq.budget}</span>
+          <span className="text-white font-semibold">{rfq.budget === 0 || rfq.budget === '0' ? 'Negotiable' : `$ ${rfq.budget}`}</span>
         </div>
       </div>
 
@@ -117,11 +142,7 @@ function RFQCard({ rfq }) {
         <p className="text-[13px] text-[#94a3b8] leading-relaxed mb-5 line-clamp-2 overflow-hidden">{rfq.description}</p>
       )}
 
-      <div className="mt-auto pt-4 border-t border-[rgba(255,255,255,0.05)] flex justify-between items-center">
-        <div className="flex items-center gap-1.5 text-[13px] text-white">
-          <CountryFlag countryCode={rfq.country} size={16} />
-          <span>{getCountryName(rfq.country)}</span>
-        </div>
+      <div className="mt-auto pt-4 border-t border-[rgba(255,255,255,0.05)] flex justify-end items-center">
         <div className="bg-gradient-to-br from-[#3b82f6] to-[#2563eb] text-white border-0 px-5 py-2 rounded-full text-[13px] font-semibold shadow-lg hover:bg-blue-400 hover:-translate-y-0.5 transition-all text-center">
           Quote Now
         </div>
@@ -132,10 +153,24 @@ function RFQCard({ rfq }) {
 
 export function FeaturedRFQs() {
   const [rfqs, setRfqs] = useState(DEFAULT_RFQS);
+  const [displayRfqs, setDisplayRfqs] = useState(DEFAULT_RFQS);
   const [loading, setLoading] = useState(true);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(true);
   const scrollRef = useRef(null);
+  const { categories } = useCategories();
+
+  // Resolve category names when categories or rfqs change
+  useEffect(() => {
+    const withCategories = rfqs.map(r => {
+      const category = categories?.find(c => c.value === r.categoryId);
+      return {
+        ...r,
+        categoryName: category?.name || r.category || ''
+      };
+    });
+    setDisplayRfqs(withCategories);
+  }, [rfqs, categories]);
 
   // Check initial scroll position on mount and when content loads
   useEffect(() => {
@@ -174,8 +209,8 @@ export function FeaturedRFQs() {
               ...r,
               title: r.productName || r.title,
               country: r.targetCountry || r.country, // ISO code
-              deadline: r.deadline || 'ASAP',
-              budget: r.budget || 'Negotiable',
+              timeAgo: getRelativeTime(r.createdAt),
+              budget: r.budget ?? 'Negotiable',
             }))
           );
         }
@@ -214,7 +249,7 @@ export function FeaturedRFQs() {
         {/* Header */}
         <div className="featured-rfqs-header">
           <div>
-            <h2>Featured RFQs</h2>
+            <h2>Latest RFQs</h2>
             <p>Join active requests.</p>
           </div>
           <Link href="/requests" className="bg-gradient-to-br from-[#3b82f6] to-[#2563eb] text-white !text-white border-0 px-6 py-3 rounded-full text-sm font-bold shadow-lg hover:bg-blue-400 hover:-translate-y-0.5 transition-all text-decoration-none whitespace-nowrap">
@@ -253,10 +288,10 @@ export function FeaturedRFQs() {
                   {[1, 2, 3, 4].map((i) => (
                     <div
                       key={i}
-                      className="card min-w-[320px] h-[380px]"
+                      className="rfq-card min-w-[320px]"
                       style={{ background: 'rgba(255,255,255,0.05)' }}
                     >
-                      <div className="card-img-area animate-pulse" />
+                      <div className="h-6 w-16 bg-[rgba(255,255,255,0.1)] rounded animate-pulse mb-4" />
                       <div className="h-4 bg-[rgba(255,255,255,0.1)] rounded animate-pulse mb-3 mt-4" />
                       <div className="h-6 bg-[rgba(255,255,255,0.1)] rounded animate-pulse mb-2" />
                       <div className="h-4 bg-[rgba(255,255,255,0.1)] rounded animate-pulse" />
@@ -264,7 +299,7 @@ export function FeaturedRFQs() {
                   ))}
                 </>
               ) : (
-                rfqs.map((rfq) => <RFQCard key={rfq.id} rfq={rfq} />)
+                displayRfqs.map((rfq) => <RFQCard key={rfq.id} rfq={rfq} />)
               )}
             </div>
           </div>

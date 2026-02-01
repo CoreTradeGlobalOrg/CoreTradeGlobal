@@ -3,7 +3,7 @@
 import { Search, X } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
-export function SearchBar({ placeholder = "Search...", initialValue = "", onSearch }) {
+export function SearchBar({ placeholder = "Search...", initialValue = "", onSearch, variant = "gold" }) {
     const [query, setQuery] = useState(initialValue);
 
     useEffect(() => {
@@ -19,6 +19,10 @@ export function SearchBar({ placeholder = "Search...", initialValue = "", onSear
         setQuery('');
         onSearch('');
     };
+
+    const buttonStyles = variant === "blue"
+        ? "w-12 h-12 rounded-full bg-gradient-to-br from-[#3b82f6] to-[#2563eb] text-white flex items-center justify-center transition-all hover:brightness-110"
+        : "search-btn";
 
     return (
         <form onSubmit={handleSubmit} className="w-full relative">
@@ -41,7 +45,7 @@ export function SearchBar({ placeholder = "Search...", initialValue = "", onSear
                     </button>
                 )}
 
-                <button type="submit" className="search-btn">
+                <button type="submit" className={buttonStyles}>
                     <Search size={22} strokeWidth={2.5} />
                 </button>
             </div>

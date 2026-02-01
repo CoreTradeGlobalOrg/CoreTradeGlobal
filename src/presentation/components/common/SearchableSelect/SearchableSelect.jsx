@@ -4,6 +4,7 @@
  * Dropdown with search functionality
  * Used for Country and Category selection
  * Supports SVG flags for country selection (showFlags prop)
+ * Supports color variants: dark-select (gold) and dark-select-blue (blue)
  */
 
 'use client';
@@ -54,6 +55,12 @@ export function SearchableSelect({
   const [searchTerm, setSearchTerm] = useState('');
   const dropdownRef = useRef(null);
 
+  // Determine color variant
+  const isBlue = className.includes('dark-select-blue');
+  const isDark = className.includes('dark-select');
+  const accentColor = isBlue ? '#3b82f6' : '#FFD700';
+  const accentColorRgba = isBlue ? 'rgba(59,130,246,' : 'rgba(255,215,0,';
+
   // Filter options based on search term
   const filteredOptions = options.filter((option) =>
     option.label.toLowerCase().includes(searchTerm.toLowerCase())
@@ -103,20 +110,23 @@ export function SearchableSelect({
         disabled={disabled}
         className={`
           w-full text-left flex items-center justify-between transition-all duration-200
-          ${className.includes('dark-select')
-            ? 'px-4 py-3 bg-[#0F1B2B] border border-[rgba(255,255,255,0.1)] rounded-lg text-white text-base hover:border-[rgba(255,255,255,0.2)] focus:border-[#FFD700] focus:ring-4 focus:ring-[#FFD700]/20'
+          ${isDark
+            ? `px-4 py-3 bg-[#0F1B2B] border border-[rgba(255,255,255,0.1)] rounded-lg text-white text-base hover:border-[rgba(255,255,255,0.2)] focus:border-[${accentColor}] focus:ring-4 focus:ring-[${accentColor}]/20`
             : 'px-4 py-3 bg-white border-2 border-slate-300 rounded-lg text-slate-900'}
           ${error ? 'border-red-500 focus:border-red-600' : ''}
           ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
           focus:outline-none
         `}
+        style={isDark ? {
+          '--focus-color': accentColor,
+        } : {}}
       >
-        <span className={selectedOption ? (className.includes('dark-select') ? 'text-white' : 'text-slate-900') : (className.includes('dark-select') ? 'text-gray-500' : 'text-slate-400')}>
+        <span className={selectedOption ? (isDark ? 'text-white' : 'text-slate-900') : (isDark ? 'text-gray-500' : 'text-slate-400')}>
           {selectedOption ? renderOptionContent(selectedOption, true) : placeholder}
         </span>
         <svg
           className={`w-5 h-5 transition-transform flex-shrink-0 ${isOpen ? 'rotate-180' : ''
-            } ${className.includes('dark-select') ? 'text-gray-400' : 'text-slate-400'}`}
+            } ${isDark ? 'text-gray-400' : 'text-slate-400'}`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -132,22 +142,37 @@ export function SearchableSelect({
 
       {/* Dropdown menu */}
       {isOpen && (
-        <div className={`absolute z-50 w-full mt-2 rounded-lg shadow-xl max-h-80 overflow-hidden ${className.includes('dark-select')
+        <div className={`absolute z-50 w-full mt-2 rounded-lg shadow-xl max-h-80 overflow-hidden ${isDark
           ? 'bg-[#0F1B2B] border border-[rgba(255,255,255,0.1)] text-white'
           : 'bg-white border-2 border-slate-200 text-slate-900'
           }`}>
           {/* Search input */}
-          <div className={`p-2 border-b ${className.includes('dark-select') ? 'border-[rgba(255,255,255,0.1)]' : 'border-slate-200'
+          <div className={`p-2 border-b ${isDark ? 'border-[rgba(255,255,255,0.1)]' : 'border-slate-200'
             }`}>
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder={searchPlaceholder}
-              className={`w-full px-3 py-2 rounded-lg focus:outline-none ${className.includes('dark-select')
-                ? 'bg-[#0F1B2B] border border-[rgba(255,255,255,0.1)] text-white focus:border-[#FFD700] focus:ring-2 focus:ring-[#FFD700]/20 placeholder:text-gray-500'
+              className={`w-full px-3 py-2 rounded-lg focus:outline-none ${isDark
+                ? 'bg-[#0F1B2B] border border-[rgba(255,255,255,0.1)] text-white placeholder:text-gray-500'
                 : 'bg-white border border-slate-300 text-slate-900 focus:ring-2 focus:ring-blue-500'
                 }`}
+              style={isDark ? {
+                '--tw-ring-color': `${accentColorRgba}0.2)`,
+              } : {}}
+              onFocus={(e) => {
+                if (isDark) {
+                  e.target.style.borderColor = accentColor;
+                  e.target.style.boxShadow = `0 0 0 2px ${accentColorRgba}0.2)`;
+                }
+              }}
+              onBlur={(e) => {
+                if (isDark) {
+                  e.target.style.borderColor = 'rgba(255,255,255,0.1)';
+                  e.target.style.boxShadow = 'none';
+                }
+              }}
               autoFocus
             />
           </div>
@@ -164,16 +189,20 @@ export function SearchableSelect({
                     w-full px-4 py-3 text-left text-[15px]
                     transition-colors duration-150
                     ${option.value === value
-                      ? (className.includes('dark-select') ? 'bg-[rgba(255,215,0,0.15)] text-[#FFD700] font-medium' : 'bg-blue-100 text-blue-900 font-medium')
-                      : (className.includes('dark-select') ? 'text-[#A0A0A0] hover:bg-[rgba(255,255,255,0.05)] hover:text-white' : 'text-slate-700 hover:bg-blue-50')
+                      ? (isDark ? 'font-medium' : 'bg-blue-100 text-blue-900 font-medium')
+                      : (isDark ? 'text-[#A0A0A0] hover:bg-[rgba(255,255,255,0.05)] hover:text-white' : 'text-slate-700 hover:bg-blue-50')
                     }
                   `}
+                  style={option.value === value && isDark ? {
+                    backgroundColor: `${accentColorRgba}0.15)`,
+                    color: accentColor,
+                  } : {}}
                 >
                   {renderOptionContent(option)}
                 </button>
               ))
             ) : (
-              <div className={`px-4 py-8 text-center ${className.includes('dark-select') ? 'text-[#A0A0A0]' : 'text-slate-500'}`}>
+              <div className={`px-4 py-8 text-center ${isDark ? 'text-[#A0A0A0]' : 'text-slate-500'}`}>
                 No results found
               </div>
             )}

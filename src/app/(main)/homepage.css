@@ -370,6 +370,7 @@ html {
 .btn-hero-white:hover {
     transform: translateY(-3px);
     box-shadow: 0 15px 50px rgba(255, 215, 0, 0.5);
+    color: #0F1B2B;
 }
 
 .btn-hero-secondary {
@@ -1486,7 +1487,7 @@ html {
 #products .product-card {
     flex: 0 0 calc(25% - 18px);
     min-width: 280px;
-    height: 480px;
+    height: 520px;
     display: flex;
     flex-direction: column;
     background: linear-gradient(145deg, rgba(18, 28, 40, 0.55) 0%, rgba(11, 20, 32, 0.6) 100%);
@@ -1495,14 +1496,16 @@ html {
 }
 
 #products .product-card .product-card-image {
-    height: 400px;
+    height: 200px;
+    min-height: 200px;
+    max-height: 200px;
 }
 
 #products .product-card .product-card-content {
     padding: 20px;
     display: flex;
     flex-direction: column;
-    flex: 1 1 auto;
+    flex: 1;
 }
 
 /* Responsive breakpoints */
@@ -2739,7 +2742,7 @@ html {
 #products .product-card .product-card-content {
     display: flex;
     flex-direction: column;
-    height: 100%;
+    flex: 1;
 }
 
 #products .product-card-btn {
@@ -2882,15 +2885,20 @@ html {
 
 /* FIX: Ensure RFQ cards have uniform height */
 .rfq-card {
-    height: 100%;
+    height: 380px;
     display: flex;
     flex-direction: column;
-    min-height: 380px;
+    background: linear-gradient(145deg, rgba(26, 40, 59, 0.4) 0%, rgba(15, 27, 43, 0.65) 100%);
+    border: 1px solid rgba(255, 215, 0, 0.18);
+    border-radius: 16px;
+    padding: 16px;
+    transition: all 0.3s ease;
 }
 
-.dynamic-container .card {
-    height: 100%;
-    min-height: 380px;
+.rfq-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.35);
+    border-color: rgba(255, 215, 0, 0.4);
 }
 
 .tab-content {

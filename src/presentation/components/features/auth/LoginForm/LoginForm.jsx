@@ -48,8 +48,9 @@ export function LoginForm() {
       // Clear any stored redirect from ViewLimitGuard
       localStorage.removeItem('ctg_auth_redirect');
 
-      // Only use URL redirect param, otherwise go to homepage
-      router.push(redirectTo || '/');
+      // Use window.location for full page reload to ensure auth state is properly loaded
+      // router.push doesn't work reliably because AuthContext hasn't updated yet
+      window.location.href = redirectTo || '/';
     } catch (err) {
       console.error('Login failed:', err);
 

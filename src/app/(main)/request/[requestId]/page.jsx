@@ -18,6 +18,7 @@ import { RestrictedCard } from '@/presentation/components/common/RestrictedCard/
 import { CountryFlag } from '@/presentation/components/common/CountryFlag/CountryFlag';
 import { SubmitQuoteDialog } from '@/presentation/components/features/request/SubmitQuoteDialog/SubmitQuoteDialog';
 import { QuotesSection } from '@/presentation/components/features/request/QuotesSection/QuotesSection';
+import { useCategories } from '@/presentation/hooks/category/useCategories';
 import toast from 'react-hot-toast';
 
 export default function RequestDetailsPage() {
@@ -30,6 +31,11 @@ export default function RequestDetailsPage() {
   const [author, setAuthor] = useState(null);
   const [quoteDialogOpen, setQuoteDialogOpen] = useState(false);
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
+  const { categories } = useCategories();
+
+  // Resolve category name
+  const category = categories?.find(c => c.value === request?.categoryId);
+  const categoryName = category?.name || request?.category || '';
 
   useEffect(() => {
     const fetchRequestDetails = async () => {
@@ -157,9 +163,12 @@ export default function RequestDetailsPage() {
                 </span>
               </div>
 
-              <h1 className="text-3xl font-bold text-white mb-6 leading-tight">
+              <h1 className="text-3xl font-bold text-white mb-2 leading-tight">
                 {request.productName || request.title}
               </h1>
+              {categoryName && (
+                <p className="text-lg text-[#3b82f6] font-bold mb-6">{categoryName}</p>
+              )}
 
               <div className="flex flex-wrap gap-4 mb-6">
                 <div className="bg-[rgba(255,255,255,0.05)] rounded-lg px-4 py-2 border border-[rgba(255,255,255,0.1)]">
@@ -173,7 +182,7 @@ export default function RequestDetailsPage() {
                   <span className="block text-xs text-[#A0A0A0] mb-1">Target Budget</span>
                   <div className="flex items-center gap-2 text-white font-semibold">
                     <DollarSign size={16} className="text-[#3B82F6]" />
-                    {request.budget || 'Negotiable'}
+                    {request.budget === 0 || request.budget === '0' ? 'Negotiable' : (request.budget ? `$ ${request.budget}` : 'Negotiable')}
                   </div>
                 </div>
                 <div className="bg-[rgba(255,255,255,0.05)] rounded-lg px-4 py-2 border border-[rgba(255,255,255,0.1)]">

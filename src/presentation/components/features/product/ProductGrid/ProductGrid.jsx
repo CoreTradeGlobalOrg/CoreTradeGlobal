@@ -13,6 +13,7 @@ import Link from 'next/link';
 import { container } from '@/core/di/container';
 import { COUNTRIES } from '@/core/constants/countries';
 import { CountryFlag } from '@/presentation/components/common/CountryFlag/CountryFlag';
+import { useCategories } from '@/presentation/hooks/category/useCategories';
 
 // Helper to get country name from ISO code
 const getCountryName = (countryCode) => {
@@ -22,6 +23,21 @@ const getCountryName = (countryCode) => {
         return country.label.replace(/^[\u{1F1E0}-\u{1F1FF}]{2}\s*/u, '').trim();
     }
     return countryCode;
+};
+
+// Map currency codes to symbols
+const CURRENCY_SYMBOLS = {
+    'USD': '$',
+    'EUR': '€',
+    'GBP': '£',
+    'TRY': '₺',
+    'JPY': '¥',
+    'CNY': '¥',
+    'AUD': 'A$',
+    'CAD': 'C$',
+    'CHF': 'CHF',
+    'KRW': '₩',
+    'INR': '₹',
 };
 
 const DEFAULT_PRODUCTS = [
@@ -111,6 +127,7 @@ export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter }) {
     const [products, setProducts] = useState(DEFAULT_PRODUCTS);
     const [filteredProducts, setFilteredProducts] = useState(DEFAULT_PRODUCTS);
     const [loading, setLoading] = useState(true);
+    const { categories } = useCategories();
 
     // Fetch Products
     useEffect(() => {
@@ -194,14 +211,18 @@ export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter }) {
     return (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {filteredProducts.map((product) => (
-                <ProductCard key={product.id} product={product} />
+                <ProductCard key={product.id} product={product} categories={categories} />
             ))}
         </div>
     );
 }
 
-function ProductCard({ product }) {
+function ProductCard({ product, categories }) {
     const [imageLoading, setImageLoading] = useState(true);
+
+    // Resolve category name from categoryId
+    const category = categories?.find(c => c.value === product.categoryId);
+    const categoryName = category?.name || product.category || '';
 
     return (
         <Link
@@ -227,9 +248,6 @@ function ProductCard({ product }) {
                 ) : (
                     <div className="text-4xl">📦</div>
                 )}
-                <div className="absolute top-3 right-3 bg-[rgba(15,27,43,0.8)] backdrop-blur-md px-3 py-1 rounded-full border border-[rgba(255,255,255,0.1)] z-20">
-                    <span className="text-xs font-bold text-[#FFD700] uppercase tracking-wider">{product.category || 'Product'}</span>
-                </div>
             </div>
 
             {/* Content */}
@@ -241,21 +259,33 @@ function ProductCard({ product }) {
                     </div>
                 )}
 
-                <h3 className="text-lg font-bold text-white mb-2 leading-tight line-clamp-2 min-h-[44px]">
+                <h3 className="text-lg font-bold text-white mb-1 leading-tight line-clamp-2 min-h-[44px]">
                     {product.name}
                 </h3>
+                {categoryName && (
+                    <span className="text-sm text-[#FFD700] font-bold mb-2">{categoryName}</span>
+                )}
 
-                <div className="mt-auto pt-4 border-t border-[rgba(255,255,255,0.05)] flex justify-between items-end">
-                    <div>
-                        <span className="block text-xs text-[#A0A0A0] mb-1">Price</span>
-                        <div className="text-[#FFD700] font-bold text-xl">
-                            {product.currency || '$'}{product.price}
-                            <span className="text-sm text-[#A0A0A0] font-normal ml-1">/ {product.unit}</span>
-                        </div>
+                <div className="mt-auto pt-4 border-t border-[rgba(255,255,255,0.05)] flex justify-between items-center">
+                    <div className="text-[#FFD700] font-bold text-xl">
+                        {CURRENCY_SYMBOLS[product.currency] || product.currency || '$'} {product.price}
+                        {product.unit && (
+                            <span
+                                className="text-sm font-semibold ml-1"
+                                style={{
+                                    background: 'linear-gradient(180deg, #ffffff 20%, #909090 100%)',
+                                    WebkitBackgroundClip: 'text',
+                                    WebkitTextFillColor: 'transparent',
+                                    backgroundClip: 'text'
+                                }}
+                            >
+                                / {product.unit}
+                            </span>
+                        )}
                     </div>
-                    <button className="w-10 h-10 rounded-full bg-[rgba(255,255,255,0.05)] flex items-center justify-center text-[#FFD700] group-hover:bg-[#FFD700] group-hover:text-[#0F1B2B] transition-all">
-                        →
-                    </button>
+                    <div className="px-5 py-2 bg-gradient-to-r from-[#FFD700] to-[#FDB931] text-[#0F1B2B] font-bold rounded-full text-center text-sm hover:brightness-110 transition-all">
+                        View
+                    </div>
                 </div>
             </div>
         </Link>

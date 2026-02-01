@@ -6,6 +6,7 @@
  * - Backdrop click to close
  * - Z-Index 1000 (above Navbar)
  * - Glassmorphism styling
+ * - Variant support (gold/blue)
  */
 
 'use client';
@@ -19,7 +20,8 @@ export function Modal({
     children,
     className = '',
     hideHeader = false,
-    transparentBackdrop = false
+    transparentBackdrop = false,
+    variant = 'gold' // 'gold' or 'blue'
 }) {
     // Handle Scroll Lock
     useEffect(() => {
@@ -38,6 +40,8 @@ export function Modal({
     // Don't render if not open
     if (!isOpen) return null;
 
+    const closeButtonColor = variant === 'blue' ? '#3b82f6' : '#FFD700';
+
     return (
         <div
             className={`fixed inset-0 z-[1000] flex items-center justify-center p-4 backdrop-blur-sm ${transparentBackdrop ? 'bg-black/60' : 'bg-black/80'}`}
@@ -53,7 +57,12 @@ export function Modal({
                         <h2 className="text-2xl font-bold text-white">{title}</h2>
                         <button
                             onClick={onClose}
-                            className="text-[#FFD700] hover:text-[#FFD700] hover:bg-[#FFD700]/10 transition-colors p-2 rounded-full cursor-pointer"
+                            className="transition-colors p-2 rounded-full cursor-pointer"
+                            style={{
+                                color: closeButtonColor,
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = `${closeButtonColor}1a`}
+                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                             aria-label="Close modal"
                         >
                             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">

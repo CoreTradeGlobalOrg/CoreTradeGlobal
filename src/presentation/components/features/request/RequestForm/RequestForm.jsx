@@ -50,6 +50,7 @@ export function RequestForm({ request, onSubmit, onCancel, userId }) {
   const targetCountry = watch('targetCountry');
   const unitCategory = watch('unitCategory');
   const unit = watch('unit');
+  const quantity = watch('quantity');
 
   // Get filtered units based on selected category
   const availableUnits = getUnitsByCategory(unitCategory).map((u) => ({
@@ -80,7 +81,7 @@ export function RequestForm({ request, onSubmit, onCancel, userId }) {
       {/* Product Name */}
       <div>
         <label className="block text-sm font-medium text-gray-300 mb-2">
-          Product Name <span className="text-[#FFD700]">*</span>
+          Product Name <span className="text-[#3b82f6]">*</span>
         </label>
         <Input
           type="text"
@@ -88,7 +89,7 @@ export function RequestForm({ request, onSubmit, onCancel, userId }) {
           error={!!errors.productName}
           disabled={submitting}
           placeholder="e.g., Steel Pipes"
-          className="bg-[#0F1B2B] border-[rgba(255,255,255,0.1)] text-white placeholder:text-gray-500 focus:border-[#FFD700] focus:ring-[#FFD700]/20"
+          className="bg-[#0F1B2B] border-[rgba(255,255,255,0.1)] text-white placeholder:text-gray-500 focus:border-[#3b82f6] focus:ring-[#3b82f6]/20"
         />
         {errors.productName && (
           <p className="mt-1 text-sm text-red-400">{errors.productName.message}</p>
@@ -98,7 +99,7 @@ export function RequestForm({ request, onSubmit, onCancel, userId }) {
       {/* Category */}
       <div>
         <label className="block text-sm font-medium text-gray-300 mb-2">
-          Category <span className="text-[#FFD700]">*</span>
+          Category <span className="text-[#3b82f6]">*</span>
         </label>
         <SearchableSelect
           options={categories}
@@ -107,18 +108,18 @@ export function RequestForm({ request, onSubmit, onCancel, userId }) {
           placeholder="Select category"
           disabled={submitting || categoriesLoading}
           error={!!errors.categoryId}
-          className="dark-select"
+          className="dark-select dark-select-blue"
         />
         {errors.categoryId && (
           <p className="mt-1 text-sm text-red-400">{errors.categoryId.message}</p>
         )}
       </div>
 
-      {/* Target Country & Quantity */}
+      {/* Target Country & Target Budget */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-2">
-            Target Country <span className="text-[#FFD700]">*</span>
+            Target Country <span className="text-[#3b82f6]">*</span>
           </label>
           <SearchableSelect
             options={COUNTRIES}
@@ -127,7 +128,7 @@ export function RequestForm({ request, onSubmit, onCancel, userId }) {
             placeholder="Select country"
             disabled={submitting}
             error={!!errors.targetCountry}
-            className="dark-select"
+            className="dark-select dark-select-blue"
           />
           {errors.targetCountry && (
             <p className="mt-1 text-sm text-red-400">{errors.targetCountry.message}</p>
@@ -136,34 +137,17 @@ export function RequestForm({ request, onSubmit, onCancel, userId }) {
 
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-2">
-            Quantity <span className="text-[#FFD700]">*</span>
-          </label>
-          <Input
-            type="number"
-            {...register('quantity', { valueAsNumber: true })}
-            error={!!errors.quantity}
-            disabled={submitting}
-            min="1"
-            className="bg-[#0F1B2B] border-[rgba(255,255,255,0.1)] text-white placeholder:text-gray-500 focus:border-[#FFD700] focus:ring-[#FFD700]/20"
-          />
-          {errors.quantity && (
-            <p className="mt-1 text-sm text-red-400">{errors.quantity.message}</p>
-          )}
-        </div>
-
-        {/* Budget (Required) */}
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
-            Target Budget (USD) <span className="text-[#FFD700]">*</span>
+            Target Budget (USD) <span className="text-[#3b82f6]">*</span>
           </label>
           <Input
             type="number"
             {...register('budget', { valueAsNumber: true })}
             error={!!errors.budget}
             disabled={submitting}
-            placeholder="e.g. 5000"
-            min="1"
-            className="bg-[#0F1B2B] border-[rgba(255,255,255,0.1)] text-white placeholder:text-gray-500 focus:border-[#FFD700] focus:ring-[#FFD700]/20"
+            placeholder="0 = Negotiable"
+            min="0"
+            step="any"
+            className="bg-[#0F1B2B] border-[rgba(255,255,255,0.1)] text-white placeholder:text-gray-500 focus:border-[#3b82f6] focus:ring-[#3b82f6]/20"
           />
           {errors.budget && (
             <p className="mt-1 text-sm text-red-400">{errors.budget.message}</p>
@@ -175,7 +159,7 @@ export function RequestForm({ request, onSubmit, onCancel, userId }) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-2">
-            Unit Category <span className="text-[#FFD700]">*</span>
+            Unit Category <span className="text-[#3b82f6]">*</span>
           </label>
           <SearchableSelect
             options={UNIT_CATEGORIES}
@@ -191,7 +175,7 @@ export function RequestForm({ request, onSubmit, onCancel, userId }) {
             placeholder="Select unit category"
             disabled={submitting}
             error={!!errors.unitCategory}
-            className="dark-select"
+            className="dark-select dark-select-blue"
           />
           {errors.unitCategory && (
             <p className="mt-1 text-sm text-red-400">{errors.unitCategory.message}</p>
@@ -200,7 +184,7 @@ export function RequestForm({ request, onSubmit, onCancel, userId }) {
 
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-2">
-            Unit <span className="text-[#FFD700]">*</span>
+            Unit <span className="text-[#3b82f6]">*</span>
           </label>
           <SearchableSelect
             options={availableUnits}
@@ -209,7 +193,7 @@ export function RequestForm({ request, onSubmit, onCancel, userId }) {
             placeholder="Select unit"
             disabled={submitting}
             error={!!errors.unit}
-            className="dark-select"
+            className="dark-select dark-select-blue"
           />
           {errors.unit && (
             <p className="mt-1 text-sm text-red-400">{errors.unit.message}</p>
@@ -217,17 +201,36 @@ export function RequestForm({ request, onSubmit, onCancel, userId }) {
         </div>
       </div>
 
+      {/* Quantity */}
+      <div>
+        <label className="block text-sm font-medium text-gray-300 mb-2">
+          Quantity <span className="text-[#3b82f6]">*</span>
+        </label>
+        <Input
+          type="number"
+          {...register('quantity', { valueAsNumber: true })}
+          error={!!errors.quantity}
+          disabled={submitting}
+          min="0.0000001"
+          step="any"
+          className="bg-[#0F1B2B] border-[rgba(255,255,255,0.1)] text-white placeholder:text-gray-500 focus:border-[#3b82f6] focus:ring-[#3b82f6]/20"
+        />
+        {errors.quantity && (
+          <p className="mt-1 text-sm text-red-400">{errors.quantity.message}</p>
+        )}
+      </div>
+
       {/* Description */}
       <div>
         <label className="block text-sm font-medium text-gray-300 mb-2">
-          Description <span className="text-[#FFD700]">*</span>
+          Description <span className="text-[#3b82f6]">*</span>
         </label>
         <textarea
           {...register('description')}
           rows={4}
           className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-4 transition-all duration-200 bg-[#0F1B2B] text-white placeholder:text-gray-500 ${errors.description
             ? 'border-red-500 focus:border-red-600 focus:ring-red-500/20'
-            : 'border-[rgba(255,255,255,0.1)] focus:border-[#FFD700] focus:ring-[#FFD700]/20'
+            : 'border-[rgba(255,255,255,0.1)] focus:border-[#3b82f6] focus:ring-[#3b82f6]/20'
             }`}
           disabled={submitting}
           placeholder="Describe your request in detail..."

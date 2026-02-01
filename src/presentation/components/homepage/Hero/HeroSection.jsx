@@ -495,6 +495,7 @@ export function HeroSection({ fetchData = false }) {
         isOpen={requestModalOpen}
         onClose={() => setRequestModalOpen(false)}
         title="Create New RFQ"
+        variant="blue"
       >
         <RequestForm
           userId={user?.uid}

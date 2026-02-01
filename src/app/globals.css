@@ -6,6 +6,17 @@ html, body {
   color: #F5F5F5;
 }
 
+/* Hide number input spinners/arrows */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
 :root {
   /* Primary Colors - Gold/Yellow from Homepage */
   --color-primary: #FFD700;
@@ -44,8 +55,8 @@ html, body {
   /* Border Colors */
   --color-border: #1e293b;
   /* Slate 800 */
-  --color-border-focus: #FFD700;
-  /* Gold */
+  --color-border-focus: #3b82f6;
+  /* Blue */
 
   /* Homepage Component Variables (hp-*) */
   --hp-gold: #FFD700;

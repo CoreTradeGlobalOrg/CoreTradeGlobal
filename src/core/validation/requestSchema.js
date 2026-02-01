@@ -31,8 +31,7 @@ export const requestSchema = z.object({
   // Quantity
   quantity: z
     .number()
-    .min(1, 'Quantity must be at least 1')
-    .int('Quantity must be a whole number'),
+    .positive('Quantity must be greater than 0'),
 
   // Unit (UNECE code)
   unit: z
@@ -60,10 +59,10 @@ export const requestSchema = z.object({
     .default('active')
     .optional(),
 
-  // Budget (required)
+  // Budget (required, 0 = Negotiable)
   budget: z
     .number({ invalid_type_error: 'Please enter a valid budget amount' })
-    .min(1, 'Budget must be at least 1'),
+    .min(0, 'Budget cannot be negative'),
 });
 
 export default requestSchema;

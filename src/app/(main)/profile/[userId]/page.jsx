@@ -986,6 +986,7 @@ function ProfileContent() {
           isOpen={requestModalOpen}
           onClose={() => setRequestModalOpen(false)}
           title={editingRequest ? 'Edit Request' : 'Create New Request'}
+          variant="blue"
         >
           <RequestForm
             request={editingRequest}

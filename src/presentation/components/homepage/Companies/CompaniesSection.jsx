@@ -13,6 +13,7 @@ import { container } from '@/core/di/container';
 import { CountryFlag } from '@/presentation/components/common/CountryFlag/CountryFlag';
 import { COUNTRIES } from '@/core/constants/countries';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useCategories } from '@/presentation/hooks/category/useCategories';
 
 // Default companies for initial display (country = ISO code)
 const DEFAULT_COMPANIES = [
@@ -56,10 +57,15 @@ const getCountryName = (countryCode) => {
   return countryCode; // Return code as fallback
 };
 
-function CompanyCard({ company }) {
+function CompanyCard({ company, categories }) {
   const [imgError, setImgError] = useState(false);
   const profileImage = company.companyLogo || company.photoURL;
   const hasImage = profileImage && !imgError;
+
+  // Resolve category name from companyCategory
+  const category = categories?.find(c => c.value === company.companyCategory);
+  const categoryName = category?.label?.replace(/^[^\s]+\s/, '') || company.companyCategory || company.industry || '';
+  const categoryIcon = category?.icon || '';
 
   return (
     <Link href={`/profile/${company.id}`} className="company-card-link block no-underline text-inherit hover:no-underline">
@@ -89,8 +95,17 @@ function CompanyCard({ company }) {
               <CountryFlag countryCode={company.country} size={14} />
               <span>{getCountryName(company.country)}</span>
             </div>
-            {company.industry && (
-              <span className="text-xs text-[#FFD700] font-semibold mt-1 block">{company.industry}</span>
+            {categoryName && (
+              <span className="text-xs text-[#FFD700] font-semibold mt-1 flex items-center gap-1.5">
+                {categoryIcon && (
+                  categoryIcon.startsWith('http') || categoryIcon.startsWith('/') ? (
+                    <img src={categoryIcon} alt="" className="w-4 h-4 object-contain" />
+                  ) : (
+                    <span>{categoryIcon}</span>
+                  )
+                )}
+                <span className="uppercase">{categoryName}</span>
+              </span>
             )}
           </div>
         </div>
@@ -129,6 +144,7 @@ export function CompaniesSection() {
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(true);
   const scrollRef = useRef(null);
+  const { categories } = useCategories();
 
   // Check initial scroll position on mount and when content loads
   useEffect(() => {
@@ -202,7 +218,7 @@ export function CompaniesSection() {
         {/* Header */}
         <div className="featured-products-header">
           <div>
-            <h2>Trusted Companies</h2>
+            <h2>Latest Companies</h2>
             <p>Connect with verified suppliers worldwide.</p>
           </div>
           <Link href="/companies" className="btn-section-action">
@@ -260,7 +276,7 @@ export function CompaniesSection() {
                 </>
               ) : (
                 companies.map((company) => (
-                  <CompanyCard key={company.id} company={company} />
+                  <CompanyCard key={company.id} company={company} categories={categories} />
                 ))
               )}
             </div>
