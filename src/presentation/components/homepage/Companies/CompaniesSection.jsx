@@ -36,6 +36,13 @@ const getAbbreviation = (name) => {
   return name.substring(0, 2).toUpperCase();
 };
 
+// Truncate text to specified length
+const truncateText = (text, maxLength = 200) => {
+  if (!text) return '';
+  if (text.length <= maxLength) return text;
+  return text.substring(0, maxLength).trim() + '...';
+};
+
 // Helper to get country name from ISO code
 const getCountryName = (countryCode) => {
   if (!countryCode) return 'Global';
@@ -55,46 +62,61 @@ function CompanyCard({ company }) {
   const hasImage = profileImage && !imgError;
 
   return (
-    <Link href={`/profile/${company.id}`} className="product-card block no-underline text-inherit hover:no-underline">
-      {/* Company Logo/Photo Area */}
-      <div className="product-card-image relative flex items-center justify-center">
-        {hasImage ? (
-          <img
-            src={profileImage}
-            alt={company.companyName}
-            className="w-full h-full object-cover"
-            onError={() => setImgError(true)}
-          />
-        ) : (
-          <div className="text-5xl font-extrabold text-[var(--accent-gold)]" style={{ textShadow: '0 2px 10px rgba(255, 215, 0, 0.3)' }}>
-            {getAbbreviation(company.companyName)}
+    <Link href={`/profile/${company.id}`} className="company-card-link block no-underline text-inherit hover:no-underline">
+      <div className="company-card-inner">
+        {/* Header: Logo + Info */}
+        <div className="flex items-start gap-4 mb-4">
+          {/* Logo */}
+          <div className="w-16 h-16 rounded-xl flex-shrink-0 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] flex items-center justify-center overflow-hidden">
+            {hasImage ? (
+              <img
+                src={profileImage}
+                alt={company.companyName}
+                className="w-full h-full object-cover"
+                onError={() => setImgError(true)}
+              />
+            ) : (
+              <span className="text-xl font-extrabold text-[var(--accent-gold)]">
+                {getAbbreviation(company.companyName)}
+              </span>
+            )}
           </div>
-        )}
-      </div>
 
-      {/* Company Content */}
-      <div className="product-card-content">
-        <div className="flex items-center gap-2 mb-2 text-sm text-[var(--text-grey)]">
-          <CountryFlag countryCode={company.country} size={16} />
-          <span>{getCountryName(company.country)}</span>
+          {/* Name + Country */}
+          <div className="flex-1 min-w-0">
+            <h3 className="text-lg font-bold text-white leading-tight mb-1 line-clamp-2">{company.companyName}</h3>
+            <div className="flex items-center gap-2 text-sm text-[var(--text-grey)]">
+              <CountryFlag countryCode={company.country} size={14} />
+              <span>{getCountryName(company.country)}</span>
+            </div>
+            {company.industry && (
+              <span className="text-xs text-[#FFD700] font-semibold mt-1 block">{company.industry}</span>
+            )}
+          </div>
         </div>
 
-        <h3 className="product-card-name">{company.companyName}</h3>
-
-        <p className="product-card-description">
-          {company.industry || 'Member'}
-        </p>
-
-        {company.emailVerified && company.adminApproved && (
-          <div className="flex items-center gap-2 mt-2">
-            <span className="inline-flex items-center gap-1 bg-[rgba(16,185,129,0.15)] text-[#34d399] border border-[rgba(16,185,129,0.3)] px-2.5 py-1 rounded-full text-[11px] font-semibold uppercase tracking-wider">
-              ✓ Verified
-            </span>
-          </div>
+        {/* Description */}
+        {company.about && (
+          <p className="text-[13px] text-[#94a3b8] leading-relaxed line-clamp-[8] flex-1">
+            {truncateText(company.about, 300)}
+          </p>
         )}
 
-        <div className="w-full">
-          <div className="product-card-btn w-full mt-3 text-center">View Profile</div>
+        {/* Bottom Section - Always at bottom */}
+        <div className="mt-auto">
+          {/* Verified Badge */}
+          {company.emailVerified && company.adminApproved && (
+            <div className="flex items-center gap-2 mb-3">
+              <span className="inline-flex items-center gap-1 bg-[rgba(16,185,129,0.15)] text-[#34d399] border border-[rgba(16,185,129,0.3)] px-2.5 py-1 rounded-full text-[11px] font-semibold uppercase tracking-wider">
+                ✓ Verified
+              </span>
+            </div>
+          )}
+
+          {/* CTA Button */}
+          <div className="w-full py-2.5 bg-gradient-to-r from-[#FFD700] to-[#FDB931] text-[#0F1B2B] font-bold rounded-full text-center text-sm">
+            View Profile
+          </div>
         </div>
       </div>
     </Link>
@@ -107,6 +129,20 @@ export function CompaniesSection() {
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(true);
   const scrollRef = useRef(null);
+
+  // Check initial scroll position on mount and when content loads
+  useEffect(() => {
+    const checkScroll = () => {
+      if (scrollRef.current) {
+        const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+        setShowLeftArrow(scrollLeft > 0);
+        setShowRightArrow(scrollWidth > clientWidth);
+      }
+    };
+    checkScroll();
+    const timeout = setTimeout(checkScroll, 500);
+    return () => clearTimeout(timeout);
+  }, [companies]);
 
   useEffect(() => {
     const fetchCompanies = async () => {
@@ -205,14 +241,19 @@ export function CompaniesSection() {
                   {[1, 2, 3, 4].map((i) => (
                     <div
                       key={i}
-                      className="product-card"
-                      style={{ background: 'rgba(255,255,255,0.05)' }}
+                      className="company-card-link"
                     >
-                      <div className="product-card-image animate-pulse" />
-                      <div className="product-card-content">
-                        <div className="h-4 bg-[rgba(255,255,255,0.1)] rounded animate-pulse mb-3" />
-                        <div className="h-6 bg-[rgba(255,255,255,0.1)] rounded animate-pulse mb-2" />
-                        <div className="h-4 bg-[rgba(255,255,255,0.1)] rounded animate-pulse" />
+                      <div className="company-card-inner" style={{ background: 'rgba(255,255,255,0.03)' }}>
+                        <div className="flex items-start gap-4 mb-4">
+                          <div className="w-16 h-16 rounded-xl bg-[rgba(255,255,255,0.1)] animate-pulse" />
+                          <div className="flex-1">
+                            <div className="h-5 bg-[rgba(255,255,255,0.1)] rounded animate-pulse mb-2 w-3/4" />
+                            <div className="h-4 bg-[rgba(255,255,255,0.1)] rounded animate-pulse w-1/2" />
+                          </div>
+                        </div>
+                        <div className="h-4 bg-[rgba(255,255,255,0.1)] rounded animate-pulse mb-2" />
+                        <div className="h-4 bg-[rgba(255,255,255,0.1)] rounded animate-pulse mb-2 w-5/6" />
+                        <div className="h-4 bg-[rgba(255,255,255,0.1)] rounded animate-pulse w-2/3" />
                       </div>
                     </div>
                   ))}

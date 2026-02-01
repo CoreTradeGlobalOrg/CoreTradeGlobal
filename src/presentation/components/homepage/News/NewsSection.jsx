@@ -7,10 +7,10 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { container } from '@/core/di/container';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 
 // Default news for initial display
 const DEFAULT_NEWS = [
@@ -95,6 +95,41 @@ function NewsCard({ news, index }) {
 export function NewsSection() {
   const [news, setNews] = useState(DEFAULT_NEWS);
   const [loading, setLoading] = useState(true);
+  const [showLeftArrow, setShowLeftArrow] = useState(false);
+  const [showRightArrow, setShowRightArrow] = useState(true);
+  const scrollRef = useRef(null);
+
+  // Check initial scroll position on mount and when content loads
+  useEffect(() => {
+    const checkScroll = () => {
+      if (scrollRef.current) {
+        const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+        setShowLeftArrow(scrollLeft > 0);
+        setShowRightArrow(scrollWidth > clientWidth);
+      }
+    };
+    checkScroll();
+    const timeout = setTimeout(checkScroll, 500);
+    return () => clearTimeout(timeout);
+  }, [news]);
+
+  const handleScroll = () => {
+    if (scrollRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+      setShowLeftArrow(scrollLeft > 0);
+      setShowRightArrow(scrollLeft < scrollWidth - clientWidth - 10);
+    }
+  };
+
+  const scroll = (direction) => {
+    if (scrollRef.current) {
+      const scrollAmount = 320;
+      scrollRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth',
+      });
+    }
+  };
 
   useEffect(() => {
     const firestoreDS = container.getFirestoreDataSource();
@@ -143,36 +178,60 @@ export function NewsSection() {
         <div className="news-header">
           <div className="news-header-content">
             <h2>Trade News</h2>
+            <p>Stay informed with the latest updates.</p>
           </div>
           <Link href="/news" className="btn-view-all-news">
             View All News <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
 
-        {/* News Scroll Container */}
-        <div className="news-scroll-wrapper">
-          {loading ? (
-            <>
-              {[1, 2, 3, 4].map((i) => (
-                <div
-                  key={i}
-                  className="news-card"
-                  style={{ background: 'rgba(255,255,255,0.03)' }}
-                >
-                  <div className="news-img-wrapper animate-pulse" />
-                  <div className="news-content">
-                    <div className="h-4 bg-[rgba(255,255,255,0.1)] rounded animate-pulse mb-3" />
-                    <div className="h-6 bg-[rgba(255,255,255,0.1)] rounded animate-pulse mb-2" />
-                    <div className="h-4 bg-[rgba(255,255,255,0.1)] rounded animate-pulse" />
+        {/* Dynamic Container with Arrows */}
+        <div className="dynamic-container" style={{ padding: 0, background: 'transparent' }}>
+          {/* Scroll Arrows */}
+          <button
+            className={`scroll-arrow-btn scroll-left ${showLeftArrow ? 'visible' : ''}`}
+            id="dash-left-news"
+            onClick={() => scroll('left')}
+          >
+            <ChevronLeft className="w-6 h-6" />
+          </button>
+          <button
+            className={`scroll-arrow-btn scroll-right ${showRightArrow ? 'visible' : ''}`}
+            id="dash-right-news"
+            onClick={() => scroll('right')}
+          >
+            <ChevronRight className="w-6 h-6" />
+          </button>
+
+          {/* News Scroll Container */}
+          <div
+            className="news-scroll-wrapper"
+            ref={scrollRef}
+            onScroll={handleScroll}
+          >
+            {loading ? (
+              <>
+                {[1, 2, 3, 4].map((i) => (
+                  <div
+                    key={i}
+                    className="news-card"
+                    style={{ background: 'rgba(255,255,255,0.03)' }}
+                  >
+                    <div className="news-img-wrapper animate-pulse" />
+                    <div className="news-content">
+                      <div className="h-4 bg-[rgba(255,255,255,0.1)] rounded animate-pulse mb-3" />
+                      <div className="h-6 bg-[rgba(255,255,255,0.1)] rounded animate-pulse mb-2" />
+                      <div className="h-4 bg-[rgba(255,255,255,0.1)] rounded animate-pulse" />
+                    </div>
                   </div>
-                </div>
-              ))}
-            </>
-          ) : (
-            news.map((item, index) => (
-              <NewsCard key={item.id} news={item} index={index} />
-            ))
-          )}
+                ))}
+              </>
+            ) : (
+              news.map((item, index) => (
+                <NewsCard key={item.id} news={item} index={index} />
+              ))
+            )}
+          </div>
         </div>
       </div>
     </section>

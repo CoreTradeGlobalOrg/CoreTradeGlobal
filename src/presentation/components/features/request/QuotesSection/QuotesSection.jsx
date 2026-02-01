@@ -274,7 +274,7 @@ export function QuotesSection({ request, isOwner }) {
                 <div className="bg-[rgba(255,255,255,0.05)] rounded-lg p-3">
                   <span className="text-xs text-[#94a3b8] block mb-1">Unit Price</span>
                   <div className="flex items-center gap-1">
-                    <DollarSign size={14} className="text-[#FFD700]" />
+                    <DollarSign size={14} className="text-[#3b82f6]" />
                     <span className="text-white font-bold">
                       {quote.unitPrice} {quote.currency}/{getUnitLabel(quote.unitType)}
                     </span>

@@ -23,7 +23,7 @@ import { useDeleteProduct } from '@/presentation/hooks/product/useDeleteProduct'
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { ProductForm } from '@/presentation/components/features/product/ProductForm/ProductForm';
-import { ViewLimitGuard } from '@/presentation/components/common/ViewLimitGuard/ViewLimitGuard';
+import { RestrictedCard } from '@/presentation/components/common/RestrictedCard/RestrictedCard';
 import { ChevronLeft, ChevronRight, ArrowLeft, Pencil, Trash2, Power, User, MessageCircle } from 'lucide-react';
 import { container } from '@/core/di/container';
 import { useConversations } from '@/presentation/hooks/messaging/useConversations';
@@ -255,7 +255,6 @@ export default function ProductDetailPage() {
   }
 
   return (
-    <ViewLimitGuard itemId={productId} itemType="product">
     <div className="min-h-screen pt-[120px] pb-20 bg-radial-navy">
       <div className="max-w-[1200px] mx-auto px-4">
         {/* Back Button */}
@@ -268,8 +267,8 @@ export default function ProductDetailPage() {
         </button>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-          {/* Left Column - Images */}
-          <div className="space-y-4">
+          {/* Left Column - Images & Seller */}
+          <div className="flex flex-col gap-4">
             {/* Main Image */}
             <div className="relative glass-card rounded-2xl overflow-hidden group" style={{ height: '500px' }}>
               {hasImages ? (
@@ -325,7 +324,7 @@ export default function ProductDetailPage() {
 
             {/* Thumbnail Strip */}
             {images.length > 1 && (
-              <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+              <div className="flex gap-3 overflow-x-auto p-2 scrollbar-hide">
                 {images.map((img, index) => (
                   <button
                     key={index}
@@ -333,9 +332,9 @@ export default function ProductDetailPage() {
                       setImageLoading(true);
                       setCurrentImageIndex(index);
                     }}
-                    className={`flex-shrink-0 w-24 h-24 rounded-xl border relative overflow-hidden transition-all duration-200 ${index === currentImageIndex
-                      ? 'border-[#FFD700] shadow-[0_0_15px_rgba(255,215,0,0.3)] scale-105 z-10'
-                      : 'border-white/10 hover:border-white/30 opacity-70 hover:opacity-100'
+                    className={`flex-shrink-0 w-24 h-24 rounded-xl relative overflow-hidden transition-all duration-200 ${index === currentImageIndex
+                      ? 'outline outline-2 outline-[#FFD700] shadow-[0_0_15px_rgba(255,215,0,0.3)]'
+                      : 'opacity-60 hover:opacity-100'
                       }`}
                   >
                     <ThumbnailImage src={img} alt={`Thumbnail ${index + 1}`} />
@@ -346,10 +345,58 @@ export default function ProductDetailPage() {
                 ))}
               </div>
             )}
+
+            {/* Seller Info Card */}
+            {seller && !isOwnProduct && (
+              <RestrictedCard>
+                <div className="glass-card p-6">
+                  <div className="flex flex-col gap-4">
+                    <div className="flex items-center gap-4">
+                      <div className="w-16 h-16 flex-shrink-0 rounded-2xl bg-gradient-to-br from-[#1A283B] to-[#0F1B2B] border border-white/10 flex items-center justify-center text-[#FFD700] shadow-lg overflow-hidden relative">
+                        <SellerAvatar
+                          src={seller.companyLogo || seller.photoURL || seller.logoURL || seller.image || seller.avatar}
+                          alt={seller.companyName || seller.displayName}
+                        />
+                      </div>
+                      <div>
+                        <div className="text-xs text-gray-500 uppercase tracking-widest mb-1">Seller</div>
+                        <div className="font-bold text-xl text-white">{seller.companyName || seller.displayName || 'Unknown Seller'}</div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <Button
+                        onClick={handleSendMessage}
+                        disabled={sendingMessage}
+                        className="flex-1 px-4 py-3 rounded-full bg-gradient-to-r from-[#FFD700] to-[#FDB931] !text-black hover:shadow-[0_0_20px_rgba(255,215,0,0.3)] transition-all font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50"
+                      >
+                        {sendingMessage ? (
+                          <>
+                            <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></span>
+                            Opening...
+                          </>
+                        ) : (
+                          <>
+                            <MessageCircle className="w-4 h-4" />
+                            Contact Seller
+                          </>
+                        )}
+                      </Button>
+                      <Button
+                        onClick={() => router.push(`/profile/${seller.id}`)}
+                        className="flex-1 px-4 py-3 rounded-full border border-[#FFD700]/30 text-[#FFD700] hover:bg-[#FFD700]/20 hover:text-white transition-all font-semibold text-sm text-center"
+                      >
+                        View Profile
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </RestrictedCard>
+            )}
           </div>
 
           {/* Right Column - Details */}
-          <div className="space-y-6">
+          <div className="flex flex-col gap-6">
             {/* Header Card */}
             <div className="glass-card p-8 relative overflow-hidden">
               <div className="absolute top-0 right-0 w-32 h-32 bg-[#FFD700]/10 blur-[50px] rounded-full pointer-events-none" />
@@ -394,7 +441,7 @@ export default function ProductDetailPage() {
 
             {/* Description */}
             <div
-              className="glass-card p-8 cursor-pointer transition-all duration-300 hover:border-[#FFD700]/30"
+              className="glass-card p-8 cursor-pointer transition-all duration-300 hover:border-[#FFD700]/30 flex-1"
               onClick={() => product.description?.length > 400 && setDescriptionExpanded(!descriptionExpanded)}
             >
               <div className="text-sm uppercase tracking-wider text-[#FFD700] font-bold mb-4 flex items-center justify-between">
@@ -405,7 +452,7 @@ export default function ProductDetailPage() {
                   </span>
                 )}
               </div>
-              <div className={`overflow-hidden transition-all duration-300 ${descriptionExpanded ? 'max-h-[2000px]' : 'max-h-[180px]'}`}>
+              <div className={`overflow-hidden transition-all duration-300 ${descriptionExpanded ? 'max-h-[2000px]' : 'max-h-[200px]'}`}>
                 <p className="text-gray-300 whitespace-pre-wrap leading-relaxed text-lg font-light">
                   {product.description}
                 </p>
@@ -436,56 +483,6 @@ export default function ProductDetailPage() {
                 </button>
               )}
             </div>
-
-            {/* Seller Info */}
-            {seller && (
-              <div className="glass-card p-6">
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                  <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 flex-shrink-0 rounded-2xl bg-gradient-to-br from-[#1A283B] to-[#0F1B2B] border border-white/10 flex items-center justify-center text-[#FFD700] shadow-lg overflow-hidden relative">
-                      <SellerAvatar
-                        src={seller.companyLogo || seller.photoURL || seller.logoURL || seller.image || seller.avatar}
-                        alt={seller.companyName || seller.displayName}
-                      />
-                    </div>
-                    <div>
-                      <div className="text-xs text-gray-500 uppercase tracking-widest mb-1">Seller</div>
-                      <div className="font-bold text-xl text-white">{seller.companyName || seller.displayName || 'Unknown Seller'}</div>
-                    </div>
-                  </div>
-
-                  {!isOwnProduct && (
-                    <div className="flex items-center gap-3">
-                      <Button
-                        onClick={handleSendMessage}
-                        disabled={sendingMessage}
-                        className="flex-1 md:flex-none px-4 md:px-6 py-3 rounded-full bg-gradient-to-r from-[#FFD700] to-[#FDB931] !text-black hover:shadow-[0_0_20px_rgba(255,215,0,0.3)] transition-all font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50"
-                      >
-                        {sendingMessage ? (
-                          <>
-                            <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></span>
-                            <span className="hidden sm:inline">Opening...</span>
-                          </>
-                        ) : (
-                          <>
-                            <MessageCircle className="w-4 h-4" />
-                            <span className="hidden sm:inline">Contact Seller</span>
-                            <span className="sm:hidden">Contact</span>
-                          </>
-                        )}
-                      </Button>
-                      <Button
-                        onClick={() => router.push(`/profile/${seller.id}`)}
-                        className="flex-1 md:flex-none px-4 md:px-6 py-3 rounded-full border border-[#FFD700]/30 text-[#FFD700] hover:bg-[#FFD700] hover:text-[#0F1B2B] transition-all font-semibold text-sm text-center"
-                      >
-                        <span className="hidden sm:inline">View Profile</span>
-                        <span className="sm:hidden">Profile</span>
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
 
             {/* Action Buttons (Owner Only) */}
             {isOwnProduct && (
@@ -621,6 +618,5 @@ export default function ProductDetailPage() {
         </Modal>
       </div>
     </div>
-    </ViewLimitGuard>
   );
 }

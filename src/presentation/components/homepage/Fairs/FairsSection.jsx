@@ -94,6 +94,21 @@ export function FairsSection() {
   const [showRightArrow, setShowRightArrow] = useState(true);
   const scrollRef = useRef(null);
 
+  // Check initial scroll position on mount and when content loads
+  useEffect(() => {
+    const checkScroll = () => {
+      if (scrollRef.current) {
+        const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+        setShowLeftArrow(scrollLeft > 0);
+        setShowRightArrow(scrollWidth > clientWidth);
+      }
+    };
+    // Check on mount and after a brief delay for content to load
+    checkScroll();
+    const timeout = setTimeout(checkScroll, 500);
+    return () => clearTimeout(timeout);
+  }, [fairs]);
+
   useEffect(() => {
     const fetchFairs = async () => {
       try {
@@ -159,7 +174,7 @@ export function FairsSection() {
 
         {/* Scroll Arrows */}
         <button
-          className={`scroll-arrow-btn ${showLeftArrow ? 'visible' : ''}`}
+          className={`scroll-arrow-btn scroll-left ${showLeftArrow ? 'visible' : ''}`}
           id="fair-left"
           onClick={() => scroll('left')}
         >

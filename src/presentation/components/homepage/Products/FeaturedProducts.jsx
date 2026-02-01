@@ -239,6 +239,20 @@ export function FeaturedProducts() {
   const scrollRef = useRef(null);
   const { categories } = useCategories();
 
+  // Check initial scroll position on mount and when content loads
+  useEffect(() => {
+    const checkScroll = () => {
+      if (scrollRef.current) {
+        const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+        setShowLeftArrow(scrollLeft > 0);
+        setShowRightArrow(scrollWidth > clientWidth);
+      }
+    };
+    checkScroll();
+    const timeout = setTimeout(checkScroll, 500);
+    return () => clearTimeout(timeout);
+  }, [products]);
+
   useEffect(() => {
     const firestoreDS = container.getFirestoreDataSource();
 
@@ -292,7 +306,7 @@ export function FeaturedProducts() {
         {/* Header */}
         <div className="featured-products-header">
           <div>
-            <h2>Featured Products</h2>
+            <h2>Latest Products</h2>
             <p>Goods from verified suppliers.</p>
           </div>
           <Link href="/products" className="btn-section-action">

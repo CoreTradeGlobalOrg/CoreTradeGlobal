@@ -466,7 +466,7 @@ export function HeroSection({ fetchData = false }) {
                   {fetchData && latestSupplier ? (latestSupplier.industry || '') : 'Worldwide network'}
                 </p>
               </div>
-              <p className="card-budget">{fetchData ? 'Verified Member' : 'Browse →'}</p>
+              {!fetchData && <p className="card-budget">Browse →</p>}
             </div>
           </Link>
         </div>

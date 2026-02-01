@@ -7,7 +7,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { container } from '@/core/di/container';
 
@@ -46,9 +46,36 @@ const CategoryCard = ({ category }) => {
   );
 };
 
+const CARD_WIDTH = 140;
+const GAP = 16;
+const PADDING = 60; // left + right = 120
+
 export function CategoriesSection() {
   const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
   const [loading, setLoading] = useState(true);
+  const [visibleCount, setVisibleCount] = useState(6);
+  const containerRef = useRef(null);
+
+  // Calculate how many cards fit
+  useEffect(() => {
+    const calculateVisibleCount = () => {
+      if (containerRef.current) {
+        const containerWidth = containerRef.current.offsetWidth - (PADDING * 2);
+        // How many cards fit = (containerWidth + gap) / (cardWidth + gap)
+        const fitsCount = Math.floor((containerWidth + GAP) / (CARD_WIDTH + GAP));
+        // Show one less for "More Categories"
+        setVisibleCount(Math.max(1, fitsCount - 1));
+      }
+    };
+
+    // Small delay to ensure container is rendered
+    const timeout = setTimeout(calculateVisibleCount, 100);
+    window.addEventListener('resize', calculateVisibleCount);
+    return () => {
+      clearTimeout(timeout);
+      window.removeEventListener('resize', calculateVisibleCount);
+    };
+  }, [categories, loading]);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -87,7 +114,7 @@ export function CategoriesSection() {
               iconUrl: finalIconUrl
             };
           });
-          setCategories(mappedCategories.slice(0, 5));
+          setCategories(mappedCategories);
         }
       } catch (error) {
         console.error('Error fetching categories:', error);
@@ -101,25 +128,43 @@ export function CategoriesSection() {
   }, []);
 
   return (
-    <section className="categories-section" id="categories">
-      {/* Header */}
-      <div className="cat-header">
-        <h2 className="cat-title">Browse by Category</h2>
-        <Link href="/categories" className="btn-section-action">
-          View All Categories →
-        </Link>
-      </div>
+    <section className="categories-section" id="categories" ref={containerRef}>
+      <div className="categories-container">
+        {/* Header */}
+        <div className="cat-header">
+          <div>
+            <h2 className="cat-title">Browse by Category</h2>
+            <p className="text-[#A0A0A0] mt-1 text-sm">Find products by industry.</p>
+          </div>
+          <Link href="/categories" className="btn-section-action">
+            View All Categories →
+          </Link>
+        </div>
 
-      {/* Categories Grid */}
-      <div className="cat-container">
-        {categories.map((category) => (
-          <CategoryCard key={category.id} category={category} />
-        ))}
-        {/* More Categories Card */}
-        <Link href="/categories" className="cat-card cat-card-more group">
-          <span className="text-4xl mb-4 transform group-hover:scale-110 transition-transform">➕</span>
-          <span className="cat-name">More Categories</span>
-        </Link>
+        {/* Categories Grid */}
+        <div className="cat-grid">
+          {loading ? (
+            <>
+              {Array.from({ length: visibleCount + 1 }).map((_, i) => (
+                <div key={i} className="cat-card" style={{ background: 'rgba(255,255,255,0.03)' }}>
+                  <div className="w-12 h-12 rounded-full bg-[rgba(255,255,255,0.1)] animate-pulse mb-4" />
+                  <div className="h-4 w-20 bg-[rgba(255,255,255,0.1)] rounded animate-pulse" />
+                </div>
+              ))}
+            </>
+          ) : (
+            <>
+              {categories.slice(0, visibleCount).map((category) => (
+                <CategoryCard key={category.id} category={category} />
+              ))}
+              {/* More Categories Card - Always Last */}
+              <Link href="/categories" className="cat-card cat-card-more group">
+                <span className="text-4xl mb-4 transform group-hover:scale-110 transition-transform">➕</span>
+                <span className="cat-name">More Categories</span>
+              </Link>
+            </>
+          )}
+        </div>
       </div>
     </section>
   );

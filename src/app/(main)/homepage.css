@@ -605,7 +605,7 @@ html {
     flex-direction: column;
     gap: 20px;
     z-index: 60;
-    width: 320px;
+    width: 380px;
     pointer-events: all;
 }
 
@@ -656,7 +656,7 @@ html {
     flex-direction: column;
     gap: 20px;
     z-index: 60;
-    width: 320px;
+    width: 380px;
     pointer-events: all;
 }
 
@@ -1024,7 +1024,7 @@ html {
 
 .dynamic-container {
     width: 100%;
-    max-width: var(--container-width);
+    max-width: 100%;
     min-height: 400px;
     position: relative;
 }
@@ -1034,7 +1034,7 @@ html {
     gap: 24px;
     overflow-x: auto;
     align-items: flex-start;
-    padding: 10px 40px 30px 40px;
+    padding: 10px 60px 30px 60px;
     scrollbar-width: none;
     scroll-behavior: smooth;
     width: 100%;
@@ -1088,7 +1088,11 @@ html {
 #dash-left,
 #dash-right,
 #dash-left-rfq,
-#dash-right-rfq {
+#dash-right-rfq,
+#dash-left-news,
+#dash-right-news,
+#dash-left-companies,
+#dash-right-companies {
     top: 50% !important;
     transform: translateY(-50%) !important;
     z-index: 100;
@@ -1099,21 +1103,29 @@ html {
 #dash-left:hover,
 #dash-right:hover,
 #dash-left-rfq:hover,
-#dash-right-rfq:hover {
+#dash-right-rfq:hover,
+#dash-left-news:hover,
+#dash-right-news:hover,
+#dash-left-companies:hover,
+#dash-right-companies:hover {
     transform: translateY(-50%) scale(1.1) !important;
 }
 
 #fair-left,
 #dash-left,
-#dash-left-rfq {
-    left: -25px;
+#dash-left-rfq,
+#dash-left-news,
+#dash-left-companies {
+    left: 10px;
     right: auto;
 }
 
 #fair-right,
 #dash-right,
-#dash-right-rfq {
-    right: -25px;
+#dash-right-rfq,
+#dash-right-news,
+#dash-right-companies {
+    right: 10px;
     left: auto;
 }
 
@@ -1242,33 +1254,32 @@ html {
 .categories-section {
     width: 100%;
     background: transparent;
-    padding: 40px 20px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+    padding: 60px 0;
 }
 
-.cat-container {
+.categories-container {
     width: 100%;
-    max-width: 1200px;
-    display: grid;
-    grid-template-columns: repeat(6, 1fr);
-    gap: 20px;
+    max-width: 100%;
+    padding: 0;
 }
 
-@media (max-width: 900px) {
-    .cat-container {
-        grid-template-columns: repeat(3, 1fr);
-    }
+.cat-grid {
+    display: flex;
+    gap: 16px;
+    padding: 10px 60px 30px 60px;
 }
 
-@media (max-width: 500px) {
-    .cat-container {
-        grid-template-columns: repeat(2, 1fr);
+@media (max-width: 640px) {
+    .cat-grid {
+        padding: 10px 20px 20px 20px;
+        gap: 12px;
     }
 }
 
 .cat-card {
+    flex: 1 1 140px;
+    min-width: 140px;
+    height: 140px;
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.05);
     border-radius: 16px;
@@ -1276,6 +1287,7 @@ html {
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
     transition: 0.2s;
     text-align: center;
     cursor: pointer;
@@ -1327,8 +1339,9 @@ html {
 
 .cat-header {
     width: 100%;
-    max-width: 1200px;
+    max-width: 100%;
     margin-bottom: 24px;
+    padding: 0 60px;
     display: flex;
     justify-content: space-between;
     align-items: end;
@@ -1369,14 +1382,13 @@ html {
 .featured-products-section {
     width: 100%;
     background: transparent;
-    padding: 60px 20px;
-    display: flex;
-    justify-content: center;
+    padding: 60px 0;
 }
 
 .featured-products-container {
     width: 100%;
-    max-width: 1200px;
+    max-width: 100%;
+    padding: 0;
 }
 
 .featured-products-header {
@@ -1384,6 +1396,7 @@ html {
     justify-content: space-between;
     align-items: flex-end;
     margin-bottom: 40px;
+    padding: 0 60px;
 }
 
 .featured-products-header h2 {
@@ -1400,9 +1413,7 @@ html {
 }
 
 .featured-products-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(3000px, 1fr));
-    gap: 24px;
+    width: 100%;
 }
 
 .product-card {
@@ -1422,14 +1433,13 @@ html {
 .featured-rfqs-section {
     width: 100%;
     background: transparent;
-    padding: 60px 20px;
-    display: flex;
-    justify-content: center;
+    padding: 60px 0;
 }
 
 .featured-rfqs-container {
     width: 100%;
-    max-width: 1200px;
+    max-width: 100%;
+    padding: 0;
 }
 
 .featured-rfqs-header {
@@ -1437,6 +1447,7 @@ html {
     justify-content: space-between;
     align-items: flex-end;
     margin-bottom: 40px;
+    padding: 0 60px;
 }
 
 .featured-rfqs-header h2 {
@@ -1453,9 +1464,7 @@ html {
 }
 
 .featured-rfqs-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(3000px, 1fr));
-    gap: 24px;
+    width: 100%;
 }
 
 
@@ -1465,15 +1474,19 @@ html {
     display: flex;
     gap: 24px;
     overflow-x: auto;
+    padding: 10px 60px 30px 60px;
     -webkit-overflow-scrolling: touch;
-    padding: 10px 40px 30px 40px;
+    scrollbar-width: none;
+}
+
+#products::-webkit-scrollbar {
+    display: none;
 }
 
 #products .product-card {
-    flex: 0 0 calc((100% - 72px) / 4);
-    min-width: 220px;
+    flex: 0 0 calc(25% - 18px);
+    min-width: 280px;
     height: 480px;
-    flex-shrink: 0;
     display: flex;
     flex-direction: column;
     background: linear-gradient(145deg, rgba(18, 28, 40, 0.55) 0%, rgba(11, 20, 32, 0.6) 100%);
@@ -1492,29 +1505,35 @@ html {
     flex: 1 1 auto;
 }
 
-/* Responsive breakpoints: 3-up, 2-up, 1-up */
-@media (max-width: 1199px) {
+/* Responsive breakpoints */
+@media (max-width: 1200px) {
     #products .product-card {
-        flex: 0 0 calc((100% - 48px) / 3);
+        flex: 0 0 calc(33.333% - 16px);
+    }
+    #requests .card {
+        flex: 0 0 calc(33.333% - 16px);
     }
 }
 
-@media (max-width: 899px) {
+@media (max-width: 900px) {
     #products .product-card {
-        flex: 0 0 calc((100% - 24px) / 2);
+        flex: 0 0 calc(50% - 12px);
+    }
+    #requests .card {
+        flex: 0 0 calc(50% - 12px);
     }
 }
 
 @media (max-width: 639px) {
     #products {
-        padding: 8px 16px 20px 16px;
+        padding: 8px 0 20px 0;
         gap: 16px;
     }
-
     #products .product-card {
         flex: 0 0 100%;
-        min-width: 280px;
-        height: 520px;
+    }
+    #requests .card {
+        flex: 0 0 100%;
     }
 }
 
@@ -1689,23 +1708,30 @@ html {
 
 /* RFQ / Requests container styles */
 #requests {
+    display: flex;
+    gap: 24px;
+    overflow-x: auto;
     background: transparent;
-    padding: 8px 0;
+    padding: 10px 60px 30px 60px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+}
+
+#requests::-webkit-scrollbar {
+    display: none;
 }
 
 /* RFQ card visual (restore gradient & gold border) */
 #requests .card {
+    flex: 0 0 calc(25% - 18px);
+    min-width: 280px;
     background: linear-gradient(145deg, rgba(26, 40, 59, 0.4) 0%, rgba(15, 27, 43, 0.65) 100%);
     border: 1px solid rgba(255, 215, 0, 0.18);
     border-radius: 16px;
     padding: 16px;
-    width: 280px;
-    min-width: 280px;
-    max-width: 320px;
     height: 400px;
     display: flex;
     flex-direction: column;
-    flex-shrink: 0;
     transition: all 0.3s ease;
     cursor: pointer;
 }
@@ -1727,80 +1753,51 @@ html {
     gap: 24px;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
-    padding: 10px 40px 30px 40px;
+    padding: 10px 60px 30px 60px;
 }
 
-#companies .product-card {
-    flex: 0 0 calc((100% - 72px) / 4);
-    min-width: 220px;
-    height: 480px;
+/* Company Card - New Layout */
+#companies .company-card-link {
+    flex: 0 0 320px;
+    min-width: 320px;
+    max-width: 320px;
+    height: 380px;
     flex-shrink: 0;
+}
+
+#companies .company-card-inner {
+    height: 100%;
+    padding: 20px;
     display: flex;
     flex-direction: column;
     background: linear-gradient(145deg, rgba(18, 28, 40, 0.55) 0%, rgba(11, 20, 32, 0.6) 100%);
     border: 1px solid rgba(255, 215, 0, 0.16);
+    border-radius: 16px;
     box-shadow: 0 8px 30px rgba(8, 12, 20, 0.45);
+    transition: all 0.3s ease;
 }
 
-#companies .product-card .product-card-image {
-    height: 200px;
-}
-
-#companies .product-card .product-card-content {
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    flex: 1 1 auto;
+#companies .company-card-link:hover .company-card-inner {
+    border-color: rgba(255, 215, 0, 0.5);
+    transform: translateY(-6px);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
 }
 
 /* Responsive breakpoints for companies */
-@media (max-width: 1199px) {
-    #companies .product-card {
-        flex: 0 0 calc((100% - 48px) / 3);
-    }
-}
-
-@media (max-width: 899px) {
-    #companies .product-card {
-        flex: 0 0 calc((100% - 24px) / 2);
-    }
-}
-
 @media (max-width: 639px) {
     #companies {
         padding: 8px 16px 20px 16px;
         gap: 16px;
     }
 
-    #companies .product-card {
-        flex: 0 0 100%;
+    #companies .company-card-link {
+        flex: 0 0 280px;
         min-width: 280px;
-        height: 520px;
+        max-width: 280px;
+        height: 380px;
     }
 }
 
-/* Arrow positioning for companies section */
-#dash-left-companies,
-#dash-right-companies {
-    top: 50% !important;
-    transform: translateY(-50%) !important;
-    z-index: 100;
-}
-
-#dash-left-companies:hover,
-#dash-right-companies:hover {
-    transform: translateY(-50%) scale(1.1) !important;
-}
-
-#dash-left-companies {
-    left: -25px;
-    right: auto;
-}
-
-#dash-right-companies {
-    right: -25px;
-    left: auto;
-}
 
 /* --- 11. FUARLAR (FAIRS) BÖLÜMÜ --- */
 .fairs-wrapper {
@@ -1814,7 +1811,8 @@ html {
 
 .exhibitions-container {
     width: 100%;
-    max-width: 1200px;
+    max-width: 100%;
+    padding: 0;
     display: flex;
     flex-direction: column;
     position: relative;
@@ -1826,7 +1824,7 @@ html {
     align-items: center;
     justify-content: space-between;
     margin-bottom: 30px;
-    padding: 0 10px;
+    padding: 0 60px;
 }
 
 .fair-title-group h2 {
@@ -1846,9 +1844,8 @@ html {
     display: flex;
     gap: 24px;
     overflow-x: auto;
-    padding: 10px 25px 30px 25px;
-    scroll-behavior: smooth;
-    -ms-overflow-style: none;
+    padding: 10px 60px 30px 60px;
+    -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
 }
 
@@ -1857,8 +1854,9 @@ html {
 }
 
 .fair-card {
-    width: 280px;
-    min-width: 280px;
+    flex: 0 0 400px;
+    min-width: 400px;
+    max-width: 400px;
     height: 380px;
     background: linear-gradient(160deg, rgba(26, 28, 32, 0.6) 0%, rgba(15, 27, 43, 0.8) 100%);
     border: 1px solid rgba(255, 255, 255, 0.1);
@@ -1869,7 +1867,6 @@ html {
     flex-direction: column;
     transition: 0.3s;
     cursor: pointer;
-    flex-shrink: 0;
 }
 
 .fair-card:hover {
@@ -2389,7 +2386,9 @@ html {
 }
 
 .news-container {
-    max-width: 1200px;
+    width: 100%;
+    max-width: 100%;
+    padding: 0;
     margin: 0 auto;
     position: relative;
     z-index: 2;
@@ -2402,7 +2401,7 @@ html {
     align-items: center;
     justify-content: space-between;
     margin-bottom: 30px;
-    padding: 0 10px;
+    padding: 0 60px;
 }
 
 .news-header-content h2 {
@@ -2410,6 +2409,12 @@ html {
     font-weight: 700;
     color: #fff;
     margin: 0;
+}
+
+.news-header-content p {
+    color: var(--text-grey);
+    margin: 5px 0 0 0;
+    font-size: 14px;
 }
 
 .btn-view-all-news {
@@ -2444,9 +2449,8 @@ html {
     display: flex;
     gap: 24px;
     overflow-x: auto;
-    padding: 10px 25px 40px 25px;
-    scroll-behavior: smooth;
-    -ms-overflow-style: none;
+    padding: 10px 60px 40px 60px;
+    -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
 }
 
@@ -2455,8 +2459,9 @@ html {
 }
 
 .news-card {
-    min-width: 300px;
-    width: 300px;
+    flex: 0 0 400px;
+    min-width: 400px;
+    max-width: 400px;
     height: 400px;
     background: linear-gradient(160deg, rgba(26, 28, 32, 0.6) 0%, rgba(15, 27, 43, 0.8) 100%);
     border: 1px solid rgba(255, 255, 255, 0.08);
@@ -2466,7 +2471,6 @@ html {
     cursor: pointer;
     display: flex;
     flex-direction: column;
-    flex-shrink: 0;
 }
 
 .news-card:hover {
@@ -2793,19 +2797,27 @@ html {
 @media (max-width: 768px) {
     #fair-left,
     #dash-left,
-    #dash-left-rfq {
+    #dash-left-rfq,
+    #dash-left-news,
+    #dash-left-companies {
         left: 5px;
     }
 
     #fair-right,
     #dash-right,
-    #dash-right-rfq {
+    #dash-right-rfq,
+    #dash-right-news,
+    #dash-right-companies {
         right: 5px;
     }
 
     .scroll-arrow-btn {
         width: 40px;
         height: 40px;
+    }
+
+    .cat-header {
+        padding: 0 20px;
     }
 }
 

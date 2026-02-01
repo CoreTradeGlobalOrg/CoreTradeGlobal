@@ -137,6 +137,21 @@ export function FeaturedRFQs() {
   const [showRightArrow, setShowRightArrow] = useState(true);
   const scrollRef = useRef(null);
 
+  // Check initial scroll position on mount and when content loads
+  useEffect(() => {
+    const checkScroll = () => {
+      if (scrollRef.current) {
+        const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+        setShowLeftArrow(scrollLeft > 0);
+        setShowRightArrow(scrollWidth > clientWidth);
+      }
+    };
+    // Check on mount and after a brief delay for content to load
+    checkScroll();
+    const timeout = setTimeout(checkScroll, 500);
+    return () => clearTimeout(timeout);
+  }, [rfqs]);
+
   useEffect(() => {
     const firestoreDS = container.getFirestoreDataSource();
 

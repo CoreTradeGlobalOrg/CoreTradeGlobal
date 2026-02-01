@@ -14,7 +14,7 @@ import { container } from '@/core/di/container';
 import { COUNTRIES } from '@/core/constants/countries';
 import Link from 'next/link';
 import { ArrowLeft, Calendar, MapPin, Package, DollarSign, Building } from 'lucide-react';
-import { ViewLimitGuard } from '@/presentation/components/common/ViewLimitGuard/ViewLimitGuard';
+import { RestrictedCard } from '@/presentation/components/common/RestrictedCard/RestrictedCard';
 import { CountryFlag } from '@/presentation/components/common/CountryFlag/CountryFlag';
 import { SubmitQuoteDialog } from '@/presentation/components/features/request/SubmitQuoteDialog/SubmitQuoteDialog';
 import { QuotesSection } from '@/presentation/components/features/request/QuotesSection/QuotesSection';
@@ -29,6 +29,7 @@ export default function RequestDetailsPage() {
   const [loading, setLoading] = useState(true);
   const [author, setAuthor] = useState(null);
   const [quoteDialogOpen, setQuoteDialogOpen] = useState(false);
+  const [descriptionExpanded, setDescriptionExpanded] = useState(false);
 
   useEffect(() => {
     const fetchRequestDetails = async () => {
@@ -103,18 +104,35 @@ export default function RequestDetailsPage() {
   const countryCode = request.targetCountry || request.country;
   const countryName = getCountryName(countryCode);
 
+  // Format date helper
+  const formatPostedDate = (timestamp) => {
+    if (!timestamp) return 'Posted recently';
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) return 'Posted today';
+    if (diffDays === 1) return 'Posted yesterday';
+    if (diffDays < 7) return `Posted ${diffDays} days ago`;
+    if (diffDays < 30) return `Posted ${Math.floor(diffDays / 7)} weeks ago`;
+    return `Posted on ${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+  };
+
+  // Get member year
+  const getMemberYear = (timestamp) => {
+    if (!timestamp) return 'N/A';
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    return date.getFullYear();
+  };
+
   const handleQuoteClick = () => {
-    if (!isAuthenticated) {
-      router.push('/login?redirect=/request/' + request.id);
-      return;
-    }
     setQuoteDialogOpen(true);
   };
 
   return (
-    <ViewLimitGuard itemId={params.requestId} itemType="request">
-    <main className="min-h-screen pt-[120px] pb-20 px-6 bg-radial-navy">
-      <div className="max-w-4xl mx-auto">
+    <main className="pt-[120px] px-6 bg-radial-navy min-h-screen">
+      <div className="max-w-4xl mx-auto pb-8">
         {/* Back Button */}
         <button
           onClick={() => router.back()}
@@ -124,18 +142,18 @@ export default function RequestDetailsPage() {
           <span>Back to Requests</span>
         </button>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:items-stretch">
           {/* Main Content */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Header Card */}
-            <div className="glass-card p-8">
+          <div className="lg:col-span-2 flex">
+            {/* Header Card with Description */}
+            <div className="glass-card p-8 w-full">
               <div className="flex justify-between items-start mb-4">
                 <span className={`text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full ${request.status === 'active' ? 'bg-[#10b981]/20 text-[#34d399] border border-[#10b981]/30' : 'bg-gray-700 text-gray-400'}`}>
                   {request.status === 'active' ? (request.badge || 'Active') : 'Closed'}
                 </span>
                 <span className="text-sm text-[#A0A0A0] flex items-center gap-1.5">
                   <Calendar size={14} />
-                  {request.deadline ? `Deadline: ${request.deadline}` : 'Posted recently'}
+                  {formatPostedDate(request.updatedAt || request.createdAt)}
                 </span>
               </div>
 
@@ -147,133 +165,171 @@ export default function RequestDetailsPage() {
                 <div className="bg-[rgba(255,255,255,0.05)] rounded-lg px-4 py-2 border border-[rgba(255,255,255,0.1)]">
                   <span className="block text-xs text-[#A0A0A0] mb-1">Quantity/Volume</span>
                   <div className="flex items-center gap-2 text-white font-semibold">
-                    <Package size={16} className="text-[#FFD700]" />
+                    <Package size={16} className="text-[#3B82F6]" />
                     {request.quantity} {request.unit}
                   </div>
                 </div>
                 <div className="bg-[rgba(255,255,255,0.05)] rounded-lg px-4 py-2 border border-[rgba(255,255,255,0.1)]">
                   <span className="block text-xs text-[#A0A0A0] mb-1">Target Budget</span>
                   <div className="flex items-center gap-2 text-white font-semibold">
-                    <DollarSign size={16} className="text-[#FFD700]" />
+                    <DollarSign size={16} className="text-[#3B82F6]" />
                     {request.budget || 'Negotiable'}
                   </div>
                 </div>
                 <div className="bg-[rgba(255,255,255,0.05)] rounded-lg px-4 py-2 border border-[rgba(255,255,255,0.1)]">
                   <span className="block text-xs text-[#A0A0A0] mb-1">Destination</span>
                   <div className="flex items-center gap-2 text-white font-semibold">
-                    <MapPin size={16} className="text-[#FFD700]" />
+                    <MapPin size={16} className="text-[#3B82F6]" />
                     <CountryFlag countryCode={countryCode} size={18} />
                     {countryName}
                   </div>
                 </div>
               </div>
 
-              <div className="prose prose-invert max-w-none overflow-hidden">
-                <h3 className="text-lg font-bold text-white mb-2">Description</h3>
-                <p className="text-[#A0A0A0] leading-relaxed whitespace-pre-line break-words" style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}>
-                  {request.description || 'No detailed description provided.'}
-                </p>
-              </div>
-            </div>
-
-            {/* Additional Details */}
-            {(request.requirements || request.paymentTerms) && (
-              <div className="glass-card p-8">
-                <h3 className="text-xl font-bold text-white mb-4">Specific Requirements</h3>
-                <div className="space-y-4">
-                  {request.requirements && (
-                    <div className="overflow-hidden">
-                      <span className="text-[#FFD700] font-semibold block mb-1">Technical Specs:</span>
-                      <p className="text-[#A0A0A0] break-words" style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}>{request.requirements}</p>
-                    </div>
-                  )}
-                  {request.paymentTerms && (
-                    <div className="overflow-hidden">
-                      <span className="text-[#FFD700] font-semibold block mb-1">Payment Terms:</span>
-                      <p className="text-[#A0A0A0] break-words" style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}>{request.paymentTerms}</p>
-                    </div>
+              <div
+                className="prose prose-invert max-w-none overflow-hidden cursor-pointer"
+                onClick={() => request.description?.length > 300 && setDescriptionExpanded(!descriptionExpanded)}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-lg font-bold text-white">Description</h3>
+                  {request.description?.length > 300 && (
+                    <span className="text-xs font-medium text-gray-400">
+                      {descriptionExpanded ? 'Click to collapse' : 'Click to expand'}
+                    </span>
                   )}
                 </div>
+                <div className={`overflow-hidden transition-all duration-300 ${descriptionExpanded ? '' : 'line-clamp-6'}`}>
+                  <p className="text-[#A0A0A0] leading-relaxed whitespace-pre-line">
+                    {request.description || 'No detailed description provided.'}
+                  </p>
+                </div>
+                {request.description?.length > 300 && (
+                  <button
+                    className="mt-3 text-[#3B82F6] font-semibold text-sm hover:text-[#60A5FA] transition-colors flex items-center gap-2"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setDescriptionExpanded(!descriptionExpanded);
+                    }}
+                  >
+                    {descriptionExpanded ? (
+                      <>
+                        Show Less
+                        <svg className="w-4 h-4 rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </>
+                    ) : (
+                      <>
+                        Read More
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </>
+                    )}
+                  </button>
+                )}
               </div>
-            )}
-
-            {/* Quotes/Offers Section - Only visible to RFQ owner */}
-            <div id="quotes">
-              <QuotesSection
-                request={request}
-                isOwner={user?.uid === request.userId}
-              />
             </div>
           </div>
 
           {/* Sidebar (Buyer Info) */}
           <div className="lg:col-span-1 space-y-6">
-            <div className="glass-card p-6 border-t-4 border-t-[#FFD700]">
-              <h3 className="text-lg font-bold text-white mb-4">Buyer Information</h3>
+            <RestrictedCard>
+              <div className="glass-card p-6 border-t-4 border-t-[#FFD700]">
+                <h3 className="text-lg font-bold text-white mb-4">Buyer Information</h3>
 
-              <div className="flex items-center gap-4 mb-6">
-                {author?.companyLogo ? (
-                  <img src={author.companyLogo} alt="Logo" className="w-16 h-16 rounded-xl object-cover border border-[rgba(255,255,255,0.1)]" />
-                ) : (
-                  <div className="w-16 h-16 rounded-xl bg-[rgba(255,255,255,0.05)] flex items-center justify-center text-3xl border border-[rgba(255,255,255,0.1)]">
-                    🏭
+                <Link href={`/profile/${author?.id}`} className="flex items-center gap-4 mb-6 hover:opacity-80 transition-opacity">
+                  {author?.companyLogo ? (
+                    <img src={author.companyLogo} alt="Logo" className="w-16 h-16 rounded-xl object-cover border border-[rgba(255,255,255,0.1)]" />
+                  ) : (
+                    <div className="w-16 h-16 rounded-xl bg-[rgba(255,255,255,0.05)] flex items-center justify-center text-3xl border border-[rgba(255,255,255,0.1)]">
+                      🏭
+                    </div>
+                  )}
+                  <div>
+                    <p className="font-bold text-white hover:text-[#3B82F6] transition-colors">{author?.companyName || 'Verified Buyer'}</p>
+                    <p className="text-xs text-[#A0A0A0] flex items-center gap-1 mt-1">
+                      <CountryFlag countryCode={countryCode} size={14} />
+                      {countryName}
+                    </p>
                   </div>
-                )}
-                <div>
-                  <p className="font-bold text-white">{author?.companyName || 'Verified Buyer'}</p>
-                  <p className="text-xs text-[#A0A0A0] flex items-center gap-1 mt-1">
-                    <CountryFlag countryCode={countryCode} size={14} />
-                    {countryName}
-                  </p>
-                </div>
-              </div>
+                </Link>
 
-              <div className="space-y-3 mb-6">
-                <div className="flex justify-between text-sm">
-                  <span className="text-[#A0A0A0]">Member Since</span>
-                  <span className="text-white">2023</span>
+                <div className="space-y-3 mb-6">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-[#A0A0A0]">Member Since</span>
+                    <span className="text-white">{getMemberYear(author?.createdAt)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-[#A0A0A0]">Verified Status</span>
+                    {author?.emailVerified && author?.adminApproved ? (
+                      <span className="text-[#34d399] font-medium flex items-center gap-1">
+                        <span className="w-2 h-2 rounded-full bg-[#34d399]"></span> Verified
+                      </span>
+                    ) : (
+                      <span className="text-[#A0A0A0] font-medium flex items-center gap-1">
+                        <span className="w-2 h-2 rounded-full bg-[#A0A0A0]"></span> Unverified
+                      </span>
+                    )}
+                  </div>
                 </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-[#A0A0A0]">Verified Status</span>
-                  <span className="text-[#34d399] font-medium flex items-center gap-1">
-                    <span className="w-2 h-2 rounded-full bg-[#34d399]"></span> Verified
-                  </span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-[#A0A0A0]">Response Rate</span>
-                  <span className="text-white">High (90%+)</span>
-                </div>
-              </div>
 
-              <button
-                onClick={handleQuoteClick}
-                className="w-full py-3 bg-gradient-to-r from-[#FFD700] to-[#FDB931] text-[#0F1B2B] font-bold rounded-full shadow-[0_4px_14px_rgba(255,215,0,0.3)] hover:shadow-[0_6px_20px_rgba(255,215,0,0.4)] hover:transform hover:-translate-y-0.5 transition-all"
-              >
-                Submit Quote
-              </button>
-              {!isAuthenticated && (
-                <p className="text-xs text-center text-[#A0A0A0] mt-3">
-                  You must be logged in to quote.
-                </p>
-              )}
-            </div>
+                <button
+                  onClick={handleQuoteClick}
+                  className="w-full py-3 bg-gradient-to-r from-[#3B82F6] to-[#2563EB] text-white font-bold rounded-full shadow-[0_4px_14px_rgba(59,130,246,0.3)] hover:shadow-[0_6px_20px_rgba(59,130,246,0.4)] hover:transform hover:-translate-y-0.5 transition-all"
+                >
+                  Submit Quote
+                </button>
+              </div>
+            </RestrictedCard>
 
             <div className="glass-card p-6">
               <h3 className="text-lg font-bold text-white mb-4">Safety Tips</h3>
               <ul className="space-y-2 text-sm text-[#A0A0A0]">
                 <li className="flex gap-2">
-                  <span className="text-[#FFD700]">•</span> Verify buyer identity before shipping.
+                  <span className="text-[#3B82F6]">•</span> Verify buyer identity before shipping.
                 </li>
                 <li className="flex gap-2">
-                  <span className="text-[#FFD700]">•</span> Use secure payment methods (LC/Escrow).
+                  <span className="text-[#3B82F6]">•</span> Use secure payment methods (LC/Escrow).
                 </li>
                 <li className="flex gap-2">
-                  <span className="text-[#FFD700]">•</span> Report suspicious behavior instantly.
+                  <span className="text-[#3B82F6]">•</span> Report suspicious behavior instantly.
                 </li>
               </ul>
             </div>
           </div>
         </div>
+
+        {/* Additional Details - Outside the grid */}
+        {(request.requirements || request.paymentTerms) && (
+          <div className="glass-card p-8 mt-6">
+            <h3 className="text-xl font-bold text-white mb-4">Specific Requirements</h3>
+            <div className="space-y-4">
+              {request.requirements && (
+                <div className="overflow-hidden">
+                  <span className="text-[#FFD700] font-semibold block mb-1">Technical Specs:</span>
+                  <p className="text-[#A0A0A0] break-words" style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}>{request.requirements}</p>
+                </div>
+              )}
+              {request.paymentTerms && (
+                <div className="overflow-hidden">
+                  <span className="text-[#FFD700] font-semibold block mb-1">Payment Terms:</span>
+                  <p className="text-[#A0A0A0] break-words" style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}>{request.paymentTerms}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Quotes/Offers Section - Only shown to owner */}
+        {user?.uid === request.userId && (
+          <div id="quotes" className="mt-6 pb-8">
+            <QuotesSection
+              request={request}
+              isOwner={true}
+            />
+          </div>
+        )}
       </div>
 
       {/* Submit Quote Dialog */}
@@ -283,6 +339,5 @@ export default function RequestDetailsPage() {
         request={request}
       />
     </main>
-    </ViewLimitGuard>
   );
 }
