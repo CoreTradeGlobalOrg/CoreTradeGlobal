@@ -15,6 +15,7 @@ import Link from 'next/link';
 import toast from 'react-hot-toast';
 import { container } from '@/core/di/container';
 import { DeletedAccountDialog } from '@/presentation/components/features/auth/DeletedAccountDialog/DeletedAccountDialog';
+import { useTrackEvent } from '@/presentation/hooks/analytics';
 import { Eye, EyeOff } from 'lucide-react';
 
 export function LoginForm() {
@@ -24,6 +25,7 @@ export function LoginForm() {
   const [showDeletedDialog, setShowDeletedDialog] = useState(false);
   const [deletionInfo, setDeletionInfo] = useState(null);
   const { login, loading, error } = useLogin();
+  const { trackLogin } = useTrackEvent();
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get('redirect');
@@ -41,6 +43,9 @@ export function LoginForm() {
         router.push('/verify-email');
         return;
       }
+
+      // Track successful login
+      trackLogin('email');
 
       // Success - redirect to homepage or intended page (from URL param only)
       toast.success('Login successful!');

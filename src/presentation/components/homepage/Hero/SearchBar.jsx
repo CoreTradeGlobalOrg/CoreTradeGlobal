@@ -9,15 +9,20 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Search, Package, FileText } from 'lucide-react';
+import { useTrackEvent } from '@/presentation/hooks/analytics';
 
 export function SearchBar({ className = '' }) {
   const router = useRouter();
   const [query, setQuery] = useState('');
   const [searchType, setSearchType] = useState('products');
+  const { trackSearch } = useTrackEvent();
 
   const handleSearch = (e) => {
     e.preventDefault();
     if (query.trim()) {
+      // Track search event
+      trackSearch(query.trim());
+
       // Navigate to search results
       router.push(`/search?q=${encodeURIComponent(query)}&type=${searchType}`);
     }

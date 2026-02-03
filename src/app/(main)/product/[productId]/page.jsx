@@ -29,6 +29,7 @@ import { container } from '@/core/di/container';
 import { useConversations } from '@/presentation/hooks/messaging/useConversations';
 import { useRecommendedProducts } from '@/presentation/hooks/product/useRecommendedProducts';
 import { ProductCard } from '@/presentation/components/homepage/Products/FeaturedProducts';
+import { useTrackEvent } from '@/presentation/hooks/analytics';
 import toast from 'react-hot-toast';
 
 // Thumbnail image with loading state
@@ -100,6 +101,7 @@ export default function ProductDetailPage() {
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
 
   const { startDirectConversation } = useConversations();
+  const { trackViewItem, trackContactSeller } = useTrackEvent();
 
   // Get recommended products
   const { products: recommendedProducts, loading: recommendedLoading } = useRecommendedProducts(
@@ -111,6 +113,13 @@ export default function ProductDetailPage() {
   const isOwnProduct = currentUser?.uid === product?.userId;
   const images = product?.images || [];
   const hasImages = images.length > 0;
+
+  // Track product view
+  useEffect(() => {
+    if (product?.id && product?.name) {
+      trackViewItem(product.id, product.name, product.categoryId);
+    }
+  }, [product?.id, product?.name, product?.categoryId, trackViewItem]);
 
   // Fetch seller information
   useEffect(() => {
@@ -222,6 +231,9 @@ export default function ProductDetailPage() {
         },
         initialMessage // Send initial message automatically
       );
+
+      // Track contact seller event
+      trackContactSeller(seller.id, product.id);
 
       // Conversation opened via startDirectConversation (widget opens automatically)
     } catch (err) {

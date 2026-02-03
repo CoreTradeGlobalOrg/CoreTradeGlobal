@@ -18,10 +18,12 @@ import { SearchableSelect } from '@/presentation/components/common/SearchableSel
 import { COUNTRIES } from '@/core/constants/countries';
 import { UNIT_CATEGORIES, getUnitsByCategory } from '@/core/constants/units';
 import { useCategories } from '@/presentation/hooks/category/useCategories';
+import { useTrackEvent } from '@/presentation/hooks/analytics';
 
 export function RequestForm({ request, onSubmit, onCancel, userId }) {
   const { categories, loading: categoriesLoading } = useCategories();
   const [submitting, setSubmitting] = useState(false);
+  const { trackCreateRequest } = useTrackEvent();
 
   const isEditing = !!request;
 
@@ -67,7 +69,13 @@ export function RequestForm({ request, onSubmit, onCancel, userId }) {
         userId,
       };
 
-      await onSubmit(requestData);
+      const result = await onSubmit(requestData);
+
+      // Track RFQ creation (not editing)
+      if (!isEditing) {
+        trackCreateRequest(result?.id || 'new', data.categoryId);
+      }
+
       toast.success(isEditing ? 'Request updated!' : 'Request created!');
     } catch (error) {
       toast.error(error.message || 'Failed to save request');

@@ -60,6 +60,11 @@ export function CookieConsent() {
     }));
     setShowBanner(false);
     setShowSettings(false);
+
+    // Dispatch consent change event for Analytics
+    window.dispatchEvent(new CustomEvent('consentChanged', {
+      detail: { analytics: prefs.analytics, functional: prefs.functional }
+    }));
   };
 
   const handleAcceptAll = () => {

@@ -11,6 +11,7 @@ import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import { getFunctions, connectFunctionsEmulator } from 'firebase/functions';
+import { getAnalytics, isSupported, logEvent, setUserId, setUserProperties } from 'firebase/analytics';
 
 // Firebase configuration from environment variables
 const firebaseConfig = {
@@ -57,6 +58,31 @@ export const functions = getFunctions(app);
 //   connectFunctionsEmulator(functions, '127.0.0.1', 5001);
 //   console.log('🔧 Connected to Functions Emulator');
 // }
+
+/**
+ * Firebase Analytics
+ *
+ * Analytics is only initialized client-side when supported
+ * Use initializeAnalytics() to get the analytics instance
+ */
+let analyticsInstance = null;
+
+export const initializeAnalytics = async () => {
+  if (typeof window === 'undefined') return null;
+
+  if (analyticsInstance) return analyticsInstance;
+
+  const supported = await isSupported();
+  if (supported) {
+    analyticsInstance = getAnalytics(app);
+  }
+
+  return analyticsInstance;
+};
+
+export const getAnalyticsInstance = () => analyticsInstance;
+
+export { logEvent, setUserId, setUserProperties };
 
 /**
  * Export the app instance for advanced usage

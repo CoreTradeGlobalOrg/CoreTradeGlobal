@@ -21,6 +21,7 @@ import { Input } from '@/components/ui/Input';
 import { SearchableSelect } from '@/presentation/components/common/SearchableSelect/SearchableSelect';
 import { COUNTRIES } from '@/core/constants/countries';
 import { useCategories } from '@/presentation/hooks/category/useCategories';
+import { useTrackEvent } from '@/presentation/hooks/analytics';
 import { Eye, EyeOff } from 'lucide-react';
 
 export function RegisterForm() {
@@ -29,6 +30,12 @@ export function RegisterForm() {
   const redirectTo = searchParams.get('redirect');
   const { register: registerUser, loading } = useRegister();
   const { categories, loading: categoriesLoading } = useCategories();
+  const { trackSignUp, track } = useTrackEvent();
+
+  // Track when user starts registration (visits the page)
+  useEffect(() => {
+    track('begin_registration');
+  }, [track]);
 
   // Store redirect URL in localStorage for after email verification
   useEffect(() => {
@@ -122,6 +129,9 @@ export function RegisterForm() {
       };
 
       await registerUser(registerData);
+
+      // Track successful registration
+      trackSignUp('email');
 
       toast.success(
         'Account created! Please check your email to verify your account.',
