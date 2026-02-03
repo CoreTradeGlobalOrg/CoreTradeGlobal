@@ -20,7 +20,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { SearchableSelect } from '@/presentation/components/common/SearchableSelect/SearchableSelect';
 import { COUNTRIES } from '@/core/constants/countries';
-import { COMPANY_CATEGORIES } from '@/core/constants/categories';
+import { useCategories } from '@/presentation/hooks/category/useCategories';
 import { Eye, EyeOff } from 'lucide-react';
 
 export function RegisterForm() {
@@ -28,6 +28,7 @@ export function RegisterForm() {
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get('redirect');
   const { register: registerUser, loading } = useRegister();
+  const { categories, loading: categoriesLoading } = useCategories();
 
   // Store redirect URL in localStorage for after email verification
   useEffect(() => {
@@ -274,11 +275,11 @@ export function RegisterForm() {
                   Company Category <span className="text-red-500">*</span>
                 </label>
                 <SearchableSelect
-                  options={COMPANY_CATEGORIES}
+                  options={categories}
                   value={companyCategory}
                   onChange={(value) => setValue('companyCategory', value, { shouldValidate: true })}
-                  placeholder="Select category"
-                  disabled={loading}
+                  placeholder={categoriesLoading ? "Loading categories..." : "Select category"}
+                  disabled={loading || categoriesLoading}
                   error={!!errors.companyCategory}
                   className="dark-select"
                 />
