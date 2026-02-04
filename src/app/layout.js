@@ -17,6 +17,7 @@ const inter = Inter({
 });
 
 export const metadata = {
+  metadataBase: new URL('https://coretradeglobal.com'),
   title: 'CoreTradeGlobal | B2B Trading Platform',
   description: 'B2B Trading Platform - Connect with businesses, manage products, and trade globally',
   keywords: ['B2B', 'trading', 'platform', 'business', 'products', 'requests'],
@@ -24,6 +25,12 @@ export const metadata = {
   creator: 'CoreTradeGlobal',
   publisher: 'CoreTradeGlobal',
   manifest: '/manifest.json',
+  alternates: {
+    canonical: '/',
+  },
+  verification: {
+    google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || '',
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
@@ -32,6 +39,13 @@ export const metadata = {
   robots: {
     index: true,
     follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
   },
   openGraph: {
     type: 'website',
