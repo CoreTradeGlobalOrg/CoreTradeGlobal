@@ -253,8 +253,8 @@ function Scene({ isMobile, disableInteraction }) {
   // Dynamic Config based on device
   const config = useMemo(() => ({
     globeRadius: 6,
-    pointCount: isMobile ? 2000 : 4000, // Adjusted for land-only density
-    pointSize: isMobile ? 0.35 : 0.28,
+    pointCount: isMobile ? 4000 : 8000, // Doubled for more detailed continents
+    pointSize: isMobile ? 0.28 : 0.22, // Slightly smaller for denser points
     pointColor: 0xFFFFFF,
     waterColor: 0x0A1628,
     mapUrl: 'https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/earth_specular_2048.jpg',
@@ -278,11 +278,11 @@ function Scene({ isMobile, disableInteraction }) {
 
     img.onload = () => {
       const canvas = document.createElement('canvas');
-      canvas.width = 512;
-      canvas.height = 256;
+      canvas.width = 1024;
+      canvas.height = 512;
       const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0, 512, 256);
-      const imageData = ctx.getImageData(0, 0, 512, 256);
+      ctx.drawImage(img, 0, 0, 1024, 512);
+      const imageData = ctx.getImageData(0, 0, 1024, 512);
       const { width, height, data } = imageData;
 
       const points = [];
@@ -332,7 +332,7 @@ function Scene({ isMobile, disableInteraction }) {
         enablePan={false}
         enableRotate={!isMobile}
         autoRotate
-        autoRotateSpeed={2}
+        autoRotateSpeed={4}
       />
     </>
   );
