@@ -3,12 +3,20 @@
 import { Search, X } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
-export function SearchBar({ placeholder = "Search...", initialValue = "", onSearch, variant = "gold" }) {
+export function SearchBar({ placeholder = "Search...", initialValue = "", onSearch, variant = "gold", instant = false }) {
     const [query, setQuery] = useState(initialValue);
 
     useEffect(() => {
         setQuery(initialValue);
     }, [initialValue]);
+
+    const handleChange = (e) => {
+        const value = e.target.value;
+        setQuery(value);
+        if (instant) {
+            onSearch(value);
+        }
+    };
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -30,7 +38,7 @@ export function SearchBar({ placeholder = "Search...", initialValue = "", onSear
                 <input
                     type="text"
                     value={query}
-                    onChange={(e) => setQuery(e.target.value)}
+                    onChange={handleChange}
                     placeholder={placeholder}
                     className="search-input"
                 />

@@ -1,8 +1,8 @@
 /**
  * ProductList Component
  *
- * Displays a grid of products using the .product-grid-card style (Dark Theme)
- * Matches ProductGrid.jsx EXACTLY but adds Edit/Delete actions for Profile
+ * Displays products using the exact same design as homepage ProductCard
+ * Adds Edit/Delete actions for Profile page
  */
 
 'use client';
@@ -10,45 +10,7 @@
 import Link from 'next/link';
 import { Package, MoreVertical, Edit, Trash2, Eye, EyeOff } from 'lucide-react';
 import { useState, memo } from 'react';
-import { COUNTRIES } from '@/core/constants/countries';
-import { CountryFlag } from '@/presentation/components/common/CountryFlag/CountryFlag';
-
-// Individual product card with image loading state
-const ProductCardImage = memo(function ProductCardImage({ src, alt, inactive }) {
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-
-  if (!src || error) {
-    return <div className="text-4xl">📦</div>;
-  }
-
-  return (
-    <>
-      {loading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-[#1A283B] z-10">
-          <div className="w-8 h-8 border-2 border-[#FFD700] border-t-transparent rounded-full animate-spin"></div>
-        </div>
-      )}
-      <img
-        src={src}
-        alt={alt}
-        className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 ${loading ? 'opacity-0' : 'opacity-100'} ${inactive ? 'opacity-50 grayscale' : ''}`}
-        onLoad={() => setLoading(false)}
-        onError={() => { setLoading(false); setError(true); }}
-      />
-    </>
-  );
-});
-
-// Helper to get country name from ISO code
-const getCountryName = (countryCode) => {
-  if (!countryCode) return 'Global';
-  const country = COUNTRIES.find(c => c.value === countryCode);
-  if (country) {
-    return country.label.replace(/^[\u{1F1E0}-\u{1F1FF}]{2}\s*/u, '').trim();
-  }
-  return countryCode;
-};
+import { useCategories } from '@/presentation/hooks/category/useCategories';
 
 // Map codes to symbols
 const CURRENCY_SYMBOLS = {
@@ -74,15 +36,57 @@ const CURRENCY_SYMBOLS = {
   'ZAR': 'R'
 };
 
+// Truncate text to specified length
+const truncateText = (text, maxLength = 80) => {
+  if (!text) return '';
+  if (text.length <= maxLength) return text;
+  return text.substring(0, maxLength).trim() + '...';
+};
+
+// Image component with loading state (same as homepage)
+const ProductCardImage = memo(function ProductCardImage({ src, alt, inactive }) {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  if (!src || error) {
+    return <div className="text-6xl">📦</div>;
+  }
+
+  return (
+    <>
+      {loading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-[#1A283B] z-10">
+          <div className="w-8 h-8 border-2 border-[#FFD700] border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      )}
+      <img
+        src={src}
+        alt={alt}
+        className={`w-full h-full object-cover transition-opacity duration-300 ${loading ? 'opacity-0' : 'opacity-100'} ${inactive ? 'opacity-50 grayscale' : ''}`}
+        onLoad={() => setLoading(false)}
+        onError={() => { setLoading(false); setError(true); }}
+      />
+    </>
+  );
+});
+
 export function ProductList({ products = [], loading, isOwnProfile, onEdit, onDelete, onToggleStatus }) {
   const [activeMenu, setActiveMenu] = useState(null);
+  const { categories } = useCategories();
 
   // Loading skeleton
   if (loading) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="profile-products-grid">
         {[...Array(6)].map((_, index) => (
-          <div key={index} className="aspect-[4/3] bg-[rgba(255,255,255,0.05)] rounded-[20px] animate-pulse" />
+          <div key={index} className="product-card" style={{ background: 'rgba(255,255,255,0.05)' }}>
+            <div className="product-card-image animate-pulse" />
+            <div className="product-card-content">
+              <div className="h-4 bg-[rgba(255,255,255,0.1)] rounded animate-pulse mb-3" />
+              <div className="h-6 bg-[rgba(255,255,255,0.1)] rounded animate-pulse mb-2" />
+              <div className="h-4 bg-[rgba(255,255,255,0.1)] rounded animate-pulse" />
+            </div>
+          </div>
         ))}
       </div>
     );
@@ -107,18 +111,28 @@ export function ProductList({ products = [], loading, isOwnProfile, onEdit, onDe
     );
   }
 
-  // Product grid
+  // Product grid - using homepage card design
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" onClick={() => setActiveMenu(null)}>
+    <div className="profile-products-grid" onClick={() => setActiveMenu(null)}>
       {products.map((product) => {
+        // Get first image from images array
+        const imageUrl = product.images?.[0] || product.imageUrl;
+
         // Resolve Currency Symbol
         const code = product.currency || 'USD';
         const currencySymbol = CURRENCY_SYMBOLS[code] || code;
 
+        // Resolve Category Name and Icon
+        const category = categories?.find(c => c.value === product.categoryId);
+        const categoryName = product.category || category?.label?.replace(/^[^\s]+\s/, '') || '';
+        const categoryIcon = category?.icon || '';
+
+        const isInactive = product.status !== 'active';
+
         return (
           <div
             key={product.id}
-            className="product-grid-card group relative"
+            className={`product-card relative ${isInactive && isOwnProfile ? 'opacity-70' : ''}`}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Action Menu (Only for Own Profile) */}
@@ -163,46 +177,65 @@ export function ProductList({ products = [], loading, isOwnProfile, onEdit, onDe
               </div>
             )}
 
-            <Link href={`/product/${product.id}`} className="block h-full flex flex-col">
-              {/* Image Area */}
-              <div className="aspect-[4/3] w-full bg-[#1A283B] rounded-xl mb-4 overflow-hidden relative flex items-center justify-center">
+            {/* Status Badge (for inactive products on own profile) */}
+            {isOwnProfile && isInactive && (
+              <div className="absolute top-3 left-3 z-20 bg-gray-800/80 backdrop-blur px-3 py-1 rounded text-xs font-bold text-white uppercase">
+                {product.status}
+              </div>
+            )}
+
+            <Link href={`/product/${product.id}`} className="block no-underline text-inherit hover:no-underline h-full">
+              {/* Product Image */}
+              <div className="product-card-image relative">
                 <ProductCardImage
-                  src={product.images?.[0]}
+                  src={imageUrl}
                   alt={product.name}
-                  inactive={product.status !== 'active' && isOwnProfile}
+                  inactive={isInactive && isOwnProfile}
                 />
-
-                {/* Status Badge */}
-                {isOwnProfile && product.status !== 'active' && (
-                  <div className="absolute top-3 left-3 bg-gray-800/80 backdrop-blur px-3 py-1 rounded text-xs font-bold text-white uppercase">
-                    {product.status}
-                  </div>
-                )}
-
-                <div className="absolute top-3 right-3 bg-[rgba(15,27,43,0.8)] backdrop-blur-md px-3 py-1 rounded-full border border-[rgba(255,255,255,0.1)]">
-                  <span className="text-xs font-bold text-[#FFD700] uppercase tracking-wider">{product.category || 'Product'}</span>
-                </div>
               </div>
 
-              {/* Content */}
-              <div className="flex flex-col flex-1">
-                <div className="flex items-center gap-2 mb-2 text-[#A0A0A0] text-sm">
-                  <CountryFlag countryCode={product.country} size={16} />
-                  <span>{getCountryName(product.country)}</span>
-                </div>
-
-                <h3 className="text-lg font-bold text-white mb-2 leading-tight line-clamp-2 min-h-[44px]">
+              {/* Product Content */}
+              <div className="product-card-content">
+                <h3
+                  className="product-card-name"
+                  style={{
+                    background: 'linear-gradient(180deg, #ffffff 20%, #909090 100%)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text'
+                  }}
+                >
                   {product.name}
                 </h3>
+                {categoryName && (
+                  <span className="text-sm text-[#FFD700] font-bold flex items-center gap-2">
+                    {categoryIcon && <span>{categoryIcon}</span>}
+                    <span>{categoryName}</span>
+                  </span>
+                )}
+                <p className="product-card-description">{truncateText(product.description, 80)}</p>
 
-                <div className="mt-auto pt-4 border-t border-[rgba(255,255,255,0.05)] flex justify-between items-end">
-                  <div>
-                    <span className="block text-xs text-[#A0A0A0] mb-1">Price</span>
-                    <div className="text-[#FFD700] font-bold text-xl">
-                      {currencySymbol} {product.price}
-                      <span className="text-sm text-[#A0A0A0] font-normal ml-1">/ {product.unit}</span>
-                    </div>
-                  </div>
+                {product.price && (
+                  <p className="product-card-price">
+                    {currencySymbol} {product.price}
+                    {product.unit && (
+                      <span
+                        className="font-semibold text-sm ml-1"
+                        style={{
+                          background: 'linear-gradient(180deg, #ffffff 20%, #909090 100%)',
+                          WebkitBackgroundClip: 'text',
+                          WebkitTextFillColor: 'transparent',
+                          backgroundClip: 'text'
+                        }}
+                      >
+                        / {product.unit.replace(/^\/\s*/, '')}
+                      </span>
+                    )}
+                  </p>
+                )}
+
+                <div className="w-full mt-auto pt-3">
+                  <div className="product-card-btn w-full text-center">View Details</div>
                 </div>
               </div>
             </Link>

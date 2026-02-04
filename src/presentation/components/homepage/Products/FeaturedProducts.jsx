@@ -12,6 +12,7 @@ import Link from 'next/link';
 import { container } from '@/core/di/container';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useCategories } from '@/presentation/hooks/category/useCategories';
+import { useResponsiveLimit, useScrollLoadMore } from '@/presentation/hooks/useResponsiveLimit';
 
 // Default products for initial display - country is ISO code
 const DEFAULT_PRODUCTS = [
@@ -233,11 +234,23 @@ export function ProductCard({ product, categories }) {
 
 export function FeaturedProducts() {
   const [products, setProducts] = useState(DEFAULT_PRODUCTS);
+  const [allProducts, setAllProducts] = useState([]); // Store all fetched products
   const [loading, setLoading] = useState(true);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(true);
   const scrollRef = useRef(null);
   const { categories } = useCategories();
+
+  // Responsive limits with lazy loading: mobile 4, tablet 8, desktop 12, max 30
+  const { limit, displayCount, isReady, loadMore, hasMore } = useResponsiveLimit({
+    mobile: 4,
+    tablet: 8,
+    desktop: 12,
+    maxItems: 30
+  });
+
+  // Lazy load more when scrolling near end
+  useScrollLoadMore(scrollRef, loadMore, hasMore, 200);
 
   // Check initial scroll position on mount and when content loads
   useEffect(() => {
@@ -253,23 +266,33 @@ export function FeaturedProducts() {
     return () => clearTimeout(timeout);
   }, [products]);
 
+  // Update displayed products when displayCount changes (lazy loading)
   useEffect(() => {
+    if (allProducts.length > 0) {
+      setProducts(allProducts.slice(0, displayCount));
+    }
+  }, [displayCount, allProducts]);
+
+  useEffect(() => {
+    if (!isReady) return; // Wait for responsive limit to be determined
+
     const firestoreDS = container.getFirestoreDataSource();
 
-    // Real-time subscription to products
+    // Real-time subscription to products (fetch max for lazy loading)
     const unsubscribe = firestoreDS.subscribeToQuery(
       'products',
-      { limit: 30 },
-      (allProducts) => {
-        if (allProducts && allProducts.length > 0) {
+      { limit: 35 }, // Fetch enough for lazy loading
+      (fetchedProducts) => {
+        if (fetchedProducts && fetchedProducts.length > 0) {
           // Filter active products and sort by createdAt client-side
-          const active = allProducts.filter(p => p.status === 'active');
+          const active = fetchedProducts.filter(p => p.status === 'active');
           const sorted = active.sort((a, b) => {
             const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
             const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
             return dateB - dateA;
           });
-          setProducts(sorted.slice(0, 12));
+          setAllProducts(sorted);
+          setProducts(sorted.slice(0, displayCount));
         }
         setLoading(false);
       },
@@ -280,7 +303,7 @@ export function FeaturedProducts() {
     );
 
     return () => unsubscribe();
-  }, []);
+  }, [isReady]);
 
   const handleScroll = () => {
     if (scrollRef.current) {

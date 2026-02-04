@@ -167,8 +167,8 @@ export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter }) {
             const lowerQ = searchQuery.toLowerCase();
             result = result.filter(p =>
                 p.name.toLowerCase().includes(lowerQ) ||
-                (p.category && p.category.toLowerCase().includes(lowerQ)) ||
-                (p.country && p.country.toLowerCase().includes(lowerQ))
+                (p.description && p.description.toLowerCase().includes(lowerQ)) ||
+                (p.category && p.category.toLowerCase().includes(lowerQ))
             );
         }
 

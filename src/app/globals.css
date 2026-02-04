@@ -215,7 +215,13 @@ a:hover {
   position: relative;
   overflow: hidden;
   cursor: pointer;
-  height: 100%;
+  min-height: 380px;
+  height: 380px;
+  width: 320px;
+  min-width: 320px;
+  max-width: 320px;
+  flex-shrink: 0;
+  box-sizing: border-box;
 }
 
 .rfq-card:hover {
@@ -1015,4 +1021,26 @@ a:hover {
 
 .animate-pulse-glow {
   animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* Profile Products Grid - same card style as homepage */
+.profile-products-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 24px;
+}
+
+.profile-products-grid .product-card {
+  height: auto;
+  min-height: 480px;
+}
+
+@media (max-width: 640px) {
+  .profile-products-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-products-grid .product-card {
+    min-height: auto;
+  }
 }

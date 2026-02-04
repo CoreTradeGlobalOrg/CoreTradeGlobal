@@ -6,12 +6,13 @@
 
 'use client';
 
-import { Suspense, useEffect } from 'react';
+import { Suspense, useEffect, useState, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { MessageSquare } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/presentation/contexts/AuthContext';
 import { useMessages } from '@/presentation/contexts/MessagesContext';
+import { SearchBar } from '@/presentation/components/common/SearchBar/SearchBar';
 import './messages.css';
 
 function MessagesPageContent() {
@@ -19,9 +20,56 @@ function MessagesPageContent() {
   const searchParams = useSearchParams();
   const { user, isAuthenticated, loading: authLoading } = useAuth();
   const { conversations, loading, openConversation } = useMessages();
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Get conversation ID from URL if present
   const conversationIdFromUrl = searchParams.get('conversation');
+
+  // Filter conversations based on search query
+  const filteredConversations = useMemo(() => {
+    if (!searchQuery.trim()) return conversations;
+
+    const query = searchQuery.toLowerCase().trim();
+
+    return conversations.filter((conversation) => {
+      // Search in last message content
+      if (conversation.lastMessage?.content?.toLowerCase().includes(query)) {
+        return true;
+      }
+
+      // Search in participant details - only check the OTHER participant in the conversation
+      if (conversation.participants && conversation.participantDetails) {
+        // Find the other participant (not the current user)
+        const otherParticipantId = conversation.participants.find(id => id !== user?.uid);
+
+        if (otherParticipantId) {
+          const otherParticipant = conversation.participantDetails[otherParticipantId];
+          if (otherParticipant) {
+            if (
+              otherParticipant.displayName?.toLowerCase().includes(query) ||
+              otherParticipant.companyName?.toLowerCase().includes(query) ||
+              otherParticipant.email?.toLowerCase().includes(query)
+            ) {
+              return true;
+            }
+          }
+        }
+      }
+
+      // Search in contact metadata
+      if (conversation.type === 'contact') {
+        if (
+          conversation.metadata?.contactName?.toLowerCase().includes(query) ||
+          conversation.metadata?.contactEmail?.toLowerCase().includes(query) ||
+          conversation.metadata?.subject?.toLowerCase().includes(query)
+        ) {
+          return true;
+        }
+      }
+
+      return false;
+    });
+  }, [conversations, searchQuery, user?.uid]);
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -69,7 +117,17 @@ function MessagesPageContent() {
               Messages
             </h1>
           </div>
-          <p className="text-[#A0A0A0]">Your conversations with suppliers and buyers.</p>
+          <p className="text-[#A0A0A0] mb-8">Your conversations with suppliers and buyers.</p>
+
+          {/* Search Bar */}
+          <div className="max-w-2xl mx-auto">
+            <SearchBar
+              placeholder="Search messages, names, companies..."
+              initialValue={searchQuery}
+              onSearch={(val) => setSearchQuery(val)}
+              instant={true}
+            />
+          </div>
         </div>
 
         {/* Conversations List */}
@@ -95,9 +153,23 @@ function MessagesPageContent() {
                 </Link>
               </div>
             </div>
+          ) : filteredConversations.length === 0 ? (
+            <div className="messages-empty">
+              <div className="messages-empty-icon">
+                <MessageSquare className="w-12 h-12" />
+              </div>
+              <h2>No results found</h2>
+              <p>No conversations match your search "{searchQuery}"</p>
+              <button
+                onClick={() => setSearchQuery('')}
+                className="messages-cta-button mt-4"
+              >
+                Clear Search
+              </button>
+            </div>
           ) : (
             <div className="messages-list">
-              {conversations.map((conversation) => {
+              {filteredConversations.map((conversation) => {
                 const display = getConversationDisplay(conversation, user?.uid);
                 const unreadCount = conversation.unreadCount[user?.uid] || 0;
                 const lastMessage = conversation.lastMessage;

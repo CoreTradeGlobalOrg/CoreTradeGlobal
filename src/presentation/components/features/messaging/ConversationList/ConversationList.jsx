@@ -6,7 +6,8 @@
 
 'use client';
 
-import { MessageSquare, User, Mail, Clock } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { MessageSquare, User, Mail, Clock, Search, X } from 'lucide-react';
 import { useMessages } from '@/presentation/contexts/MessagesContext';
 import { useAuth } from '@/presentation/contexts/AuthContext';
 import './ConversationList.css';
@@ -14,6 +15,7 @@ import './ConversationList.css';
 export function ConversationList() {
   const { user } = useAuth();
   const { conversations, loading, openConversation } = useMessages();
+  const [searchQuery, setSearchQuery] = useState('');
 
   const formatTime = (date) => {
     if (!date) return '';
@@ -61,6 +63,52 @@ export function ConversationList() {
     return { name: 'Conversation', initial: 'C' };
   };
 
+  // Filter conversations based on search query
+  const filteredConversations = useMemo(() => {
+    if (!searchQuery.trim()) return conversations;
+
+    const query = searchQuery.toLowerCase().trim();
+
+    return conversations.filter((conversation) => {
+      // Search in last message content
+      if (conversation.lastMessage?.content?.toLowerCase().includes(query)) {
+        return true;
+      }
+
+      // Search in participant details - only check the OTHER participant in the conversation
+      if (conversation.participants && conversation.participantDetails) {
+        // Find the other participant (not the current user)
+        const otherParticipantId = conversation.participants.find(id => id !== user?.uid);
+
+        if (otherParticipantId) {
+          const otherParticipant = conversation.participantDetails[otherParticipantId];
+          if (otherParticipant) {
+            if (
+              otherParticipant.displayName?.toLowerCase().includes(query) ||
+              otherParticipant.companyName?.toLowerCase().includes(query) ||
+              otherParticipant.email?.toLowerCase().includes(query)
+            ) {
+              return true;
+            }
+          }
+        }
+      }
+
+      // Search in contact metadata
+      if (conversation.type === 'contact') {
+        if (
+          conversation.metadata?.contactName?.toLowerCase().includes(query) ||
+          conversation.metadata?.contactEmail?.toLowerCase().includes(query) ||
+          conversation.metadata?.subject?.toLowerCase().includes(query)
+        ) {
+          return true;
+        }
+      }
+
+      return false;
+    });
+  }, [conversations, searchQuery, user?.uid]);
+
   if (loading) {
     return (
       <div className="conversation-list-loading">
@@ -81,8 +129,41 @@ export function ConversationList() {
   }
 
   return (
-    <div className="conversation-list">
-      {conversations.map((conversation) => {
+    <div className="conversation-list-wrapper">
+      {/* Search Bar */}
+      <div className="conversation-search">
+        <div className="conversation-search-input-wrapper">
+          <Search className="conversation-search-icon" size={16} />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search messages..."
+            className="conversation-search-input"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="conversation-search-clear"
+            >
+              <X size={14} />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* No Results */}
+      {filteredConversations.length === 0 && searchQuery && (
+        <div className="conversation-list-empty">
+          <Search className="w-8 h-8 text-[#64748b]" />
+          <h4>No results</h4>
+          <p>No conversations match "{searchQuery}"</p>
+        </div>
+      )}
+
+      {/* Conversation List */}
+      <div className="conversation-list">
+        {filteredConversations.map((conversation) => {
         const display = getConversationDisplay(conversation);
         const unreadCount = conversation.unreadCount[user?.uid] || 0;
         const lastMessage = conversation.lastMessage;
@@ -135,6 +216,7 @@ export function ConversationList() {
           </div>
         );
       })}
+      </div>
     </div>
   );
 }

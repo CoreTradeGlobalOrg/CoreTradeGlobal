@@ -130,19 +130,14 @@ export default function FairDetailPage() {
                             <div className="absolute top-0 right-0 w-40 h-40 bg-[#FFD700]/10 blur-[80px] rounded-full pointer-events-none" />
 
                             <div className="relative z-10">
-                                {/* Status Badge */}
-                                <div className="flex justify-end mb-4">
-                                    {getStatusBadge(fair.status)}
-                                </div>
-
-                                {/* Icon + Title Row */}
-                                <div className="flex items-center gap-5 mb-4">
-                                    <div className="w-16 h-16 rounded-2xl bg-[rgba(255,255,255,0.05)] flex items-center justify-center text-4xl flex-shrink-0">
-                                        {fair.icon || fair.image || '🌐'}
-                                    </div>
+                                {/* Title + Status Badge Row */}
+                                <div className="flex items-start justify-between gap-4 mb-4">
                                     <h1 className="text-3xl md:text-4xl font-bold text-white leading-tight">
                                         {fair.name}
                                     </h1>
+                                    <div className="flex-shrink-0">
+                                        {getStatusBadge(fair.status)}
+                                    </div>
                                 </div>
 
                                 {/* Category */}

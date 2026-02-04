@@ -559,10 +559,10 @@ function ProfileContent() {
                   <div className="w-24 h-24 rounded-2xl border-2 border-dashed border-[#FFD700] bg-[rgba(255,215,0,0.1)] flex items-center justify-center">
                     <div className="w-6 h-6 border-2 border-[#FFD700] border-t-transparent rounded-full animate-spin"></div>
                   </div>
-                ) : logoPreview ? (
+                ) : (isEditing ? logoPreview : profileUser?.companyLogo) ? (
                   <div className="relative">
                     <img
-                      src={logoPreview}
+                      src={isEditing ? logoPreview : profileUser?.companyLogo}
                       alt="Company logo"
                       className="w-24 h-24 object-cover rounded-2xl border-2 border-[rgba(255,215,0,0.3)]"
                     />
@@ -640,13 +640,24 @@ function ProfileContent() {
                   {isEditing ? (
                     <textarea
                       value={about}
-                      onChange={(e) => setAbout(e.target.value)}
-                      rows={2}
-                      placeholder="Tell us about yourself..."
-                      className="w-full bg-[rgba(255,255,255,0.05)] border-2 border-[#FFD700]/50 rounded-xl p-3 text-white text-sm placeholder-[#A0A0A0] focus:outline-none focus:border-[#FFD700] resize-none shadow-[0_0_15px_rgba(255,215,0,0.2)] animate-pulse-glow"
+                      onChange={(e) => {
+                        setAbout(e.target.value);
+                        // Auto-resize textarea
+                        e.target.style.height = 'auto';
+                        e.target.style.height = e.target.scrollHeight + 'px';
+                      }}
+                      ref={(el) => {
+                        // Initial auto-resize when entering edit mode
+                        if (el) {
+                          el.style.height = 'auto';
+                          el.style.height = el.scrollHeight + 'px';
+                        }
+                      }}
+                      placeholder="Tell us about yourself and your company..."
+                      className="w-full bg-[rgba(255,255,255,0.05)] border-2 border-[#FFD700]/50 rounded-xl p-4 text-white text-sm leading-relaxed placeholder-[#A0A0A0] focus:outline-none focus:border-[#FFD700] resize-none min-h-[80px] overflow-hidden shadow-[0_0_15px_rgba(255,215,0,0.2)] animate-pulse-glow"
                     />
                   ) : (
-                    <p className="text-[#A0A0A0] text-sm leading-relaxed">
+                    <p className="text-[#A0A0A0] text-sm leading-relaxed whitespace-pre-wrap">
                       {profileUser?.about || 'No bio available'}
                     </p>
                   )}

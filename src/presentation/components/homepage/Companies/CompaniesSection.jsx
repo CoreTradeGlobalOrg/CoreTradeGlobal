@@ -14,6 +14,7 @@ import { CountryFlag } from '@/presentation/components/common/CountryFlag/Countr
 import { COUNTRIES } from '@/core/constants/countries';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useCategories } from '@/presentation/hooks/category/useCategories';
+import { useResponsiveLimit, useScrollLoadMore } from '@/presentation/hooks/useResponsiveLimit';
 
 // Default companies for initial display (country = ISO code)
 const DEFAULT_COMPANIES = [
@@ -140,11 +141,30 @@ function CompanyCard({ company, categories }) {
 
 export function CompaniesSection() {
   const [companies, setCompanies] = useState(DEFAULT_COMPANIES);
+  const [allCompanies, setAllCompanies] = useState([]); // Store all fetched companies
   const [loading, setLoading] = useState(true);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(true);
   const scrollRef = useRef(null);
   const { categories } = useCategories();
+
+  // Responsive limits with lazy loading: mobile 4, tablet 8, desktop 12, max 30
+  const { limit, displayCount, isReady, loadMore, hasMore } = useResponsiveLimit({
+    mobile: 4,
+    tablet: 8,
+    desktop: 12,
+    maxItems: 30
+  });
+
+  // Lazy load more when scrolling near end
+  useScrollLoadMore(scrollRef, loadMore, hasMore, 200);
+
+  // Update displayed companies when displayCount changes (lazy loading)
+  useEffect(() => {
+    if (allCompanies.length > 0) {
+      setCompanies(allCompanies.slice(0, displayCount));
+    }
+  }, [displayCount, allCompanies]);
 
   // Check initial scroll position on mount and when content loads
   useEffect(() => {
@@ -161,10 +181,13 @@ export function CompaniesSection() {
   }, [companies]);
 
   useEffect(() => {
+    if (!isReady) return; // Wait for responsive limit to be determined
+
     const fetchCompanies = async () => {
       try {
+        // Fetch enough companies for lazy loading
         const firestoreDS = container.getFirestoreDataSource();
-        const allUsers = await firestoreDS.query('users', { limit: 50 });
+        const allUsers = await firestoreDS.query('users', { limit: 35 });
 
         if (allUsers && allUsers.length > 0) {
           // Filter: must have company name and not suspended
@@ -180,7 +203,8 @@ export function CompaniesSection() {
           });
 
           if (sorted.length > 0) {
-            setCompanies(sorted.slice(0, 12));
+            setAllCompanies(sorted);
+            setCompanies(sorted.slice(0, displayCount));
           }
           // If no companies found, keep showing default companies
         }
@@ -192,7 +216,7 @@ export function CompaniesSection() {
     };
 
     fetchCompanies();
-  }, []);
+  }, [isReady]);
 
   const handleScroll = () => {
     if (scrollRef.current) {
@@ -221,9 +245,11 @@ export function CompaniesSection() {
             <h2>Latest Companies</h2>
             <p>Connect with verified suppliers worldwide.</p>
           </div>
+          {/* TODO: View All Companies butonu daha sonra açılacaktır
           <Link href="/companies" className="btn-section-action">
             View All Companies →
           </Link>
+          */}
         </div>
 
         {/* Companies Grid with Scroll */}

@@ -203,7 +203,7 @@ export function RequestGrid({ searchQuery, categoryFilter }) {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredRequests.map((rfq) => (
                 <Link key={rfq.id} href={`/request/${rfq.id}`} className="block">
-                    <div className="rfq-card cursor-pointer hover:border-[#3b82f6]/50 hover:shadow-[0_0_30px_rgba(59,130,246,0.15)] transition-all duration-300">
+                    <div className="rfq-card cursor-pointer hover:border-[#3b82f6]/50 hover:shadow-[0_0_30px_rgba(59,130,246,0.15)] transition-all duration-300 !w-auto !min-w-0 !max-w-none">
                         <div className="flex justify-between items-start mb-4">
                             <div className="flex items-center gap-1.5 text-[13px] text-white">
                                 <CountryFlag countryCode={rfq.country} size={16} />

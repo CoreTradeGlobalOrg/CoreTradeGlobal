@@ -11,6 +11,7 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { container } from '@/core/di/container';
 import { ChevronLeft, ChevronRight, MapPin } from 'lucide-react';
+import { useResponsiveLimit, useScrollLoadMore } from '@/presentation/hooks/useResponsiveLimit';
 
 // Default fairs for initial display
 const DEFAULT_FAIRS = [
@@ -89,10 +90,29 @@ function FairCard({ fair }) {
 
 export function FairsSection() {
   const [fairs, setFairs] = useState(DEFAULT_FAIRS);
+  const [allFairs, setAllFairs] = useState([]); // Store all fetched fairs
   const [loading, setLoading] = useState(true);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(true);
   const scrollRef = useRef(null);
+
+  // Responsive limits with lazy loading: mobile 3, tablet 4, desktop 6, max 15
+  const { limit, displayCount, isReady, loadMore, hasMore } = useResponsiveLimit({
+    mobile: 3,
+    tablet: 4,
+    desktop: 6,
+    maxItems: 15
+  });
+
+  // Lazy load more when scrolling near end
+  useScrollLoadMore(scrollRef, loadMore, hasMore, 200);
+
+  // Update displayed fairs when displayCount changes (lazy loading)
+  useEffect(() => {
+    if (allFairs.length > 0) {
+      setFairs(allFairs.slice(0, displayCount));
+    }
+  }, [displayCount, allFairs]);
 
   // Check initial scroll position on mount and when content loads
   useEffect(() => {
@@ -110,15 +130,17 @@ export function FairsSection() {
   }, [fairs]);
 
   useEffect(() => {
+    if (!isReady) return; // Wait for responsive limit to be determined
+
     const fetchFairs = async () => {
       try {
-        // Use simple query without index, filter client-side
+        // Fetch enough fairs for lazy loading
         const firestoreDS = container.getFirestoreDataSource();
-        const allFairs = await firestoreDS.query('fairs', { limit: 20 });
+        const fetchedFairs = await firestoreDS.query('fairs', { limit: 20 });
 
-        if (allFairs && allFairs.length > 0) {
+        if (fetchedFairs && fetchedFairs.length > 0) {
           // Filter upcoming fairs and sort by startDate client-side
-          const upcoming = allFairs.filter(f => f.status === 'upcoming' || f.status === 'ongoing');
+          const upcoming = fetchedFairs.filter(f => f.status === 'upcoming' || f.status === 'ongoing');
           const sorted = upcoming.sort((a, b) => {
             const dateA = a.startDate?.toDate ? a.startDate.toDate() : new Date(a.startDate || 0);
             const dateB = b.startDate?.toDate ? b.startDate.toDate() : new Date(b.startDate || 0);
@@ -126,7 +148,8 @@ export function FairsSection() {
           });
 
           if (sorted.length > 0) {
-            setFairs(sorted.slice(0, 6));
+            setAllFairs(sorted);
+            setFairs(sorted.slice(0, displayCount));
           }
         }
       } catch (error) {
@@ -138,7 +161,7 @@ export function FairsSection() {
     };
 
     fetchFairs();
-  }, []);
+  }, [isReady]);
 
   const handleScroll = () => {
     if (scrollRef.current) {

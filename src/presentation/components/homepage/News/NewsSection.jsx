@@ -11,6 +11,7 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { container } from '@/core/di/container';
 import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useResponsiveLimit, useScrollLoadMore } from '@/presentation/hooks/useResponsiveLimit';
 
 // Default news for initial display
 const DEFAULT_NEWS = [
@@ -70,7 +71,7 @@ function NewsCard({ news, index }) {
   const imageClass = news.imageClass || `bg-news-${(index % 5) + 1}`;
 
   return (
-    <div className="news-card">
+    <Link href={`/news/${news.id}`} className="news-card block cursor-pointer">
       {/* News Image */}
       <div className="news-img-wrapper">
         <div className={`news-img-placeholder ${imageClass}`} />
@@ -84,20 +85,39 @@ function NewsCard({ news, index }) {
         </div>
         <h3 className="news-title">{news.title}</h3>
         <p className="news-excerpt">{news.excerpt}</p>
-        <Link href={`/news/${news.id}`} className="news-link">
+        <span className="news-link">
           Read More <ArrowRight className="w-4 h-4" />
-        </Link>
+        </span>
       </div>
-    </div>
+    </Link>
   );
 }
 
 export function NewsSection() {
   const [news, setNews] = useState(DEFAULT_NEWS);
+  const [allNews, setAllNews] = useState([]); // Store all fetched news
   const [loading, setLoading] = useState(true);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(true);
   const scrollRef = useRef(null);
+
+  // Responsive limits with lazy loading: mobile 3, tablet 4, desktop 6, max 20
+  const { limit, displayCount, isReady, loadMore, hasMore } = useResponsiveLimit({
+    mobile: 3,
+    tablet: 4,
+    desktop: 6,
+    maxItems: 20
+  });
+
+  // Lazy load more when scrolling near end
+  useScrollLoadMore(scrollRef, loadMore, hasMore, 200);
+
+  // Update displayed news when displayCount changes (lazy loading)
+  useEffect(() => {
+    if (allNews.length > 0) {
+      setNews(allNews.slice(0, displayCount));
+    }
+  }, [displayCount, allNews]);
 
   // Check initial scroll position on mount and when content loads
   useEffect(() => {
@@ -132,30 +152,31 @@ export function NewsSection() {
   };
 
   useEffect(() => {
+    if (!isReady) return; // Wait for responsive limit to be determined
+
     const firestoreDS = container.getFirestoreDataSource();
 
-    // Real-time subscription to news
+    // Real-time subscription to news (fetch enough for lazy loading)
     const unsubscribe = firestoreDS.subscribeToQuery(
       'news',
-      { limit: 20 },
-      (allNews) => {
-        if (allNews && allNews.length > 0) {
+      { limit: 25 }, // Fetch enough for lazy loading
+      (fetchedNews) => {
+        if (fetchedNews && fetchedNews.length > 0) {
           // Filter published news and sort by publishedAt client-side
-          const published = allNews.filter(n => n.status === 'published');
+          const published = fetchedNews.filter(n => n.status === 'published');
           const sorted = published.sort((a, b) => {
             const dateA = a.publishedAt?.toDate ? a.publishedAt.toDate() : new Date(a.publishedAt || 0);
             const dateB = b.publishedAt?.toDate ? b.publishedAt.toDate() : new Date(b.publishedAt || 0);
             return dateB - dateA;
           });
 
-          if (sorted.length > 0) {
-            setNews(
-              sorted.slice(0, 6).map((n, i) => ({
-                ...n,
-                imageClass: `bg-news-${(i % 5) + 1}`,
-              }))
-            );
-          }
+          const mappedNews = sorted.map((n, i) => ({
+            ...n,
+            imageClass: `bg-news-${(i % 5) + 1}`,
+          }));
+
+          setAllNews(mappedNews);
+          setNews(mappedNews.slice(0, displayCount));
         }
         setLoading(false);
       },
@@ -166,7 +187,7 @@ export function NewsSection() {
     );
 
     return () => unsubscribe();
-  }, []);
+  }, [isReady]);
 
   return (
     <section className="news-section">

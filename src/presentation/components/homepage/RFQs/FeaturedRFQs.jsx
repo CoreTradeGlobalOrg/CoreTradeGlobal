@@ -14,6 +14,7 @@ import { ChevronLeft, ChevronRight, FileText } from 'lucide-react';
 import { COUNTRIES } from '@/core/constants/countries';
 import { CountryFlag } from '@/presentation/components/common/CountryFlag/CountryFlag';
 import { useCategories } from '@/presentation/hooks/category/useCategories';
+import { useResponsiveLimit, useScrollLoadMore } from '@/presentation/hooks/useResponsiveLimit';
 
 // Helper to get country name from ISO code
 const getCountryName = (countryCode) => {
@@ -113,7 +114,7 @@ const DEFAULT_RFQS = [
 
 function RFQCard({ rfq }) {
   return (
-    <Link href={`/request/${rfq.id}`} className="rfq-card min-w-[320px] block no-underline hover:no-underline">
+    <Link href={`/request/${rfq.id}`} className="rfq-card block no-underline hover:no-underline">
       <div className="flex justify-between items-start mb-4">
         <div className="flex items-center gap-1.5 text-[13px] text-white">
           <CountryFlag countryCode={rfq.country} size={16} />
@@ -153,12 +154,24 @@ function RFQCard({ rfq }) {
 
 export function FeaturedRFQs() {
   const [rfqs, setRfqs] = useState(DEFAULT_RFQS);
+  const [allRfqs, setAllRfqs] = useState([]); // Store all fetched RFQs
   const [displayRfqs, setDisplayRfqs] = useState(DEFAULT_RFQS);
   const [loading, setLoading] = useState(true);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(true);
   const scrollRef = useRef(null);
   const { categories } = useCategories();
+
+  // Responsive limits with lazy loading: mobile 4, tablet 6, desktop 10, max 25
+  const { limit, displayCount, isReady, loadMore, hasMore } = useResponsiveLimit({
+    mobile: 4,
+    tablet: 6,
+    desktop: 10,
+    maxItems: 25
+  });
+
+  // Lazy load more when scrolling near end
+  useScrollLoadMore(scrollRef, loadMore, hasMore, 200);
 
   // Resolve category names when categories or rfqs change
   useEffect(() => {
@@ -171,6 +184,13 @@ export function FeaturedRFQs() {
     });
     setDisplayRfqs(withCategories);
   }, [rfqs, categories]);
+
+  // Update displayed RFQs when displayCount changes (lazy loading)
+  useEffect(() => {
+    if (allRfqs.length > 0) {
+      setRfqs(allRfqs.slice(0, displayCount));
+    }
+  }, [displayCount, allRfqs]);
 
   // Check initial scroll position on mount and when content loads
   useEffect(() => {
@@ -188,12 +208,14 @@ export function FeaturedRFQs() {
   }, [rfqs]);
 
   useEffect(() => {
+    if (!isReady) return; // Wait for responsive limit to be determined
+
     const firestoreDS = container.getFirestoreDataSource();
 
-    // Real-time subscription to requests
+    // Real-time subscription to requests (fetch enough for lazy loading)
     const unsubscribe = firestoreDS.subscribeToQuery(
       'requests',
-      { limit: 30 },
+      { limit: 30 }, // Fetch enough for lazy loading
       (allRequests) => {
         if (allRequests && allRequests.length > 0) {
           // Filter active requests and sort by createdAt client-side
@@ -204,15 +226,16 @@ export function FeaturedRFQs() {
             return dateB - dateA;
           });
 
-          setRfqs(
-            sorted.slice(0, 10).map((r) => ({
-              ...r,
-              title: r.productName || r.title,
-              country: r.targetCountry || r.country, // ISO code
-              timeAgo: getRelativeTime(r.createdAt),
-              budget: r.budget ?? 'Negotiable',
-            }))
-          );
+          const mappedRfqs = sorted.map((r) => ({
+            ...r,
+            title: r.productName || r.title,
+            country: r.targetCountry || r.country, // ISO code
+            timeAgo: getRelativeTime(r.createdAt),
+            budget: r.budget ?? 'Negotiable',
+          }));
+
+          setAllRfqs(mappedRfqs);
+          setRfqs(mappedRfqs.slice(0, displayCount));
         }
         setLoading(false);
       },
@@ -223,7 +246,7 @@ export function FeaturedRFQs() {
     );
 
     return () => unsubscribe();
-  }, []);
+  }, [isReady]);
 
   const handleScroll = () => {
     if (scrollRef.current) {
@@ -288,7 +311,7 @@ export function FeaturedRFQs() {
                   {[1, 2, 3, 4].map((i) => (
                     <div
                       key={i}
-                      className="rfq-card min-w-[320px]"
+                      className="rfq-card"
                       style={{ background: 'rgba(255,255,255,0.05)' }}
                     >
                       <div className="h-6 w-16 bg-[rgba(255,255,255,0.1)] rounded animate-pulse mb-4" />
