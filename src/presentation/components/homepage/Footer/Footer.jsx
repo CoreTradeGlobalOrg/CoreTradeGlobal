@@ -47,7 +47,9 @@ export function Footer() {
             <h4>Platform</h4>
             <Link href="/products">Browse Products</Link>
             <Link href="/requests">Requests for Quotation</Link>
+            {/* TODO: Verified Partners sayfası hazır olduğunda açılacak
             <Link href="/companies">Verified Partners</Link>
+            */}
             <Link href="/fairs">Trade Shows &amp; Fairs</Link>
           </div>
 

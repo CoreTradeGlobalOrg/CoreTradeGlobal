@@ -7,11 +7,13 @@ import { NotificationPrompt } from '@/presentation/components/common/Notificatio
 import { NotificationListener } from '@/presentation/components/common/NotificationListener/NotificationListener';
 import { InstallPrompt } from '@/presentation/components/common/InstallPrompt/InstallPrompt';
 import { CookieConsent } from '@/presentation/components/common/CookieConsent/CookieConsent';
+import { ScrollToTop } from '@/presentation/components/common/ScrollToTop/ScrollToTop';
 import './homepage.css';
 
 export default function MainLayout({ children }) {
   return (
     <>
+      <ScrollToTop />
       <Navbar />
       {children}
       <Footer />

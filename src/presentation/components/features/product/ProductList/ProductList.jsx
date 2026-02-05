@@ -132,7 +132,7 @@ export function ProductList({ products = [], loading, isOwnProfile, onEdit, onDe
         return (
           <div
             key={product.id}
-            className={`product-card relative ${isInactive && isOwnProfile ? 'opacity-70' : ''}`}
+            className={`product-card relative !h-auto !min-h-0 ${isInactive && isOwnProfile ? 'opacity-70' : ''}`}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Action Menu (Only for Own Profile) */}
@@ -184,7 +184,7 @@ export function ProductList({ products = [], loading, isOwnProfile, onEdit, onDe
               </div>
             )}
 
-            <Link href={`/product/${product.id}`} className="block no-underline text-inherit hover:no-underline h-full">
+            <Link href={`/product/${product.id}`} className="block no-underline text-inherit hover:no-underline">
               {/* Product Image */}
               <div className="product-card-image relative">
                 <ProductCardImage
@@ -195,9 +195,9 @@ export function ProductList({ products = [], loading, isOwnProfile, onEdit, onDe
               </div>
 
               {/* Product Content */}
-              <div className="product-card-content">
+              <div className="p-5">
                 <h3
-                  className="product-card-name"
+                  className="text-lg font-bold mb-1 line-clamp-1"
                   style={{
                     background: 'linear-gradient(180deg, #ffffff 20%, #909090 100%)',
                     WebkitBackgroundClip: 'text',
@@ -207,34 +207,42 @@ export function ProductList({ products = [], loading, isOwnProfile, onEdit, onDe
                 >
                   {product.name}
                 </h3>
-                {categoryName && (
-                  <span className="text-sm text-[#FFD700] font-bold flex items-center gap-2">
-                    {categoryIcon && <span>{categoryIcon}</span>}
-                    <span>{categoryName}</span>
-                  </span>
-                )}
-                <p className="product-card-description">{truncateText(product.description, 80)}</p>
+                <span className="text-sm text-[#FFD700] font-bold flex items-center gap-2 min-h-[20px]">
+                  {categoryName ? (
+                    <>
+                      {categoryIcon && <span>{categoryIcon}</span>}
+                      <span>{categoryName}</span>
+                    </>
+                  ) : (
+                    <span className="invisible">-</span>
+                  )}
+                </span>
+                <p className="text-sm text-[#A0A0A0] my-2 line-clamp-2 min-h-[40px]">{truncateText(product.description, 80)}</p>
 
-                {product.price && (
-                  <p className="product-card-price">
-                    {currencySymbol} {product.price}
-                    {product.unit && (
-                      <span
-                        className="font-semibold text-sm ml-1"
-                        style={{
-                          background: 'linear-gradient(180deg, #ffffff 20%, #909090 100%)',
-                          WebkitBackgroundClip: 'text',
-                          WebkitTextFillColor: 'transparent',
-                          backgroundClip: 'text'
-                        }}
-                      >
-                        / {product.unit.replace(/^\/\s*/, '')}
-                      </span>
-                    )}
-                  </p>
-                )}
+                <p className="text-xl font-bold text-[#FFD700] min-h-[28px]">
+                  {product.price ? (
+                    <>
+                      {currencySymbol} {product.price}
+                      {product.unit && (
+                        <span
+                          className="font-semibold text-sm ml-1"
+                          style={{
+                            background: 'linear-gradient(180deg, #ffffff 20%, #909090 100%)',
+                            WebkitBackgroundClip: 'text',
+                            WebkitTextFillColor: 'transparent',
+                            backgroundClip: 'text'
+                          }}
+                        >
+                          / {product.unit.replace(/^\/\s*/, '')}
+                        </span>
+                      )}
+                    </>
+                  ) : (
+                    <span className="invisible">-</span>
+                  )}
+                </p>
 
-                <div className="w-full mt-auto pt-3">
+                <div className="w-full pt-3">
                   <div className="product-card-btn w-full text-center">View Details</div>
                 </div>
               </div>

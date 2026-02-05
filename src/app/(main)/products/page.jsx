@@ -2,19 +2,37 @@
 
 import { ProductGrid } from '@/presentation/components/features/product/ProductGrid/ProductGrid';
 import { SearchBar } from '@/presentation/components/common/SearchBar/SearchBar';
-import { useState, useEffect, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useState, useEffect, Suspense, useCallback } from 'react';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 
 import { container } from '@/core/di/container';
 
 function ProductsContent() {
     const searchParams = useSearchParams();
+    const router = useRouter();
+    const pathname = usePathname();
+
     const initialCategory = searchParams.get('category') || '';
     const initialCategoryId = searchParams.get('categoryId') || '';
     const initialSearch = searchParams.get('search') || '';
 
     const [searchQuery, setSearchQuery] = useState(initialSearch);
     const [displayName, setDisplayName] = useState(initialCategory || 'Selected Category');
+
+    // Update URL when search changes
+    const handleSearch = useCallback((value) => {
+        setSearchQuery(value);
+
+        const params = new URLSearchParams(searchParams.toString());
+        if (value) {
+            params.set('search', value);
+        } else {
+            params.delete('search');
+        }
+
+        const newUrl = params.toString() ? `${pathname}?${params.toString()}` : pathname;
+        router.replace(newUrl, { scroll: false });
+    }, [searchParams, pathname, router]);
 
     // Update state if URL params change
     useEffect(() => {
@@ -51,7 +69,7 @@ function ProductsContent() {
                     <SearchBar
                         placeholder="Search products..."
                         initialValue={searchQuery}
-                        onSearch={(val) => setSearchQuery(val)}
+                        onSearch={handleSearch}
                     />
                 </div>
             </div>

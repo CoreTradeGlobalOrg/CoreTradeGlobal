@@ -376,11 +376,11 @@ export default function ProductDetailPage() {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 w-full">
                       <Button
                         onClick={handleSendMessage}
                         disabled={sendingMessage}
-                        className="flex-1 px-4 py-3 rounded-full bg-gradient-to-r from-[#FFD700] to-[#FDB931] !text-black hover:shadow-[0_0_20px_rgba(255,215,0,0.3)] transition-all font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50"
+                        className="flex-1 basis-1/2 px-3 py-3 rounded-full bg-gradient-to-r from-[#FFD700] to-[#FDB931] !text-black hover:shadow-[0_0_20px_rgba(255,215,0,0.3)] transition-all font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50 whitespace-nowrap"
                       >
                         {sendingMessage ? (
                           <>
@@ -396,7 +396,7 @@ export default function ProductDetailPage() {
                       </Button>
                       <Button
                         onClick={() => router.push(`/profile/${seller.id}`)}
-                        className="flex-1 px-4 py-3 rounded-full border border-[#FFD700]/30 text-[#FFD700] hover:bg-[#FFD700]/20 hover:text-white transition-all font-semibold text-sm text-center"
+                        className="flex-1 basis-1/2 px-3 py-3 rounded-full border border-[#FFD700]/30 text-[#FFD700] hover:bg-[#FFD700]/20 hover:text-white transition-all font-semibold text-sm flex items-center justify-center whitespace-nowrap"
                       >
                         View Profile
                       </Button>

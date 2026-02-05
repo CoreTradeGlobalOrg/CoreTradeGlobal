@@ -1379,6 +1379,19 @@ html {
     transform: scale(0.95);
 }
 
+/* Blue variant for RFQs */
+.btn-section-action-blue {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: #ffffff;
+    box-shadow: 0 4px 20px rgba(59, 130, 246, 0.25);
+}
+
+.btn-section-action-blue:hover {
+    background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+    color: #ffffff;
+    box-shadow: 0 6px 25px rgba(59, 130, 246, 0.4);
+}
+
 /* --- 9B. FEATURED PRODUCTS SECTION --- */
 .featured-products-section {
     width: 100%;
@@ -2821,6 +2834,90 @@ html {
 
     .cat-header {
         padding: 0 20px;
+    }
+
+    /* Section headers on mobile */
+    .featured-products-header,
+    .featured-rfqs-header,
+    .fair-header,
+    .news-header {
+        padding: 0 16px;
+        margin-bottom: 20px;
+    }
+
+    .btn-section-action,
+    .btn-view-all-news {
+        padding: 8px 12px;
+        font-size: 11px;
+        white-space: nowrap;
+        min-width: 120px;
+        text-align: center;
+        display: inline-flex;
+        justify-content: center;
+    }
+
+    /* Align button centered with title block */
+    .featured-products-header,
+    .featured-rfqs-header,
+    .cat-header,
+    .fair-header,
+    .news-header {
+        align-items: center;
+    }
+
+    /* Hide subtitles on mobile for all sections */
+    .featured-products-header p,
+    .featured-rfqs-header p,
+    .cat-header p,
+    .fair-header p,
+    .fair-title-group p,
+    .news-header p,
+    .news-header-content p {
+        display: none;
+    }
+
+    /* Mobile: Consistent 20px padding for all sections */
+    .featured-products-header,
+    .featured-rfqs-header,
+    .cat-header,
+    .fair-header,
+    .news-header {
+        padding: 0 20px !important;
+    }
+
+    /* All horizontal scroll containers - 20px left padding, 0 right padding */
+    #products.tab-content,
+    #requests.tab-content,
+    #companies.tab-content,
+    .fair-scroll-row,
+    .news-scroll-wrapper {
+        padding: 10px 0 20px 20px !important;
+    }
+
+    /* Last card margin for scroll end spacing */
+    #products.tab-content > *:last-child,
+    #requests.tab-content > *:last-child,
+    #companies.tab-content > *:last-child,
+    .fair-scroll-row > *:last-child,
+    .news-scroll-wrapper > *:last-child {
+        margin-right: 20px !important;
+    }
+
+    .cat-grid {
+        padding: 0 20px !important;
+    }
+
+    /* Responsive card widths for mobile */
+    .fair-card {
+        flex: 0 0 calc(100vw - 60px) !important;
+        min-width: calc(100vw - 60px) !important;
+        max-width: calc(100vw - 60px) !important;
+    }
+
+    .news-card {
+        flex: 0 0 calc(100vw - 60px) !important;
+        min-width: calc(100vw - 60px) !important;
+        max-width: calc(100vw - 60px) !important;
     }
 }
 

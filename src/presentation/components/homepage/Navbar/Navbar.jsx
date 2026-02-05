@@ -201,7 +201,28 @@ export function Navbar() {
 
       {/* Mobile Menu Button & Notification */}
       <div className="md:hidden flex items-center gap-2">
-        {isAuthenticated && user && <NotificationBell />}
+        {isAuthenticated && user && (
+          <>
+            <NotificationBell />
+            <Link
+              href={`/profile/${user.uid}`}
+              className="w-10 h-10 flex-shrink-0 rounded-full overflow-hidden border-2 border-[#FFD700] hover:opacity-90 transition-opacity"
+              style={{ backgroundColor: '#FFD700' }}
+            >
+              {user.companyLogo || user.photoURL ? (
+                <img
+                  src={user.companyLogo || user.photoURL}
+                  alt="Profile"
+                  className="w-full h-full object-cover object-center"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-[#FFD700]">
+                  <User className="w-5 h-5 text-[#0F1B2B]" />
+                </div>
+              )}
+            </Link>
+          </>
+        )}
         <button
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           className="w-10 h-10 flex items-center justify-center text-white hover:bg-[rgba(255,255,255,0.1)] rounded-lg transition-colors"

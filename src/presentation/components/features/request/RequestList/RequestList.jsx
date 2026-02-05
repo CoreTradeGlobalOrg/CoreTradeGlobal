@@ -53,9 +53,9 @@ export function RequestList({ requests = [], loading, isOwnProfile, onEdit, onDe
   // Loading skeleton
   if (loading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="profile-rfq-grid">
         {[...Array(6)].map((_, index) => (
-          <div key={index} className="h-[380px] bg-[rgba(255,255,255,0.05)] rounded-[20px] animate-pulse" />
+          <div key={index} className="h-[350px] bg-[rgba(255,255,255,0.05)] rounded-[20px] animate-pulse" />
         ))}
       </div>
     );
@@ -82,7 +82,7 @@ export function RequestList({ requests = [], loading, isOwnProfile, onEdit, onDe
 
   // Request grid
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" onClick={() => setActiveMenu(null)}>
+    <div className="profile-rfq-grid" onClick={() => setActiveMenu(null)}>
       {requests.map((request) => {
         const countryCode = request.targetCountry || request.country;
         const category = categories?.find(c => c.value === request.categoryId);
@@ -200,9 +200,9 @@ export function RequestList({ requests = [], loading, isOwnProfile, onEdit, onDe
             </div>
 
             {/* Description */}
-            {request.description && (
-              <p className="text-[13px] text-[#94a3b8] leading-relaxed mb-5 line-clamp-2 overflow-hidden">{request.description}</p>
-            )}
+            <p className="text-[13px] text-[#94a3b8] leading-relaxed mb-5 line-clamp-2 min-h-[40px]">
+              {request.description || <span className="invisible">-</span>}
+            </p>
 
             {/* Footer */}
             <div className="mt-auto pt-4 border-t border-[rgba(255,255,255,0.05)] flex justify-end items-center">

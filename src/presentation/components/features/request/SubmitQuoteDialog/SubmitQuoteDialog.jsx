@@ -72,16 +72,16 @@ const WARRANTY_OPTIONS = [
 ];
 
 // Input class with white placeholder
-const inputClass = "w-full bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] p-3.5 rounded-xl text-white text-sm outline-none transition-all focus:border-[#3b82f6] focus:bg-[rgba(15,27,43,0.9)] focus:shadow-[0_0_15px_rgba(59,130,246,0.15)] placeholder:text-white/70";
+const inputClass = "w-full max-w-full box-border bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] p-3.5 rounded-xl text-white text-sm outline-none transition-all focus:border-[#3b82f6] focus:bg-[rgba(15,27,43,0.9)] focus:shadow-[0_0_15px_rgba(59,130,246,0.15)] placeholder:text-white/70";
 
 // Label class with silver gradient effect
 const labelClass = "block text-xs font-semibold tracking-wider uppercase mb-2 bg-gradient-to-r from-[#C0C0C0] via-[#FFFFFF] to-[#C0C0C0] bg-clip-text text-transparent";
 
 // Select class with padding for arrow
-const selectClass = "w-full bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] p-3.5 pr-10 rounded-xl text-white text-sm outline-none transition-all focus:border-[#3b82f6] focus:bg-[rgba(15,27,43,0.9)] appearance-none cursor-pointer bg-[url('data:image/svg+xml;charset=UTF-8,%3csvg%20xmlns%3d%22http%3a%2f%2fwww.w3.org%2f2000%2fsvg%22%20width%3d%2224%22%20height%3d%2224%22%20viewBox%3d%220%200%2024%2024%22%20fill%3d%22none%22%20stroke%3d%22white%22%20stroke-width%3d%222%22%20stroke-linecap%3d%22round%22%20stroke-linejoin%3d%22round%22%3e%3cpolyline%20points%3d%226%209%2012%2015%2018%209%22%3e%3c%2fpolyline%3e%3c%2fsvg%3e')] bg-[length:20px] bg-[right_12px_center] bg-no-repeat";
+const selectClass = "w-full max-w-full box-border bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] p-3.5 pr-10 rounded-xl text-white text-sm outline-none transition-all focus:border-[#3b82f6] focus:bg-[rgba(15,27,43,0.9)] appearance-none cursor-pointer bg-[url('data:image/svg+xml;charset=UTF-8,%3csvg%20xmlns%3d%22http%3a%2f%2fwww.w3.org%2f2000%2fsvg%22%20width%3d%2224%22%20height%3d%2224%22%20viewBox%3d%220%200%2024%2024%22%20fill%3d%22none%22%20stroke%3d%22white%22%20stroke-width%3d%222%22%20stroke-linecap%3d%22round%22%20stroke-linejoin%3d%22round%22%3e%3cpolyline%20points%3d%226%209%2012%2015%2018%209%22%3e%3c%2fpolyline%3e%3c%2fsvg%3e')] bg-[length:20px] bg-[right_12px_center] bg-no-repeat";
 
-// Date input class with blue calendar icon
-const dateInputClass = "w-full bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] p-3.5 rounded-xl text-white text-sm outline-none transition-all focus:border-[#3b82f6] focus:bg-[rgba(15,27,43,0.9)] focus:shadow-[0_0_15px_rgba(59,130,246,0.15)] placeholder:text-white/70 [&::-webkit-calendar-picker-indicator]:brightness-0 [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:sepia [&::-webkit-calendar-picker-indicator]:saturate-[5000%] [&::-webkit-calendar-picker-indicator]:hue-rotate-[190deg] [&::-webkit-calendar-picker-indicator]:cursor-pointer";
+// Date input class with blue calendar icon - iOS Safari compatible
+const dateInputClass = "w-full max-w-full box-border appearance-none bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] p-3.5 rounded-xl text-white text-sm outline-none transition-all focus:border-[#3b82f6] focus:bg-[rgba(15,27,43,0.9)] focus:shadow-[0_0_15px_rgba(59,130,246,0.15)] placeholder:text-white/70 [&::-webkit-date-and-time-value]:text-white [&::-webkit-calendar-picker-indicator]:brightness-0 [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:sepia [&::-webkit-calendar-picker-indicator]:saturate-[5000%] [&::-webkit-calendar-picker-indicator]:hue-rotate-[190deg] [&::-webkit-calendar-picker-indicator]:cursor-pointer";
 
 export function SubmitQuoteDialog({ isOpen, onClose, request }) {
   const { user } = useAuth();
@@ -420,17 +420,17 @@ export function SubmitQuoteDialog({ isOpen, onClose, request }) {
             <button
               type="submit"
               disabled={loading}
-              className="w-full mt-8 py-5 bg-[#3b82f6] text-white font-extrabold text-lg uppercase tracking-wider rounded-full border-none cursor-pointer transition-all hover:bg-[#60a5fa] hover:shadow-[0_0_40px_rgba(59,130,246,0.5)] hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none flex items-center justify-center gap-3"
+              className="w-full mt-8 py-4 px-6 bg-[#3b82f6] text-white font-bold text-base uppercase tracking-wider rounded-xl border-none cursor-pointer transition-all hover:bg-[#60a5fa] hover:shadow-[0_0_40px_rgba(59,130,246,0.5)] hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none flex items-center justify-center gap-3"
             >
               {loading ? (
                 <>
-                  <Loader2 size={22} className="animate-spin" />
+                  <Loader2 size={20} className="animate-spin" />
                   Sending...
                 </>
               ) : (
                 <>
-                  <Send size={22} />
-                  Transmit Offer to Buyer
+                  <Send size={20} />
+                  Submit Quote
                 </>
               )}
             </button>

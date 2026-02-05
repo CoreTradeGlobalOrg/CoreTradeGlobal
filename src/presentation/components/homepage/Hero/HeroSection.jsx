@@ -225,19 +225,17 @@ export function HeroSection({ fetchData = false }) {
           <div className="slogan-container">
             <h1 className="hero-slogan">Connect with Verified Suppliers</h1>
             <div className="search-bar-container">
-              <form className="search-bar" onSubmit={handleSearch}>
+              {/* Switch above bar on mobile */}
+              {isMobile && (
+                <div className="flex justify-center" style={{ marginBottom: '12px' }}>
                 <div className="search-switch-container">
-                  {/* Sliding Background - Yellow for Products, Blue for RFQs */}
                   <div
                     className="search-switch-slider"
                     style={{
                       transform: searchType === 'Products' ? 'translateX(0)' : 'translateX(100%)',
-                      width: 'calc(50% - 4px)',
                       background: searchType === 'Products' ? '#FFD700' : '#3B82F6'
                     }}
                   />
-
-                  {/* Buttons */}
                   <button
                     type="button"
                     className={`search-switch-btn ${searchType === 'Products' ? 'active' : ''}`}
@@ -255,6 +253,38 @@ export function HeroSection({ fetchData = false }) {
                     RFQs
                   </button>
                 </div>
+                </div>
+              )}
+
+              <form className="search-bar" onSubmit={handleSearch}>
+                {/* Switch inside bar on desktop only */}
+                {!isMobile && (
+                  <div className="search-switch-container">
+                    <div
+                      className="search-switch-slider"
+                      style={{
+                        transform: searchType === 'Products' ? 'translateX(0)' : 'translateX(100%)',
+                        background: searchType === 'Products' ? '#FFD700' : '#3B82F6'
+                      }}
+                    />
+                    <button
+                      type="button"
+                      className={`search-switch-btn ${searchType === 'Products' ? 'active' : ''}`}
+                      onClick={() => setSearchType('Products')}
+                      style={{ color: searchType === 'Products' ? '#0F1B2B' : '#fff' }}
+                    >
+                      Products
+                    </button>
+                    <button
+                      type="button"
+                      className={`search-switch-btn ${searchType === 'RFQs' ? 'active' : ''}`}
+                      onClick={() => setSearchType('RFQs')}
+                      style={{ color: searchType === 'RFQs' ? '#fff' : '#fff' }}
+                    >
+                      RFQs
+                    </button>
+                  </div>
+                )}
                 <input
                   type="text"
                   className="search-input"
@@ -271,6 +301,7 @@ export function HeroSection({ fetchData = false }) {
                   </svg>
                 </button>
               </form>
+
               <div className="search-tags">
                 {(isMobile ? SEARCH_TAGS.slice(0, 3) : SEARCH_TAGS).map((tag) => (
                   <span

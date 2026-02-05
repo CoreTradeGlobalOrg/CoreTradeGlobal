@@ -677,6 +677,28 @@ a:hover {
   /* Dark text on Gold background */
 }
 
+/* Mobile: Search switch below bar - same style as desktop */
+@media (max-width: 768px) {
+  .search-switch-container {
+    height: 48px;
+    padding: 4px;
+    margin: 0 auto;
+    margin-right: 0;
+  }
+
+  .search-switch-slider {
+    top: 4px;
+    left: 4px;
+    bottom: 4px;
+    width: calc(50% - 4px);
+  }
+
+  .search-switch-btn {
+    padding: 0 20px;
+    font-size: 14px;
+  }
+}
+
 /* --- GLOBAL SEARCH BAR STYLES (Premium) --- */
 .search-bar {
   width: 100%;
@@ -1028,11 +1050,16 @@ a:hover {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 24px;
+  align-items: start;
 }
 
 .profile-products-grid .product-card {
   height: auto;
   min-height: 480px;
+}
+
+.profile-products-grid .product-card:hover {
+  transform: none;
 }
 
 @media (max-width: 640px) {
@@ -1042,5 +1069,56 @@ a:hover {
 
   .profile-products-grid .product-card {
     min-height: auto;
+  }
+
+  .profile-products-grid .product-card .product-card-content {
+    flex: 0 !important;
+  }
+
+  .profile-products-grid .product-card .product-card-name {
+    min-height: 28px;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .profile-products-grid .product-card .product-card-description {
+    min-height: 40px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .profile-products-grid .product-card .product-card-price {
+    min-height: 24px;
+  }
+}
+
+/* Profile RFQ Grid - consistent card heights */
+.profile-rfq-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 24px;
+}
+
+.profile-rfq-grid .rfq-card {
+  min-height: 380px;
+}
+
+@media (max-width: 640px) {
+  .profile-rfq-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-rfq-grid .rfq-card {
+    min-height: 350px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .profile-rfq-grid .rfq-card > p {
+    flex: 1;
   }
 }

@@ -275,7 +275,7 @@ export function FeaturedRFQs() {
             <h2>Latest RFQs</h2>
             <p>Join active requests.</p>
           </div>
-          <Link href="/requests" className="bg-gradient-to-br from-[#3b82f6] to-[#2563eb] text-white !text-white border-0 px-6 py-3 rounded-full text-sm font-bold shadow-lg hover:bg-blue-400 hover:-translate-y-0.5 transition-all text-decoration-none whitespace-nowrap">
+          <Link href="/requests" className="btn-section-action btn-section-action-blue">
             View All RFQs →
           </Link>
         </div>

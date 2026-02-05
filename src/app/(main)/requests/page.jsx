@@ -2,14 +2,32 @@
 
 import { RequestGrid } from '@/presentation/components/features/request/RequestGrid/RequestGrid';
 import { SearchBar } from '@/presentation/components/common/SearchBar/SearchBar';
-import { useState, useEffect, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useState, useEffect, Suspense, useCallback } from 'react';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 
 function RequestsContent() {
     const searchParams = useSearchParams();
+    const router = useRouter();
+    const pathname = usePathname();
+
     const initialSearch = searchParams.get('search') || '';
 
     const [searchQuery, setSearchQuery] = useState(initialSearch);
+
+    // Update URL when search changes
+    const handleSearch = useCallback((value) => {
+        setSearchQuery(value);
+
+        const params = new URLSearchParams(searchParams.toString());
+        if (value) {
+            params.set('search', value);
+        } else {
+            params.delete('search');
+        }
+
+        const newUrl = params.toString() ? `${pathname}?${params.toString()}` : pathname;
+        router.replace(newUrl, { scroll: false });
+    }, [searchParams, pathname, router]);
 
     // Update state if URL params change
     useEffect(() => {
@@ -25,7 +43,7 @@ function RequestsContent() {
                 <SearchBar
                     placeholder="Search RFQs by keyword, country..."
                     initialValue={searchQuery}
-                    onSearch={setSearchQuery}
+                    onSearch={handleSearch}
                 />
             </div>
             <RequestGrid searchQuery={searchQuery} />

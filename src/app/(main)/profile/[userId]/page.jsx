@@ -12,7 +12,7 @@ import { useAuth } from '@/presentation/contexts/AuthContext';
 import { useLogout } from '@/presentation/hooks/auth/useLogout';
 import { useDeleteAccount } from '@/presentation/hooks/auth/useDeleteAccount';
 import { useRouter, useParams } from 'next/navigation';
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useState, Suspense, useLayoutEffect } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Modal } from '@/components/ui/Modal';
@@ -43,6 +43,11 @@ function ProfileContent() {
   const params = useParams();
   const userId = params.userId;
 
+  // Scroll to top on page load
+  useLayoutEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, []);
+
   const [profileUser, setProfileUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -62,7 +67,17 @@ function ProfileContent() {
   // Pagination state
   const [productPage, setProductPage] = useState(1);
   const [requestPage, setRequestPage] = useState(1);
-  const ITEMS_PER_PAGE = 3;
+  const [itemsPerPage, setItemsPerPage] = useState(3);
+
+  // Responsive items per page
+  useEffect(() => {
+    const updateItemsPerPage = () => {
+      setItemsPerPage(window.innerWidth < 768 ? 1 : 3);
+    };
+    updateItemsPerPage();
+    window.addEventListener('resize', updateItemsPerPage);
+    return () => window.removeEventListener('resize', updateItemsPerPage);
+  }, []);
   const [categoryName, setCategoryName] = useState(null);
   const [showStickyHeader, setShowStickyHeader] = useState(false);
 
@@ -401,7 +416,7 @@ function ProfileContent() {
       await deleteProduct(productId, userId);
       // Adjust page if current page becomes empty
       const newTotal = (products?.length || 1) - 1;
-      const maxPage = Math.ceil(newTotal / ITEMS_PER_PAGE) || 1;
+      const maxPage = Math.ceil(newTotal / itemsPerPage) || 1;
       if (productPage > maxPage) setProductPage(maxPage);
       refetchProducts();
     } catch (error) {
@@ -454,7 +469,7 @@ function ProfileContent() {
       await deleteRequest(requestId, userId);
       // Adjust page if current page becomes empty
       const newTotal = (requests?.length || 1) - 1;
-      const maxPage = Math.ceil(newTotal / ITEMS_PER_PAGE) || 1;
+      const maxPage = Math.ceil(newTotal / itemsPerPage) || 1;
       if (requestPage > maxPage) setRequestPage(maxPage);
       refetchRequests();
     } catch (error) {
@@ -494,7 +509,7 @@ function ProfileContent() {
   return (
     <div className="min-h-screen bg-radial-navy pb-20">
       {/* Sticky Header - appears on scroll */}
-      <header className={`border-b border-[rgba(255,255,255,0.1)] bg-[rgba(15,27,43,0.95)] backdrop-blur-md fixed top-[80px] left-0 right-0 z-40 py-4 transition-all duration-300 ${showStickyHeader ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0 pointer-events-none'}`}>
+      <header className={`border-b border-[rgba(255,255,255,0.1)] bg-[rgba(15,27,43,0.95)] backdrop-blur-md fixed top-[60px] md:top-[80px] left-0 right-0 z-40 py-4 transition-all duration-300 ${showStickyHeader ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0 pointer-events-none'}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             {/* User Info with Logo */}
@@ -821,21 +836,25 @@ function ProfileContent() {
         {/* Products Section */}
         <div className="glass-card p-6">
           <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               <span className="w-1 h-5 bg-[#FFD700] rounded-full"></span>
-              <h3 className="text-lg font-bold text-white">
-                {isOwnProfile ? 'My Products' : 'Products'}
+              <h3 className="text-base font-bold text-white">
+                {isOwnProfile ? 'My Products' : 'Products'}{' '}
+                <span className="text-sm text-[#A0A0A0] font-normal">({products?.length || 0})</span>
               </h3>
-              <span className="text-sm text-[#A0A0A0]">({products?.length || 0})</span>
             </div>
             {isOwnProfile && (
-              <Button onClick={handleOpenProductModal} className="bg-[#FFD700] text-[#0F1B2B] hover:bg-white font-bold border-none text-sm px-4 py-2">
+              <Button
+                onClick={handleOpenProductModal}
+                className="font-bold border-none text-xs px-3 py-1.5 rounded-lg whitespace-nowrap"
+                style={{ backgroundColor: '#FFD700', color: '#0F1B2B' }}
+              >
                 + Add Product
               </Button>
             )}
           </div>
           <ProductList
-            products={products?.slice((productPage - 1) * ITEMS_PER_PAGE, productPage * ITEMS_PER_PAGE)}
+            products={products?.slice((productPage - 1) * itemsPerPage, productPage * itemsPerPage)}
             loading={productsLoading}
             isOwnProfile={isOwnProfile}
             onEdit={handleEditProduct}
@@ -843,7 +862,7 @@ function ProfileContent() {
             onToggleStatus={handleToggleProductStatus}
           />
           {/* Products Pagination */}
-          {products && products.length > ITEMS_PER_PAGE && (
+          {products && products.length > itemsPerPage && (
             <div className="flex items-center justify-center gap-4 mt-6 pt-4 border-t border-[rgba(255,255,255,0.1)]">
               <button
                 onClick={() => setProductPage(p => Math.max(1, p - 1))}
@@ -853,11 +872,11 @@ function ProfileContent() {
                 ← Previous
               </button>
               <span className="text-sm text-[#A0A0A0]">
-                Page <span className="text-white font-medium">{productPage}</span> of <span className="text-white font-medium">{Math.ceil(products.length / ITEMS_PER_PAGE)}</span>
+                Page <span className="text-white font-medium">{productPage}</span> of <span className="text-white font-medium">{Math.ceil(products.length / itemsPerPage)}</span>
               </span>
               <button
-                onClick={() => setProductPage(p => Math.min(Math.ceil(products.length / ITEMS_PER_PAGE), p + 1))}
-                disabled={productPage >= Math.ceil(products.length / ITEMS_PER_PAGE)}
+                onClick={() => setProductPage(p => Math.min(Math.ceil(products.length / itemsPerPage), p + 1))}
+                disabled={productPage >= Math.ceil(products.length / itemsPerPage)}
                 className="px-4 py-2 rounded-lg bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] text-white text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[rgba(255,255,255,0.1)] transition-all"
               >
                 Next →
@@ -869,21 +888,21 @@ function ProfileContent() {
         {/* Requests Section */}
         <div className="glass-card p-6">
           <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               <span className="w-1 h-5 bg-[#3b82f6] rounded-full"></span>
-              <h3 className="text-lg font-bold text-white">
-                {isOwnProfile ? 'My Requests (RFQs)' : 'Requests (RFQs)'}
+              <h3 className="text-base font-bold text-white">
+                {isOwnProfile ? 'My Requests' : 'Requests'}{' '}
+                <span className="text-sm text-[#A0A0A0] font-normal">({requests?.length || 0})</span>
               </h3>
-              <span className="text-sm text-[#A0A0A0]">({requests?.length || 0})</span>
             </div>
             {isOwnProfile && (
-              <Button onClick={handleOpenRequestModal} className="bg-[#3b82f6] text-white hover:bg-blue-400 font-bold border-none text-sm px-4 py-2">
+              <Button onClick={handleOpenRequestModal} className="bg-[#3b82f6] text-white hover:bg-blue-400 font-bold border-none text-xs px-3 py-1.5 rounded-lg whitespace-nowrap">
                 + Create Request
               </Button>
             )}
           </div>
           <RequestList
-            requests={requests?.slice((requestPage - 1) * ITEMS_PER_PAGE, requestPage * ITEMS_PER_PAGE)}
+            requests={requests?.slice((requestPage - 1) * itemsPerPage, requestPage * itemsPerPage)}
             categories={categories}
             loading={requestsLoading}
             isOwnProfile={isOwnProfile}
@@ -894,7 +913,7 @@ function ProfileContent() {
             onSendMessage={handleSendMessage}
           />
           {/* Requests Pagination */}
-          {requests && requests.length > ITEMS_PER_PAGE && (
+          {requests && requests.length > itemsPerPage && (
             <div className="flex items-center justify-center gap-4 mt-6 pt-4 border-t border-[rgba(255,255,255,0.1)]">
               <button
                 onClick={() => setRequestPage(p => Math.max(1, p - 1))}
@@ -904,11 +923,11 @@ function ProfileContent() {
                 ← Previous
               </button>
               <span className="text-sm text-[#A0A0A0]">
-                Page <span className="text-white font-medium">{requestPage}</span> of <span className="text-white font-medium">{Math.ceil(requests.length / ITEMS_PER_PAGE)}</span>
+                Page <span className="text-white font-medium">{requestPage}</span> of <span className="text-white font-medium">{Math.ceil(requests.length / itemsPerPage)}</span>
               </span>
               <button
-                onClick={() => setRequestPage(p => Math.min(Math.ceil(requests.length / ITEMS_PER_PAGE), p + 1))}
-                disabled={requestPage >= Math.ceil(requests.length / ITEMS_PER_PAGE)}
+                onClick={() => setRequestPage(p => Math.min(Math.ceil(requests.length / itemsPerPage), p + 1))}
+                disabled={requestPage >= Math.ceil(requests.length / itemsPerPage)}
                 className="px-4 py-2 rounded-lg bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] text-white text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[rgba(255,255,255,0.1)] transition-all"
               >
                 Next →
