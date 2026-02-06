@@ -8,7 +8,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Download, X, Smartphone, Share, Plus } from 'lucide-react';
+import { Download, X, Smartphone, Share, Plus, MoreVertical, Menu } from 'lucide-react';
 import './InstallPrompt.css';
 
 // Detect iOS device
@@ -24,13 +24,137 @@ const isInStandaloneMode = () => {
          window.navigator.standalone === true;
 };
 
+// Detect browser type
+const detectBrowser = () => {
+  if (typeof window === 'undefined') return 'unknown';
+  const ua = navigator.userAgent.toLowerCase();
+
+  // iOS browsers
+  if (isIOS()) {
+    if (ua.includes('crios')) return 'chrome-ios';
+    if (ua.includes('fxios')) return 'firefox-ios';
+    if (ua.includes('edgios')) return 'edge-ios';
+    if (ua.includes('opios')) return 'opera-ios';
+    // Safari is the default on iOS
+    return 'safari';
+  }
+
+  // Android/Desktop browsers
+  if (ua.includes('samsung')) return 'samsung';
+  if (ua.includes('opera') || ua.includes('opr')) return 'opera';
+  if (ua.includes('edg')) return 'edge';
+  if (ua.includes('firefox') || ua.includes('fxandroid')) return 'firefox';
+  if (ua.includes('chrome')) return 'chrome';
+
+  return 'unknown';
+};
+
+// Get browser-specific installation instructions
+const getBrowserInstructions = (browser) => {
+  const instructions = {
+    'safari': {
+      name: 'Safari',
+      steps: [
+        { icon: 'share', text: 'Tap the <strong>Share</strong> button at the bottom' },
+        { icon: 'plus', text: 'Scroll and select <strong>Add to Home Screen</strong>' },
+        { icon: 'download', text: 'Tap <strong>Add</strong> to install' },
+      ],
+    },
+    'chrome-ios': {
+      name: 'Chrome',
+      steps: [
+        { icon: 'share', text: 'Tap the <strong>Share</strong> button (box with arrow)' },
+        { icon: 'plus', text: 'Select <strong>Add to Home Screen</strong>' },
+        { icon: 'download', text: 'Tap <strong>Add</strong> to confirm' },
+      ],
+    },
+    'firefox-ios': {
+      name: 'Firefox',
+      steps: [
+        { icon: 'menu', text: 'Tap the <strong>Menu</strong> button (three lines)' },
+        { icon: 'share', text: 'Select <strong>Share</strong>' },
+        { icon: 'plus', text: 'Choose <strong>Add to Home Screen</strong>' },
+      ],
+    },
+    'edge-ios': {
+      name: 'Edge',
+      steps: [
+        { icon: 'menu', text: 'Tap the <strong>Menu</strong> button (three dots)' },
+        { icon: 'share', text: 'Select <strong>Share</strong>' },
+        { icon: 'plus', text: 'Choose <strong>Add to Home Screen</strong>' },
+      ],
+    },
+    'chrome': {
+      name: 'Chrome',
+      steps: [
+        { icon: 'dots', text: 'Tap the <strong>Menu</strong> (three dots) at top right' },
+        { icon: 'plus', text: 'Select <strong>Add to Home screen</strong> or <strong>Install app</strong>' },
+        { icon: 'download', text: 'Tap <strong>Install</strong> to confirm' },
+      ],
+    },
+    'firefox': {
+      name: 'Firefox',
+      steps: [
+        { icon: 'dots', text: 'Tap the <strong>Menu</strong> (three dots)' },
+        { icon: 'download', text: 'Select <strong>Install</strong>' },
+        { icon: 'plus', text: 'Confirm by tapping <strong>Add</strong>' },
+      ],
+    },
+    'samsung': {
+      name: 'Samsung Internet',
+      steps: [
+        { icon: 'menu', text: 'Tap the <strong>Menu</strong> (three lines)' },
+        { icon: 'plus', text: 'Select <strong>Add page to</strong>' },
+        { icon: 'download', text: 'Choose <strong>Home screen</strong>' },
+      ],
+    },
+    'edge': {
+      name: 'Edge',
+      steps: [
+        { icon: 'dots', text: 'Tap the <strong>Menu</strong> (three dots)' },
+        { icon: 'plus', text: 'Select <strong>Add to phone</strong>' },
+        { icon: 'download', text: 'Tap <strong>Install</strong>' },
+      ],
+    },
+    'opera': {
+      name: 'Opera',
+      steps: [
+        { icon: 'menu', text: 'Tap the <strong>Menu</strong> button' },
+        { icon: 'plus', text: 'Select <strong>Home screen</strong>' },
+        { icon: 'download', text: 'Tap <strong>Add</strong>' },
+      ],
+    },
+  };
+
+  return instructions[browser] || instructions['safari'];
+};
+
+// Icon component for steps
+const StepIcon = ({ type }) => {
+  switch (type) {
+    case 'share':
+      return <Share className="w-5 h-5 text-[#3b82f6]" />;
+    case 'plus':
+      return <Plus className="w-5 h-5 text-[#3b82f6]" />;
+    case 'download':
+      return <Download className="w-5 h-5 text-[#3b82f6]" />;
+    case 'dots':
+      return <MoreVertical className="w-5 h-5 text-[#3b82f6]" />;
+    case 'menu':
+      return <Menu className="w-5 h-5 text-[#3b82f6]" />;
+    default:
+      return <Download className="w-5 h-5 text-[#3b82f6]" />;
+  }
+};
+
 export function InstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [showPrompt, setShowPrompt] = useState(false);
   const [dismissed, setDismissed] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
   const [isIOSDevice, setIsIOSDevice] = useState(false);
-  const [showIOSInstructions, setShowIOSInstructions] = useState(false);
+  const [showInstructions, setShowInstructions] = useState(false);
+  const [browser, setBrowser] = useState('safari');
 
   useEffect(() => {
     // Check if already dismissed
@@ -52,9 +176,10 @@ export function InstallPrompt() {
         return;
       }
 
-      // Check if iOS
+      // Check if iOS and detect browser
       const iosDevice = isIOS();
       setIsIOSDevice(iosDevice);
+      setBrowser(detectBrowser());
 
       // On iOS, show prompt after a delay if not dismissed
       if (iosDevice && !wasDismissed) {
@@ -92,13 +217,13 @@ export function InstallPrompt() {
   }, []);
 
   const handleInstall = async () => {
-    if (isIOSDevice) {
-      setShowIOSInstructions(true);
+    // For iOS or when no native prompt available, show manual instructions
+    if (isIOSDevice || !deferredPrompt) {
+      setShowInstructions(true);
       return;
     }
 
-    if (!deferredPrompt) return;
-
+    // Use native install prompt
     deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
 
@@ -112,7 +237,7 @@ export function InstallPrompt() {
   const handleDismiss = () => {
     setDismissed(true);
     setShowPrompt(false);
-    setShowIOSInstructions(false);
+    setShowInstructions(false);
     localStorage.setItem('install-prompt-dismissed', 'true');
     localStorage.setItem('install-prompt-dismissed-at', Date.now().toString());
   };
@@ -132,14 +257,16 @@ export function InstallPrompt() {
     return null;
   }
 
-  // iOS Instructions Modal
-  if (showIOSInstructions) {
+  // Browser-specific Instructions Modal
+  if (showInstructions) {
+    const browserInstructions = getBrowserInstructions(browser);
+
     return (
       <div className="install-prompt-ios-overlay">
         <div className="install-prompt-ios-modal">
           <button
             className="install-prompt-ios-close"
-            onClick={() => setShowIOSInstructions(false)}
+            onClick={() => setShowInstructions(false)}
             aria-label="Close"
           >
             <X className="w-5 h-5" />
@@ -151,28 +278,19 @@ export function InstallPrompt() {
           <p className="install-prompt-ios-subtitle">
             Add this app to your home screen for quick access
           </p>
+          <p className="install-prompt-browser-name">
+            Using {browserInstructions.name}
+          </p>
           <div className="install-prompt-ios-steps">
-            <div className="install-prompt-ios-step">
-              <div className="install-prompt-ios-step-number">1</div>
-              <div className="install-prompt-ios-step-content">
-                <Share className="w-5 h-5 text-[#3b82f6]" />
-                <span>Tap the <strong>Share</strong> button in Safari</span>
+            {browserInstructions.steps.map((step, index) => (
+              <div key={index} className="install-prompt-ios-step">
+                <div className="install-prompt-ios-step-number">{index + 1}</div>
+                <div className="install-prompt-ios-step-content">
+                  <StepIcon type={step.icon} />
+                  <span dangerouslySetInnerHTML={{ __html: step.text }} />
+                </div>
               </div>
-            </div>
-            <div className="install-prompt-ios-step">
-              <div className="install-prompt-ios-step-number">2</div>
-              <div className="install-prompt-ios-step-content">
-                <Plus className="w-5 h-5 text-[#3b82f6]" />
-                <span>Select <strong>Add to Home Screen</strong></span>
-              </div>
-            </div>
-            <div className="install-prompt-ios-step">
-              <div className="install-prompt-ios-step-number">3</div>
-              <div className="install-prompt-ios-step-content">
-                <Download className="w-5 h-5 text-[#3b82f6]" />
-                <span>Tap <strong>Add</strong> to install</span>
-              </div>
-            </div>
+            ))}
           </div>
           <button
             className="install-prompt-ios-done"
