@@ -2,7 +2,8 @@
  * CompaniesSection Component
  *
  * Homepage section displaying trusted companies
- * Horizontal scroll with arrows, matching product/RFQ card styling
+ * Desktop: Horizontal scroll with arrows
+ * Mobile: Tinder-style swipeable card stack
  */
 
 'use client';
@@ -15,18 +16,14 @@ import { COUNTRIES } from '@/core/constants/countries';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useCategories } from '@/presentation/hooks/category/useCategories';
 import { useResponsiveLimit, useScrollLoadMore } from '@/presentation/hooks/useResponsiveLimit';
+import dynamic from 'next/dynamic';
 
-// Default companies for initial display (country = ISO code)
-const DEFAULT_COMPANIES = [
-  { id: '1', companyName: 'EuroLogistics GmbH', country: 'DE', industry: 'Logistics' },
-  { id: '2', companyName: 'Ankara Marble Export', country: 'TR', industry: 'Construction' },
-  { id: '3', companyName: 'Shanghai Silk Co.', country: 'CN', industry: 'Textile' },
-  { id: '4', companyName: 'Tuscany Olive Oils', country: 'IT', industry: 'Food & Beverage' },
-  { id: '5', companyName: 'Seoul Solar Tech', country: 'KR', industry: 'Energy' },
-  { id: '6', companyName: 'Valencia Ceramics', country: 'ES', industry: 'Construction' },
-  { id: '7', companyName: 'Kyiv Steel Works', country: 'UA', industry: 'Industrial' },
-  { id: '8', companyName: 'Mumbai Textiles', country: 'IN', industry: 'Textile' },
-];
+// Dynamically import mobile card stack to reduce initial bundle
+const MobileCompanyCardStack = dynamic(
+  () => import('./MobileCompanyCardStack'),
+  { ssr: false }
+);
+
 
 // Get abbreviation from company name
 const getAbbreviation = (name) => {
@@ -140,13 +137,25 @@ function CompanyCard({ company, categories }) {
 }
 
 export function CompaniesSection() {
-  const [companies, setCompanies] = useState(DEFAULT_COMPANIES);
-  const [allCompanies, setAllCompanies] = useState([]); // Store all fetched companies
+  const [companies, setCompanies] = useState([]);
+  const [allCompanies, setAllCompanies] = useState([]); // Store all fetched companies (for Latest Companies)
+  const [featuredCompanies, setFeaturedCompanies] = useState([]); // Featured companies for card stack
   const [loading, setLoading] = useState(true);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(true);
+  const [isMobile, setIsMobile] = useState(null); // null = not determined yet
   const scrollRef = useRef(null);
   const { categories } = useCategories();
+
+  // Detect mobile screen
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Responsive limits with lazy loading: mobile 4, tablet 8, desktop 12, max 30
   const { limit, displayCount, isReady, loadMore, hasMore } = useResponsiveLimit({
@@ -185,8 +194,9 @@ export function CompaniesSection() {
 
     const fetchCompanies = async () => {
       try {
-        // Fetch enough companies for lazy loading
         const firestoreDS = container.getFirestoreDataSource();
+
+        // Fetch ALL companies for Latest Companies section
         const allUsers = await firestoreDS.query('users', { limit: 35 });
 
         if (allUsers && allUsers.length > 0) {
@@ -196,17 +206,19 @@ export function CompaniesSection() {
             !u.isSuspended
           );
 
+          // Sort by date (newest first)
           const sorted = validCompanies.sort((a, b) => {
             const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
             const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
             return dateB - dateA;
           });
 
-          if (sorted.length > 0) {
-            setAllCompanies(sorted);
-            setCompanies(sorted.slice(0, displayCount));
-          }
-          // If no companies found, keep showing default companies
+          setAllCompanies(sorted);
+          setCompanies(sorted.slice(0, displayCount));
+
+          // Filter featured companies for card stack
+          const featured = sorted.filter(u => u.featured === true);
+          setFeaturedCompanies(featured);
         }
       } catch (error) {
         console.error('Error fetching companies:', error);
@@ -236,21 +248,83 @@ export function CompaniesSection() {
     }
   };
 
-  return (
-    <section className="featured-products-section">
-      <div className="featured-products-container">
-        {/* Header */}
-        <div className="featured-products-header">
-          <div>
-            <h2>Latest Companies</h2>
-            <p>Connect with verified suppliers worldwide.</p>
+  // Wait for mobile detection
+  if (isMobile === null) {
+    return (
+      <section className="featured-products-section">
+        <div className="featured-products-container">
+          <div className="featured-products-header">
+            <div>
+              <h2>Featured Companies</h2>
+              <p>Connect with verified suppliers worldwide.</p>
+            </div>
           </div>
-          {/* TODO: View All Companies butonu daha sonra açılacaktır
-          <Link href="/companies" className="btn-section-action">
-            View All Companies →
-          </Link>
-          */}
         </div>
+      </section>
+    );
+  }
+
+  // Mobile: Show card stack (Featured Companies with swipe)
+  const renderMobileCardStack = () => {
+    if (!isMobile) return null;
+
+    // Don't show if no featured companies
+    if (featuredCompanies.length === 0) {
+      if (loading) {
+        return (
+          <section className="featured-products-section">
+            <div className="mobile-card-stack-container">
+              <div className="section-header" style={{ marginTop: 0, marginBottom: '1.5rem' }}>
+                <h1 className="section-title">Featured Companies</h1>
+                <Link
+                  href="/contact?subject=featured-companies-application"
+                  className="link-hero-blue"
+                  style={{ justifyContent: 'center', marginTop: '10px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                >
+                  Want to see your company here? View Advertising Options <span className="arrow-icon">›</span>
+                </Link>
+              </div>
+              <div className="relative w-full h-[420px] flex items-center justify-center">
+                <div className="w-[90%] h-[380px] bg-[rgba(255,255,255,0.03)] rounded-2xl border border-[rgba(255,215,0,0.2)] animate-pulse flex items-center justify-center">
+                  <div className="text-[#64748b]">Loading...</div>
+                </div>
+              </div>
+            </div>
+          </section>
+        );
+      }
+      // No featured companies - don't render card stack
+      return null;
+    }
+
+    return (
+      <section className="featured-products-section">
+        <MobileCompanyCardStack
+          companies={featuredCompanies.slice(0, 15)}
+          categories={categories}
+        />
+      </section>
+    );
+  };
+
+  // Latest Companies horizontal scroll (both mobile and desktop)
+  return (
+    <>
+      {/* Latest Companies - horizontal scroll (shows first) */}
+      <section className="featured-products-section">
+        <div className="featured-products-container">
+          {/* Header */}
+          <div className="featured-products-header">
+            <div>
+              <h2>Latest Companies</h2>
+              <p>Connect with verified suppliers worldwide.</p>
+            </div>
+            {/* TODO: View All Companies butonu daha sonra açılacaktır
+            <Link href="/companies" className="btn-section-action">
+              View All Companies →
+            </Link>
+            */}
+          </div>
 
         {/* Companies Grid with Scroll */}
         <div className="featured-products-grid">
@@ -310,6 +384,10 @@ export function CompaniesSection() {
         </div>
       </div>
     </section>
+
+      {/* Mobile: Featured Companies Card Stack (shows after Latest Companies) */}
+      {renderMobileCardStack()}
+    </>
   );
 }
 

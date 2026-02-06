@@ -75,15 +75,19 @@ export const registerSchema = z
       .string()
       .min(1, 'Please select a country'),
 
-    // Password
+    // Password - Strong password policy
     password: z
       .string()
-      .min(6, 'Password must be at least 6 characters')
-      .max(100, 'Password is too long'),
+      .min(8, 'Password must be at least 8 characters')
+      .max(100, 'Password is too long')
+      .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
+      .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
+      .regex(/[0-9]/, 'Password must contain at least one number')
+      .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character'),
 
     confirmPassword: z
       .string()
-      .min(6, 'Please confirm your password'),
+      .min(8, 'Please confirm your password'),
 
     // Terms & Conditions
     acceptPolicies: z

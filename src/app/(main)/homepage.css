@@ -1951,6 +1951,13 @@ html {
     overflow: hidden;
 }
 
+/* Hide showcase on mobile - using card stack instead */
+@media (max-width: 768px) {
+    .showcase-section {
+        display: none !important;
+    }
+}
+
 .section-header {
     text-align: center;
     margin-bottom: 3rem;
@@ -2811,6 +2818,25 @@ html {
 }
 
 @media (max-width: 768px) {
+    /* Reduce section padding on mobile for better UX */
+    .featured-products-section,
+    .hp-section,
+    .categories-section,
+    .news-section,
+    .fair-section,
+    .strategic-cta-v2 {
+        padding: 30px 0 !important;
+    }
+
+    .mobile-card-stack-container {
+        padding: 20px 16px !important;
+    }
+
+    /* Remove divider line above fairs section on mobile */
+    .fairs-wrapper {
+        border-top: none !important;
+    }
+
     #fair-left,
     #dash-left,
     #dash-left-rfq,
@@ -3008,4 +3034,91 @@ html {
     align-items: stretch;
     display: flex;
     flex-wrap: nowrap;
+}
+/* --- MOBILE COMPANY CARD STACK --- */
+.mobile-card-stack-container {
+    display: none;
+    padding: 24px 16px;
+    background: linear-gradient(180deg, rgba(15, 27, 43, 0.95) 0%, rgba(10, 18, 30, 1) 100%);
+}
+
+@media (max-width: 768px) {
+    .mobile-card-stack-container {
+        display: block;
+    }
+    
+    /* Hide desktop companies section on mobile when using card stack */
+    .companies-desktop-view {
+        display: none !important;
+    }
+}
+
+.mobile-stack-card {
+    width: 100%;
+    height: 100%;
+    padding: 28px 24px;
+    background: linear-gradient(145deg, rgba(15, 27, 43, 0.98) 0%, rgba(10, 18, 30, 0.99) 100%);
+    border: 1.5px solid rgba(255, 215, 0, 0.25);
+    border-radius: 20px;
+    box-shadow: 
+        0 10px 40px rgba(0, 0, 0, 0.5),
+        0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+/* Card stack depth effect enhancement */
+.mobile-stack-card::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: 22px;
+    background: linear-gradient(145deg, rgba(255, 215, 0, 0.15) 0%, transparent 50%);
+    z-index: -1;
+    opacity: 0.5;
+}
+
+/* Mobile card stack section header styling */
+@media (max-width: 768px) {
+    .mobile-card-stack-container .section-header {
+        margin-top: 0 !important;
+        margin-bottom: 1.5rem;
+        padding: 0 16px;
+    }
+
+    .mobile-card-stack-container .section-title {
+        font-size: clamp(1.75rem, 4vw, 2.5rem);
+        margin-bottom: 0.5rem;
+    }
+
+    .mobile-card-stack-container .link-hero-blue {
+        font-size: 14px;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+}
+
+/* Mobile card stack header styling */
+.mobile-stack-header {
+    flex-direction: column !important;
+    text-align: center;
+    gap: 12px;
+    padding: 0 16px;
+    margin-bottom: 24px;
+}
+
+.mobile-stack-header h2 {
+    font-size: 1.75rem;
+}
+
+.mobile-stack-header p {
+    margin-bottom: 8px;
+}
+
+.mobile-stack-header .btn-section-action {
+    font-size: 14px;
 }

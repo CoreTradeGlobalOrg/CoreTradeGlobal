@@ -24,6 +24,19 @@ import { useCategories } from '@/presentation/hooks/category/useCategories';
 import { useTrackEvent } from '@/presentation/hooks/analytics';
 import { Eye, EyeOff } from 'lucide-react';
 
+// SECURITY: Google's test reCAPTCHA key - should NEVER be used in production
+const RECAPTCHA_TEST_KEY = '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI';
+const isTestKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY === RECAPTCHA_TEST_KEY;
+const isProduction = process.env.NODE_ENV === 'production';
+
+// Log warning if test key is used in production
+if (isTestKey && isProduction) {
+  console.error(
+    'SECURITY WARNING: Using test reCAPTCHA key in production! ' +
+    'Get a real key from https://www.google.com/recaptcha/admin'
+  );
+}
+
 export function RegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();

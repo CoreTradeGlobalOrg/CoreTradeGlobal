@@ -3,11 +3,48 @@
  * Call this endpoint once to populate categories in Firestore
  *
  * Usage: POST /api/seed-categories
+ *
+ * SECURITY: This endpoint requires admin authentication
  */
 
 import { container } from '@/core/di/container';
 import { Category } from '@/domain/entities/Category';
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
+
+/**
+ * Verify admin access from session cookie
+ * Returns { valid: true, uid } or { valid: false, error }
+ */
+async function verifyAdminAccess() {
+  const cookieStore = await cookies();
+  const sessionCookie = cookieStore.get('session');
+
+  if (!sessionCookie?.value) {
+    return { valid: false, error: 'Not authenticated' };
+  }
+
+  try {
+    const session = JSON.parse(sessionCookie.value);
+
+    if (!session.uid || !session.verified) {
+      return { valid: false, error: 'Invalid session' };
+    }
+
+    // Verify user role from Firestore (don't trust client-sent role)
+    const firestoreDataSource = container.getFirestoreDataSource();
+    const userDoc = await firestoreDataSource.getById('users', session.uid);
+
+    if (!userDoc || userDoc.role !== 'admin') {
+      return { valid: false, error: 'Admin access required' };
+    }
+
+    return { valid: true, uid: session.uid };
+  } catch (error) {
+    console.error('Admin verification error:', error);
+    return { valid: false, error: 'Invalid session format' };
+  }
+}
 
 const sampleCategories = [
   { name: 'Electronics', iconUrl: '🔌', parentId: null },
@@ -28,6 +65,15 @@ const sampleCategories = [
 ];
 
 export async function POST() {
+  // SECURITY: Verify admin access before allowing seed operation
+  const adminCheck = await verifyAdminAccess();
+  if (!adminCheck.valid) {
+    return NextResponse.json(
+      { success: false, error: adminCheck.error },
+      { status: adminCheck.error === 'Not authenticated' ? 401 : 403 }
+    );
+  }
+
   try {
     const firestoreDataSource = container.getFirestoreDataSource();
     const categoryRepository = container.getCategoryRepository();

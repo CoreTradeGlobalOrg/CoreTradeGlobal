@@ -77,14 +77,15 @@ export function AuthProvider({ children }) {
             setUser(userData);
 
             // Set session cookie for middleware authentication
+            // SECURITY: Send Firebase ID token for server-side verification
             try {
+              const idToken = await firebaseUser.getIdToken();
               await fetch('/api/auth/session', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                  uid: userData.uid,
-                  role: userData.role,
-                  email: userData.email,
+                  idToken,
+                  role: userData.role, // Role will be validated server-side
                 }),
               });
             } catch (cookieError) {
