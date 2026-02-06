@@ -30,10 +30,11 @@ export class SendContactMessageUseCase {
    * @param {string} params.email - Sender's email
    * @param {string} params.subject - Message subject
    * @param {string} params.message - Message content
+   * @param {string} params.tag - Message tag (e.g., 'contact', 'advertising')
    * @param {string|null} params.userId - User ID if authenticated (null for anonymous)
    * @returns {Promise<Object>} Created conversation
    */
-  async execute({ name, email, subject, message, userId = null }) {
+  async execute({ name, email, subject, message, tag = 'contact', userId = null }) {
     // 1. Validate inputs
     this.validateInputs(name, email, message);
 
@@ -77,14 +78,15 @@ export class SendContactMessageUseCase {
 
     // 5. Create the conversation
     const conversationData = {
-      type: 'contact',
+      type: tag, // 'contact' or 'advertising'
       participants: participantIds,
       participantDetails,
       lastMessage: null,
       unreadCount: {},
       metadata: {
-        source: 'contact_page',
-        subject: subject || 'Contact Inquiry',
+        source: tag === 'advertising' ? 'advertising_inquiry' : 'contact_page',
+        tag: tag,
+        subject: subject || (tag === 'advertising' ? 'Advertising Inquiry' : 'Contact Inquiry'),
         contactName: name,
         contactEmail: email,
       },

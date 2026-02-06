@@ -1,23 +1,29 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Send, MessageSquare, CheckCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useContactMessage } from '@/presentation/hooks/messaging/useContactMessage';
 import { useAuth } from '@/presentation/contexts/AuthContext';
 
-export default function ContactPage() {
+function ContactForm() {
+    const searchParams = useSearchParams();
     const { user, isAuthenticated } = useAuth();
     const { sendContactMessage, sending, error, success, reset } = useContactMessage();
+
+    // Get subject from URL query parameter
+    const urlSubject = searchParams.get('subject');
+    const isAdvertising = urlSubject === 'advertising';
 
     const [formData, setFormData] = useState({
         name: '',
         email: '',
-        subject: '',
+        subject: isAdvertising ? 'Advertising Inquiry' : '',
         message: ''
     });
 
-    // Pre-fill form for authenticated users
+    // Pre-fill form for authenticated users and handle URL subject
     useEffect(() => {
         if (isAuthenticated && user) {
             setFormData((prev) => ({
@@ -27,6 +33,16 @@ export default function ContactPage() {
             }));
         }
     }, [isAuthenticated, user]);
+
+    // Update subject when URL parameter changes
+    useEffect(() => {
+        if (isAdvertising) {
+            setFormData((prev) => ({
+                ...prev,
+                subject: 'Advertising Inquiry'
+            }));
+        }
+    }, [isAdvertising]);
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -46,12 +62,19 @@ export default function ContactPage() {
                 email: formData.email,
                 subject: formData.subject,
                 message: formData.message,
+                tag: isAdvertising ? 'advertising' : 'contact',
             });
 
             toast.success('Message sent successfully! We will get back to you soon.');
-            setFormData({ name: '', email: '', subject: '', message: '' });
+            setFormData({ name: '', email: '', subject: isAdvertising ? 'Advertising Inquiry' : '', message: '' });
         } catch (err) {
-            toast.error(err.message || 'Failed to send message. Please try again.');
+            // Check for permission/auth errors and show user-friendly message
+            const errorMsg = err.message?.toLowerCase() || '';
+            if (errorMsg.includes('permission') || errorMsg.includes('unauthorized') || errorMsg.includes('unauthenticated')) {
+                toast.error('You need to login or sign up to use this feature.');
+            } else {
+                toast.error(err.message || 'Failed to send message. Please try again.');
+            }
         }
     };
 
@@ -181,5 +204,17 @@ export default function ContactPage() {
                 </div>
             </section>
         </main>
+    );
+}
+
+export default function ContactPage() {
+    return (
+        <Suspense fallback={
+            <main className="pt-[120px] pb-20 bg-radial-navy flex items-center justify-center min-h-screen">
+                <div className="text-white">Loading...</div>
+            </main>
+        }>
+            <ContactForm />
+        </Suspense>
     );
 }

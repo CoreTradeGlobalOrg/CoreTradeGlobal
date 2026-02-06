@@ -7,7 +7,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { getMessaging, getToken, onMessage, isSupported } from 'firebase/messaging';
+import { getMessaging, getToken, isSupported } from 'firebase/messaging';
 import { useAuth } from '@/presentation/contexts/AuthContext';
 import { container } from '@/core/di/container';
 import app from '@/core/config/firebase.config';
@@ -144,47 +144,8 @@ export function usePushNotifications() {
     return 'web';
   };
 
-  // Listen for foreground messages
-  useEffect(() => {
-    if (!isSupported_ || permission !== 'granted') {
-      return;
-    }
-
-    let unsubscribe = () => {};
-
-    const setupMessageListener = async () => {
-      try {
-        const messaging = getMessaging(app);
-
-        unsubscribe = onMessage(messaging, (payload) => {
-          console.log('Foreground message received:', payload);
-
-          // Show a notification even when the app is in foreground
-          if (Notification.permission === 'granted') {
-            const { title, body } = payload.notification || {};
-            const notificationTitle = title || 'New Message';
-            const notificationOptions = {
-              body: body || 'You have a new message',
-              icon: '/icons/icon-192x192.png',
-              tag: payload.data?.conversationId || 'message',
-              data: payload.data,
-            };
-
-            // Use the service worker to show notification
-            navigator.serviceWorker.ready.then((registration) => {
-              registration.showNotification(notificationTitle, notificationOptions);
-            });
-          }
-        });
-      } catch (err) {
-        console.error('Error setting up message listener:', err);
-      }
-    };
-
-    setupMessageListener();
-
-    return () => unsubscribe();
-  }, [isSupported_, permission]);
+  // Note: Foreground message listening is handled by NotificationListener component
+  // to avoid duplicate notifications. This hook only handles permission and token management.
 
   // Remove FCM token when user logs out
   const removeToken = useCallback(async () => {

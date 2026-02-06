@@ -7,7 +7,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { MessageSquare, User, Mail, Clock, Search, X } from 'lucide-react';
+import { MessageSquare, User, Mail, Clock, Search, X, Megaphone } from 'lucide-react';
 import { useMessages } from '@/presentation/contexts/MessagesContext';
 import { useAuth } from '@/presentation/contexts/AuthContext';
 import './ConversationList.css';
@@ -43,6 +43,18 @@ export function ConversationList() {
         initial: name.charAt(0).toUpperCase(),
         subtitle: conversation.metadata?.contactEmail || conversation.metadata?.subject,
         isContact: true,
+        isAdvertising: false,
+      };
+    }
+
+    if (conversation.type === 'advertising') {
+      const name = conversation.metadata?.contactName || 'Advertising';
+      return {
+        name,
+        initial: name.charAt(0).toUpperCase(),
+        subtitle: conversation.metadata?.contactEmail || conversation.metadata?.subject,
+        isContact: false,
+        isAdvertising: true,
       };
     }
 
@@ -57,6 +69,7 @@ export function ConversationList() {
         initial: name.charAt(0).toUpperCase(),
         photoURL: otherUser.photoURL,
         isContact: false,
+        isAdvertising: false,
       };
     }
 
@@ -94,8 +107,8 @@ export function ConversationList() {
         }
       }
 
-      // Search in contact metadata
-      if (conversation.type === 'contact') {
+      // Search in contact/advertising metadata
+      if (conversation.type === 'contact' || conversation.type === 'advertising') {
         if (
           conversation.metadata?.contactName?.toLowerCase().includes(query) ||
           conversation.metadata?.contactEmail?.toLowerCase().includes(query) ||
@@ -174,7 +187,7 @@ export function ConversationList() {
             className={`conversation-item ${unreadCount > 0 ? 'unread' : ''}`}
             onClick={() => openConversation(conversation.id)}
           >
-            <div className="conversation-avatar">
+            <div className={`conversation-avatar ${display.isAdvertising ? 'advertising' : ''}`}>
               {display.photoURL ? (
                 <img src={display.photoURL} alt={display.name} />
               ) : (
@@ -183,6 +196,11 @@ export function ConversationList() {
               {display.isContact && (
                 <div className="conversation-avatar-badge">
                   <Mail className="w-3 h-3" />
+                </div>
+              )}
+              {display.isAdvertising && (
+                <div className="conversation-avatar-badge advertising">
+                  <Megaphone className="w-3 h-3" />
                 </div>
               )}
             </div>

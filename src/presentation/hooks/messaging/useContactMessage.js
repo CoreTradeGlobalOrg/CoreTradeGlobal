@@ -25,10 +25,11 @@ export function useContactMessage() {
    * @param {string} params.email - Sender's email
    * @param {string} params.subject - Message subject
    * @param {string} params.message - Message content
+   * @param {string} params.tag - Message tag (e.g., 'contact', 'advertising')
    * @returns {Promise<Object>} The created conversation
    */
   const sendContactMessage = useCallback(
-    async ({ name, email, subject, message }) => {
+    async ({ name, email, subject, message, tag = 'contact' }) => {
       setSending(true);
       setError(null);
       setSuccess(false);
@@ -51,6 +52,7 @@ export function useContactMessage() {
           email,
           subject,
           message,
+          tag,
           userId: isAuthenticated ? user?.uid : null,
         });
 

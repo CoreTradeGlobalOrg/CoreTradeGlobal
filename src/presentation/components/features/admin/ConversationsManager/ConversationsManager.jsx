@@ -81,10 +81,11 @@ export function ConversationsManager() {
   };
 
   const getParticipantNames = (conversation) => {
-    if (conversation.type === 'contact') {
+    if (conversation.type === 'contact' || conversation.type === 'advertising') {
       const contactName = conversation.metadata?.contactName || 'Anonymous';
       const contactEmail = conversation.metadata?.contactEmail || '';
-      return `${contactName} (Contact)${contactEmail ? ` - ${contactEmail}` : ''}`;
+      const typeLabel = conversation.type === 'advertising' ? 'Advertising' : 'Contact';
+      return `${contactName} (${typeLabel})${contactEmail ? ` - ${contactEmail}` : ''}`;
     }
 
     const names = Object.values(conversation.participantDetails || {})
@@ -207,6 +208,12 @@ export function ConversationsManager() {
           >
             Contact
           </button>
+          <button
+            className={`filter-btn ${filterType === 'advertising' ? 'active' : ''}`}
+            onClick={() => setFilterType('advertising')}
+          >
+            Advertising
+          </button>
         </div>
       </div>
 
@@ -227,7 +234,7 @@ export function ConversationsManager() {
                 onClick={() => setSelectedConversation(conv)}
               >
                 <div className="conversation-icon">
-                  {conv.type === 'contact' ? (
+                  {(conv.type === 'contact' || conv.type === 'advertising') ? (
                     <MessageCircle className="w-5 h-5" />
                   ) : (
                     <User className="w-5 h-5" />
@@ -242,7 +249,7 @@ export function ConversationsManager() {
                       {formatDate(conv.updatedAt)}
                     </span>
                   </div>
-                  {conv.type === 'contact' && conv.metadata?.subject && (
+                  {(conv.type === 'contact' || conv.type === 'advertising') && conv.metadata?.subject && (
                     <div className="conversation-subject">
                       Subject: {conv.metadata.subject}
                     </div>

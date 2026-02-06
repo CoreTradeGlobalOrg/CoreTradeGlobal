@@ -277,7 +277,7 @@ export function CompaniesSection() {
               <div className="section-header" style={{ marginTop: 0, marginBottom: '1.5rem' }}>
                 <h1 className="section-title">Featured Companies</h1>
                 <Link
-                  href="/contact?subject=featured-companies-application"
+                  href="/contact?subject=advertising"
                   className="link-hero-blue"
                   style={{ justifyContent: 'center', marginTop: '10px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
                 >

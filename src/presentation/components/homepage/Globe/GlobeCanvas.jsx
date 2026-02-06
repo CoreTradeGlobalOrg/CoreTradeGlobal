@@ -332,7 +332,7 @@ function Scene({ isMobile, disableInteraction }) {
         enablePan={false}
         enableRotate={!isMobile}
         autoRotate
-        autoRotateSpeed={4}
+        autoRotateSpeed={2.5}
       />
     </>
   );

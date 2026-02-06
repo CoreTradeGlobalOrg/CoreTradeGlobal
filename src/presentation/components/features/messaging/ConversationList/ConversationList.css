@@ -196,6 +196,17 @@
   color: #0f1b2b;
 }
 
+/* Advertising avatar - purple theme */
+.conversation-avatar.advertising span {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(139, 92, 246, 0.1));
+  color: #8b5cf6;
+}
+
+.conversation-avatar-badge.advertising {
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+  color: white;
+}
+
 /* Info */
 .conversation-info {
   flex: 1;

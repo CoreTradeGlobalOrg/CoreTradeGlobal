@@ -303,6 +303,11 @@
   color: #FFD700;
 }
 
+.type-badge.advertising {
+  background: rgba(139, 92, 246, 0.2);
+  color: #8b5cf6;
+}
+
 .message-count {
   font-size: 11px;
   color: #64748b;
