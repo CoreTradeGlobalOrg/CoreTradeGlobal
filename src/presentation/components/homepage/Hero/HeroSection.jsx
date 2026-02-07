@@ -52,6 +52,22 @@ const GlobeCanvas = dynamic(
 
 const SEARCH_TAGS = ['Marble', 'Steel', 'Textile', 'Machinery', 'Cotton'];
 
+// Daily slogans - changes based on day of week
+const DAILY_SLOGANS = {
+  0: "Global Trade, Simplified: Navigate the Complex Markets with Ease.", // Sunday - Simplicity
+  1: "The Global Hub of Trust: Trade Exclusively with Verified Suppliers.", // Monday - Trust
+  2: "Scale Beyond Borders: Expand Your Business to Every Global Market.", // Tuesday - Growth
+  3: "Trading at the Speed of Light: Get Instant Quotes for Your RFQs.", // Wednesday - Speed
+  4: "The Intersection of Global Trade: Connecting Buyers and Sellers with Transparency.", // Thursday - Connection
+  5: "The Operating System for Trade: A Future-Ready, Data-Driven B2B Experience.", // Friday - Innovation
+  6: "Unlock New Opportunities: Find Your Next Strategic Partner Today.", // Saturday - Discovery
+};
+
+const getDailySlogan = () => {
+  const day = new Date().getDay();
+  return DAILY_SLOGANS[day];
+};
+
 export function HeroSection({ fetchData = false }) {
   const { user, isAuthenticated, loading } = useAuth();
   const [mounted, setMounted] = useState(false);
@@ -223,7 +239,7 @@ export function HeroSection({ fetchData = false }) {
         {/* Hero Overlay with Slogan and Search */}
         <div className="hero-overlay">
           <div className="slogan-container">
-            <h1 className="hero-slogan">Connect with Verified Suppliers</h1>
+            <h1 className="hero-slogan">{getDailySlogan()}</h1>
             <div className="search-bar-container">
               {/* Switch above bar on mobile */}
               {isMobile && (
