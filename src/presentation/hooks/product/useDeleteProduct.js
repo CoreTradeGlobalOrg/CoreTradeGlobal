@@ -14,14 +14,14 @@ export function useDeleteProduct() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const deleteProduct = async (productId, userId) => {
+  const deleteProduct = async (productId, userId, { isAdmin = false } = {}) => {
     setLoading(true);
     setError(null);
 
     try {
       const productRepository = container.getProductRepository();
       const deleteProductUseCase = new DeleteProductUseCase(productRepository);
-      await deleteProductUseCase.execute(productId, userId);
+      await deleteProductUseCase.execute(productId, userId, { isAdmin });
     } catch (err) {
       console.error('useDeleteProduct error:', err);
       setError(err.message);

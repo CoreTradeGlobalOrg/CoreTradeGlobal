@@ -24,13 +24,14 @@ firebase.initializeApp(firebaseConfig);
 // Initialize Firebase Messaging
 const messaging = firebase.messaging();
 
-// Handle background messages
+// Handle background messages (data-only messages)
 messaging.onBackgroundMessage((payload) => {
   console.log('[firebase-messaging-sw.js] Received background message:', payload);
 
-  const notificationTitle = payload.notification?.title || 'New Message';
+  // Use data fields since we're using data-only messages
+  const notificationTitle = payload.data?.senderName || 'New Message';
   const notificationOptions = {
-    body: payload.notification?.body || 'You have a new message',
+    body: payload.data?.messageContent || 'You have a new message',
     icon: '/icons/icon-192x192.png',
     badge: '/icons/icon-192x192.png',
     tag: payload.data?.conversationId || 'message',

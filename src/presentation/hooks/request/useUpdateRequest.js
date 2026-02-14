@@ -14,7 +14,7 @@ export function useUpdateRequest() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const updateRequest = async (requestId, userId, updateData) => {
+  const updateRequest = async (requestId, userId, updateData, { isAdmin = false } = {}) => {
     setLoading(true);
     setError(null);
 
@@ -24,7 +24,8 @@ export function useUpdateRequest() {
       const request = await updateRequestUseCase.execute(
         requestId,
         userId,
-        updateData
+        updateData,
+        { isAdmin }
       );
       return request;
     } catch (err) {

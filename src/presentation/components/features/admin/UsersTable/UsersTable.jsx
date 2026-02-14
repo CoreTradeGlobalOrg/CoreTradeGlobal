@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
-import { Star, MoreVertical, Check, Ban, Trash2, Eye, Shield, ShieldX } from 'lucide-react';
+import { Star, MoreVertical, Check, Ban, Trash2, Eye, Shield, ShieldX, ChevronDown } from 'lucide-react';
 import { container } from '@/core/di/container';
 import { COUNTRIES } from '@/core/constants/countries';
 import { useApproveUser } from '@/presentation/hooks/admin/useApproveUser';
@@ -19,6 +19,7 @@ export function UsersTable({ users = [], onRefresh }) {
   const [filterRole, setFilterRole] = useState('all'); // 'all', 'admin', 'member'
   const [actionLoading, setActionLoading] = useState(null); // Track which user action is loading
   const [activeActionMenu, setActiveActionMenu] = useState(null); // Track open menu
+  const [mobileDropdownOpen, setMobileDropdownOpen] = useState(null); // Track open mobile dropdown
   const [banReasonInput, setBanReasonInput] = useState('Violation of terms of service'); // For ban reason input
 
   // Dialog states
@@ -47,7 +48,12 @@ export function UsersTable({ users = [], onRefresh }) {
 
   // Close menu when clicking outside
   useEffect(() => {
-    const handleClickOutside = () => setActiveActionMenu(null);
+    const handleClickOutside = (e) => {
+      if (!e.target.closest('.mobile-action-dropdown')) {
+        setMobileDropdownOpen(null);
+      }
+      setActiveActionMenu(null);
+    };
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
   }, []);
@@ -312,14 +318,14 @@ export function UsersTable({ users = [], onRefresh }) {
       className="bg-[rgba(255,255,255,0.03)] rounded-xl border border-[#FFD700]/20 backdrop-blur-md shadow-2xl"
     >
       {/* Table Header */}
-      <div className="px-6 py-4 border-b border-[rgba(255,255,255,0.1)]">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <h2 className="text-xl font-bold text-white">
+      <div className="px-4 md:px-6 py-4 border-b border-[rgba(255,255,255,0.1)]">
+        <div className="flex flex-col gap-4">
+          <h2 className="text-lg md:text-xl font-bold text-white">
             All Users ({filteredUsers.length})
           </h2>
 
-          {/* Filters */}
-          <div className="flex flex-col sm:flex-row gap-3">
+          {/* Filters - Scrollable on mobile */}
+          <div className="flex flex-col gap-3">
             {/* Search Input */}
             <div className="relative">
               <input
@@ -327,53 +333,56 @@ export function UsersTable({ users = [], onRefresh }) {
                 placeholder="Search users..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full sm:w-64 px-4 py-2 pl-10 bg-[#0F1B2B] border border-[rgba(255,255,255,0.1)] rounded-lg text-white placeholder:text-gray-500 focus:border-[#FFD700] focus:outline-none transition-colors"
+                className="w-full px-4 py-2 pl-10 bg-[#0F1B2B] border border-[rgba(255,255,255,0.1)] rounded-lg text-white placeholder:text-gray-500 focus:border-[#FFD700] focus:outline-none transition-colors text-sm"
               />
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
                 🔍
               </span>
             </div>
 
-            {/* Verification Filter */}
-            <select
-              value={filterVerified}
-              onChange={(e) => setFilterVerified(e.target.value)}
-              className="px-4 py-2 bg-[#0F1B2B] border border-[rgba(255,255,255,0.1)] rounded-lg text-white focus:border-[#FFD700] focus:outline-none cursor-pointer"
-            >
-              <option value="all">All Status</option>
-              <option value="verified">Email Verified</option>
-              <option value="unverified">Email Unverified</option>
-            </select>
+            {/* Filter dropdowns - Horizontal scroll on mobile */}
+            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0 md:flex-wrap">
+              {/* Verification Filter */}
+              <select
+                value={filterVerified}
+                onChange={(e) => setFilterVerified(e.target.value)}
+                className="px-3 py-2 bg-[#1a2a3a] border border-[rgba(255,255,255,0.2)] rounded-lg text-white focus:border-[#FFD700] focus:outline-none cursor-pointer text-sm flex-shrink-0 min-w-[100px]"
+              >
+                <option value="all" className="bg-[#1a2a3a] text-white">All Status</option>
+                <option value="verified" className="bg-[#1a2a3a] text-white">Verified</option>
+                <option value="unverified" className="bg-[#1a2a3a] text-white">Unverified</option>
+              </select>
 
-            {/* Approval Filter */}
-            <select
-              value={filterApproved}
-              onChange={(e) => setFilterApproved(e.target.value)}
-              className="px-4 py-2 bg-[#0F1B2B] border border-[rgba(255,255,255,0.1)] rounded-lg text-white focus:border-[#FFD700] focus:outline-none cursor-pointer"
-            >
-              <option value="all">All Approval</option>
-              <option value="approved">Admin Approved</option>
-              <option value="pending">Pending Approval</option>
-              <option value="banned">Banned Users</option>
-              <option value="expired">Expired Self-Delete</option>
-            </select>
+              {/* Approval Filter */}
+              <select
+                value={filterApproved}
+                onChange={(e) => setFilterApproved(e.target.value)}
+                className="px-3 py-2 bg-[#1a2a3a] border border-[rgba(255,255,255,0.2)] rounded-lg text-white focus:border-[#FFD700] focus:outline-none cursor-pointer text-sm flex-shrink-0 min-w-[110px]"
+              >
+                <option value="all" className="bg-[#1a2a3a] text-white">All Approval</option>
+                <option value="approved" className="bg-[#1a2a3a] text-white">Approved</option>
+                <option value="pending" className="bg-[#1a2a3a] text-white">Pending</option>
+                <option value="banned" className="bg-[#1a2a3a] text-white">Banned</option>
+                <option value="expired" className="bg-[#1a2a3a] text-white">Expired</option>
+              </select>
 
-            {/* Role Filter */}
-            <select
-              value={filterRole}
-              onChange={(e) => setFilterRole(e.target.value)}
-              className="px-4 py-2 bg-[#0F1B2B] border border-[rgba(255,255,255,0.1)] rounded-lg text-white focus:border-[#FFD700] focus:outline-none cursor-pointer"
-            >
-              <option value="all">All Roles</option>
-              <option value="admin">Admins Only</option>
-              <option value="member">Members Only</option>
-            </select>
+              {/* Role Filter */}
+              <select
+                value={filterRole}
+                onChange={(e) => setFilterRole(e.target.value)}
+                className="px-3 py-2 bg-[#1a2a3a] border border-[rgba(255,255,255,0.2)] rounded-lg text-white focus:border-[#FFD700] focus:outline-none cursor-pointer text-sm flex-shrink-0 min-w-[90px]"
+              >
+                <option value="all" className="bg-[#1a2a3a] text-white">All Roles</option>
+                <option value="admin" className="bg-[#1a2a3a] text-white">Admins</option>
+                <option value="member" className="bg-[#1a2a3a] text-white">Members</option>
+              </select>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Table */}
-      <div className="overflow-x-auto min-h-[400px]">
+      {/* Desktop Table */}
+      <div className="hidden md:block overflow-x-auto min-h-[400px]">
         <table className="w-full">
           <thead className="bg-[#0F1B2B]/50 border-b border-[rgba(255,255,255,0.05)]">
             <tr>
@@ -604,6 +613,192 @@ export function UsersTable({ users = [], onRefresh }) {
             )}
           </tbody>
         </table>
+      </div>
+
+      {/* Mobile Cards */}
+      <div className="md:hidden space-y-4 p-4">
+        {filteredUsers.length === 0 ? (
+          <div className="text-center py-12 text-gray-500">
+            {searchTerm || filterVerified !== 'all' || filterApproved !== 'all'
+              ? 'No users found matching your filters'
+              : 'No users registered yet'}
+          </div>
+        ) : (
+          filteredUsers.map((user) => {
+            // Check if self-delete recovery period has expired
+            const isExpired = user.isDeleted &&
+              user.deletionType === 'self' &&
+              user.canRecoverUntil &&
+              new Date() > new Date(user.canRecoverUntil.seconds * 1000);
+
+            return (
+              <div
+                key={user.id}
+                className={`bg-[rgba(255,255,255,0.03)] border border-[#FFD700]/20 rounded-xl overflow-hidden hover:border-[#FFD700]/40 transition-colors ${user.isDeleted ? 'bg-red-900/20 opacity-75' : user.isSuspended ? 'bg-red-900/10' : ''}`}
+              >
+                {/* Card Body */}
+                <div className="p-4">
+                  {/* Header - Name + Role Badge */}
+                  <div className="flex items-start justify-between gap-3 mb-2">
+                    <div
+                      onClick={() => router.push(`/profile/${user.id}`)}
+                      className="cursor-pointer flex-1 min-w-0"
+                    >
+                      <div className="font-semibold text-white">
+                        {user.displayName || `${user.firstName} ${user.lastName}` || 'N/A'}
+                      </div>
+                      <div className="text-sm text-gray-400 truncate">{user.email}</div>
+                    </div>
+                    {user.role === 'admin' && (
+                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-purple-500/10 text-purple-400 border border-purple-500/20 flex-shrink-0">
+                        <Shield size={12} /> Admin
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Info Lines */}
+                  <div className="space-y-2 mb-4">
+                    {/* Company */}
+                    <div className="flex items-center gap-2 text-sm">
+                      <span className="text-[#A0A0A0]">Company:</span>
+                      <span className="text-white">{user.companyName || 'N/A'}</span>
+                    </div>
+
+                    {/* Country */}
+                    <div className="flex items-center gap-2 text-sm">
+                      <span className="text-[#A0A0A0]">Country:</span>
+                      <span className="text-white">{user.country ? getCountryLabel(user.country) : 'N/A'}</span>
+                    </div>
+
+                    {/* Registered */}
+                    <div className="flex items-center gap-2 text-sm">
+                      <span className="text-[#A0A0A0]">Registered:</span>
+                      <span className="text-white">{formatDate(user.createdAt)}</span>
+                    </div>
+                  </div>
+
+                  {/* Status Badges */}
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {/* Email Status */}
+                    {user.emailVerified ? (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-500/10 text-green-400 border border-green-500/20">
+                        Email Verified
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-500/10 text-yellow-400 border border-yellow-500/20">
+                        Email Pending
+                      </span>
+                    )}
+
+                    {/* Approval Status */}
+                    {user.isDeleted ? (
+                      isExpired ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-gray-600/20 text-gray-400 border border-gray-500/30">
+                          ⏱️ Expired
+                        </span>
+                      ) : user.deletionType === 'admin_ban' ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-red-600/20 text-red-400 border border-red-500/30">
+                          <ShieldX size={12} /> Banned
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-yellow-600/20 text-yellow-400 border border-yellow-500/30">
+                          🗑️ Self-Deleted
+                        </span>
+                      )
+                    ) : user.isSuspended ? (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-500/10 text-red-400 border border-red-500/20">
+                        Suspended
+                      </span>
+                    ) : user.adminApproved ? (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-500/10 text-green-400 border border-green-500/20">
+                        Approved
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-500/10 text-orange-400 border border-orange-500/20">
+                        Pending
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Ban reason or recovery deadline */}
+                  {user.isDeleted && user.banReason && (
+                    <div className="text-xs text-gray-500 mb-2 truncate" title={user.banReason}>
+                      Reason: {user.banReason}
+                    </div>
+                  )}
+                  {user.isDeleted && user.deletionType === 'self' && user.canRecoverUntil && (
+                    <div className="text-xs text-gray-500 mb-2">
+                      {isExpired ? 'Expired: ' : 'Expires: '}
+                      {new Date(user.canRecoverUntil.seconds * 1000).toLocaleDateString()}
+                    </div>
+                  )}
+
+                  {/* Actions - Custom Dropdown */}
+                  <div className="pt-3 border-t border-[rgba(255,255,255,0.05)] mobile-action-dropdown">
+                    <button
+                      type="button"
+                      onClick={() => setMobileDropdownOpen(mobileDropdownOpen === user.id ? null : user.id)}
+                      className="w-full bg-[#1a2a3a] text-white border border-[#FFD700]/30 rounded-lg px-4 py-3 text-base focus:outline-none focus:border-[#FFD700] cursor-pointer hover:bg-[#243444] transition-colors flex items-center justify-between"
+                    >
+                      <span>Select Action...</span>
+                      <ChevronDown className={`w-5 h-5 text-[#FFD700] transition-transform ${mobileDropdownOpen === user.id ? 'rotate-180' : ''}`} />
+                    </button>
+
+                    {mobileDropdownOpen === user.id && (
+                      <div className="mt-2 bg-[#1a2a3a] border border-[#FFD700]/40 rounded-lg shadow-2xl overflow-hidden">
+                        {user.isDeleted ? (
+                          <>
+                            <button type="button" onClick={() => { setMobileDropdownOpen(null); openDialog('unban', user); }} className="w-full px-4 py-3 text-left text-base text-green-400 hover:bg-[#243444] flex items-center gap-3">
+                              <Check className="w-5 h-5" /> Unban User
+                            </button>
+                            <button type="button" onClick={() => { setMobileDropdownOpen(null); router.push(`/profile/${user.id}`); }} className="w-full px-4 py-3 text-left text-base text-white hover:bg-[#243444] flex items-center gap-3">
+                              <Eye className="w-5 h-5" /> View Profile
+                            </button>
+                            <button type="button" onClick={() => { setMobileDropdownOpen(null); openDialog('delete', user); }} className="w-full px-4 py-3 text-left text-base text-red-400 hover:bg-red-900/30 flex items-center gap-3">
+                              <Trash2 className="w-5 h-5" /> Permanently Delete
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            {!user.isSuspended && user.adminApproved && (
+                              <button type="button" onClick={() => { setMobileDropdownOpen(null); handleAction(handleToggleFeatured, user.id, user.featured, user.displayName); }} className="w-full px-4 py-3 text-left text-base text-white hover:bg-[#243444] flex items-center gap-3">
+                                <Star className="w-5 h-5" /> {user.featured ? 'Unfeature User' : 'Feature User'}
+                              </button>
+                            )}
+                            {!user.isSuspended && user.adminApproved && (
+                              <button type="button" onClick={() => { setMobileDropdownOpen(null); openDialog('admin', user); }} className="w-full px-4 py-3 text-left text-base text-purple-400 hover:bg-[#243444] flex items-center gap-3">
+                                <Shield className="w-5 h-5" /> {user.role === 'admin' ? 'Remove Admin' : 'Make Admin'}
+                              </button>
+                            )}
+                            {!user.adminApproved && !user.isSuspended && (
+                              <button type="button" onClick={() => { setMobileDropdownOpen(null); openDialog('approve', user); }} className="w-full px-4 py-3 text-left text-base text-green-400 hover:bg-[#243444] flex items-center gap-3">
+                                <Check className="w-5 h-5" /> Approve User
+                              </button>
+                            )}
+                            <button type="button" onClick={() => { setMobileDropdownOpen(null); openDialog('suspend', user); }} className="w-full px-4 py-3 text-left text-base text-yellow-400 hover:bg-[#243444] flex items-center gap-3">
+                              <Ban className="w-5 h-5" /> {user.isSuspended ? 'Unsuspend User' : 'Suspend User'}
+                            </button>
+                            {user.role !== 'admin' && (
+                              <button type="button" onClick={() => { setMobileDropdownOpen(null); openDialog('ban', user); }} className="w-full px-4 py-3 text-left text-base text-orange-400 hover:bg-[#243444] flex items-center gap-3">
+                                <ShieldX className="w-5 h-5" /> Ban User
+                              </button>
+                            )}
+                            <button type="button" onClick={() => { setMobileDropdownOpen(null); router.push(`/profile/${user.id}`); }} className="w-full px-4 py-3 text-left text-base text-white hover:bg-[#243444] flex items-center gap-3">
+                              <Eye className="w-5 h-5" /> View Profile
+                            </button>
+                            <button type="button" onClick={() => { setMobileDropdownOpen(null); openDialog('delete', user); }} className="w-full px-4 py-3 text-left text-base text-red-400 hover:bg-red-900/30 flex items-center gap-3">
+                              <Trash2 className="w-5 h-5" /> Permanently Delete
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })
+        )}
       </div>
 
       {/* Table Footer */}

@@ -291,6 +291,20 @@ export class ProductRepository {
   }
 
   /**
+   * Delete product image by its Firebase Storage URL
+   * Extracts the actual path from the URL to delete the correct file
+   * @param {string} imageUrl - Firebase Storage download URL
+   * @returns {Promise<void>}
+   */
+  async deleteImageByUrl(imageUrl) {
+    try {
+      await this.storageDataSource.deleteFileByUrl(imageUrl);
+    } catch (error) {
+      console.warn(`Failed to delete image by URL:`, error.message);
+    }
+  }
+
+  /**
    * Check if product exists
    * @param {string} productId
    * @returns {Promise<boolean>}

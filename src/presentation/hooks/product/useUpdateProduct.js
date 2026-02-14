@@ -14,7 +14,7 @@ export function useUpdateProduct() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const updateProduct = async (productId, userId, updateData, newImageFiles = []) => {
+  const updateProduct = async (productId, userId, updateData, newImageFiles = [], { isAdmin = false } = {}) => {
     setLoading(true);
     setError(null);
 
@@ -25,7 +25,8 @@ export function useUpdateProduct() {
         productId,
         userId,
         updateData,
-        newImageFiles
+        newImageFiles,
+        { isAdmin }
       );
       return product;
     } catch (err) {

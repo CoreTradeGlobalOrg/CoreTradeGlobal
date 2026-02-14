@@ -110,7 +110,8 @@ export default function ProductDetailPage() {
     3
   );
 
-  const isOwnProduct = currentUser?.uid === product?.userId;
+  const isAdmin = currentUser?.role === 'admin';
+  const isOwnProduct = currentUser?.uid === product?.userId || isAdmin;
   const images = product?.images || [];
   const hasImages = images.length > 0;
 
@@ -159,10 +160,10 @@ export default function ProductDetailPage() {
   const handleDeleteConfirm = async () => {
     setDeleting(true);
     try {
-      await deleteProduct(productId, currentUser.uid);
+      await deleteProduct(productId, product.userId, { isAdmin });
       toast.success('Product deleted successfully');
       setDeleteModalOpen(false);
-      router.push(`/profile/${currentUser.uid}?tab=products`);
+      router.push(`/profile/${product.userId}?tab=products`);
     } catch (err) {
       toast.error('Failed to delete product');
     } finally {
@@ -173,7 +174,7 @@ export default function ProductDetailPage() {
   const handleToggleStatus = async () => {
     const newStatus = product.status === 'active' ? 'inactive' : 'active';
     try {
-      await updateProduct(productId, currentUser.uid, { status: newStatus });
+      await updateProduct(productId, product.userId, { status: newStatus }, [], { isAdmin });
       toast.success(`Product ${newStatus === 'active' ? 'activated' : 'deactivated'}`);
       refetch();
     } catch (err) {
@@ -182,7 +183,7 @@ export default function ProductDetailPage() {
   };
 
   const handleEditSubmit = async (data, imageFiles = []) => {
-    await updateProduct(productId, currentUser.uid, data, imageFiles);
+    await updateProduct(productId, product.userId, data, imageFiles, { isAdmin });
     setEditModalOpen(false);
     refetch();
   };
@@ -416,12 +417,19 @@ export default function ProductDetailPage() {
               <div className="flex flex-col gap-4 relative z-10">
                 <div className="flex items-start justify-between gap-4">
                   <h1 className="text-4xl font-bold text-white leading-tight">{product.name}</h1>
-                  <span className={`px-4 py-1.5 text-xs uppercase tracking-wider font-bold rounded-full border ${product.status === 'active'
-                    ? 'bg-green-500/10 border-green-500/30 text-green-400'
-                    : 'bg-gray-500/10 border-gray-500/30 text-gray-400'
-                    }`}>
-                    {product.status}
-                  </span>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    {product.createdByAdmin && currentUser?.role === 'admin' && (
+                      <span className="px-3 py-1.5 text-xs uppercase tracking-wider font-bold rounded-full border bg-purple-500/10 border-purple-500/30 text-purple-400">
+                        Admin Created
+                      </span>
+                    )}
+                    <span className={`px-4 py-1.5 text-xs uppercase tracking-wider font-bold rounded-full border ${product.status === 'active'
+                      ? 'bg-green-500/10 border-green-500/30 text-green-400'
+                      : 'bg-gray-500/10 border-gray-500/30 text-gray-400'
+                      }`}>
+                      {product.status}
+                    </span>
+                  </div>
                 </div>
 
                 <div className="flex items-end gap-2 mt-2">
@@ -573,7 +581,7 @@ export default function ProductDetailPage() {
         >
           <ProductForm
             product={product}
-            userId={currentUser?.uid}
+            userId={product?.userId}
             onSubmit={handleEditSubmit}
             onCancel={() => setEditModalOpen(false)}
           />

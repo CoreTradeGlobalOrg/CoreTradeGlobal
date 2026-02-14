@@ -21,7 +21,7 @@ export class DeleteRequestUseCase {
    * @returns {Promise<void>}
    * @throws {Error} If validation fails or deletion fails
    */
-  async execute(requestId, userId) {
+  async execute(requestId, userId, { isAdmin = false } = {}) {
     // 1. Validate inputs
     if (!requestId) {
       throw new Error('Request ID is required');
@@ -38,8 +38,8 @@ export class DeleteRequestUseCase {
         throw new Error('Request not found');
       }
 
-      // 3. Validate ownership
-      if (request.userId !== userId) {
+      // 3. Validate ownership (admins can delete any request)
+      if (!isAdmin && request.userId !== userId) {
         throw new Error('You do not have permission to delete this request');
       }
 

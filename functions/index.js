@@ -472,29 +472,24 @@ exports.sendMessageNotification = onDocumentCreated(
 
       console.log(`📱 Sending notification to ${tokens.length} device(s)`);
 
-      // Prepare notification payload
+      // Prepare DATA-ONLY payload (no 'notification' field)
+      // This prevents FCM from auto-showing notifications
+      // The service worker/client will handle display
       const notificationPayload = {
-        notification: {
-          title: message.senderName || 'New Message',
-          body: message.content.length > 100
-            ? message.content.substring(0, 97) + '...'
-            : message.content,
-        },
         data: {
           conversationId: conversationId,
           messageId: event.params.messageId,
           senderId: message.senderId,
-          senderName: message.senderName || '',
+          senderName: message.senderName || 'New Message',
+          messageContent: message.content.length > 100
+            ? message.content.substring(0, 97) + '...'
+            : message.content,
           type: 'new_message',
           click_action: `/messages/${conversationId}`,
         },
         webpush: {
           fcmOptions: {
             link: `/messages/${conversationId}`,
-          },
-          notification: {
-            icon: '/icons/icon-192x192.png',
-            badge: '/icons/badge-72x72.png',
           },
         },
       };

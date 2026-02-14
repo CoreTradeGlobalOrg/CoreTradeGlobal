@@ -35,6 +35,9 @@ export class MarkAsReadUseCase {
 
     // 3. Reset unread count in conversation
     await this.conversationRepository.resetUnreadCount(conversationId, userId);
+
+    // 4. Mark related notifications as read
+    await this.notificationRepository.markAsReadByConversationId(userId, conversationId);
   }
 
   /**

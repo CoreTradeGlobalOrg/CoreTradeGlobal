@@ -13,11 +13,14 @@ import { useAuth } from '@/presentation/contexts/AuthContext';
 import { container } from '@/core/di/container';
 import { COUNTRIES } from '@/core/constants/countries';
 import Link from 'next/link';
-import { ArrowLeft, Calendar, MapPin, Package, DollarSign, Building } from 'lucide-react';
+import { ArrowLeft, Calendar, MapPin, Package, DollarSign, Building, Pencil } from 'lucide-react';
 import { RestrictedCard } from '@/presentation/components/common/RestrictedCard/RestrictedCard';
 import { CountryFlag } from '@/presentation/components/common/CountryFlag/CountryFlag';
 import { SubmitQuoteDialog } from '@/presentation/components/features/request/SubmitQuoteDialog/SubmitQuoteDialog';
 import { QuotesSection } from '@/presentation/components/features/request/QuotesSection/QuotesSection';
+import { RequestForm } from '@/presentation/components/features/request/RequestForm/RequestForm';
+import { Modal } from '@/components/ui/Modal';
+import { useUpdateRequest } from '@/presentation/hooks/request/useUpdateRequest';
 import { useCategories } from '@/presentation/hooks/category/useCategories';
 import toast from 'react-hot-toast';
 
@@ -31,7 +34,13 @@ export default function RequestDetailsPage() {
   const [author, setAuthor] = useState(null);
   const [quoteDialogOpen, setQuoteDialogOpen] = useState(false);
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
   const { categories } = useCategories();
+  const { updateRequest } = useUpdateRequest();
+
+  // Admin / ownership checks
+  const isAdmin = user?.role === 'admin';
+  const isOwnRequest = user?.uid === request?.userId || isAdmin;
 
   // Resolve category name
   const category = categories?.find(c => c.value === request?.categoryId);
@@ -136,6 +145,24 @@ export default function RequestDetailsPage() {
     setQuoteDialogOpen(true);
   };
 
+  const refetchRequest = async () => {
+    const firestoreDS = container.getFirestoreDataSource();
+    const updated = await firestoreDS.getById('requests', params.requestId);
+    if (updated) setRequest(updated);
+  };
+
+  const handleEditSubmit = async (data) => {
+    try {
+      await updateRequest(params.requestId, request.userId, data, { isAdmin });
+      await refetchRequest();
+      setEditModalOpen(false);
+      toast.success('Request updated successfully!');
+    } catch (error) {
+      console.error('Request update error:', error);
+      toast.error('Failed to update request');
+    }
+  };
+
   return (
     <main className="pt-[120px] px-6 bg-radial-navy min-h-screen">
       <div className="max-w-4xl mx-auto pb-8">
@@ -154,18 +181,36 @@ export default function RequestDetailsPage() {
             {/* Header Card with Description */}
             <div className="glass-card p-8 w-full">
               <div className="flex justify-between items-start mb-4">
-                <span className={`text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full ${request.status === 'active' ? 'bg-[#10b981]/20 text-[#34d399] border border-[#10b981]/30' : 'bg-gray-700 text-gray-400'}`}>
-                  {request.status === 'active' ? (request.badge || 'Active') : 'Closed'}
-                </span>
-                <span className="text-sm text-[#A0A0A0] flex items-center gap-1.5">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className={`text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full ${request.status === 'active' ? 'bg-[#10b981]/20 text-[#34d399] border border-[#10b981]/30' : 'bg-gray-700 text-gray-400'}`}>
+                    {request.status === 'active' ? (request.badge || 'Active') : 'Closed'}
+                  </span>
+                  {request.createdByAdmin && user?.role === 'admin' && (
+                    <span className="text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-400">
+                      Admin Created
+                    </span>
+                  )}
+                </div>
+                <span className="text-sm text-[#A0A0A0] flex items-center gap-1.5 flex-shrink-0">
                   <Calendar size={14} />
                   {formatPostedDate(request.updatedAt || request.createdAt)}
                 </span>
               </div>
 
-              <h1 className="text-3xl font-bold text-white mb-2 leading-tight">
-                {request.productName || request.title}
-              </h1>
+              <div className="flex items-start justify-between gap-3">
+                <h1 className="text-3xl font-bold text-white mb-2 leading-tight">
+                  {request.productName || request.title}
+                </h1>
+                {isOwnRequest && (
+                  <button
+                    onClick={() => setEditModalOpen(true)}
+                    className="flex-shrink-0 p-2 rounded-lg bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] text-[#A0A0A0] hover:text-[#FFD700] hover:border-[#FFD700]/30 transition-all"
+                    title="Edit Request"
+                  >
+                    <Pencil size={18} />
+                  </button>
+                )}
+              </div>
               {categoryName && (
                 <p className="text-lg text-[#3b82f6] font-bold mb-6">{categoryName}</p>
               )}
@@ -330,8 +375,8 @@ export default function RequestDetailsPage() {
           </div>
         )}
 
-        {/* Quotes/Offers Section - Only shown to owner */}
-        {user?.uid === request.userId && (
+        {/* Quotes/Offers Section - Shown to owner and admin */}
+        {isOwnRequest && (
           <div id="quotes" className="mt-6 pb-8">
             <QuotesSection
               request={request}
@@ -347,6 +392,22 @@ export default function RequestDetailsPage() {
         onClose={() => setQuoteDialogOpen(false)}
         request={request}
       />
+
+      {/* Edit Request Modal */}
+      <Modal
+        isOpen={editModalOpen}
+        onClose={() => setEditModalOpen(false)}
+        title="Edit Request"
+        variant="blue"
+      >
+        <RequestForm
+          request={request}
+          categories={categories}
+          onSubmit={handleEditSubmit}
+          onCancel={() => setEditModalOpen(false)}
+          userId={request?.userId}
+        />
+      </Modal>
     </main>
   );
 }

@@ -21,7 +21,7 @@ export class DeleteProductUseCase {
    * @returns {Promise<void>}
    * @throws {Error} If validation fails or deletion fails
    */
-  async execute(productId, userId) {
+  async execute(productId, userId, { isAdmin = false } = {}) {
     // 1. Validate inputs
     if (!productId) {
       throw new Error('Product ID is required');
@@ -38,8 +38,8 @@ export class DeleteProductUseCase {
         throw new Error('Product not found');
       }
 
-      // 3. Validate ownership
-      if (product.userId !== userId) {
+      // 3. Validate ownership (admins can delete any product)
+      if (!isAdmin && product.userId !== userId) {
         throw new Error('You do not have permission to delete this product');
       }
 

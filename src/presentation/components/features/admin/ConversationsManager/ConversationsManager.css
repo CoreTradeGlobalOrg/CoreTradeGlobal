@@ -502,3 +502,92 @@
     min-height: 400px;
   }
 }
+
+@media (max-width: 640px) {
+  .conversations-manager-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px;
+  }
+
+  .conversations-manager-header h3 {
+    font-size: 16px;
+  }
+
+  .refresh-button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .conversations-filters {
+    flex-direction: column;
+    padding: 12px 16px;
+    gap: 12px;
+  }
+
+  .search-box {
+    min-width: 100%;
+  }
+
+  .filter-buttons {
+    width: 100%;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .filter-btn {
+    padding: 6px 12px;
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+
+  .conversation-item {
+    padding: 12px 16px;
+    gap: 12px;
+  }
+
+  .conversation-icon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .conversation-participants {
+    font-size: 13px;
+  }
+
+  .conversation-preview {
+    font-size: 12px;
+  }
+
+  .conversations-list.collapsed {
+    max-height: 250px;
+  }
+
+  .detail-header {
+    padding: 12px 16px;
+    flex-wrap: wrap;
+  }
+
+  .detail-title h4 {
+    font-size: 14px;
+  }
+
+  .detail-info {
+    padding: 12px 16px;
+    gap: 12px;
+  }
+
+  .detail-messages {
+    padding: 12px 16px;
+  }
+
+  .message-item-admin {
+    padding: 10px 12px;
+  }
+
+  .message-content-admin {
+    font-size: 13px;
+  }
+}

@@ -7,9 +7,10 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { getMessaging, getToken, onMessage, isSupported } from 'firebase/messaging';
 import { useAuth } from '@/presentation/contexts/AuthContext';
+import { useMessages } from '@/presentation/contexts/MessagesContext';
 import { container } from '@/core/di/container';
 import app from '@/core/config/firebase.config';
 
@@ -17,7 +18,14 @@ const VAPID_KEY = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY;
 
 export function NotificationListener() {
   const { user, isAuthenticated } = useAuth();
+  const { openConversation } = useMessages();
   const [isSetup, setIsSetup] = useState(false);
+  const openConversationRef = useRef(openConversation);
+
+  // Keep ref updated
+  useEffect(() => {
+    openConversationRef.current = openConversation;
+  }, [openConversation]);
 
   useEffect(() => {
     // Only run on client
@@ -63,13 +71,13 @@ export function NotificationListener() {
           console.log('[FCM] Token refreshed and saved');
         }
 
-        // Listen for foreground messages
+        // Listen for foreground messages (data-only messages)
         unsubscribe = onMessage(messaging, (payload) => {
           console.log('[FCM] Foreground message received:', payload);
 
-          const { title, body } = payload.notification || {};
-          const notificationTitle = title || 'New Message';
-          const notificationBody = body || 'You have a new message';
+          // Use data fields since we're using data-only messages
+          const notificationTitle = payload.data?.senderName || 'New Message';
+          const notificationBody = payload.data?.messageContent || 'You have a new message';
 
           // Try native Notification API first (works better in Chrome)
           try {
@@ -83,8 +91,9 @@ export function NotificationListener() {
             notification.onclick = () => {
               window.focus();
               const conversationId = payload.data?.conversationId;
-              if (conversationId) {
-                window.location.href = `/messages/${conversationId}`;
+              if (conversationId && openConversationRef.current) {
+                // Open FAB with the conversation instead of navigating
+                openConversationRef.current(conversationId);
               }
               notification.close();
             };

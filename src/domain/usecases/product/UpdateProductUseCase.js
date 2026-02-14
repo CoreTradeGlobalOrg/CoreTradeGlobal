@@ -23,7 +23,7 @@ export class UpdateProductUseCase {
    * @returns {Promise<Object>} Updated product
    * @throws {Error} If validation fails or update fails
    */
-  async execute(productId, userId, updateData, newImageFiles = []) {
+  async execute(productId, userId, updateData, newImageFiles = [], { isAdmin = false } = {}) {
     // 1. Validate product ID
     if (!productId) {
       throw new Error('Product ID is required');
@@ -37,8 +37,8 @@ export class UpdateProductUseCase {
         throw new Error('Product not found');
       }
 
-      // 3. Validate ownership
-      if (existingProduct.userId !== userId) {
+      // 3. Validate ownership (admins can edit any product)
+      if (!isAdmin && existingProduct.userId !== userId) {
         throw new Error('You do not have permission to update this product');
       }
 
@@ -59,12 +59,27 @@ export class UpdateProductUseCase {
       // 5. Handle image updates (existing images + new uploads)
       // If existingImages is provided, use it (some images may have been removed)
       // Otherwise, keep all existing images
+      const oldImages = existingProduct.images || [];
       let imageUrls = updateData.existingImages !== undefined
         ? updateData.existingImages
-        : (existingProduct.images || []);
+        : oldImages;
 
       // Remove existingImages from updateData as it's not a product field
       delete updateData.existingImages;
+
+      // 5.1 Delete removed images from Firebase Storage
+      const removedImages = oldImages.filter(img => !imageUrls.includes(img));
+      if (removedImages.length > 0) {
+        try {
+          // Delete each removed image from storage using its URL
+          for (const imageUrl of removedImages) {
+            await this.productRepository.deleteImageByUrl(imageUrl);
+          }
+        } catch (deleteError) {
+          console.error('Failed to delete removed images:', deleteError);
+          // Don't fail update if image deletion fails
+        }
+      }
 
       if (newImageFiles && newImageFiles.length > 0) {
         // Check total image count

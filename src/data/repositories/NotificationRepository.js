@@ -128,6 +128,27 @@ export class NotificationRepository {
   }
 
   /**
+   * Mark notifications as read for a specific conversation
+   * @param {string} userId
+   * @param {string} conversationId
+   * @returns {Promise<void>}
+   */
+  async markAsReadByConversationId(userId, conversationId) {
+    const unreadNotifications = await this.getUnreadByUserId(userId);
+
+    // Filter notifications that belong to this conversation
+    const conversationNotifications = unreadNotifications.filter(
+      (notification) => notification.data?.conversationId === conversationId
+    );
+
+    await Promise.all(
+      conversationNotifications.map((notification) =>
+        this.markAsRead(userId, notification.id)
+      )
+    );
+  }
+
+  /**
    * Delete notification
    * @param {string} userId
    * @param {string} notificationId

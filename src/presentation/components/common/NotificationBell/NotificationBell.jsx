@@ -16,7 +16,7 @@ import './NotificationBell.css';
 
 export function NotificationBell() {
   const router = useRouter();
-  const { notifications, unreadNotificationCount } = useMessages();
+  const { notifications, unreadNotificationCount, openConversation } = useMessages();
   const { markNotificationAsRead, markAllNotificationsAsRead, deleteAllNotifications } = useMarkAsRead();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -50,8 +50,8 @@ export function NotificationBell() {
       // Navigate to RFQ detail page (for quote submitter to see status)
       router.push(`/request/${notification.data.requestId}`);
     } else if (notification.data?.conversationId) {
-      // Navigate to messages page with conversation
-      router.push(`/messages?conversation=${notification.data.conversationId}`);
+      // Open FAB with the conversation (don't navigate to messages page)
+      openConversation(notification.data.conversationId);
     }
 
     setIsOpen(false);

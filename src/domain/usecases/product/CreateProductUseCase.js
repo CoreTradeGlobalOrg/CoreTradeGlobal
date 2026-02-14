@@ -39,6 +39,7 @@ export class CreateProductUseCase {
       price,
       currency,
       description,
+      createdByAdmin,
     } = productData;
 
     // 1. Validate all inputs
@@ -64,6 +65,7 @@ export class CreateProductUseCase {
         description,
         images: [],
         status: 'active',
+        ...(createdByAdmin && { createdByAdmin }),
         createdAt: new Date(),
         updatedAt: new Date(),
       };

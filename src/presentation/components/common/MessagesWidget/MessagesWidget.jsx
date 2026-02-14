@@ -47,6 +47,44 @@ export function MessagesWidget() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  // Handle mobile keyboard - resize widget to visual viewport
+  useEffect(() => {
+    if (!isMobile || !isWidgetOpen) return;
+
+    const updateSize = () => {
+      if (widgetRef.current && window.visualViewport) {
+        const { height, offsetTop } = window.visualViewport;
+        widgetRef.current.style.height = `${height}px`;
+        widgetRef.current.style.top = `${offsetTop}px`;
+      }
+    };
+
+    // Initial size
+    updateSize();
+
+    // Listen to viewport changes (keyboard open/close)
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', updateSize);
+      window.visualViewport.addEventListener('scroll', updateSize);
+    }
+
+    // Also prevent body scroll
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', updateSize);
+        window.visualViewport.removeEventListener('scroll', updateSize);
+      }
+      document.body.style.overflow = '';
+      if (widgetRef.current) {
+        widgetRef.current.style.height = '';
+        widgetRef.current.style.top = '';
+      }
+    };
+  }, [isMobile, isWidgetOpen]);
+
+
   // Don't render for non-authenticated users
   if (!isAuthenticated) {
     return null;

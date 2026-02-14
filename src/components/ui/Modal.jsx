@@ -44,7 +44,7 @@ export function Modal({
 
     return (
         <div
-            className={`fixed inset-0 z-[1000] flex items-center justify-center p-4 backdrop-blur-sm ${transparentBackdrop ? 'bg-black/60' : 'bg-black/80'}`}
+            className={`fixed inset-0 z-[1000] flex items-center justify-center p-2 md:p-4 backdrop-blur-sm ${transparentBackdrop ? 'bg-black/60' : 'bg-black/80'}`}
             onClick={onClose}
         >
             <div
@@ -53,8 +53,8 @@ export function Modal({
             >
                 {/* Header - Conditional */}
                 {!hideHeader && (
-                    <div className="sticky top-0 bg-[#0F1B2B]/95 backdrop-blur-xl border-b border-white/10 px-8 py-6 flex items-center justify-between z-50">
-                        <h2 className="text-2xl font-bold text-white">{title}</h2>
+                    <div className="sticky top-0 bg-[#0F1B2B]/95 backdrop-blur-xl border-b border-white/10 px-4 py-4 md:px-8 md:py-6 flex items-center justify-between z-50">
+                        <h2 className="text-lg md:text-2xl font-bold text-white">{title}</h2>
                         <button
                             onClick={onClose}
                             className="transition-colors p-2 rounded-full cursor-pointer"
@@ -73,7 +73,7 @@ export function Modal({
                 )}
 
                 {/* Content */}
-                <div className={hideHeader ? "p-6" : "p-8"}>
+                <div className={hideHeader ? "p-4 md:p-6" : "p-4 md:p-8"}>
                     {children}
                 </div>
             </div>

@@ -22,7 +22,7 @@ export class UpdateRequestUseCase {
    * @returns {Promise<Object>} Updated request
    * @throws {Error} If validation fails or update fails
    */
-  async execute(requestId, userId, updateData) {
+  async execute(requestId, userId, updateData, { isAdmin = false } = {}) {
     // 1. Validate request ID
     if (!requestId) {
       throw new Error('Request ID is required');
@@ -36,8 +36,8 @@ export class UpdateRequestUseCase {
         throw new Error('Request not found');
       }
 
-      // 3. Validate ownership
-      if (existingRequest.userId !== userId) {
+      // 3. Validate ownership (admins can edit any request)
+      if (!isAdmin && existingRequest.userId !== userId) {
         throw new Error('You do not have permission to update this request');
       }
 

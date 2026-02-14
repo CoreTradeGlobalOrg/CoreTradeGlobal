@@ -87,6 +87,35 @@ export class FirebaseStorageDataSource {
   }
 
   /**
+   * Delete file from Firebase Storage using its download URL
+   * @param {string} url - Firebase Storage download URL
+   * @returns {Promise<void>}
+   */
+  async deleteFileByUrl(url) {
+    try {
+      // Extract path from Firebase Storage URL
+      // URL format: https://firebasestorage.googleapis.com/v0/b/[bucket]/o/[encoded-path]?alt=media&token=[token]
+      const match = url.match(/\/o\/([^?]+)/);
+      if (!match) {
+        throw new Error('Invalid Firebase Storage URL');
+      }
+      const encodedPath = match[1];
+      const path = decodeURIComponent(encodedPath);
+
+      const storageRef = ref(storage, path);
+      await deleteObject(storageRef);
+    } catch (error) {
+      // Ignore "object-not-found" errors - file might already be deleted
+      if (error.code === 'storage/object-not-found') {
+        console.warn('File already deleted or not found:', url);
+        return;
+      }
+      console.error('Error deleting file by URL:', error);
+      throw new Error(`Failed to delete file: ${error.message}`);
+    }
+  }
+
+  /**
    * Get download URL for a file
    * @param {string} path - Storage path
    * @returns {Promise<string>} Download URL

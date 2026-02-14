@@ -14,14 +14,14 @@ export function useDeleteRequest() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const deleteRequest = async (requestId, userId) => {
+  const deleteRequest = async (requestId, userId, { isAdmin = false } = {}) => {
     setLoading(true);
     setError(null);
 
     try {
       const requestRepository = container.getRequestRepository();
       const deleteRequestUseCase = new DeleteRequestUseCase(requestRepository);
-      await deleteRequestUseCase.execute(requestId, userId);
+      await deleteRequestUseCase.execute(requestId, userId, { isAdmin });
     } catch (err) {
       console.error('useDeleteRequest error:', err);
       setError(err.message);

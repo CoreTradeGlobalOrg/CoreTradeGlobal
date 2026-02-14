@@ -189,15 +189,23 @@ export function InstallPrompt() {
     }
 
     // Listen for the beforeinstallprompt event (Android/Chrome)
-    // If this fires, app is not installed - reset dismiss state to show prompt
     const handleBeforeInstallPrompt = (e) => {
       e.preventDefault();
       setDeferredPrompt(e);
+
+      // Only show prompt if not already dismissed
+      const wasDismissed = localStorage.getItem('install-prompt-dismissed');
+      const dismissedAt = localStorage.getItem('install-prompt-dismissed-at');
+
+      if (wasDismissed && dismissedAt) {
+        const daysSinceDismissed = (Date.now() - parseInt(dismissedAt)) / (1000 * 60 * 60 * 24);
+        if (daysSinceDismissed < 7) {
+          // Still within dismiss period, don't show
+          return;
+        }
+      }
+
       setShowPrompt(true);
-      // Reset dismiss state since app was uninstalled
-      setDismissed(false);
-      localStorage.removeItem('install-prompt-dismissed');
-      localStorage.removeItem('install-prompt-dismissed-at');
     };
 
     // Listen for app installed event

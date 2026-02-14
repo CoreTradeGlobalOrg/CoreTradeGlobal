@@ -37,6 +37,7 @@ export class CreateRequestUseCase {
       unitCategory,
       description,
       budget,
+      createdByAdmin,
     } = requestData;
 
     // 1. Validate all inputs
@@ -60,6 +61,7 @@ export class CreateRequestUseCase {
         description,
         budget: budget ? parseFloat(budget) : null,
         status: 'active',
+        ...(createdByAdmin && { createdByAdmin }),
         createdAt: new Date(),
         updatedAt: new Date(),
       };

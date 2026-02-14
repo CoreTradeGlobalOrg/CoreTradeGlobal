@@ -136,8 +136,8 @@ function ProfileContent() {
 
         setProfileUser(userData);
 
-        // Initialize form if viewing own profile
-        if (isOwnProfile) {
+        // Initialize form if can edit profile (own or admin)
+        if (isOwnProfile || currentUser?.role === 'admin') {
           setPhone(userData.phone || '');
           setAbout(userData.about || '');
           setLinkedinProfile(userData.linkedinProfile || '');
@@ -394,10 +394,12 @@ function ProfileContent() {
     setProductModalOpen(true);
   };
 
+  const isAdmin = currentUser?.role === 'admin' && !isOwnProfile;
+
   const handleProductSubmit = async (productData, imageFiles) => {
     try {
       if (editingProduct) {
-        await updateProduct(editingProduct.id, userId, productData, imageFiles);
+        await updateProduct(editingProduct.id, userId, productData, imageFiles, { isAdmin });
       } else {
         await createProduct(productData, imageFiles);
         setProductPage(1); // Go to first page to see new product
@@ -413,7 +415,7 @@ function ProfileContent() {
 
   const handleDeleteProduct = async (productId) => {
     try {
-      await deleteProduct(productId, userId);
+      await deleteProduct(productId, userId, { isAdmin });
       // Adjust page if current page becomes empty
       const newTotal = (products?.length || 1) - 1;
       const maxPage = Math.ceil(newTotal / itemsPerPage) || 1;
@@ -427,7 +429,7 @@ function ProfileContent() {
 
   const handleToggleProductStatus = async (productId, newStatus) => {
     try {
-      await updateProduct(productId, userId, { status: newStatus });
+      await updateProduct(productId, userId, { status: newStatus }, [], { isAdmin });
       refetchProducts();
       toast.success(`Product ${newStatus === 'active' ? 'activated' : 'deactivated'}!`);
     } catch (error) {
@@ -450,7 +452,7 @@ function ProfileContent() {
   const handleRequestSubmit = async (requestData) => {
     try {
       if (editingRequest) {
-        await updateRequest(editingRequest.id, userId, requestData);
+        await updateRequest(editingRequest.id, userId, requestData, { isAdmin });
       } else {
         await createRequest(requestData);
         setRequestPage(1); // Go to first page to see new request
@@ -466,7 +468,7 @@ function ProfileContent() {
 
   const handleDeleteRequest = async (requestId) => {
     try {
-      await deleteRequest(requestId, userId);
+      await deleteRequest(requestId, userId, { isAdmin });
       // Adjust page if current page becomes empty
       const newTotal = (requests?.length || 1) - 1;
       const maxPage = Math.ceil(newTotal / itemsPerPage) || 1;
@@ -480,7 +482,7 @@ function ProfileContent() {
 
   const handleCloseRequest = async (requestId) => {
     try {
-      await updateRequest(requestId, userId, { status: 'closed' });
+      await updateRequest(requestId, userId, { status: 'closed' }, { isAdmin });
       refetchRequests();
       toast.success('Request closed!');
     } catch (error) {
@@ -491,7 +493,7 @@ function ProfileContent() {
 
   const handleReopenRequest = async (requestId) => {
     try {
-      await updateRequest(requestId, userId, { status: 'active' });
+      await updateRequest(requestId, userId, { status: 'active' }, { isAdmin });
       refetchRequests();
       toast.success('Request reopened!');
     } catch (error) {
@@ -581,7 +583,7 @@ function ProfileContent() {
                       alt="Company logo"
                       className="w-24 h-24 object-cover rounded-2xl border-2 border-[rgba(255,215,0,0.3)]"
                     />
-                    {isOwnProfile && isEditing && (
+                    {canEdit && isEditing && (
                       <div className="absolute -bottom-2 left-0 right-0 flex justify-center gap-2">
                         <label className="cursor-pointer bg-[#FFD700] text-[#0F1B2B] text-xs px-2 py-1 rounded font-medium hover:bg-white transition-colors">
                           Change
@@ -609,7 +611,7 @@ function ProfileContent() {
                     <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-[#1c304a] to-[#0F1B2B] border border-[rgba(255,255,255,0.1)] flex items-center justify-center">
                       <span className="text-4xl">🏭</span>
                     </div>
-                    {isOwnProfile && isEditing && (
+                    {canEdit && isEditing && (
                       <label className="absolute -bottom-2 left-0 right-0 flex justify-center cursor-pointer">
                         <span className="bg-[#FFD700] text-[#0F1B2B] text-xs px-3 py-1 rounded font-medium hover:bg-white transition-colors">
                           Upload
@@ -639,7 +641,7 @@ function ProfileContent() {
                       {profileUser?.position && <span className="text-[#A0A0A0]"> • {profileUser.position}</span>}
                     </p>
                   </div>
-                  {isOwnProfile && !isEditing && (
+                  {canEdit && !isEditing && (
                     <button
                       type="button"
                       onClick={() => setIsEditing(true)}
@@ -706,8 +708,8 @@ function ProfileContent() {
                 <p className="text-white font-semibold text-lg truncate">{getCountryLabel(profileUser?.country)}</p>
               </div>
 
-              {/* Email - Only for own profile */}
-              {isOwnProfile && (
+              {/* Email - Only for own profile or admin */}
+              {canEdit && (
                 <div className="bg-[rgba(255,255,255,0.04)] rounded-2xl p-5 border border-[rgba(255,255,255,0.05)]">
                   <div className="flex items-center gap-2 mb-2">
                     <p className="text-sm font-semibold uppercase tracking-wider bg-gradient-to-r from-[#C0C0C0] via-[#FFFFFF] to-[#C0C0C0] bg-clip-text text-transparent">Email</p>
@@ -717,8 +719,8 @@ function ProfileContent() {
                 </div>
               )}
 
-              {/* Phone - Only for own profile */}
-              {isOwnProfile && (
+              {/* Phone - Only for own profile or admin */}
+              {canEdit && (
                 <div className="bg-[rgba(255,255,255,0.04)] rounded-2xl p-5 border border-[rgba(255,255,255,0.05)]">
                   <div className="flex items-center gap-2 mb-2">
                     <p className="text-sm font-semibold uppercase tracking-wider bg-gradient-to-r from-[#C0C0C0] via-[#FFFFFF] to-[#C0C0C0] bg-clip-text text-transparent">Phone</p>
@@ -741,7 +743,7 @@ function ProfileContent() {
               {/* LinkedIn Profile */}
               <div className="bg-[rgba(255,255,255,0.04)] rounded-2xl p-5 border border-[rgba(255,255,255,0.05)]">
                 <p className="text-sm font-semibold uppercase tracking-wider mb-2 bg-gradient-to-r from-[#C0C0C0] via-[#FFFFFF] to-[#C0C0C0] bg-clip-text text-transparent">LinkedIn</p>
-                {isOwnProfile && isEditing ? (
+                {canEdit && isEditing ? (
                   <input
                     type="url"
                     value={linkedinProfile}
@@ -759,14 +761,14 @@ function ProfileContent() {
                     {profileUser.linkedinProfile.replace(/^https?:\/\/(www\.)?/, '')}
                   </a>
                 ) : (
-                  <p className="text-[#A0A0A0] font-semibold text-lg">{isOwnProfile ? 'Not set - Add your LinkedIn' : 'Not set'}</p>
+                  <p className="text-[#A0A0A0] font-semibold text-lg">{canEdit ? 'Not set - Add LinkedIn' : 'Not set'}</p>
                 )}
               </div>
 
               {/* Company Website */}
               <div className="bg-[rgba(255,255,255,0.04)] rounded-2xl p-5 border border-[rgba(255,255,255,0.05)]">
                 <p className="text-sm font-semibold uppercase tracking-wider mb-2 bg-gradient-to-r from-[#C0C0C0] via-[#FFFFFF] to-[#C0C0C0] bg-clip-text text-transparent">Website</p>
-                {isOwnProfile && isEditing ? (
+                {canEdit && isEditing ? (
                   <input
                     type="url"
                     value={companyWebsite}
@@ -784,7 +786,7 @@ function ProfileContent() {
                     {profileUser.companyWebsite.replace(/^https?:\/\/(www\.)?/, '')}
                   </a>
                 ) : (
-                  <p className="text-[#A0A0A0] font-semibold text-lg">{isOwnProfile ? 'Not set - Add your website' : 'Not set'}</p>
+                  <p className="text-[#A0A0A0] font-semibold text-lg">{canEdit ? 'Not set - Add website' : 'Not set'}</p>
                 )}
               </div>
             </div>
@@ -843,7 +845,7 @@ function ProfileContent() {
                 <span className="text-sm text-[#A0A0A0] font-normal">({products?.length || 0})</span>
               </h3>
             </div>
-            {isOwnProfile && (
+            {canEdit && (
               <Button
                 onClick={handleOpenProductModal}
                 className="font-bold border-none text-xs px-3 py-1.5 rounded-lg whitespace-nowrap"
@@ -856,7 +858,7 @@ function ProfileContent() {
           <ProductList
             products={products?.slice((productPage - 1) * itemsPerPage, productPage * itemsPerPage)}
             loading={productsLoading}
-            isOwnProfile={isOwnProfile}
+            isOwnProfile={canEdit}
             onEdit={handleEditProduct}
             onDelete={handleDeleteProduct}
             onToggleStatus={handleToggleProductStatus}
@@ -895,7 +897,7 @@ function ProfileContent() {
                 <span className="text-sm text-[#A0A0A0] font-normal">({requests?.length || 0})</span>
               </h3>
             </div>
-            {isOwnProfile && (
+            {canEdit && (
               <Button onClick={handleOpenRequestModal} className="bg-[#3b82f6] text-white hover:bg-blue-400 font-bold border-none text-xs px-3 py-1.5 rounded-lg whitespace-nowrap">
                 + Create Request
               </Button>
@@ -905,7 +907,7 @@ function ProfileContent() {
             requests={requests?.slice((requestPage - 1) * itemsPerPage, requestPage * itemsPerPage)}
             categories={categories}
             loading={requestsLoading}
-            isOwnProfile={isOwnProfile}
+            isOwnProfile={canEdit}
             onEdit={handleEditRequest}
             onDelete={handleDeleteRequest}
             onClose={handleCloseRequest}

@@ -21,6 +21,7 @@ import { CategoriesManager } from '@/presentation/components/features/admin/Cate
 import { FairsManager } from '@/presentation/components/features/admin/FairsManager/FairsManager';
 import { NewsManager } from '@/presentation/components/features/admin/NewsManager/NewsManager';
 import { ConversationsManager } from '@/presentation/components/features/admin/ConversationsManager/ConversationsManager';
+import { ProductsRequestsManager } from '@/presentation/components/features/admin/ProductsRequestsManager/ProductsRequestsManager';
 import { useGetAllUsers } from '@/presentation/hooks/admin/useGetAllUsers';
 
 export default function AdminPage() {
@@ -87,18 +88,18 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0F1B2B] p-8 pt-[120px]">
+    <div className="min-h-screen bg-[#0F1B2B] px-4 py-6 pt-[100px] md:px-8 md:py-8 md:pt-[120px]">
       {/* Page Header */}
-      <div className="mb-8">
-        <h2 className="text-3xl font-bold text-white mb-2">Admin Dashboard</h2>
-        <p className="text-[#A0A0A0]">
+      <div className="mb-6 md:mb-8">
+        <h2 className="text-2xl md:text-3xl font-bold text-white mb-2">Admin Dashboard</h2>
+        <p className="text-sm md:text-base text-[#A0A0A0]">
           Manage users, categories, and platform settings
         </p>
       </div>
 
-      {/* Tabs */}
-      <div className="mb-8 border-b border-[rgba(255,255,255,0.1)]">
-        <nav className="-mb-px flex space-x-8 overflow-x-auto">
+      {/* Tabs - Scrollable on mobile */}
+      <div className="mb-6 md:mb-8 border-b border-[rgba(255,255,255,0.1)] -mx-4 px-4 md:mx-0 md:px-0">
+        <nav className="-mb-px flex space-x-4 md:space-x-8 overflow-x-auto scrollbar-hide pb-px">
           {['users', 'messages', 'categories', 'fairs', 'news'].map((tab) => (
             <button
               key={tab}
@@ -106,9 +107,9 @@ export default function AdminPage() {
               className={`${activeTab === tab
                   ? 'border-[#FFD700] text-[#FFD700]'
                   : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
-                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm capitalize transition-colors`}
+                } whitespace-nowrap py-3 md:py-4 px-1 border-b-2 font-medium text-xs md:text-sm capitalize transition-colors flex-shrink-0`}
             >
-              {tab === 'users' ? 'Users Management' : tab === 'messages' ? 'Conversations' : `${tab.charAt(0).toUpperCase() + tab.slice(1)} Management`}
+              {tab === 'users' ? 'Users' : tab === 'messages' ? 'Messages' : tab.charAt(0).toUpperCase() + tab.slice(1)}
             </button>
           ))}
         </nav>
@@ -119,6 +120,9 @@ export default function AdminPage() {
         <div>
           {/* Stats Cards */}
           <StatsCards users={users} />
+
+          {/* Add Product / Request on behalf of user */}
+          <ProductsRequestsManager users={users} />
 
           {/* Users Table */}
           <UsersTable users={users} onRefresh={refetch} />

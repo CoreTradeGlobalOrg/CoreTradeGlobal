@@ -355,7 +355,7 @@ export function ProductForm({ product, onSubmit, onCancel, userId }) {
                 <button
                   type="button"
                   onClick={() => handleRemoveImage(index)}
-                  className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-700 shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-8 h-8 md:w-6 md:h-6 flex items-center justify-center hover:bg-red-700 shadow-lg text-lg md:text-base font-bold opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity"
                   disabled={submitting}
                 >
                   ×

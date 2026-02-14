@@ -42,6 +42,7 @@ export class ConversationRepository {
 
   /**
    * Get all conversations for a user
+   * Sorted by last message time
    * @param {string} userId
    * @param {number} limitCount - Optional limit
    * @returns {Promise<Array>}
@@ -49,7 +50,7 @@ export class ConversationRepository {
   async getByUserId(userId, limitCount = 50) {
     return await this.firestoreDataSource.query(COLLECTIONS.CONVERSATIONS, {
       where: [['participants', 'array-contains', userId]],
-      orderBy: [['updatedAt', 'desc']],
+      orderBy: [['lastMessage.createdAt', 'desc']],
       limit: limitCount,
     });
   }
@@ -215,6 +216,7 @@ export class ConversationRepository {
 
   /**
    * Subscribe to user's conversations in real-time
+   * Sorted by last message time (like WhatsApp)
    * @param {string} userId
    * @param {Function} onData - Callback with array of conversations
    * @param {Function} onError - Error callback
@@ -225,7 +227,7 @@ export class ConversationRepository {
       COLLECTIONS.CONVERSATIONS,
       {
         where: [['participants', 'array-contains', userId]],
-        orderBy: [['updatedAt', 'desc']],
+        orderBy: [['lastMessage.createdAt', 'desc']],
       },
       onData,
       onError

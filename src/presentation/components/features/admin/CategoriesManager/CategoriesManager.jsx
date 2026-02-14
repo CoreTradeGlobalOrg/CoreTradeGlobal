@@ -72,12 +72,12 @@ export function CategoriesManager() {
   return (
     <div>
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h3 className="text-2xl font-bold text-white">Categories</h3>
-          <p className="text-[#A0A0A0] mt-1">Manage product and request categories</p>
+          <h3 className="text-xl md:text-2xl font-bold text-white">Categories</h3>
+          <p className="text-sm text-[#A0A0A0] mt-1">Manage product and request categories</p>
         </div>
-        <Button onClick={handleCreate} className="flex items-center gap-2 bg-[#FFD700] hover:bg-[#B5952F] text-black font-semibold">
+        <Button onClick={handleCreate} className="flex items-center justify-center gap-2 bg-[#FFD700] hover:bg-[#B5952F] text-black font-semibold text-sm w-full sm:w-auto">
           <Plus className="w-4 h-4" />
           Add Category
         </Button>
