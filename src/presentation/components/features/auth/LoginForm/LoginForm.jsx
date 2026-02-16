@@ -44,6 +44,21 @@ export function LoginForm() {
         return;
       }
 
+      // Set session cookie BEFORE navigating so middleware can read it
+      try {
+        const firebaseUser = authRepo.getCurrentUser();
+        if (firebaseUser) {
+          const idToken = await firebaseUser.getIdToken();
+          await fetch('/api/auth/session', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ idToken, role: user.role }),
+          });
+        }
+      } catch (cookieError) {
+        console.error('Failed to set session cookie:', cookieError);
+      }
+
       // Track successful login
       trackLogin('email');
 
@@ -54,7 +69,6 @@ export function LoginForm() {
       localStorage.removeItem('ctg_auth_redirect');
 
       // Use window.location for full page reload to ensure auth state is properly loaded
-      // router.push doesn't work reliably because AuthContext hasn't updated yet
       window.location.href = redirectTo || '/';
     } catch (err) {
       console.error('Login failed:', err);

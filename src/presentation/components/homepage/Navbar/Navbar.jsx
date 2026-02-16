@@ -109,7 +109,15 @@ export function Navbar() {
     <nav className={`navbar ${isScrolled ? 'scrolled' : ''}`}>
       {/* Logo Container */}
       <div className="nav-logo-container">
-        <Link href="/">
+        <Link
+          href="/"
+          onClick={(e) => {
+            if (pathname === '/') {
+              e.preventDefault();
+              window.location.reload();
+            }
+          }}
+        >
           <Image
             src="/icons/ctg-logo.png"
             alt="CoreTradeGlobal"

@@ -33,7 +33,22 @@ export default function FairsPage() {
         fair.location?.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-    const getStatusBadge = (status) => {
+    const getFairStatus = (fair) => {
+        const now = new Date();
+        now.setHours(0, 0, 0, 0);
+
+        const start = fair.startDate?.toDate ? fair.startDate.toDate() : new Date(fair.startDate);
+        const end = fair.endDate?.toDate ? fair.endDate.toDate() : new Date(fair.endDate);
+        start.setHours(0, 0, 0, 0);
+        end.setHours(23, 59, 59, 999);
+
+        if (now > end) return 'past';
+        if (now >= start && now <= end) return 'ongoing';
+        return 'upcoming';
+    };
+
+    const getStatusBadge = (fair) => {
+        const status = getFairStatus(fair);
         switch (status) {
             case 'ongoing':
                 return <span className="px-3 py-1 text-xs font-bold rounded-full bg-green-500/20 text-green-400 border border-green-500/30">Ongoing</span>;
@@ -100,7 +115,7 @@ export default function FairsPage() {
                                     <div className="fair-content">
                                         {/* Status Badge */}
                                         <div className="mb-3">
-                                            {getStatusBadge(fair.status)}
+                                            {getStatusBadge(fair)}
                                         </div>
 
                                         {/* Fair Title */}
