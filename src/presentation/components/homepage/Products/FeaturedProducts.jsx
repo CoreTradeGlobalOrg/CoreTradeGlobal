@@ -205,24 +205,26 @@ export function ProductCard({ product, categories }) {
         )}
         <p className="product-card-description">{truncateText(product.description, 80)}</p>
 
-        {product.price && (
-          <p className="product-card-price">
-            {currencySymbol} {product.price}
-            {product.unit && (
-              <span
-                className="font-semibold text-sm ml-1"
-                style={{
-                  background: 'linear-gradient(180deg, #ffffff 20%, #909090 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text'
-                }}
-              >
-                / {product.unit.replace(/^\/\s*/, '')}
-              </span>
-            )}
-          </p>
-        )}
+        <p className="product-card-price">
+          {product.price ? (
+            <>
+              {currencySymbol} {product.price}
+              {product.unit && (
+                <span
+                  className="font-semibold text-sm ml-1"
+                  style={{
+                    background: 'linear-gradient(180deg, #ffffff 20%, #909090 100%)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text'
+                  }}
+                >
+                  / {product.unit.replace(/^\/\s*/, '')}
+                </span>
+              )}
+            </>
+          ) : 'Negotiable'}
+        </p>
 
         <div className="w-full mt-auto pt-3">
           <div className="product-card-btn w-full text-center">View Details</div>

@@ -199,9 +199,9 @@ export default function ProductDetailPage() {
     }
   };
 
-  const getCategoryName = () => {
+  const getCategory = () => {
     const category = categories.find((cat) => cat.value === product?.categoryId);
-    return category?.label || 'Unknown Category';
+    return { icon: category?.icon || '', name: category?.name || 'Unknown Category' };
   };
 
   const handleSendMessage = async () => {
@@ -218,10 +218,11 @@ export default function ProductDetailPage() {
 
     setSendingMessage(true);
     try {
-      // Prepare initial message about this specific product
-      const initialMessage = `Hi, I'm interested in your product "${product.name}" (${product.currency} ${product.price?.toLocaleString() || '0'}). Is it still available?`;
+      // Prepare draft message about this specific product
+      const priceText = product.price ? `${product.currency} ${product.price.toLocaleString()}` : 'Negotiable';
+      const draftText = `Hi, I'm interested in your product "${product.name}" (${priceText}). Is it still available?`;
 
-      // Create/find conversation with product context - each product gets its own conversation
+      // Create/find conversation with product context - prefill draft, don't send
       const conversation = await startDirectConversation(
         seller.id,
         {
@@ -230,7 +231,8 @@ export default function ProductDetailPage() {
           productName: product.name,
           productImage: images.length > 0 ? images[0] : null,
         },
-        initialMessage // Send initial message automatically
+        null, // Don't send a message automatically
+        draftText // Prefill the input so user can review before sending
       );
 
       // Track contact seller event
@@ -412,8 +414,6 @@ export default function ProductDetailPage() {
           <div className="flex flex-col gap-6">
             {/* Header Card */}
             <div className="glass-card p-8 relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-[#FFD700]/10 blur-[50px] rounded-full pointer-events-none" />
-
               <div className="flex flex-col gap-4 relative z-10">
                 <div className="flex items-start justify-between gap-4">
                   <h1 className="text-4xl font-bold text-white leading-tight">{product.name}</h1>
@@ -424,8 +424,8 @@ export default function ProductDetailPage() {
                       </span>
                     )}
                     <span className={`px-4 py-1.5 text-xs uppercase tracking-wider font-bold rounded-full border ${product.status === 'active'
-                      ? 'bg-green-500/10 border-green-500/30 text-green-400'
-                      : 'bg-gray-500/10 border-gray-500/30 text-gray-400'
+                      ? 'border-green-500/30 text-green-400'
+                      : 'border-gray-500/30 text-gray-400'
                       }`}>
                       {product.status}
                     </span>
@@ -433,10 +433,18 @@ export default function ProductDetailPage() {
                 </div>
 
                 <div className="flex items-end gap-2 mt-2">
-                  <span className="text-lg text-gray-400 font-medium mb-1.5">{product.currency}</span>
-                  <div className="text-4xl font-bold bg-gradient-to-r from-white to-[#A0A0A0] bg-clip-text text-transparent">
-                    {product.price?.toLocaleString() || '0'}
-                  </div>
+                  {product.price ? (
+                    <>
+                      <span className="text-lg text-gray-400 font-medium mb-1.5">{product.currency}</span>
+                      <div className="text-4xl font-bold bg-gradient-to-r from-white to-[#A0A0A0] bg-clip-text text-transparent">
+                        {product.price.toLocaleString()}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-4xl font-bold bg-gradient-to-r from-[#FFD700] to-[#FDB931] bg-clip-text text-transparent">
+                      Negotiable
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -445,7 +453,10 @@ export default function ProductDetailPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="glass-card p-6 flex flex-col gap-2">
                 <div className="text-sm uppercase tracking-wider text-[#FFD700] font-semibold">Category</div>
-                <div className="text-lg font-medium bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">{getCategoryName()}</div>
+                <div className="text-lg font-medium flex items-center gap-2">
+                  {getCategory().icon && <span>{getCategory().icon}</span>}
+                  <span className="bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">{getCategory().name}</span>
+                </div>
               </div>
 
               <div className="glass-card p-6 flex flex-col gap-2">

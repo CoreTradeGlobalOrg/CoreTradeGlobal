@@ -30,11 +30,10 @@ export function useFairs(options = {}) {
         fetchedFairs = await fairsRepository.getAll(options);
       }
 
-      setFairs(fetchedFairs);
+      setFairs(fetchedFairs || []);
     } catch (err) {
       console.error('useFairs error:', err);
       setError(err.message);
-      setFairs([]);
     } finally {
       setLoading(false);
     }

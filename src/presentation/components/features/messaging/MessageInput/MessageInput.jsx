@@ -10,6 +10,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Send, Paperclip, X, Image, FileText } from 'lucide-react';
 import { useSendMessage } from '@/presentation/hooks/messaging/useSendMessage';
+import { useMessages } from '@/presentation/contexts/MessagesContext';
 import toast from 'react-hot-toast';
 import './MessageInput.css';
 
@@ -31,10 +32,23 @@ export function MessageInput({ conversationId }) {
   const [message, setMessage] = useState('');
   const [attachments, setAttachments] = useState([]);
   const { sendMessage, sending, error } = useSendMessage();
+  const { draftMessage, setDraftMessage } = useMessages();
   const inputRef = useRef(null);
   const fileInputRef = useRef(null);
   const searchParams = useSearchParams();
   const draftLoaded = useRef(false);
+
+  // Load draft from context (e.g. "Contact Seller" prefill)
+  useEffect(() => {
+    if (draftMessage) {
+      setMessage(draftMessage);
+      setDraftMessage('');
+      setTimeout(() => {
+        autoResize();
+        inputRef.current?.focus();
+      }, 0);
+    }
+  }, [draftMessage, setDraftMessage]);
 
   // Load draft from URL if present
   useEffect(() => {

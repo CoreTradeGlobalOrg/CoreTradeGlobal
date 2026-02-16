@@ -8,7 +8,7 @@
 
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { container } from '@/core/di/container';
 import { CountryFlag } from '@/presentation/components/common/CountryFlag/CountryFlag';
@@ -144,7 +144,9 @@ export function CompaniesSection() {
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(true);
   const [isMobile, setIsMobile] = useState(null); // null = not determined yet
+  const [isVisible, setIsVisible] = useState(false); // Viewport visibility for performance
   const scrollRef = useRef(null);
+  const sectionRef = useRef(null);
   const { categories } = useCategories();
 
   // Detect mobile screen
@@ -155,6 +157,17 @@ export function CompaniesSection() {
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Pause rendering when section is off-screen (performance optimization)
+  useEffect(() => {
+    if (!sectionRef.current) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setIsVisible(entry.isIntersecting),
+      { rootMargin: '200px', threshold: 0 } // Start loading slightly before visible
+    );
+    observer.observe(sectionRef.current);
+    return () => observer.disconnect();
   }, []);
 
   // Responsive limits with lazy loading: mobile 4, tablet 8, desktop 12, max 30
@@ -311,7 +324,7 @@ export function CompaniesSection() {
   return (
     <>
       {/* Latest Companies - horizontal scroll (shows first) */}
-      <section className="featured-products-section">
+      <section ref={sectionRef} className="featured-products-section">
         <div className="featured-products-container">
           {/* Header */}
           <div className="featured-products-header">
@@ -385,8 +398,8 @@ export function CompaniesSection() {
       </div>
     </section>
 
-      {/* Mobile: Featured Companies Card Stack (shows after Latest Companies) */}
-      {renderMobileCardStack()}
+      {/* Mobile: Featured Companies Card Stack (shows after Latest Companies) - only render when visible */}
+      {isVisible && renderMobileCardStack()}
     </>
   );
 }

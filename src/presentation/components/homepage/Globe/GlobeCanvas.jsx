@@ -341,6 +341,8 @@ function Scene({ isMobile, disableInteraction }) {
 export function GlobeCanvas({ className = '' }) {
   const [mounted, setMounted] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
+  const containerRef = useRef(null);
 
   useEffect(() => {
     setMounted(true);
@@ -350,10 +352,22 @@ export function GlobeCanvas({ className = '' }) {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  // Pause the entire render loop when the globe is off-screen
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setIsVisible(entry.isIntersecting),
+      { threshold: 0.05 }
+    );
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, [mounted]);
+
   if (!mounted) return null;
 
   return (
     <div
+      ref={containerRef}
       className={`relative w-full h-full ${className}`}
       style={isMobile ? { pointerEvents: 'none', touchAction: 'auto' } : {}}
     >
@@ -364,8 +378,8 @@ export function GlobeCanvas({ className = '' }) {
           alpha: true,
           powerPreference: isMobile ? 'default' : 'high-performance',
         }}
-        dpr={isMobile ? [1, 1.5] : [1, 2]} // Cap DPR on mobile
-        frameloop="always"
+        dpr={isMobile ? [1, 1.5] : [1, 2]}
+        frameloop={isVisible ? 'always' : 'never'}
         style={isMobile ? { pointerEvents: 'none', touchAction: 'auto' } : {}}
       >
         <Scene isMobile={isMobile} />

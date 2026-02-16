@@ -268,20 +268,24 @@ function ProductCard({ product, categories }) {
 
                 <div className="mt-auto pt-4 border-t border-[rgba(255,255,255,0.05)] flex justify-between items-center">
                     <div className="text-[#FFD700] font-bold text-xl">
-                        {CURRENCY_SYMBOLS[product.currency] || product.currency || '$'} {product.price}
-                        {product.unit && (
-                            <span
-                                className="text-sm font-semibold ml-1"
-                                style={{
-                                    background: 'linear-gradient(180deg, #ffffff 20%, #909090 100%)',
-                                    WebkitBackgroundClip: 'text',
-                                    WebkitTextFillColor: 'transparent',
-                                    backgroundClip: 'text'
-                                }}
-                            >
-                                / {product.unit}
-                            </span>
-                        )}
+                        {product.price ? (
+                            <>
+                                {CURRENCY_SYMBOLS[product.currency] || product.currency || '$'} {product.price}
+                                {product.unit && (
+                                    <span
+                                        className="text-sm font-semibold ml-1"
+                                        style={{
+                                            background: 'linear-gradient(180deg, #ffffff 20%, #909090 100%)',
+                                            WebkitBackgroundClip: 'text',
+                                            WebkitTextFillColor: 'transparent',
+                                            backgroundClip: 'text'
+                                        }}
+                                    >
+                                        / {product.unit}
+                                    </span>
+                                )}
+                            </>
+                        ) : 'Negotiable'}
                     </div>
                     <div className="px-5 py-2 bg-gradient-to-r from-[#FFD700] to-[#FDB931] text-[#0F1B2B] font-bold rounded-full text-center text-sm hover:brightness-110 transition-all">
                         View

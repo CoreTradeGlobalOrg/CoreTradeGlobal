@@ -113,9 +113,14 @@ export default function FairsPage() {
                                     className="fair-card fair-card-large"
                                 >
                                     <div className="fair-content">
-                                        {/* Status Badge */}
-                                        <div className="mb-3">
+                                        {/* Status Badge + Category */}
+                                        <div className="mb-3 flex flex-wrap items-center gap-2">
                                             {getStatusBadge(fair)}
+                                            {fair.category && (
+                                                <span className="px-3 py-1 text-xs font-bold rounded-full bg-[rgba(255,215,0,0.1)] text-[#FFD700] border border-[#FFD700]/20">
+                                                    {fair.category}
+                                                </span>
+                                            )}
                                         </div>
 
                                         {/* Fair Title */}

@@ -238,7 +238,7 @@ export function ProductList({ products = [], loading, isOwnProfile, onEdit, onDe
                       )}
                     </>
                   ) : (
-                    <span className="invisible">-</span>
+                    <span>Negotiable</span>
                   )}
                 </p>
 

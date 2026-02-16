@@ -287,9 +287,11 @@ export function ProductForm({ product, onSubmit, onCancel, userId }) {
             {...register('price', { valueAsNumber: true })}
             error={!!errors.price}
             disabled={submitting}
-            min="0.01"
+            min="0"
+            placeholder="0 = Negotiable"
             className="bg-[#0F1B2B] border-[rgba(255,255,255,0.1)] text-white placeholder:text-gray-500 focus:border-[#FFD700] focus:ring-[#FFD700]/20"
           />
+          <p className="mt-1 text-xs text-[#A0A0A0]">Set to 0 for negotiable pricing</p>
           {errors.price && (
             <p className="mt-1 text-sm text-red-400">{errors.price.message}</p>
           )}

@@ -154,8 +154,8 @@ export class CreateProductUseCase {
     if (isNaN(priceNum)) {
       throw new Error('Price must be a valid number');
     }
-    if (priceNum <= 0) {
-      throw new Error('Price must be greater than 0');
+    if (priceNum < 0) {
+      throw new Error('Price cannot be negative');
     }
   }
 

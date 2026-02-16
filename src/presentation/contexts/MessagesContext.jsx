@@ -111,8 +111,12 @@ export function MessagesProvider({ children }) {
     return () => unsubscribe();
   }, [activeConversationId]);
 
-  // Open a conversation
-  const openConversation = useCallback((conversationId) => {
+  // Draft message to prefill in the input (set externally, consumed by MessageInput)
+  const [draftMessage, setDraftMessage] = useState('');
+
+  // Open a conversation, optionally with a prefilled draft
+  const openConversation = useCallback((conversationId, draft = '') => {
+    setDraftMessage(draft);
     setActiveConversationId(conversationId);
     setIsWidgetOpen(true);
   }, []);
@@ -161,6 +165,10 @@ export function MessagesProvider({ children }) {
     loading,
     error,
     isWidgetOpen,
+
+    // Draft
+    draftMessage,
+    setDraftMessage,
 
     // Actions
     openConversation,

@@ -21,6 +21,7 @@ export class Fair {
    * @param {string} imageUrl - Fair image URL
    * @param {string} websiteUrl - Fair website URL
    * @param {string} status - Fair status (upcoming, ongoing, past)
+   * @param {string} category - Fair category
    * @param {Date} createdAt - Creation date
    * @param {Date} updatedAt - Last update date
    */
@@ -34,6 +35,7 @@ export class Fair {
     imageUrl,
     websiteUrl,
     status,
+    category,
     createdAt,
     updatedAt
   ) {
@@ -46,6 +48,7 @@ export class Fair {
     this.imageUrl = imageUrl || '';
     this.websiteUrl = websiteUrl || '';
     this.status = status || 'upcoming';
+    this.category = category || '';
     this.createdAt = createdAt || new Date();
     this.updatedAt = updatedAt || new Date();
   }
@@ -66,6 +69,7 @@ export class Fair {
       data.imageUrl,
       data.websiteUrl,
       data.status,
+      data.category,
       data.createdAt?.toDate ? data.createdAt.toDate() : data.createdAt,
       data.updatedAt?.toDate ? data.updatedAt.toDate() : data.updatedAt
     );
@@ -85,6 +89,7 @@ export class Fair {
       imageUrl: this.imageUrl,
       websiteUrl: this.websiteUrl,
       status: this.status,
+      category: this.category,
       createdAt: this.createdAt,
       updatedAt: this.updatedAt,
     };

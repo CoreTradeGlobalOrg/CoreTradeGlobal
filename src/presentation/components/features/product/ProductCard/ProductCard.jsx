@@ -163,7 +163,7 @@ export function ProductCard({ product, isOwnProfile, onEdit, onDelete, onToggleS
           <div className="flex items-center justify-between">
             <span className="text-sm text-gray-600">Price:</span>
             <span className="font-medium text-gray-900">
-              {product.currency} {product.price?.toLocaleString() || '0'}
+              {product.price ? `${product.currency} ${product.price.toLocaleString()}` : 'Negotiable'}
             </span>
           </div>
 

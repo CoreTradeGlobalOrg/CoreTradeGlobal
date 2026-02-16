@@ -7,6 +7,7 @@
 
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { onDocumentCreated } = require('firebase-functions/v2/firestore');
+const { onSchedule } = require('firebase-functions/v2/scheduler');
 const admin = require('firebase-admin');
 
 // Initialize Firebase Admin SDK
@@ -524,6 +525,75 @@ exports.sendMessageNotification = onDocumentCreated(
     } catch (error) {
       console.error('❌ Error sending notification:', error);
       return null;
+    }
+  }
+);
+
+/**
+ * Auto-Update Fair Statuses
+ *
+ * Runs twice daily (midnight and noon UTC) to automatically update
+ * fair statuses based on their start/end dates.
+ *
+ * Status logic (mirrors Fair.calculateStatus()):
+ * - now < startDate → "upcoming"
+ * - startDate <= now <= endDate → "ongoing"
+ * - now > endDate → "past"
+ */
+exports.updateFairStatuses = onSchedule(
+  {
+    schedule: '0 0,12 * * *',
+    timeZone: 'UTC',
+    retryCount: 3,
+  },
+  async () => {
+    console.log('🔄 Running fair status update...');
+
+    try {
+      const fairsSnapshot = await db.collection('fairs').get();
+
+      if (fairsSnapshot.empty) {
+        console.log('No fairs found.');
+        return;
+      }
+
+      const now = new Date();
+      const batch = db.batch();
+      let updatedCount = 0;
+
+      fairsSnapshot.forEach((doc) => {
+        const data = doc.data();
+        const startDate = data.startDate?.toDate ? data.startDate.toDate() : new Date(data.startDate);
+        const endDate = data.endDate?.toDate ? data.endDate.toDate() : new Date(data.endDate);
+
+        let correctStatus;
+        if (now < startDate) {
+          correctStatus = 'upcoming';
+        } else if (now >= startDate && now <= endDate) {
+          correctStatus = 'ongoing';
+        } else {
+          correctStatus = 'past';
+        }
+
+        if (data.status !== correctStatus) {
+          console.log(`📝 Fair "${data.name || doc.id}": ${data.status} → ${correctStatus}`);
+          batch.update(doc.ref, {
+            status: correctStatus,
+            updatedAt: admin.firestore.Timestamp.now(),
+          });
+          updatedCount++;
+        }
+      });
+
+      if (updatedCount > 0) {
+        await batch.commit();
+        console.log(`✅ Updated ${updatedCount} fair(s).`);
+      } else {
+        console.log('✅ All fair statuses are already correct.');
+      }
+    } catch (error) {
+      console.error('❌ Error updating fair statuses:', error);
+      throw error;
     }
   }
 );

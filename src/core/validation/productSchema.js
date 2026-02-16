@@ -43,10 +43,10 @@ export const productSchema = z.object({
       message: 'Please select a valid unit category',
     }),
 
-  // Price
+  // Price (0 = Negotiable)
   price: z
     .number()
-    .min(0.01, 'Price must be greater than 0'),
+    .min(0, 'Price cannot be negative'),
 
   // Currency
   currency: z

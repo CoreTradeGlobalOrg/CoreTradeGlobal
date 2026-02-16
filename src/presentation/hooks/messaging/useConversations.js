@@ -27,7 +27,7 @@ export function useConversations() {
    * @returns {Promise<Object>} The conversation
    */
   const startDirectConversation = useCallback(
-    async (otherUserId, metadata = {}, initialMessage = null) => {
+    async (otherUserId, metadata = {}, initialMessage = null, draftMessage = '') => {
       if (!user?.uid) {
         throw new Error('You must be logged in to start a conversation');
       }
@@ -56,8 +56,8 @@ export function useConversations() {
           initialMessage,
         });
 
-        // Open the conversation in the widget
-        openConversation(conversation.id);
+        // Open the conversation in the widget, optionally with a draft prefilled
+        openConversation(conversation.id, draftMessage);
 
         return conversation;
       } catch (err) {

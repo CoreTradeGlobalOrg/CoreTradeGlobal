@@ -67,6 +67,15 @@ function FairCard({ fair }) {
         {/* Fair Title */}
         <h3 className="fair-card-title">{fair.name}</h3>
 
+        {/* Category Badge */}
+        {fair.category && (
+          <div className="mb-1">
+            <span className="text-[10px] font-bold text-[#FFD700] uppercase tracking-wider bg-[rgba(255,215,0,0.1)] px-2 py-1 rounded-full">
+              {fair.category}
+            </span>
+          </div>
+        )}
+
         {/* Location */}
         <div className="fair-card-location">
           <MapPin className="w-4 h-4" />

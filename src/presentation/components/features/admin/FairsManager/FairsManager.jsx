@@ -6,16 +6,44 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/Button';
-import { useFairs } from '@/presentation/hooks/fairs/useFairs';
+import { container } from '@/core/di/container';
 import { useCreateFair } from '@/presentation/hooks/fairs/useCreateFair';
 import { useUpdateFair } from '@/presentation/hooks/fairs/useUpdateFair';
 import { useDeleteFair } from '@/presentation/hooks/fairs/useDeleteFair';
-import { Pencil, Trash2, Plus, Calendar, MapPin, Globe } from 'lucide-react';
+import { Pencil, Trash2, Plus, Calendar, MapPin, Globe, Tag } from 'lucide-react';
 
 export function FairsManager() {
-  const { fairs, loading, refetch } = useFairs();
+  const [fairs, setFairs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const fetchFairs = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const firestoreDS = container.getFirestoreDataSource();
+      const fetchedFairs = await firestoreDS.getAll('fairs');
+      // Sort client-side by startDate ascending
+      const sorted = (fetchedFairs || []).sort((a, b) => {
+        const dateA = a.startDate?.toDate ? a.startDate.toDate() : new Date(a.startDate || 0);
+        const dateB = b.startDate?.toDate ? b.startDate.toDate() : new Date(b.startDate || 0);
+        return dateA - dateB;
+      });
+      setFairs(sorted);
+    } catch (err) {
+      console.error('FairsManager fetch error:', err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchFairs();
+  }, [fetchFairs]);
+
   const { createFair } = useCreateFair();
   const { updateFair } = useUpdateFair();
   const { deleteFair } = useDeleteFair();
@@ -25,6 +53,7 @@ export function FairsManager() {
   const [formData, setFormData] = useState({
     name: '',
     location: '',
+    category: '',
     description: '',
     startDate: '',
     endDate: '',
@@ -38,6 +67,7 @@ export function FairsManager() {
     setFormData({
       name: '',
       location: '',
+      category: '',
       description: '',
       startDate: '',
       endDate: '',
@@ -56,6 +86,7 @@ export function FairsManager() {
     setFormData({
       name: fair.name || '',
       location: fair.location || '',
+      category: fair.category || '',
       description: fair.description || '',
       startDate: startDate.toISOString().split('T')[0],
       endDate: endDate.toISOString().split('T')[0],
@@ -83,7 +114,7 @@ export function FairsManager() {
       }
       setModalOpen(false);
       setEditingFair(null);
-      refetch();
+      await fetchFairs();
     } catch (err) {
       // Error is handled in hook
     }
@@ -93,7 +124,7 @@ export function FairsManager() {
     const confirmed = confirm(`Are you sure you want to delete "${fairName}"? This action cannot be undone.`);
     if (confirmed) {
       await deleteFair(fairId);
-      refetch();
+      await fetchFairs();
     }
   };
 
@@ -132,6 +163,21 @@ export function FairsManager() {
     );
   }
 
+  if (error) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <div className="text-6xl mb-4">⚠️</div>
+          <h3 className="text-lg font-semibold text-white mb-2">Failed to load fairs</h3>
+          <p className="text-red-400 mb-4 text-sm">{error}</p>
+          <Button onClick={fetchFairs} className="bg-[#FFD700] hover:bg-[#B5952F] text-black">
+            Try Again
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       {/* Header */}
@@ -154,6 +200,7 @@ export function FairsManager() {
             <thead className="bg-[#0F1B2B]/50">
               <tr>
                 <th className="px-6 py-4 text-left text-xs font-bold text-[#A0A0A0] uppercase tracking-wider">Fair</th>
+                <th className="px-6 py-4 text-left text-xs font-bold text-[#A0A0A0] uppercase tracking-wider">Category</th>
                 <th className="px-6 py-4 text-left text-xs font-bold text-[#A0A0A0] uppercase tracking-wider">Location</th>
                 <th className="px-6 py-4 text-left text-xs font-bold text-[#A0A0A0] uppercase tracking-wider">Date</th>
                 <th className="px-6 py-4 text-left text-xs font-bold text-[#A0A0A0] uppercase tracking-wider">Status</th>
@@ -170,6 +217,12 @@ export function FairsManager() {
                       )}
                       <div>
                         <div className="text-sm font-medium text-white group-hover:text-[#FFD700] transition-colors">{fair.name}</div>
+                        {fair.category && (
+                          <span className="inline-flex items-center gap-1 text-xs text-[#FFD700]/80 mt-0.5">
+                            <Tag className="w-3 h-3" />
+                            {fair.category}
+                          </span>
+                        )}
                         {fair.websiteUrl && (
                           <a href={fair.websiteUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1">
                             <Globe className="w-3 h-3" />
@@ -178,6 +231,16 @@ export function FairsManager() {
                         )}
                       </div>
                     </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {fair.category ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-[rgba(255,215,0,0.1)] text-[#FFD700] border border-[#FFD700]/20">
+                        <Tag className="w-3 h-3" />
+                        {fair.category}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-gray-500 italic">No category</span>
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center text-sm text-[#A0A0A0]">
@@ -237,6 +300,12 @@ export function FairsManager() {
 
                 {/* Info Lines */}
                 <div className="space-y-2 mb-4">
+                  {fair.category && (
+                    <div className="flex items-center gap-2 text-sm text-[#FFD700]/80">
+                      <Tag className="w-4 h-4 flex-shrink-0" />
+                      <span>{fair.category}</span>
+                    </div>
+                  )}
                   <div className="flex items-center gap-2 text-sm text-[#A0A0A0]">
                     <MapPin className="w-4 h-4 flex-shrink-0" />
                     <span>{fair.location}</span>
@@ -315,6 +384,16 @@ export function FairsManager() {
                   onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                   className="w-full px-3 py-2 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-lg text-white focus:outline-none focus:border-[#FFD700] transition-colors"
                   placeholder="Istanbul, Turkey"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-white mb-1">Category</label>
+                <input
+                  type="text"
+                  value={formData.category}
+                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                  className="w-full px-3 py-2 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-lg text-white focus:outline-none focus:border-[#FFD700] transition-colors"
+                  placeholder="e.g. Technology, Food & Beverage, Textiles"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">

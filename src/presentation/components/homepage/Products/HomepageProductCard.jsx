@@ -105,7 +105,7 @@ export function HomepageProductCard({ product, onLimitReached }) {
         {/* Price */}
         <div className="mt-3 flex items-baseline gap-2">
           <span className="text-xl font-bold text-[var(--hp-gold)]">
-            {formatPrice(product.price, product.currency)}
+            {product.price ? formatPrice(product.price, product.currency) : 'Negotiable'}
           </span>
           {product.minOrderQuantity && (
             <span className="text-xs text-[var(--hp-text-muted)]">
