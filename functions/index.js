@@ -17,12 +17,47 @@ const db = admin.firestore();
 const messaging = admin.messaging();
 
 /**
+ * Role constants (duplicated here to avoid ESM import in CJS Cloud Functions)
+ * Source of truth: src/core/constants/roles.js
+ */
+const ROLES = {
+  MEMBER: 'member',
+  LOGISTICS_PROVIDER: 'logistics_provider',
+  INSURANCE_PROVIDER: 'insurance_provider',
+  LAWYER: 'lawyer',
+  ADMIN: 'admin',
+};
+
+const ROLE_VALUES = Object.values(ROLES);
+
+// Roles assignable via invite flow (members self-register, admins are bootstrapped)
+const VALID_INVITE_ROLES = [
+  ROLES.LOGISTICS_PROVIDER,
+  ROLES.INSURANCE_PROVIDER,
+  ROLES.LAWYER,
+];
+
+/**
+ * App URL for generating invite sign-in links.
+ * Set APP_URL environment variable or configure via functions.config().app.url
+ */
+const APP_URL = process.env.APP_URL || 'https://core-trade-global.web.app';
+
+/**
  * Helper function to check if user is admin
- * Checks Firestore user document for role
+ * Uses custom claims from the verified token for security (no Firestore read).
+ * Falls back to Firestore for legacy accounts without claims.
  */
 async function isUserAdmin(userId) {
   if (!userId) return false;
   try {
+    // Primary check: custom claims on the Firebase Auth token
+    const userRecord = await admin.auth().getUser(userId);
+    const claims = userRecord.customClaims || {};
+    if (claims.role !== undefined) {
+      return claims.role === 'admin';
+    }
+    // Fallback for legacy accounts: Firestore document read
     const userDoc = await db.collection('users').doc(userId).get();
     if (!userDoc.exists) return false;
     return userDoc.data().role === 'admin';
@@ -31,6 +66,263 @@ async function isUserAdmin(userId) {
     return false;
   }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Role Management Cloud Functions
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Invite User (Admin only)
+ *
+ * Creates a Firebase Auth user with a specific role, sets custom claims,
+ * creates the Firestore user doc and invite doc, and generates a sign-in link.
+ *
+ * Note: The invites/{inviteId} document uses `expireAt` as the TTL field.
+ * Configure TTL policy in Firebase Console:
+ *   Collection: invites, Field: expireAt
+ *
+ * @param {Object} data - { email, role, name, company }
+ * @returns {Promise<{ success: boolean, uid: string }>}
+ */
+exports.inviteUser = onCall(
+  { cors: true },
+  async (request) => {
+    const { email, role, name, company } = request.data;
+    const auth = request.auth;
+
+    if (!auth) {
+      throw new HttpsError('unauthenticated', 'You must be logged in.');
+    }
+
+    // Only admins can invite users
+    const adminCheck = await isUserAdmin(auth.uid);
+    if (!adminCheck) {
+      throw new HttpsError('permission-denied', 'Only administrators can invite users.');
+    }
+
+    // Validate role — only inviteable roles allowed
+    if (!VALID_INVITE_ROLES.includes(role)) {
+      throw new HttpsError(
+        'invalid-argument',
+        `Invalid role. Must be one of: ${VALID_INVITE_ROLES.join(', ')}`
+      );
+    }
+
+    if (!email || !role || !name) {
+      throw new HttpsError('invalid-argument', 'email, role, and name are required.');
+    }
+
+    let newUser;
+
+    try {
+      // Create the Firebase Auth user
+      newUser = await admin.auth().createUser({
+        email,
+        displayName: name,
+        emailVerified: false,
+      });
+    } catch (error) {
+      if (error.code === 'auth/email-already-exists') {
+        throw new HttpsError('already-exists', 'A user with this email already exists.');
+      }
+      console.error('Error creating user:', error);
+      throw new HttpsError('internal', `Failed to create user: ${error.message}`);
+    }
+
+    const uid = newUser.uid;
+    const now = admin.firestore.Timestamp.now();
+    const expiresAt = admin.firestore.Timestamp.fromDate(
+      new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days
+    );
+
+    try {
+      // Set custom claims — role is the single source of truth
+      await admin.auth().setCustomUserClaims(uid, { role });
+
+      // Create Firestore user document
+      await db.collection('users').doc(uid).set({
+        email,
+        displayName: name,
+        companyName: company || null,
+        role,
+        inviteStatus: 'pending',
+        invitedBy: auth.uid,
+        invitedAt: now,
+        createdAt: now,
+        emailVerified: false,
+        adminApproved: true,
+      });
+
+      // Generate sign-in link for onboarding
+      const signInLink = await admin.auth().generateSignInWithEmailLink(email, {
+        url: `${APP_URL}/onboarding?uid=${uid}`,
+        handleCodeInApp: true,
+      });
+
+      // Create invite document with TTL (expireAt = TTL field for Firebase Console TTL policy)
+      await db.collection('invites').doc(uid).set({
+        email,
+        role,
+        name,
+        company: company || null,
+        status: 'pending',
+        invitedBy: auth.uid,
+        invitedAt: now,
+        expiresAt,
+        expireAt: expiresAt, // TTL field — configure in Firebase Console: Collection=invites, Field=expireAt
+        signInLink, // Stored for resend capability
+      });
+
+      console.log(`Invited user ${uid} (${email}) with role ${role}`);
+
+      return { success: true, uid };
+    } catch (error) {
+      // Attempt cleanup of partially-created user on failure
+      try {
+        await admin.auth().deleteUser(uid);
+      } catch (_) { /* best-effort cleanup */ }
+      console.error('Error during invite setup:', error);
+      throw new HttpsError('internal', `Failed to complete invite: ${error.message}`);
+    }
+  }
+);
+
+/**
+ * Set User Role (Admin only)
+ *
+ * Atomically updates a user's custom claims and their Firestore users document.
+ * This replaces direct Firestore writes for role changes (e.g., handleToggleAdmin).
+ *
+ * @param {Object} data - { userId, role }
+ * @returns {Promise<{ success: boolean }>}
+ */
+exports.setUserRole = onCall(
+  { cors: true },
+  async (request) => {
+    const { userId, role } = request.data;
+    const auth = request.auth;
+
+    if (!auth) {
+      throw new HttpsError('unauthenticated', 'You must be logged in.');
+    }
+
+    // Only admins can change roles
+    const adminCheck = await isUserAdmin(auth.uid);
+    if (!adminCheck) {
+      throw new HttpsError('permission-denied', 'Only administrators can change user roles.');
+    }
+
+    // Validate role — all 5 roles can be assigned by admin
+    if (!ROLE_VALUES.includes(role)) {
+      throw new HttpsError(
+        'invalid-argument',
+        `Invalid role. Must be one of: ${ROLE_VALUES.join(', ')}`
+      );
+    }
+
+    if (!userId) {
+      throw new HttpsError('invalid-argument', 'userId is required.');
+    }
+
+    // Cannot change your own role (self-demotion guard)
+    if (auth.uid === userId) {
+      throw new HttpsError('invalid-argument', 'You cannot change your own role.');
+    }
+
+    try {
+      // Update custom claims — role is enforced via JWT, not Firestore reads
+      await admin.auth().setCustomUserClaims(userId, { role });
+
+      // Update Firestore for display/query purposes
+      await db.collection('users').doc(userId).update({
+        role,
+        updatedAt: admin.firestore.Timestamp.now(),
+      });
+
+      console.log(`Set role ${role} for user ${userId} (by admin ${auth.uid})`);
+
+      return { success: true };
+    } catch (error) {
+      if (error instanceof HttpsError) throw error;
+      console.error(`Error setting role for user ${userId}:`, error);
+      throw new HttpsError('internal', `Failed to set user role: ${error.message}`);
+    }
+  }
+);
+
+/**
+ * Migrate Existing Users (Admin only)
+ *
+ * One-time migration function for bootstrapping existing accounts.
+ * Sets role='member' custom claim for all users without a role claim.
+ * Exception: if a user has role='admin' in Firestore, sets claim to 'admin'.
+ *
+ * Run once after deploying the role system. Safe to run multiple times
+ * (skips users who already have a role claim set).
+ *
+ * @returns {Promise<{ migrated: number, skipped: number }>}
+ */
+exports.migrateExistingUsers = onCall(
+  { cors: true },
+  async (request) => {
+    const auth = request.auth;
+
+    if (!auth) {
+      throw new HttpsError('unauthenticated', 'You must be logged in.');
+    }
+
+    // Only admins can run migration
+    const adminCheck = await isUserAdmin(auth.uid);
+    if (!adminCheck) {
+      throw new HttpsError('permission-denied', 'Only administrators can run user migration.');
+    }
+
+    let migrated = 0;
+    let skipped = 0;
+    let pageToken;
+
+    try {
+      do {
+        // List users in batches of 1000 (Firebase Auth max)
+        const listResult = await admin.auth().listUsers(1000, pageToken);
+
+        for (const userRecord of listResult.users) {
+          const claims = userRecord.customClaims || {};
+
+          // Skip users who already have a role claim
+          if (claims.role !== undefined) {
+            skipped++;
+            continue;
+          }
+
+          // Check Firestore for existing admin role (legacy accounts)
+          let roleToSet = 'member';
+          try {
+            const userDoc = await db.collection('users').doc(userRecord.uid).get();
+            if (userDoc.exists && userDoc.data().role === 'admin') {
+              roleToSet = 'admin';
+            }
+          } catch (_) { /* if Firestore read fails, default to member */ }
+
+          await admin.auth().setCustomUserClaims(userRecord.uid, { role: roleToSet });
+          migrated++;
+
+          console.log(`Migrated user ${userRecord.uid}: set role=${roleToSet}`);
+        }
+
+        pageToken = listResult.pageToken;
+      } while (pageToken);
+
+      console.log(`Migration complete: ${migrated} migrated, ${skipped} skipped`);
+
+      return { migrated, skipped };
+    } catch (error) {
+      if (error instanceof HttpsError) throw error;
+      console.error('Error during user migration:', error);
+      throw new HttpsError('internal', `Migration failed: ${error.message}`);
+    }
+  }
+);
 
 /**
  * Soft Delete User Account (User self-delete)
