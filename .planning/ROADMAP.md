@@ -12,7 +12,7 @@ This roadmap delivers the end-to-end trade flow for Core Trade Global -- from ro
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Role System and Infrastructure** - Extend roles to 5 types with Firebase custom claims, admin invite flow, role-based navigation, and Firestore security rules
+- [x] **Phase 1: Role System and Infrastructure** - Extend roles to 5 types with Firebase custom claims, admin invite flow, role-based navigation, and Firestore security rules (completed 2026-02-20)
 - [ ] **Phase 2: Deal Creation and Negotiation (S1)** - Offer/counter-offer exchange with Incoterms, real-time updates, state machine, and audit trail
 - [ ] **Phase 3: Contract Agreement (S2)** - Dual-party clause-by-clause contract approval that gates deal advancement
 - [ ] **Phase 4: Provider Portals and Insurance/Logistics Quotes (S3)** - Provider quote submission portals and buyer quote comparison/selection with server-enforced validity
@@ -136,7 +136,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 (parallel with 3-4) -> 6 
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Role System and Infrastructure | 2/3 | In Progress|  |
+| 1. Role System and Infrastructure | 3/3 | Complete   | 2026-02-20 |
 | 2. Deal Creation and Negotiation (S1) | 0/0 | Not started | - |
 | 3. Contract Agreement (S2) | 0/0 | Not started | - |
 | 4. Provider Portals and Insurance/Logistics Quotes (S3) | 0/0 | Not started | - |

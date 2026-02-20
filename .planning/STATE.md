@@ -10,27 +10,27 @@ See: .planning/PROJECT.md (updated 2026-02-20)
 ## Current Position
 
 Phase: 1 of 7 (Role System and Infrastructure)
-Plan: 3 of 6 in current phase
+Plan: 4 of 6 in current phase
 Status: In progress
-Last activity: 2026-02-21 -- Completed 01-03 (Role-Based Navigation and Route Protection)
+Last activity: 2026-02-20 -- Completed 01-02 (Admin Invite Flow and Onboarding Wizard)
 
 Progress: [██░░░░░░░░] 10%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 2
-- Average duration: 3 minutes
-- Total execution time: 0.10 hours
+- Total plans completed: 3
+- Average duration: 5 minutes
+- Total execution time: 0.25 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 01-role-system-and-infrastructure | 2 | 6 min | 3 min |
+| 01-role-system-and-infrastructure | 3 | 16 min | 5 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01, 01-03
+- Last 5 plans: 01-01, 01-03, 01-02
 - Trend: Baseline established
 
 *Updated after each plan completion*
@@ -53,6 +53,10 @@ Recent decisions affecting current work:
 - [01-03]: RoleBadge null fallback renders Member badge -- handles legacy accounts without role claims
 - [01-03]: Admin bypasses all role-specific route guards (provider, lawyer) via isAdmin check
 - [01-03]: Middleware redirects unauthorized role access to /forbidden (not home) for clear role-aware UX
+- [01-02]: resendInvite is a dedicated CF separate from inviteUser -- avoids email-already-exists race conditions
+- [01-02]: UsersTable uses tab pattern (Users/Invites) -- cleaner UX than stacked sections at scale
+- [01-02]: handleToggleAdmin replaced with setUserRole CF call -- claims updated atomically with Firestore
+- [01-02]: Force getIdToken(true) twice in onboarding -- after sign-in and after completion for fresh claims
 
 ### Pending Todos
 
@@ -67,6 +71,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-21
-Stopped at: Completed 01-03-PLAN.md (Role-Based Navigation and Route Protection)
+Last session: 2026-02-20
+Stopped at: Completed 01-02-PLAN.md (Admin Invite Flow and Onboarding Wizard)
 Resume file: None

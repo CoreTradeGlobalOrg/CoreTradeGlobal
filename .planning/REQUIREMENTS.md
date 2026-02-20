@@ -11,7 +11,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 - [x] **ROLE-01**: Platform supports 5 roles: member, logistics_provider, insurance_provider, lawyer, admin
 - [x] **ROLE-02**: Buyer/seller is contextual per deal — role determined by deal participation, not at registration
-- [ ] **ROLE-03**: Admin can create and invite provider and lawyer accounts (no self-registration)
+- [x] **ROLE-03**: Admin can create and invite provider and lawyer accounts (no self-registration)
 - [x] **ROLE-04**: Role-based navigation shows relevant dashboard and menu items per role
 - [x] **ROLE-05**: Firestore security rules enforce role-based access independently of middleware
 - [x] **ROLE-06**: No role overlap — each account has exactly one role
@@ -115,7 +115,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 |-------------|-------|--------|
 | ROLE-01 | Phase 1 | Complete |
 | ROLE-02 | Phase 1 | Pending |
-| ROLE-03 | Phase 1 | Pending |
+| ROLE-03 | Phase 1 | Complete |
 | ROLE-04 | Phase 1 | Pending |
 | ROLE-05 | Phase 1 | Complete |
 | ROLE-06 | Phase 1 | Complete |
