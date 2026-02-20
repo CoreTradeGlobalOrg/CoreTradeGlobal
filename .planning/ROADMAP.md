@@ -12,7 +12,7 @@ This roadmap delivers the end-to-end trade flow for Core Trade Global -- from ro
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [x] **Phase 1: Role System and Infrastructure** - Extend roles to 5 types with Firebase custom claims, admin invite flow, role-based navigation, and Firestore security rules (completed 2026-02-20)
+- [ ] **Phase 1: Role System and Infrastructure** - Extend roles to 5 types with Firebase custom claims, admin invite flow, role-based navigation, and Firestore security rules
 - [ ] **Phase 2: Deal Creation and Negotiation (S1)** - Offer/counter-offer exchange with Incoterms, real-time updates, state machine, and audit trail
 - [ ] **Phase 3: Contract Agreement (S2)** - Dual-party clause-by-clause contract approval that gates deal advancement
 - [ ] **Phase 4: Provider Portals and Insurance/Logistics Quotes (S3)** - Provider quote submission portals and buyer quote comparison/selection with server-enforced validity
@@ -32,12 +32,13 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. Firestore security rules independently reject unauthorized access attempts (a logistics_provider cannot read insurance-only data, even if middleware is bypassed)
   4. Each account has exactly one role that cannot be changed by the user themselves
   5. Existing member accounts continue to work without migration -- buyer/seller distinction is determined per deal, not at registration
-**Plans**: 3 plans
+**Plans**: 4 plans
 
 Plans:
 - [x] 01-01-PLAN.md — Role constants, Cloud Functions (inviteUser, setUserRole, migrateExistingUsers), session security fix, Firestore rules rewrite
-- [ ] 01-02-PLAN.md — Admin invite modal, invite tracking, onboarding wizard for invited users
+- [x] 01-02-PLAN.md — Admin invite modal, invite tracking, onboarding wizard for invited users
 - [x] 01-03-PLAN.md — Role-based navigation, middleware route protection, forbidden page, RoleBadge, provider/lawyer placeholder pages
+- [ ] 01-04-PLAN.md — UAT gap closure: Cloud Functions emulator, admin navbar override, session error visibility
 
 ### Phase 2: Deal Creation and Negotiation (S1)
 **Goal**: A buyer and seller can negotiate a deal through structured offers and counter-offers, with real-time updates and a complete audit trail
@@ -136,7 +137,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 (parallel with 3-4) -> 6 
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Role System and Infrastructure | 3/3 | Complete   | 2026-02-20 |
+| 1. Role System and Infrastructure | 3/4 | Gap closure | - |
 | 2. Deal Creation and Negotiation (S1) | 0/0 | Not started | - |
 | 3. Contract Agreement (S2) | 0/0 | Not started | - |
 | 4. Provider Portals and Insurance/Logistics Quotes (S3) | 0/0 | Not started | - |
