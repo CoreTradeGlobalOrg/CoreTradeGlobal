@@ -1,0 +1,169 @@
+# Requirements: Core Trade Global
+
+**Defined:** 2026-02-20
+**Core Value:** A member can complete an entire international trade deal — negotiate, get legal advice, insure cargo, arrange shipping, and track delivery — without leaving the platform.
+
+## v1 Requirements
+
+Requirements for initial release. Each maps to roadmap phases.
+
+### Role System
+
+- [ ] **ROLE-01**: Platform supports 5 roles: member, logistics_provider, insurance_provider, lawyer, admin
+- [ ] **ROLE-02**: Buyer/seller is contextual per deal — role determined by deal participation, not at registration
+- [ ] **ROLE-03**: Admin can create and invite provider and lawyer accounts (no self-registration)
+- [ ] **ROLE-04**: Role-based navigation shows relevant dashboard and menu items per role
+- [ ] **ROLE-05**: Firestore security rules enforce role-based access independently of middleware
+- [ ] **ROLE-06**: No role overlap — each account has exactly one role
+
+### Negotiation (S1)
+
+- [ ] **NEGO-01**: Buyer and seller can exchange offers and counter-offers on a deal
+- [ ] **NEGO-02**: Offers include Incoterms 2020 selection (EXW, FOB, CIF, CFR, DAP, DDP, FCA, CPT)
+- [ ] **NEGO-03**: Offer history timeline shows all rounds with timestamps, amounts, and terms
+- [ ] **NEGO-04**: Real-time updates via Firestore listeners — no page refresh needed
+- [ ] **NEGO-05**: In-app and email notification when counter-offer received
+- [ ] **NEGO-06**: Offer state machine enforces valid transitions (open → countered → accepted/rejected/expired)
+- [ ] **NEGO-07**: All deal state transitions use atomic Firestore transactions
+
+### Agreement (S2)
+
+- [ ] **AGMT-01**: Both parties can review contract clauses populated from negotiation outcome
+- [ ] **AGMT-02**: Each contract clause requires individual checkbox approval per party
+- [ ] **AGMT-03**: Party approval status tracked (pending/approved per side)
+- [ ] **AGMT-04**: Deal cannot advance to insurance/logistics stage until both parties approve
+- [ ] **AGMT-05**: Financial summary and document requirements displayed before approval
+
+### Legal Consulting
+
+- [ ] **LEGAL-01**: Buyer can independently hire a lawyer for a deal
+- [ ] **LEGAL-02**: Seller can independently hire a different lawyer for the same deal
+- [ ] **LEGAL-03**: Private messaging channel between client and their lawyer, isolated from opposing party
+- [ ] **LEGAL-04**: Lawyer can view full deal details (trade info, parties, documents)
+- [ ] **LEGAL-05**: Lawyer can create and revise contract drafts with version history
+- [ ] **LEGAL-06**: Risk analysis panel with severity levels (low/medium/high)
+- [ ] **LEGAL-07**: Quick-action buttons (approve, request info, request changes, attach file)
+- [ ] **LEGAL-08**: Legal consulting is optional — parties can proceed without hiring a lawyer
+
+### Insurance & Logistics Quotes (S3)
+
+- [ ] **QUOTE-01**: Buyer can view and compare insurance quotes from multiple providers
+- [ ] **QUOTE-02**: Buyer can view and compare logistics quotes from multiple providers
+- [ ] **QUOTE-03**: Quotes display provider details, price, coverage/mode, and validity countdown
+- [ ] **QUOTE-04**: Quote validity timer enforced server-side via Cloud Function
+- [ ] **QUOTE-05**: Buyer can select and confirm one insurance and one logistics provider per deal
+- [ ] **QUOTE-06**: Cost breakdown summary displayed after provider selection
+
+### Provider Portals
+
+- [ ] **PORTAL-01**: Insurance providers can view incoming quote requests with full deal info including price
+- [ ] **PORTAL-02**: Insurance providers can submit quotes with ICC coverage (A/B/C), premium, extras, and validity period
+- [ ] **PORTAL-03**: Logistics providers can view incoming quote requests with all deal info except price
+- [ ] **PORTAL-04**: Logistics providers can submit quotes with transport mode, pricing, timeline, and validity period
+- [ ] **PORTAL-05**: Provider data visibility rules enforced at data layer — logistics providers never see deal price
+
+### Tracking & Summary (S4)
+
+- [ ] **TRACK-01**: Buyer and seller can view trade summary dashboard with deal overview
+- [ ] **TRACK-02**: Shipment tracking with provider-submitted status updates
+- [ ] **TRACK-03**: Order timeline showing all completed milestones with timestamps
+- [ ] **TRACK-04**: Role-dispatched dashboard showing relevant view per role (member, lawyer, provider)
+
+### Platform Hardening
+
+- [ ] **HARDEN-01**: Thorough quality sweep of all existing features for UI consistency
+- [ ] **HARDEN-02**: All error states handled gracefully across the platform
+- [ ] **HARDEN-03**: All forms have proper validation with clear error messages
+- [ ] **HARDEN-04**: Performance audit and optimization where needed
+
+## v2 Requirements
+
+Deferred to future release. Tracked but not in current roadmap.
+
+### Legal Consulting Enhancements
+
+- **LEGAL-V2-01**: Contract revision diff view — side-by-side visual comparison between draft versions
+
+### Tracking Enhancements
+
+- **TRACK-V2-01**: Provider-submitted tracking status history with incremental milestone updates
+- **TRACK-V2-02**: Real carrier API tracking integration (DHL, Maersk, etc.)
+
+### Notifications
+
+- **NOTIF-V2-01**: Deal-level notification preferences — users can configure frequency and channels per deal
+
+## Out of Scope
+
+Explicitly excluded. Documented to prevent scope creep.
+
+| Feature | Reason |
+|---------|--------|
+| On-platform payment/escrow | Regulatory complexity (KYC/AML, licensing) — parties arrange payment externally |
+| Multi-language i18n | No validated non-English user demand — English-only for v1 |
+| Mobile native app | Web-first until product-market fit established |
+| Video/audio in lawyer channels | Requires WebRTC infrastructure — recommend Zoom/Teams for calls |
+| Self-registration for providers/lawyers | Quality control — admin vets all providers before platform access |
+| WebSocket chat for general messaging | Existing Firestore messaging pattern sufficient — only trade channels get real-time |
+| AI-assisted contract review | Liability concerns for AI legal advice across jurisdictions — human lawyers are the differentiator |
+
+## Traceability
+
+Which phases cover which requirements. Updated during roadmap creation.
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| ROLE-01 | — | Pending |
+| ROLE-02 | — | Pending |
+| ROLE-03 | — | Pending |
+| ROLE-04 | — | Pending |
+| ROLE-05 | — | Pending |
+| ROLE-06 | — | Pending |
+| NEGO-01 | — | Pending |
+| NEGO-02 | — | Pending |
+| NEGO-03 | — | Pending |
+| NEGO-04 | — | Pending |
+| NEGO-05 | — | Pending |
+| NEGO-06 | — | Pending |
+| NEGO-07 | — | Pending |
+| AGMT-01 | — | Pending |
+| AGMT-02 | — | Pending |
+| AGMT-03 | — | Pending |
+| AGMT-04 | — | Pending |
+| AGMT-05 | — | Pending |
+| LEGAL-01 | — | Pending |
+| LEGAL-02 | — | Pending |
+| LEGAL-03 | — | Pending |
+| LEGAL-04 | — | Pending |
+| LEGAL-05 | — | Pending |
+| LEGAL-06 | — | Pending |
+| LEGAL-07 | — | Pending |
+| LEGAL-08 | — | Pending |
+| QUOTE-01 | — | Pending |
+| QUOTE-02 | — | Pending |
+| QUOTE-03 | — | Pending |
+| QUOTE-04 | — | Pending |
+| QUOTE-05 | — | Pending |
+| QUOTE-06 | — | Pending |
+| PORTAL-01 | — | Pending |
+| PORTAL-02 | — | Pending |
+| PORTAL-03 | — | Pending |
+| PORTAL-04 | — | Pending |
+| PORTAL-05 | — | Pending |
+| TRACK-01 | — | Pending |
+| TRACK-02 | — | Pending |
+| TRACK-03 | — | Pending |
+| TRACK-04 | — | Pending |
+| HARDEN-01 | — | Pending |
+| HARDEN-02 | — | Pending |
+| HARDEN-03 | — | Pending |
+| HARDEN-04 | — | Pending |
+
+**Coverage:**
+- v1 requirements: 45 total
+- Mapped to phases: 0
+- Unmapped: 45 ⚠️
+
+---
+*Requirements defined: 2026-02-20*
+*Last updated: 2026-02-20 after initial definition*
