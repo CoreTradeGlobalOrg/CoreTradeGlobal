@@ -188,6 +188,89 @@ exports.inviteUser = onCall(
 );
 
 /**
+ * Resend Invite (Admin only)
+ *
+ * Regenerates the sign-in link for an existing invite (pending or expired).
+ * Resets the invite's expiresAt to 7 days from now and updates the signInLink.
+ * Does NOT recreate the Auth user — they already exist from the initial invite.
+ *
+ * @param {Object} data - { email, role, name, company }
+ * @returns {Promise<{ success: boolean, uid: string }>}
+ */
+exports.resendInvite = onCall(
+  { cors: true },
+  async (request) => {
+    const { email, role, name, company } = request.data;
+    const auth = request.auth;
+
+    if (!auth) {
+      throw new HttpsError('unauthenticated', 'You must be logged in.');
+    }
+
+    const adminCheck = await isUserAdmin(auth.uid);
+    if (!adminCheck) {
+      throw new HttpsError('permission-denied', 'Only administrators can resend invites.');
+    }
+
+    if (!email || !role) {
+      throw new HttpsError('invalid-argument', 'email and role are required.');
+    }
+
+    if (!VALID_INVITE_ROLES.includes(role)) {
+      throw new HttpsError(
+        'invalid-argument',
+        `Invalid role. Must be one of: ${VALID_INVITE_ROLES.join(', ')}`
+      );
+    }
+
+    try {
+      // Look up existing Auth user by email
+      let userRecord;
+      try {
+        userRecord = await admin.auth().getUserByEmail(email);
+      } catch (err) {
+        if (err.code === 'auth/user-not-found') {
+          throw new HttpsError('not-found', `No invited user found with email: ${email}`);
+        }
+        throw err;
+      }
+
+      const uid = userRecord.uid;
+      const now = admin.firestore.Timestamp.now();
+      const expiresAt = admin.firestore.Timestamp.fromDate(
+        new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days
+      );
+
+      // Regenerate sign-in link
+      const signInLink = await admin.auth().generateSignInWithEmailLink(email, {
+        url: `${APP_URL}/onboarding?uid=${uid}`,
+        handleCodeInApp: true,
+      });
+
+      // Update the invite doc: new expiry + new sign-in link
+      await db.collection('invites').doc(uid).update({
+        status: 'pending',
+        expiresAt,
+        expireAt: expiresAt,
+        signInLink,
+        resentAt: now,
+        resentBy: auth.uid,
+        name: name || userRecord.displayName || null,
+        company: company || null,
+      });
+
+      console.log(`Resent invite for ${uid} (${email}) with role ${role}`);
+
+      return { success: true, uid };
+    } catch (error) {
+      if (error instanceof HttpsError) throw error;
+      console.error('Error resending invite:', error);
+      throw new HttpsError('internal', `Failed to resend invite: ${error.message}`);
+    }
+  }
+);
+
+/**
  * Set User Role (Admin only)
  *
  * Atomically updates a user's custom claims and their Firestore users document.
