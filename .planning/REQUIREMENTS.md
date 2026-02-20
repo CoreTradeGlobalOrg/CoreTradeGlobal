@@ -113,57 +113,57 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ROLE-01 | — | Pending |
-| ROLE-02 | — | Pending |
-| ROLE-03 | — | Pending |
-| ROLE-04 | — | Pending |
-| ROLE-05 | — | Pending |
-| ROLE-06 | — | Pending |
-| NEGO-01 | — | Pending |
-| NEGO-02 | — | Pending |
-| NEGO-03 | — | Pending |
-| NEGO-04 | — | Pending |
-| NEGO-05 | — | Pending |
-| NEGO-06 | — | Pending |
-| NEGO-07 | — | Pending |
-| AGMT-01 | — | Pending |
-| AGMT-02 | — | Pending |
-| AGMT-03 | — | Pending |
-| AGMT-04 | — | Pending |
-| AGMT-05 | — | Pending |
-| LEGAL-01 | — | Pending |
-| LEGAL-02 | — | Pending |
-| LEGAL-03 | — | Pending |
-| LEGAL-04 | — | Pending |
-| LEGAL-05 | — | Pending |
-| LEGAL-06 | — | Pending |
-| LEGAL-07 | — | Pending |
-| LEGAL-08 | — | Pending |
-| QUOTE-01 | — | Pending |
-| QUOTE-02 | — | Pending |
-| QUOTE-03 | — | Pending |
-| QUOTE-04 | — | Pending |
-| QUOTE-05 | — | Pending |
-| QUOTE-06 | — | Pending |
-| PORTAL-01 | — | Pending |
-| PORTAL-02 | — | Pending |
-| PORTAL-03 | — | Pending |
-| PORTAL-04 | — | Pending |
-| PORTAL-05 | — | Pending |
-| TRACK-01 | — | Pending |
-| TRACK-02 | — | Pending |
-| TRACK-03 | — | Pending |
-| TRACK-04 | — | Pending |
-| HARDEN-01 | — | Pending |
-| HARDEN-02 | — | Pending |
-| HARDEN-03 | — | Pending |
-| HARDEN-04 | — | Pending |
+| ROLE-01 | Phase 1 | Pending |
+| ROLE-02 | Phase 1 | Pending |
+| ROLE-03 | Phase 1 | Pending |
+| ROLE-04 | Phase 1 | Pending |
+| ROLE-05 | Phase 1 | Pending |
+| ROLE-06 | Phase 1 | Pending |
+| NEGO-01 | Phase 2 | Pending |
+| NEGO-02 | Phase 2 | Pending |
+| NEGO-03 | Phase 2 | Pending |
+| NEGO-04 | Phase 2 | Pending |
+| NEGO-05 | Phase 2 | Pending |
+| NEGO-06 | Phase 2 | Pending |
+| NEGO-07 | Phase 2 | Pending |
+| AGMT-01 | Phase 3 | Pending |
+| AGMT-02 | Phase 3 | Pending |
+| AGMT-03 | Phase 3 | Pending |
+| AGMT-04 | Phase 3 | Pending |
+| AGMT-05 | Phase 3 | Pending |
+| LEGAL-01 | Phase 5 | Pending |
+| LEGAL-02 | Phase 5 | Pending |
+| LEGAL-03 | Phase 5 | Pending |
+| LEGAL-04 | Phase 5 | Pending |
+| LEGAL-05 | Phase 5 | Pending |
+| LEGAL-06 | Phase 5 | Pending |
+| LEGAL-07 | Phase 5 | Pending |
+| LEGAL-08 | Phase 5 | Pending |
+| QUOTE-01 | Phase 4 | Pending |
+| QUOTE-02 | Phase 4 | Pending |
+| QUOTE-03 | Phase 4 | Pending |
+| QUOTE-04 | Phase 4 | Pending |
+| QUOTE-05 | Phase 4 | Pending |
+| QUOTE-06 | Phase 4 | Pending |
+| PORTAL-01 | Phase 4 | Pending |
+| PORTAL-02 | Phase 4 | Pending |
+| PORTAL-03 | Phase 4 | Pending |
+| PORTAL-04 | Phase 4 | Pending |
+| PORTAL-05 | Phase 4 | Pending |
+| TRACK-01 | Phase 6 | Pending |
+| TRACK-02 | Phase 6 | Pending |
+| TRACK-03 | Phase 6 | Pending |
+| TRACK-04 | Phase 6 | Pending |
+| HARDEN-01 | Phase 7 | Pending |
+| HARDEN-02 | Phase 7 | Pending |
+| HARDEN-03 | Phase 7 | Pending |
+| HARDEN-04 | Phase 7 | Pending |
 
 **Coverage:**
 - v1 requirements: 45 total
-- Mapped to phases: 0
-- Unmapped: 45 ⚠️
+- Mapped to phases: 45
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-20*
-*Last updated: 2026-02-20 after initial definition*
+*Last updated: 2026-02-20 after roadmap creation*
