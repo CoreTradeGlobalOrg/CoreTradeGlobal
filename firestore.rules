@@ -3,58 +3,147 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper function to check if user is authenticated
+    // ─────────────────────────────────────────────────────────────────────────
+    // Role Helper Functions
+    //
+    // All role checks use request.auth.token.role (custom claims from the JWT).
+    // This avoids extra Firestore reads on every rule evaluation and prevents
+    // role escalation via Firestore document manipulation.
+    //
+    // Custom claims are set by Cloud Functions (inviteUser, setUserRole,
+    // migrateExistingUsers) and are the single source of truth.
+    // ─────────────────────────────────────────────────────────────────────────
+
     function isAuthenticated() {
       return request.auth != null;
     }
 
-    // Helper function to check if user is admin
+    // Returns the role from JWT custom claims.
+    // Null for legacy accounts without claims (treated as member).
+    function userRole() {
+      return request.auth.token.role;
+    }
+
     function isAdmin() {
+      return isAuthenticated() && userRole() == 'admin';
+    }
+
+    // Null/missing role fallback: existing member accounts without custom claims
+    // are treated as members per the migration strategy in CONTEXT.md.
+    function isMember() {
+      return isAuthenticated() && (userRole() == 'member' || userRole() == null);
+    }
+
+    function isProvider() {
       return isAuthenticated() &&
-             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+        (userRole() == 'logistics_provider' || userRole() == 'insurance_provider');
     }
 
-    // Global admin override - admins have full read/write access
-    match /{document=**} {
-      allow read, write: if isAdmin();
+    function isInsuranceProvider() {
+      return isAuthenticated() && userRole() == 'insurance_provider';
     }
 
-    // Helper function to check if user is owner
+    function isLogisticsProvider() {
+      return isAuthenticated() && userRole() == 'logistics_provider';
+    }
+
+    function isLawyer() {
+      return isAuthenticated() && userRole() == 'lawyer';
+    }
+
     function isOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
-    // Users collection (company profiles - public read for homepage)
+    // ─────────────────────────────────────────────────────────────────────────
+    // Global admin override — admins have full read/write access to everything
+    // ─────────────────────────────────────────────────────────────────────────
+
+    match /{document=**} {
+      allow read, write: if isAdmin();
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Users collection (company profiles)
+    // ─────────────────────────────────────────────────────────────────────────
+
     match /users/{userId} {
-      // Public can read user profiles (for company listings)
-      allow read: if true;
+      // Any authenticated user can read user profiles (for company listings, messaging)
+      allow read: if isAuthenticated();
+
+      // Users can create their own profile during registration
       allow create: if isOwner(userId);
-      allow update: if isOwner(userId) || isAdmin();
+
+      // Users can update their own profile, BUT cannot self-modify the 'role' field.
+      // Role changes must go through the setUserRole Cloud Function (admin only).
+      allow update: if isOwner(userId) &&
+        (
+          !('role' in request.resource.data) ||
+          request.resource.data.role == resource.data.role
+        );
+
+      // Admin can delete user records (hard delete goes through deleteUser Cloud Function)
       allow delete: if isAdmin();
+
+      // User notifications subcollection (private)
+      match /notifications/{notificationId} {
+        allow read: if isOwner(userId);
+        allow create: if isAuthenticated() && (
+          isAdmin() ||
+          (
+            request.resource.data.type in ['message', 'quote', 'system', 'admin',
+              'new_message', 'conversation_created', 'quote_received',
+              'quote_accepted', 'quote_rejected', 'new_user_approval'] &&
+            request.resource.data.keys().hasAll(['type', 'title', 'isRead']) &&
+            request.resource.data.isRead == false &&
+            request.auth.uid != userId
+          )
+        );
+        allow update: if isOwner(userId);
+        allow delete: if isOwner(userId);
+      }
     }
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // Invites collection (admin-only)
+    // Invite documents are created by the inviteUser Cloud Function.
+    // TTL: configure Firebase Console TTL policy on Field=expireAt
+    // ─────────────────────────────────────────────────────────────────────────
+
+    match /invites/{inviteId} {
+      allow read: if isAdmin();
+      allow write: if isAdmin();
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
     // Products collection (public read for homepage/listings)
+    // ─────────────────────────────────────────────────────────────────────────
+
     match /products/{productId} {
-      // Public can view products
+      // Public can view products (homepage, search)
       allow read: if true;
-      // Only authenticated users can create/edit their own products (admins can create on behalf of users)
-      allow create: if isAuthenticated() && (request.resource.data.userId == request.auth.uid || isAdmin());
-      allow update: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
-      allow delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      // Only authenticated users can create/edit their own products
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
     }
 
+    // ─────────────────────────────────────────────────────────────────────────
     // Requests/RFQs collection (public read for homepage/listings)
+    // ─────────────────────────────────────────────────────────────────────────
+
     match /requests/{requestId} {
       // Public can view RFQs
       allow read: if true;
-      // Only authenticated users can create/edit their own requests (admins can create on behalf of users)
-      allow create: if isAuthenticated() && (request.resource.data.userId == request.auth.uid || isAdmin());
-      allow update: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
-      allow delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      // Only authenticated users can create/edit their own requests
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
 
       // Quotes subcollection (offers for RFQs)
       match /quotes/{quoteId} {
-        // Helper: Check if user is the RFQ owner
+        // Helper: Check if user is the RFQ owner (document read is acceptable here —
+        // it's scoped to a specific subcollection, not for role checking)
         function isRequestOwner() {
           return request.auth.uid == get(/databases/$(database)/documents/requests/$(requestId)).data.userId;
         }
@@ -73,25 +162,37 @@ service cloud.firestore {
       }
     }
 
+    // ─────────────────────────────────────────────────────────────────────────
     // Categories collection (public read for dropdowns/filters)
+    // ─────────────────────────────────────────────────────────────────────────
+
     match /categories/{categoryId} {
       allow read: if true;
       allow write: if isAdmin();
     }
 
+    // ─────────────────────────────────────────────────────────────────────────
     // Fairs collection (public read)
+    // ─────────────────────────────────────────────────────────────────────────
+
     match /fairs/{fairId} {
       allow read: if true;
       allow write: if isAdmin();
     }
 
+    // ─────────────────────────────────────────────────────────────────────────
     // News collection (public read)
+    // ─────────────────────────────────────────────────────────────────────────
+
     match /news/{newsId} {
       allow read: if true;
       allow write: if isAdmin();
     }
 
-    // Conversations collection (private - only participants)
+    // ─────────────────────────────────────────────────────────────────────────
+    // Conversations collection (private — only participants)
+    // ─────────────────────────────────────────────────────────────────────────
+
     match /conversations/{conversationId} {
       function isParticipant() {
         return isAuthenticated() && request.auth.uid in resource.data.participants;
@@ -127,23 +228,10 @@ service cloud.firestore {
       }
     }
 
-    // User notifications subcollection (private)
-    match /users/{userId}/notifications/{notificationId} {
-      allow read: if isOwner(userId);
-      allow create: if isAuthenticated() && (
-        isAdmin() ||
-        (
-          request.resource.data.type in ['message', 'quote', 'system', 'admin', 'new_message', 'conversation_created', 'quote_received', 'quote_accepted', 'quote_rejected', 'new_user_approval'] &&
-          request.resource.data.keys().hasAll(['type', 'title', 'isRead']) &&
-          request.resource.data.isRead == false &&
-          request.auth.uid != userId
-        )
-      );
-      allow update: if isOwner(userId);
-      allow delete: if isOwner(userId);
-    }
-
+    // ─────────────────────────────────────────────────────────────────────────
     // Newsletter collection (public create)
+    // ─────────────────────────────────────────────────────────────────────────
+
     match /newsletter/{subscriberId} {
       allow read: if isAdmin();
       allow create: if true;

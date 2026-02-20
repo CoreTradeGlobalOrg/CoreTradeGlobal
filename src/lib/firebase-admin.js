@@ -51,7 +51,13 @@ export async function verifyIdToken(idToken) {
   try {
     const auth = getAdminAuth();
     const decodedToken = await auth.verifyIdToken(idToken);
-    return { valid: true, uid: decodedToken.uid, email: decodedToken.email };
+    return {
+      valid: true,
+      uid: decodedToken.uid,
+      email: decodedToken.email,
+      // Role from custom claims — the single source of truth for role enforcement
+      role: decodedToken.role || null,
+    };
   } catch (error) {
     console.error('Token verification failed:', error);
     return { valid: false, error: error.message };
