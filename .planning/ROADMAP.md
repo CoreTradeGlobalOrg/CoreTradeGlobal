@@ -32,11 +32,12 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. Firestore security rules independently reject unauthorized access attempts (a logistics_provider cannot read insurance-only data, even if middleware is bypassed)
   4. Each account has exactly one role that cannot be changed by the user themselves
   5. Existing member accounts continue to work without migration -- buyer/seller distinction is determined per deal, not at registration
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 01-01: TBD
-- [ ] 01-02: TBD
+- [ ] 01-01-PLAN.md — Role constants, Cloud Functions (inviteUser, setUserRole, migrateExistingUsers), session security fix, Firestore rules rewrite
+- [ ] 01-02-PLAN.md — Admin invite modal, invite tracking, onboarding wizard for invited users
+- [ ] 01-03-PLAN.md — Role-based navigation, middleware route protection, forbidden page, RoleBadge, provider/lawyer placeholder pages
 
 ### Phase 2: Deal Creation and Negotiation (S1)
 **Goal**: A buyer and seller can negotiate a deal through structured offers and counter-offers, with real-time updates and a complete audit trail
@@ -135,7 +136,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 (parallel with 3-4) -> 6 
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Role System and Infrastructure | 0/0 | Not started | - |
+| 1. Role System and Infrastructure | 0/3 | Planned | - |
 | 2. Deal Creation and Negotiation (S1) | 0/0 | Not started | - |
 | 3. Contract Agreement (S2) | 0/0 | Not started | - |
 | 4. Provider Portals and Insurance/Logistics Quotes (S3) | 0/0 | Not started | - |
