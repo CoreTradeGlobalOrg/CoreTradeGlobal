@@ -34,6 +34,7 @@ import { useDeleteRequest } from '@/presentation/hooks/request/useDeleteRequest'
 import { useCategories } from '@/presentation/hooks/category/useCategories';
 import { ConfirmDialog } from '@/presentation/components/common/ConfirmDialog/ConfirmDialog';
 import { CompanyDocuments } from '@/presentation/components/features/profile/CompanyDocuments/CompanyDocuments';
+import { RoleBadge } from '@/presentation/components/common/RoleBadge/RoleBadge';
 
 function ProfileContent() {
   const { user: currentUser, loading: authLoading, isAuthenticated } = useAuth();
@@ -698,8 +699,8 @@ function ProfileContent() {
 
               {/* Role */}
               <div className="bg-[rgba(255,255,255,0.04)] rounded-2xl p-5 border border-[rgba(255,255,255,0.05)]">
-                <p className="text-sm font-semibold uppercase tracking-wider mb-2 bg-gradient-to-r from-[#C0C0C0] via-[#FFFFFF] to-[#C0C0C0] bg-clip-text text-transparent">Role</p>
-                <p className="text-white font-semibold text-lg">{formatRole(profileUser?.role)}</p>
+                <p className="text-sm font-semibold uppercase tracking-wider mb-3 bg-gradient-to-r from-[#C0C0C0] via-[#FFFFFF] to-[#C0C0C0] bg-clip-text text-transparent">Role</p>
+                <RoleBadge role={profileUser?.role} size="md" />
               </div>
 
               {/* Country */}

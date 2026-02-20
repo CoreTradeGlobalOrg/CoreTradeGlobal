@@ -3,6 +3,7 @@
  *
  * Fixed navigation bar for the public homepage
  * Changes background on scroll - matches design exactly
+ * Nav links are filtered by user role — unauthorized areas are hidden completely.
  */
 
 'use client';
@@ -14,15 +15,33 @@ import { useAuth } from '@/presentation/contexts/AuthContext';
 import { useLogout } from '@/presentation/hooks/auth/useLogout';
 import { Menu, X, User, LogOut } from 'lucide-react';
 import { NotificationBell } from '@/presentation/components/common/NotificationBell/NotificationBell';
+import { ROLES } from '@/core/constants/roles';
 
+/**
+ * NAV_LINKS
+ *
+ * roles: null  — visible to everyone (authenticated or not)
+ * roles: [...]  — only visible when user.role is in the array
+ *
+ * User decision: menu items hidden completely for unauthorized areas (not greyed out).
+ */
 const NAV_LINKS = [
-  { label: 'Products', href: '/products' },
-  { label: 'RFQs', href: '/requests' },
-  { label: 'Categories', href: '/categories' },
-  { label: 'Fairs', href: '/fairs' },
-  { label: 'News', href: '/news' },
-  { label: 'FAQ', href: '/faq' },
-  { label: 'About Us', href: '/about-us' },
+  { label: 'Products', href: '/products', roles: null },
+  { label: 'RFQs', href: '/requests', roles: [ROLES.MEMBER, ROLES.ADMIN] },
+  { label: 'Categories', href: '/categories', roles: null },
+  { label: 'Fairs', href: '/fairs', roles: null },
+  { label: 'News', href: '/news', roles: null },
+  { label: 'FAQ', href: '/faq', roles: null },
+  { label: 'About Us', href: '/about-us', roles: null },
+  // Provider-only navigation
+  {
+    label: 'Provider Dashboard',
+    href: '/provider',
+    roles: [ROLES.LOGISTICS_PROVIDER, ROLES.INSURANCE_PROVIDER],
+  },
+  // Lawyer-only navigation
+  { label: 'Client Channels', href: '/lawyer/channels', roles: [ROLES.LAWYER] },
+  { label: 'Deal Review', href: '/lawyer/deals', roles: [ROLES.LAWYER] },
 ];
 
 import { usePathname } from 'next/navigation';
@@ -105,6 +124,15 @@ export function Navbar() {
     return pathname === path || (path !== '/' && pathname.startsWith(path));
   };
 
+  /**
+   * Filter nav links by user role.
+   * - roles: null  → always visible
+   * - roles: [...]  → only visible when user.role is in the list
+   */
+  const visibleLinks = NAV_LINKS.filter(
+    (link) => link.roles === null || (user && link.roles.includes(user.role))
+  );
+
   return (
     <nav className={`navbar ${isScrolled ? 'scrolled' : ''}`}>
       {/* Logo Container */}
@@ -131,7 +159,7 @@ export function Navbar() {
 
       {/* Desktop Navigation Links */}
       <div className="nav-links hidden md:flex">
-        {NAV_LINKS.map((link) => (
+        {visibleLinks.map((link) => (
           <Link
             key={link.href}
             href={link.href}
@@ -243,7 +271,7 @@ export function Navbar() {
       {isMobileMenuOpen && (
         <div className="md:hidden absolute top-full left-0 right-0 bg-[#0F1B2B] border-t border-[rgba(255,255,255,0.1)] shadow-lg">
           <div className="px-6 py-4 space-y-1">
-            {NAV_LINKS.map((link) => (
+            {visibleLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
