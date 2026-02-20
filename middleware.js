@@ -13,6 +13,12 @@ const protectedRoutes = ['/dashboard', '/messages'];
 // Routes that require admin role
 const adminRoutes = ['/admin'];
 
+// Routes only for logistics_provider, insurance_provider, or admin
+const providerRoutes = ['/provider'];
+
+// Routes only for lawyer or admin
+const lawyerRoutes = ['/lawyer'];
+
 // Routes only for guests (redirects to home if already logged in)
 const guestOnlyRoutes = ['/login', '/register'];
 
@@ -36,12 +42,19 @@ export function middleware(request) {
   const session = getSessionData(request);
   const isAuthenticated = !!session?.uid;
   const isAdmin = session?.role === 'admin';
+  const userRole = session?.role;
 
   // Check route types
   const isProtectedRoute = protectedRoutes.some((route) =>
     pathname.startsWith(route)
   );
   const isAdminRoute = adminRoutes.some((route) =>
+    pathname.startsWith(route)
+  );
+  const isProviderRoute = providerRoutes.some((route) =>
+    pathname.startsWith(route)
+  );
+  const isLawyerRoute = lawyerRoutes.some((route) =>
     pathname.startsWith(route)
   );
   const isGuestOnlyRoute = guestOnlyRoutes.some((route) =>
@@ -56,8 +69,37 @@ export function middleware(request) {
       return NextResponse.redirect(loginUrl);
     }
     if (!isAdmin) {
-      // Not an admin - redirect to home
-      return NextResponse.redirect(new URL('/', request.url));
+      // Not an admin - redirect to forbidden
+      return NextResponse.redirect(new URL('/forbidden', request.url));
+    }
+  }
+
+  // Provider routes - require logistics_provider, insurance_provider, or admin
+  if (isProviderRoute) {
+    if (!isAuthenticated) {
+      const loginUrl = new URL('/login', request.url);
+      loginUrl.searchParams.set('redirect', pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+    const isProvider =
+      userRole === 'logistics_provider' ||
+      userRole === 'insurance_provider' ||
+      isAdmin;
+    if (!isProvider) {
+      return NextResponse.redirect(new URL('/forbidden', request.url));
+    }
+  }
+
+  // Lawyer routes - require lawyer or admin
+  if (isLawyerRoute) {
+    if (!isAuthenticated) {
+      const loginUrl = new URL('/login', request.url);
+      loginUrl.searchParams.set('redirect', pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+    const isLawyer = userRole === 'lawyer' || isAdmin;
+    if (!isLawyer) {
+      return NextResponse.redirect(new URL('/forbidden', request.url));
     }
   }
 
