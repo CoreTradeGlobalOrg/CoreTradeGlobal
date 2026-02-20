@@ -35,9 +35,9 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 3 plans
 
 Plans:
-- [ ] 01-01-PLAN.md — Role constants, Cloud Functions (inviteUser, setUserRole, migrateExistingUsers), session security fix, Firestore rules rewrite
+- [x] 01-01-PLAN.md — Role constants, Cloud Functions (inviteUser, setUserRole, migrateExistingUsers), session security fix, Firestore rules rewrite
 - [ ] 01-02-PLAN.md — Admin invite modal, invite tracking, onboarding wizard for invited users
-- [ ] 01-03-PLAN.md — Role-based navigation, middleware route protection, forbidden page, RoleBadge, provider/lawyer placeholder pages
+- [x] 01-03-PLAN.md — Role-based navigation, middleware route protection, forbidden page, RoleBadge, provider/lawyer placeholder pages
 
 ### Phase 2: Deal Creation and Negotiation (S1)
 **Goal**: A buyer and seller can negotiate a deal through structured offers and counter-offers, with real-time updates and a complete audit trail
@@ -136,7 +136,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 (parallel with 3-4) -> 6 
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Role System and Infrastructure | 1/3 | In Progress|  |
+| 1. Role System and Infrastructure | 2/3 | In Progress|  |
 | 2. Deal Creation and Negotiation (S1) | 0/0 | Not started | - |
 | 3. Contract Agreement (S2) | 0/0 | Not started | - |
 | 4. Provider Portals and Insurance/Logistics Quotes (S3) | 0/0 | Not started | - |
@@ -146,4 +146,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 (parallel with 3-4) -> 6 
 
 ---
 *Roadmap created: 2026-02-20*
-*Last updated: 2026-02-20*
+*Last updated: 2026-02-21*

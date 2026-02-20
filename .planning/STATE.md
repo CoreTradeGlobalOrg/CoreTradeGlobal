@@ -10,27 +10,27 @@ See: .planning/PROJECT.md (updated 2026-02-20)
 ## Current Position
 
 Phase: 1 of 7 (Role System and Infrastructure)
-Plan: 1 of 6 in current phase
+Plan: 3 of 6 in current phase
 Status: In progress
-Last activity: 2026-02-20 -- Completed 01-01 (Role System Foundation)
+Last activity: 2026-02-21 -- Completed 01-03 (Role-Based Navigation and Route Protection)
 
-Progress: [█░░░░░░░░░] 5%
+Progress: [██░░░░░░░░] 10%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 1
-- Average duration: 2 minutes
-- Total execution time: 0.03 hours
+- Total plans completed: 2
+- Average duration: 3 minutes
+- Total execution time: 0.10 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 01-role-system-and-infrastructure | 1 | 2 min | 2 min |
+| 01-role-system-and-infrastructure | 2 | 6 min | 3 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01
+- Last 5 plans: 01-01, 01-03
 - Trend: Baseline established
 
 *Updated after each plan completion*
@@ -49,6 +49,10 @@ Recent decisions affecting current work:
 - [01-01]: isMember() includes null fallback for legacy accounts without claims -- no forced migration required for existing users
 - [01-01]: Session API security fix -- role read from verified JWT claims, not client request body
 - [01-01]: invites TTL uses expireAt field -- configure Firebase Console TTL policy manually
+- [01-03]: Nav items hidden completely for unauthorized roles (not greyed out) per user decision ROLE-04
+- [01-03]: RoleBadge null fallback renders Member badge -- handles legacy accounts without role claims
+- [01-03]: Admin bypasses all role-specific route guards (provider, lawyer) via isAdmin check
+- [01-03]: Middleware redirects unauthorized role access to /forbidden (not home) for clear role-aware UX
 
 ### Pending Todos
 
@@ -63,6 +67,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-20
-Stopped at: Completed 01-01-PLAN.md (Role System Foundation)
+Last session: 2026-02-21
+Stopped at: Completed 01-03-PLAN.md (Role-Based Navigation and Route Protection)
 Resume file: None
