@@ -22,7 +22,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **NEGO-02**: Offers include Incoterms 2020 selection (EXW, FOB, CIF, CFR, DAP, DDP, FCA, CPT)
 - [x] **NEGO-03**: Offer history timeline shows all rounds with timestamps, amounts, and terms
 - [x] **NEGO-04**: Real-time updates via Firestore listeners — no page refresh needed
-- [ ] **NEGO-05**: In-app and email notification when counter-offer received
+- [x] **NEGO-05**: In-app and email notification when counter-offer received
 - [x] **NEGO-06**: Offer state machine enforces valid transitions (open → countered → accepted/rejected/expired)
 - [x] **NEGO-07**: All deal state transitions use atomic Firestore transactions
 
@@ -123,7 +123,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | NEGO-02 | Phase 2 | Complete |
 | NEGO-03 | Phase 2 | Complete |
 | NEGO-04 | Phase 2 | Complete |
-| NEGO-05 | Phase 2 | Pending |
+| NEGO-05 | Phase 2 | Complete |
 | NEGO-06 | Phase 2 | Complete |
 | NEGO-07 | Phase 2 | Complete |
 | AGMT-01 | Phase 3 | Pending |

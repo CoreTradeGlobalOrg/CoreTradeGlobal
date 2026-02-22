@@ -39,6 +39,7 @@ Progress: [████░░░░░░] 20%
 | Phase 02 P01 | 5 | 2 tasks | 12 files |
 | Phase 02 P02 | 20 | 2 tasks | 12 files |
 | Phase 02 P03 | 10 | 2 tasks | 11 files |
+| Phase 02 P04 | 3 | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -75,6 +76,11 @@ Recent decisions affecting current work:
 - [Phase 02]: Suspense boundary required around useSearchParams in /deals/new — Next.js app router requires this for static rendering compatibility
 - [Phase 02]: Web Audio API used for offer notification chime — zero deployment friction vs external .mp3 file
 - [Phase 02]: useDealPresence uses Firestore heartbeat (30s interval) + 60s staleness window — handles browser crash edge case without RTDB
+- [Phase 02-04]: Resend uses onboarding@resend.dev sender in Phase 2 dev -- custom domain switch deferred to pre-production
+- [Phase 02-04]: sendDealEmail is non-blocking -- email failure never fails Cloud Function (try/catch, log, continue)
+- [Phase 02-04]: Smart FCM suppression: viewingDealId + viewingDealSince 60s staleness from useDealPresence heartbeat
+- [Phase 02-04]: All deal notification side effects called OUTSIDE Firestore transactions -- prevents duplicate sends on retry
+- [Phase 02-04]: remindersSet uses arrayUnion for race-condition-safe expiry reminder dedup
 
 ### Pending Todos
 
