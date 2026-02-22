@@ -6,16 +6,24 @@
  */
 
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
-const { onDocumentCreated } = require('firebase-functions/v2/firestore');
+const { onDocumentCreated, onDocumentUpdated } = require('firebase-functions/v2/firestore');
 const { onSchedule } = require('firebase-functions/v2/scheduler');
 const admin = require('firebase-admin');
 const { Timestamp, FieldValue } = require('firebase-admin/firestore');
+const { Resend } = require('resend');
 
 // Initialize Firebase Admin SDK
 admin.initializeApp();
 
 const db = admin.firestore();
 const messaging = admin.messaging();
+
+// Initialize Resend for transactional email
+// Set RESEND_API_KEY in functions/.env or via firebase functions:config:set resend.api_key='re_xxxxx'
+// In Phase 2 development, onboarding@resend.dev sender is used (custom domain not required yet)
+const resend = new Resend(
+  process.env.RESEND_API_KEY || null
+);
 
 /**
  * Role constants (duplicated here to avoid ESM import in CJS Cloud Functions)
@@ -1433,6 +1441,429 @@ exports.withdrawOffer = onCall(async (request) => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Deal Notification Helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * sendDealEmail — wraps Resend SDK call.
+ *
+ * Non-blocking: email failure does NOT fail the Cloud Function.
+ * From address uses onboarding@resend.dev for Phase 2 development.
+ * Switch to a verified custom domain before production.
+ *
+ * @param {string} to - Recipient email address
+ * @param {string} subject - Email subject line
+ * @param {string} htmlBody - HTML content for the email body
+ */
+async function sendDealEmail(to, subject, htmlBody) {
+  if (!to || !subject || !htmlBody) return;
+  try {
+    await resend.emails.send({
+      from: 'CoreTradeGlobal <onboarding@resend.dev>',
+      to,
+      subject,
+      html: htmlBody,
+    });
+    console.log(`sendDealEmail: sent "${subject}" to ${to}`);
+  } catch (err) {
+    console.error(`sendDealEmail: failed to send to ${to}:`, err);
+    // Non-blocking — swallow the error
+  }
+}
+
+/**
+ * Build per-event subject line and text for notifications / emails.
+ */
+function getDealEventCopy(eventType, productName) {
+  const name = productName || 'this product';
+  const map = {
+    new_deal: {
+      title: `New offer on ${name}`,
+      body: `A new deal offer has been submitted for ${name}.`,
+      subject: `New offer on ${name}`,
+    },
+    counter_offer: {
+      title: `Counter-offer received on ${name}`,
+      body: `A counter-offer has been submitted for ${name}.`,
+      subject: `Counter-offer received on ${name}`,
+    },
+    accepted: {
+      title: `Offer accepted on ${name}`,
+      body: `The offer on ${name} has been accepted. Congratulations!`,
+      subject: `Offer accepted on ${name}`,
+    },
+    rejected: {
+      title: `Offer rejected on ${name}`,
+      body: `The offer on ${name} has been rejected.`,
+      subject: `Offer rejected on ${name}`,
+    },
+    expired: {
+      title: `Offer expired on ${name}`,
+      body: `The offer on ${name} has expired.`,
+      subject: `Offer expired on ${name}`,
+    },
+    withdrawn: {
+      title: `Offer withdrawn on ${name}`,
+      body: `The offer on ${name} has been withdrawn by the sender.`,
+      subject: `Offer withdrawn on ${name}`,
+    },
+    renewed: {
+      title: `Offer renewed on ${name}`,
+      body: `The expired offer on ${name} has been renewed with a new deadline.`,
+      subject: `Offer renewed on ${name}`,
+    },
+  };
+  return map[eventType] || {
+    title: `Deal update on ${name}`,
+    body: `There is a new update for the deal on ${name}.`,
+    subject: `Deal update on ${name}`,
+  };
+}
+
+/**
+ * Build the HTML email body for a deal event.
+ */
+function buildDealEmailHtml(eventType, productName, dealId) {
+  const { body } = getDealEventCopy(eventType, productName);
+  const dealUrl = `${APP_URL}/deals/${dealId}`;
+  return `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; background: #f9f9f9;">
+      <div style="background: #0F1B2B; padding: 24px; border-radius: 8px 8px 0 0;">
+        <h1 style="color: #FFD700; margin: 0; font-size: 20px;">CoreTradeGlobal</h1>
+      </div>
+      <div style="background: #ffffff; padding: 32px; border-radius: 0 0 8px 8px; border: 1px solid #e0e0e0;">
+        <p style="color: #333333; font-size: 16px; line-height: 1.6;">${body}</p>
+        <div style="margin-top: 32px;">
+          <a href="${dealUrl}"
+             style="display: inline-block; background: #0F1B2B; color: #FFD700; text-decoration: none;
+                    padding: 12px 24px; border-radius: 6px; font-weight: bold; font-size: 15px;">
+            View Deal
+          </a>
+        </div>
+        <p style="margin-top: 24px; font-size: 13px; color: #888888;">
+          You are receiving this email because you are a participant in a deal on CoreTradeGlobal.
+        </p>
+      </div>
+    </div>
+  `;
+}
+
+/**
+ * sendDealNotifications — orchestrates all 3 notification channels for deal events.
+ *
+ * Sends to all deal participants EXCEPT the sender (actor) uid.
+ * Channels: Firestore in-app notification, FCM push (with smart suppression), Resend email.
+ *
+ * IMPORTANT: Call this OUTSIDE transactions to prevent duplicate sends on transaction retries.
+ *
+ * @param {string} dealId
+ * @param {string} eventType - new_deal | counter_offer | accepted | rejected | expired | withdrawn | renewed
+ * @param {string} senderUid - The UID of the party who triggered the event (excluded from notifications)
+ * @param {object} deal - Firestore deal document data
+ */
+async function sendDealNotifications(dealId, eventType, senderUid, deal) {
+  const { title, body } = getDealEventCopy(eventType, deal.productName);
+  const allParticipants = [deal.buyerId, deal.sellerId].filter(Boolean);
+  const recipients = allParticipants.filter((uid) => uid !== senderUid);
+
+  if (recipients.length === 0) {
+    console.log(`sendDealNotifications: no recipients for event ${eventType} on deal ${dealId}`);
+    return;
+  }
+
+  const now = Timestamp.now();
+
+  for (const recipientId of recipients) {
+    // --- a) Firestore in-app notification ---
+    try {
+      await db.collection('users').doc(recipientId).collection('notifications').add({
+        type: 'deal',
+        eventType,
+        title,
+        body,
+        dealId,
+        dealProductName: deal.productName || '',
+        isRead: false,
+        createdAt: now,
+        link: `/deals/${dealId}`,
+      });
+    } catch (err) {
+      console.error(`sendDealNotifications: failed to create in-app notification for ${recipientId}:`, err);
+    }
+
+    // --- b) FCM push notification (smart suppression) ---
+    try {
+      const userDoc = await db.collection('users').doc(recipientId).get();
+      if (userDoc.exists) {
+        const userData = userDoc.data();
+        const fcmToken = userData.fcmToken;
+
+        // Smart suppression: skip FCM if user is actively viewing this deal
+        const viewingDealId = userData.viewingDealId;
+        const viewingDealSince = userData.viewingDealSince?.toMillis?.() || 0;
+        const now60sAgo = Date.now() - 60000;
+        const isActivelyViewing = viewingDealId === dealId && viewingDealSince > now60sAgo;
+
+        if (fcmToken && !isActivelyViewing) {
+          try {
+            await messaging.send({
+              token: fcmToken,
+              data: {
+                type: 'deal_event',
+                dealId,
+                eventType,
+                click_action: `/deals/${dealId}`,
+              },
+              webpush: {
+                fcmOptions: { link: `/deals/${dealId}` },
+              },
+            });
+          } catch (fcmErr) {
+            console.error(`sendDealNotifications: FCM error for ${recipientId}:`, fcmErr.code);
+            // Clean up invalid tokens
+            if (
+              fcmErr.code === 'messaging/invalid-registration-token' ||
+              fcmErr.code === 'messaging/registration-token-not-registered'
+            ) {
+              await db.collection('users').doc(recipientId).update({
+                fcmToken: FieldValue.delete(),
+              });
+            }
+          }
+        } else if (isActivelyViewing) {
+          console.log(`sendDealNotifications: suppressed FCM for ${recipientId} — actively viewing deal ${dealId}`);
+        }
+
+        // --- c) Resend email notification ---
+        const recipientEmail = userData.email;
+        if (recipientEmail) {
+          const { subject } = getDealEventCopy(eventType, deal.productName);
+          const htmlBody = buildDealEmailHtml(eventType, deal.productName, dealId);
+          await sendDealEmail(recipientEmail, subject, htmlBody);
+        }
+      }
+    } catch (err) {
+      console.error(`sendDealNotifications: error processing recipient ${recipientId}:`, err);
+    }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Deal Event Triggers
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * onDealOfferCreated
+ *
+ * Fires when a new offer document is created inside a deal's offers subcollection.
+ * Determines whether this is a new deal (round 1) or a counter-offer (round > 1),
+ * sends all 3 notification channels to the other party, and posts a system message
+ * to the linked conversation.
+ */
+exports.onDealOfferCreated = onDocumentCreated(
+  'deals/{dealId}/offers/{offerId}',
+  async (event) => {
+    const snapshot = event.data;
+    if (!snapshot) return null;
+
+    const offer = snapshot.data();
+    const { dealId } = event.params;
+
+    try {
+      const dealDoc = await db.collection('deals').doc(dealId).get();
+      if (!dealDoc.exists) {
+        console.log(`onDealOfferCreated: deal ${dealId} not found`);
+        return null;
+      }
+      const deal = dealDoc.data();
+
+      // Determine event type
+      const eventType = offer.round === 1 ? 'new_deal' : 'counter_offer';
+
+      // Send notifications (outside transaction — non-blocking, non-duplicate)
+      await sendDealNotifications(dealId, eventType, offer.submittedBy, deal);
+
+      // Post system message to conversation (if conversationId is linked)
+      if (deal.conversationId) {
+        try {
+          const conversationRef = db.collection('conversations').doc(deal.conversationId);
+          const systemMsgRef = conversationRef.collection('messages').doc();
+          const now = Timestamp.now();
+          const content =
+            eventType === 'new_deal'
+              ? `New offer submitted for ${deal.productName || 'this product'}`
+              : `Counter-offer submitted for ${deal.productName || 'this product'}`;
+
+          await db.runTransaction(async (t) => {
+            t.set(systemMsgRef, {
+              type: 'system',
+              content,
+              dealId,
+              dealLink: `/deals/${dealId}`,
+              senderId: offer.submittedBy,
+              createdAt: now,
+              updatedAt: now,
+            });
+            t.update(conversationRef, {
+              'lastMessage.content': content,
+              'lastMessage.type': 'system',
+              'lastMessage.createdAt': now,
+              updatedAt: now,
+            });
+          });
+        } catch (msgErr) {
+          console.error('onDealOfferCreated: failed to post system message (non-fatal):', msgErr);
+        }
+      }
+
+      console.log(`onDealOfferCreated: processed ${eventType} for deal ${dealId}`);
+      return null;
+    } catch (err) {
+      console.error(`onDealOfferCreated: error for deal ${dealId}:`, err);
+      return null;
+    }
+  }
+);
+
+/**
+ * onDealStatusChanged
+ *
+ * Fires when a deal document is updated. Detects terminal status transitions
+ * (accepted, rejected, withdrawn, expired) and sends notifications to both parties.
+ *
+ * Phase 3 independently listens to deal.status === 'accepted' for contract generation.
+ */
+exports.onDealStatusChanged = onDocumentUpdated(
+  'deals/{dealId}',
+  async (event) => {
+    const before = event.data?.before?.data();
+    const after = event.data?.after?.data();
+
+    if (!before || !after) return null;
+
+    // Only fire on terminal status transitions
+    const terminalStatuses = ['accepted', 'rejected', 'withdrawn', 'expired'];
+    if (before.status === after.status) return null;
+    if (!terminalStatuses.includes(after.status)) return null;
+
+    const { dealId } = event.params;
+
+    try {
+      // Determine the actor who triggered the change
+      // For accepted/rejected: the party whose turn it was (currentTurnUid from BEFORE snapshot)
+      // For expired: system (no specific actor — notify both)
+      // For withdrawn: the submitter of the withdrawn offer (handled via sendDealNotifications with senderUid)
+      let actorUid;
+      if (after.status === 'expired') {
+        // Both parties are notified — use a sentinel value that matches no participant
+        actorUid = 'system';
+      } else {
+        // Use before.currentTurnUid — that's who accepted/rejected/withdrew
+        actorUid = before.currentTurnUid || 'system';
+      }
+
+      // Map deal status to notification event type
+      const eventTypeMap = {
+        accepted: 'accepted',
+        rejected: 'rejected',
+        withdrawn: 'withdrawn',
+        expired: 'expired',
+      };
+      const eventType = eventTypeMap[after.status];
+
+      await sendDealNotifications(dealId, eventType, actorUid, after);
+
+      console.log(`onDealStatusChanged: deal ${dealId} transitioned ${before.status} → ${after.status}`);
+      return null;
+    } catch (err) {
+      console.error(`onDealStatusChanged: error for deal ${dealId}:`, err);
+      return null;
+    }
+  }
+);
+
+/**
+ * Renew Offer
+ *
+ * Allows the original offer sender to reactivate an expired offer with a new
+ * expiry deadline. Only the submitter can renew; only expired offers can be renewed.
+ *
+ * @param {Object} data - { dealId, offerId, newExpiryHours }
+ * @returns {Promise<{ success: boolean }>}
+ */
+exports.renewOffer = onCall(async (request) => {
+  const { dealId, offerId, newExpiryHours } = request.data;
+  const uid = request.auth?.uid;
+
+  if (!uid) throw new HttpsError('unauthenticated', 'Must be logged in.');
+  if (!dealId || !offerId) {
+    throw new HttpsError('invalid-argument', 'dealId and offerId are required.');
+  }
+
+  const expiryHours = newExpiryHours || EXPIRY_DEFAULT_HOURS;
+
+  let deal;
+
+  await db.runTransaction(async (transaction) => {
+    const dealRef = db.collection('deals').doc(dealId);
+    const offerRef = dealRef.collection('offers').doc(offerId);
+
+    const [dealSnap, offerSnap] = await Promise.all([
+      transaction.get(dealRef),
+      transaction.get(offerRef),
+    ]);
+
+    if (!dealSnap.exists) throw new HttpsError('not-found', 'Deal not found.');
+    if (!offerSnap.exists) throw new HttpsError('not-found', 'Offer not found.');
+
+    const dealData = dealSnap.data();
+    const offer = offerSnap.data();
+
+    // Guard: only the original sender can renew
+    if (offer.submittedBy !== uid) {
+      throw new HttpsError('permission-denied', 'Only the offer sender can renew an expired offer.');
+    }
+    // Guard: can only renew expired offers
+    if (offer.status !== OFFER_STATUS.EXPIRED) {
+      throw new HttpsError(
+        'failed-precondition',
+        `Offer is ${offer.status}. Only expired offers can be renewed.`
+      );
+    }
+
+    const now = Timestamp.now();
+    const newExpiresAt = Timestamp.fromDate(
+      new Date(Date.now() + expiryHours * 60 * 60 * 1000)
+    );
+
+    // Flip the turn to the OTHER party (the receiver must now respond)
+    const nextTurnUid = uid === dealData.buyerId ? dealData.sellerId : dealData.buyerId;
+
+    transaction.update(offerRef, {
+      status: OFFER_STATUS.OPEN,
+      expiresAt: newExpiresAt,
+      remindersSet: [],
+      updatedAt: now,
+    });
+    transaction.update(dealRef, {
+      status: DEAL_STATUS.NEGOTIATING,
+      currentTurnUid: nextTurnUid,
+      updatedAt: now,
+    });
+
+    deal = dealData;
+  });
+
+  // Post-transaction: notify the other party about renewal (non-blocking)
+  if (deal) {
+    await sendDealNotifications(dealId, 'renewed', uid, deal);
+  }
+
+  console.log(`renewOffer: offer ${offerId} renewed for deal ${dealId} by ${uid}`);
+  return { success: true };
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Scheduled Functions
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -1500,6 +1931,237 @@ exports.updateFairStatuses = onSchedule(
       }
     } catch (error) {
       console.error('❌ Error updating fair statuses:', error);
+      throw error;
+    }
+  }
+);
+
+/**
+ * checkExpiredOffers
+ *
+ * Runs every 30 minutes. Queries all open offers past their expiresAt deadline
+ * and transitions them (and their parent deal) to 'expired' status via batched write.
+ *
+ * The composite index on collectionGroup('offers') for status + expiresAt was
+ * added in Plan 01's firestore.indexes.json.
+ */
+exports.checkExpiredOffers = onSchedule(
+  {
+    schedule: 'every 30 minutes',
+    timeZone: 'UTC',
+    retryCount: 3,
+  },
+  async () => {
+    console.log('checkExpiredOffers: running...');
+
+    try {
+      const now = Timestamp.now();
+
+      // Query all open offers that have passed their expiry deadline
+      const expiredOffersSnap = await db
+        .collectionGroup('offers')
+        .where('status', '==', OFFER_STATUS.OPEN)
+        .where('expiresAt', '<=', now)
+        .get();
+
+      if (expiredOffersSnap.empty) {
+        console.log('checkExpiredOffers: no expired offers found.');
+        return;
+      }
+
+      const batch = db.batch();
+      const expiredDealIds = new Set();
+
+      expiredOffersSnap.forEach((offerDoc) => {
+        const dealId = offerDoc.ref.parent.parent.id;
+
+        // Update offer status to expired
+        batch.update(offerDoc.ref, {
+          status: OFFER_STATUS.EXPIRED,
+          updatedAt: now,
+        });
+
+        // Track unique deal IDs that need updating (avoid double-writing)
+        expiredDealIds.add(dealId);
+      });
+
+      // Update each deal's status to expired
+      for (const dealId of expiredDealIds) {
+        const dealRef = db.collection('deals').doc(dealId);
+        batch.update(dealRef, {
+          status: DEAL_STATUS.EXPIRED,
+          updatedAt: now,
+        });
+      }
+
+      await batch.commit();
+
+      console.log(
+        `checkExpiredOffers: expired ${expiredOffersSnap.size} offer(s) across ${expiredDealIds.size} deal(s).`
+      );
+    } catch (error) {
+      console.error('checkExpiredOffers: error:', error);
+      throw error;
+    }
+  }
+);
+
+/**
+ * sendExpiryReminders
+ *
+ * Runs every 30 minutes alongside checkExpiredOffers logic.
+ * Sends reminder notifications at 24h, 4h, and 1h before offer expiry.
+ * Uses remindersSet array on offer doc to prevent duplicate reminders.
+ * Notifies both the receiver (currentTurnUid) and the sender as an FYI.
+ */
+exports.sendExpiryReminders = onSchedule(
+  {
+    schedule: 'every 30 minutes',
+    timeZone: 'UTC',
+    retryCount: 3,
+  },
+  async () => {
+    console.log('sendExpiryReminders: running...');
+
+    try {
+      const now = Date.now();
+
+      // Define 3 reminder windows with 30-min buffer (matching schedule interval)
+      const reminderWindows = [
+        {
+          level: '24h',
+          minMs: 23 * 60 * 60 * 1000,       // now + 23h
+          maxMs: 24.5 * 60 * 60 * 1000,     // now + 24h30m
+          label: '24 hours',
+        },
+        {
+          level: '4h',
+          minMs: 3.5 * 60 * 60 * 1000,      // now + 3h30m
+          maxMs: 4.5 * 60 * 60 * 1000,      // now + 4h30m
+          label: '4 hours',
+        },
+        {
+          level: '1h',
+          minMs: 30 * 60 * 1000,             // now + 30m
+          maxMs: 1.5 * 60 * 60 * 1000,      // now + 1h30m
+          label: '1 hour',
+        },
+      ];
+
+      for (const window of reminderWindows) {
+        const minExpiry = Timestamp.fromMillis(now + window.minMs);
+        const maxExpiry = Timestamp.fromMillis(now + window.maxMs);
+
+        const offersSnap = await db
+          .collectionGroup('offers')
+          .where('status', '==', OFFER_STATUS.OPEN)
+          .where('expiresAt', '>=', minExpiry)
+          .where('expiresAt', '<=', maxExpiry)
+          .get();
+
+        if (offersSnap.empty) continue;
+
+        for (const offerDoc of offersSnap.docs) {
+          const offer = offerDoc.data();
+
+          // Skip if this reminder level was already sent
+          const remindersSet = offer.remindersSet || [];
+          if (remindersSet.includes(window.level)) continue;
+
+          const dealId = offerDoc.ref.parent.parent.id;
+          const dealDoc = await db.collection('deals').doc(dealId).get();
+          if (!dealDoc.exists) continue;
+          const deal = dealDoc.data();
+
+          // Mark reminder as sent (arrayUnion prevents race conditions)
+          await offerDoc.ref.update({
+            remindersSet: FieldValue.arrayUnion(window.level),
+          });
+
+          const productName = deal.productName || 'this product';
+
+          // Notify the receiver (the party whose turn it is to respond)
+          const receiverUid = deal.currentTurnUid;
+          // Also notify the sender (FYI — opposite of currentTurnUid)
+          const senderUid = receiverUid === deal.buyerId ? deal.sellerId : deal.buyerId;
+
+          const notifyUids = [receiverUid, senderUid].filter(Boolean);
+
+          for (const notifyUid of notifyUids) {
+            const isReceiver = notifyUid === receiverUid;
+            const titleText = isReceiver
+              ? `Action needed: Offer expiring in ${window.label} on ${productName}`
+              : `FYI: Your offer on ${productName} expires in ${window.label}`;
+            const bodyText = isReceiver
+              ? `The current offer on ${productName} expires in approximately ${window.label}. Take action before it expires.`
+              : `Your offer on ${productName} expires in approximately ${window.label}.`;
+
+            // In-app notification
+            try {
+              await db
+                .collection('users')
+                .doc(notifyUid)
+                .collection('notifications')
+                .add({
+                  type: 'deal',
+                  eventType: 'expiry_reminder',
+                  title: titleText,
+                  body: bodyText,
+                  dealId,
+                  dealProductName: productName,
+                  reminderLevel: window.level,
+                  isRead: false,
+                  createdAt: Timestamp.now(),
+                  link: `/deals/${dealId}`,
+                });
+            } catch (err) {
+              console.error(`sendExpiryReminders: in-app notification failed for ${notifyUid}:`, err);
+            }
+
+            // Email notification
+            try {
+              const userDoc = await db.collection('users').doc(notifyUid).get();
+              if (userDoc.exists) {
+                const userData = userDoc.data();
+                if (userData.email) {
+                  const subject = isReceiver
+                    ? `Offer expiring in ${window.label} on ${productName}`
+                    : `Your offer on ${productName} expires in ${window.label}`;
+                  const dealUrl = `${APP_URL}/deals/${dealId}`;
+                  const htmlBody = `
+                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; background: #f9f9f9;">
+                      <div style="background: #0F1B2B; padding: 24px; border-radius: 8px 8px 0 0;">
+                        <h1 style="color: #FFD700; margin: 0; font-size: 20px;">CoreTradeGlobal</h1>
+                      </div>
+                      <div style="background: #ffffff; padding: 32px; border-radius: 0 0 8px 8px; border: 1px solid #e0e0e0;">
+                        <p style="color: #333333; font-size: 16px; line-height: 1.6;">${bodyText}</p>
+                        <div style="margin-top: 32px;">
+                          <a href="${dealUrl}"
+                             style="display: inline-block; background: #0F1B2B; color: #FFD700; text-decoration: none;
+                                    padding: 12px 24px; border-radius: 6px; font-weight: bold; font-size: 15px;">
+                            View Deal
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  `;
+                  await sendDealEmail(userData.email, subject, htmlBody);
+                }
+              }
+            } catch (err) {
+              console.error(`sendExpiryReminders: email failed for ${notifyUid}:`, err);
+            }
+          }
+
+          console.log(
+            `sendExpiryReminders: sent ${window.level} reminder for offer ${offerDoc.id} on deal ${dealId}`
+          );
+        }
+      }
+
+      console.log('sendExpiryReminders: complete.');
+    } catch (error) {
+      console.error('sendExpiryReminders: error:', error);
       throw error;
     }
   }
