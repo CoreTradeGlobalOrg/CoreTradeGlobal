@@ -5,36 +5,38 @@
 See: .planning/PROJECT.md (updated 2026-02-20)
 
 **Core value:** A member can complete an entire international trade deal -- negotiate, get legal advice, insure cargo, arrange shipping, and track delivery -- without leaving the platform.
-**Current focus:** Phase 1: Role System and Infrastructure
+**Current focus:** Phase 2: Deal Creation and Negotiation (S1)
 
 ## Current Position
 
-Phase: 1 of 7 (Role System and Infrastructure)
-Plan: 4 of 6 in current phase
+Phase: 2 of 7 (Deal Creation and Negotiation S1)
+Plan: 2 of 4 in current phase
 Status: In progress
-Last activity: 2026-02-20 -- Completed 01-02 (Admin Invite Flow and Onboarding Wizard)
+Last activity: 2026-02-22 -- Completed 02-01 (Deal Data Foundation)
 
-Progress: [██░░░░░░░░] 10%
+Progress: [███░░░░░░░] 15%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 3
+- Total plans completed: 4
 - Average duration: 5 minutes
-- Total execution time: 0.25 hours
+- Total execution time: 0.30 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-role-system-and-infrastructure | 3 | 16 min | 5 min |
+| 02-deal-creation-and-negotiation-s1 | 1 | 5 min | 5 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01, 01-03, 01-02
-- Trend: Baseline established
+- Last 5 plans: 01-01, 01-03, 01-02, 02-01
+- Trend: Consistent 5 min per plan
 
 *Updated after each plan completion*
 | Phase 01 P04 | 8 | 2 tasks | 4 files |
+| Phase 02 P01 | 5 | 2 tasks | 12 files |
 
 ## Accumulated Context
 
@@ -62,6 +64,11 @@ Recent decisions affecting current work:
 - [Phase 01]: cors:true removed from all onCall definitions -- it is onRequest-only and misleading on onCall
 - [Phase 01]: Admin navbar override: ROLES.ADMIN check in visibleLinks filter so admin sees all role-restricted nav links
 - [Phase 01]: Session body sends only idToken (not role) -- role read from verified JWT claims server-side
+- [02-01]: Two-query merge for My Deals list (buyerId + sellerId queries merged client-side) -- Firestore cannot OR across different field names
+- [02-01]: DEAL_STATUS/OFFER_STATUS constants duplicated in functions/index.js -- Cloud Functions are CJS and cannot import ESM from Next.js app
+- [02-01]: System message in createDeal uses a separate runTransaction after deal transaction -- side effects must not be inside the deal transaction (prevents duplicate sends on retry)
+- [02-01]: isDealParticipant() is local to the deals match block -- reads resource.data which is document-context-specific
+- [02-01]: withdrawOffer sets deal.status to withdrawn -- sender can withdraw at any time before receiver responds; terminates the deal
 
 ### Pending Todos
 
@@ -76,6 +83,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-20
-Stopped at: Completed 01-02-PLAN.md (Admin Invite Flow and Onboarding Wizard)
+Last session: 2026-02-22
+Stopped at: Completed 02-01-PLAN.md (Deal Data Foundation - Constants, Entities, Repositories, Cloud Functions, Rules, Indexes)
 Resume file: None

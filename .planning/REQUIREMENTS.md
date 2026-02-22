@@ -18,13 +18,13 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Negotiation (S1)
 
-- [ ] **NEGO-01**: Buyer and seller can exchange offers and counter-offers on a deal
+- [x] **NEGO-01**: Buyer and seller can exchange offers and counter-offers on a deal
 - [ ] **NEGO-02**: Offers include Incoterms 2020 selection (EXW, FOB, CIF, CFR, DAP, DDP, FCA, CPT)
 - [ ] **NEGO-03**: Offer history timeline shows all rounds with timestamps, amounts, and terms
 - [ ] **NEGO-04**: Real-time updates via Firestore listeners — no page refresh needed
 - [ ] **NEGO-05**: In-app and email notification when counter-offer received
-- [ ] **NEGO-06**: Offer state machine enforces valid transitions (open → countered → accepted/rejected/expired)
-- [ ] **NEGO-07**: All deal state transitions use atomic Firestore transactions
+- [x] **NEGO-06**: Offer state machine enforces valid transitions (open → countered → accepted/rejected/expired)
+- [x] **NEGO-07**: All deal state transitions use atomic Firestore transactions
 
 ### Agreement (S2)
 
@@ -114,18 +114,18 @@ Which phases cover which requirements. Updated during roadmap creation.
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | ROLE-01 | Phase 1 | Complete |
-| ROLE-02 | Phase 1 | Pending |
+| ROLE-02 | Phase 1 | Complete |
 | ROLE-03 | Phase 1 | Complete |
-| ROLE-04 | Phase 1 | Pending |
+| ROLE-04 | Phase 1 | Complete |
 | ROLE-05 | Phase 1 | Complete |
 | ROLE-06 | Phase 1 | Complete |
-| NEGO-01 | Phase 2 | Pending |
+| NEGO-01 | Phase 2 | Complete |
 | NEGO-02 | Phase 2 | Pending |
 | NEGO-03 | Phase 2 | Pending |
 | NEGO-04 | Phase 2 | Pending |
 | NEGO-05 | Phase 2 | Pending |
-| NEGO-06 | Phase 2 | Pending |
-| NEGO-07 | Phase 2 | Pending |
+| NEGO-06 | Phase 2 | Complete |
+| NEGO-07 | Phase 2 | Complete |
 | AGMT-01 | Phase 3 | Pending |
 | AGMT-02 | Phase 3 | Pending |
 | AGMT-03 | Phase 3 | Pending |
