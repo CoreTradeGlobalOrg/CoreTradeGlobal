@@ -8,7 +8,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { ArrowLeft, Mail, FileText, Package, MapPin, DollarSign } from 'lucide-react';
+import { ArrowLeft, Mail, FileText, Package, MapPin, DollarSign, Handshake } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/presentation/contexts/AuthContext';
 import { useMessages } from '@/presentation/contexts/MessagesContext';
@@ -179,6 +179,17 @@ export default function ConversationPage() {
                   )}
                 </div>
               </>
+            )}
+
+            {/* Initiate Deal button — shown only for product-based direct conversations */}
+            {conversation.metadata?.productId && conversation.type === 'direct' && (
+              <Link
+                href={`/deals/new?conversationId=${conversationId}&productId=${conversation.metadata.productId}`}
+                className="ml-auto flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-xl border border-[rgba(255,215,0,0.4)] text-[#FFD700] text-sm font-semibold hover:bg-[rgba(255,215,0,0.08)] hover:border-[#FFD700] transition-all duration-200"
+              >
+                <Handshake className="w-4 h-4" />
+                <span className="hidden sm:inline">Initiate Deal</span>
+              </Link>
             )}
           </div>
 
