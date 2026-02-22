@@ -130,7 +130,7 @@ export function Navbar() {
    * - roles: [...]  → only visible when user.role is in the list
    */
   const visibleLinks = NAV_LINKS.filter(
-    (link) => link.roles === null || (user && link.roles.includes(user.role))
+    (link) => link.roles === null || (user && (user.role === ROLES.ADMIN || link.roles.includes(user.role)))
   );
 
   return (

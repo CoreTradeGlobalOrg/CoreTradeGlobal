@@ -85,7 +85,6 @@ async function isUserAdmin(userId) {
  * @returns {Promise<{ success: boolean, uid: string }>}
  */
 exports.inviteUser = onCall(
-  { cors: true },
   async (request) => {
     const { email, role, name, company } = request.data;
     const auth = request.auth;
@@ -198,7 +197,6 @@ exports.inviteUser = onCall(
  * @returns {Promise<{ success: boolean, uid: string }>}
  */
 exports.resendInvite = onCall(
-  { cors: true },
   async (request) => {
     const { email, role, name, company } = request.data;
     const auth = request.auth;
@@ -280,7 +278,6 @@ exports.resendInvite = onCall(
  * @returns {Promise<{ success: boolean }>}
  */
 exports.setUserRole = onCall(
-  { cors: true },
   async (request) => {
     const { userId, role } = request.data;
     const auth = request.auth;
@@ -346,7 +343,6 @@ exports.setUserRole = onCall(
  * @returns {Promise<{ migrated: number, skipped: number }>}
  */
 exports.migrateExistingUsers = onCall(
-  { cors: true },
   async (request) => {
     const auth = request.auth;
 
@@ -417,7 +413,6 @@ exports.migrateExistingUsers = onCall(
  * @returns {Promise<Object>} - Success message
  */
 exports.softDeleteUser = onCall(
-  { cors: true },
   async (request) => {
     const { userId } = request.data;
     const auth = request.auth;
@@ -477,7 +472,6 @@ exports.softDeleteUser = onCall(
  * @returns {Promise<Object>} - Success message
  */
 exports.recoverAccount = onCall(
-  { cors: true },
   async (request) => {
     const { userId } = request.data;
     const auth = request.auth;
@@ -550,7 +544,6 @@ exports.recoverAccount = onCall(
  * @returns {Promise<Object>} - Success message
  */
 exports.banUser = onCall(
-  { cors: true },
   async (request) => {
     const { userId, reason } = request.data;
     const auth = request.auth;
@@ -623,7 +616,6 @@ exports.banUser = onCall(
  * @returns {Promise<Object>} - Success message
  */
 exports.unbanUser = onCall(
-  { cors: true },
   async (request) => {
     const { userId } = request.data;
     const auth = request.auth;
@@ -690,9 +682,6 @@ exports.unbanUser = onCall(
  * @returns {Promise<Object>} - Success message
  */
 exports.deleteUser = onCall(
-  {
-    cors: true,
-  },
   async (request) => {
     const { userId } = request.data;
     const auth = request.auth;
