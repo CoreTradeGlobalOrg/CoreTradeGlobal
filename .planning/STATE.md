@@ -38,6 +38,7 @@ Progress: [████░░░░░░] 20%
 | Phase 01 P04 | 8 | 2 tasks | 4 files |
 | Phase 02 P01 | 5 | 2 tasks | 12 files |
 | Phase 02 P02 | 20 | 2 tasks | 12 files |
+| Phase 02 P03 | 10 | 2 tasks | 11 files |
 
 ## Accumulated Context
 
@@ -72,6 +73,8 @@ Recent decisions affecting current work:
 - [02-01]: withdrawOffer sets deal.status to withdrawn -- sender can withdraw at any time before receiver responds; terminates the deal
 - [Phase 02]: NamedPlaceInput uses /api/locode/search Next.js API route — @geoapify/un-locode uses Node.js fs and cannot run client-side
 - [Phase 02]: Suspense boundary required around useSearchParams in /deals/new — Next.js app router requires this for static rendering compatibility
+- [Phase 02]: Web Audio API used for offer notification chime — zero deployment friction vs external .mp3 file
+- [Phase 02]: useDealPresence uses Firestore heartbeat (30s interval) + 60s staleness window — handles browser crash edge case without RTDB
 
 ### Pending Todos
 
