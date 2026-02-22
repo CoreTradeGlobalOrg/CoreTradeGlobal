@@ -80,14 +80,18 @@ export function AuthProvider({ children }) {
             // SECURITY: Send Firebase ID token for server-side verification
             try {
               const idToken = await firebaseUser.getIdToken();
-              await fetch('/api/auth/session', {
+              const sessionResponse = await fetch('/api/auth/session', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  idToken,
-                  role: userData.role, // Role will be validated server-side
-                }),
+                body: JSON.stringify({ idToken }),
               });
+              if (!sessionResponse.ok) {
+                console.warn(
+                  `Session cookie not set (status ${sessionResponse.status}). ` +
+                  'Role-based route protection may not work. ' +
+                  'Check FIREBASE_SERVICE_ACCOUNT_KEY in .env.local.'
+                );
+              }
             } catch (cookieError) {
               console.error('Failed to set session cookie:', cookieError);
             }
