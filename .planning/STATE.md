@@ -34,6 +34,7 @@ Progress: [██░░░░░░░░] 10%
 - Trend: Baseline established
 
 *Updated after each plan completion*
+| Phase 01 P04 | 8 | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -57,6 +58,10 @@ Recent decisions affecting current work:
 - [01-02]: UsersTable uses tab pattern (Users/Invites) -- cleaner UX than stacked sections at scale
 - [01-02]: handleToggleAdmin replaced with setUserRole CF call -- claims updated atomically with Firestore
 - [01-02]: Force getIdToken(true) twice in onboarding -- after sign-in and after completion for fresh claims
+- [Phase 01]: connectFunctionsEmulator enabled in dev mode -- httpsCallable routes to local emulator, fixing CORS errors
+- [Phase 01]: cors:true removed from all onCall definitions -- it is onRequest-only and misleading on onCall
+- [Phase 01]: Admin navbar override: ROLES.ADMIN check in visibleLinks filter so admin sees all role-restricted nav links
+- [Phase 01]: Session body sends only idToken (not role) -- role read from verified JWT claims server-side
 
 ### Pending Todos
 
