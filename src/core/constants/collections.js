@@ -27,6 +27,9 @@ export const COLLECTIONS = {
   CONVERSATIONS: 'conversations', // Message conversations
   MESSAGES: 'messages',          // Messages
 
+  // Deals & Negotiation
+  DEALS: 'deals',                // Deal negotiations
+
   // Newsletter (existing)
   NEWSLETTER: 'newsletter',      // Newsletter subscribers
 };
@@ -40,6 +43,7 @@ export const COLLECTIONS = {
 export const SUBCOLLECTIONS = {
   NOTIFICATIONS: 'notifications',
   REVIEWS: 'reviews',
+  OFFERS: 'offers',              // Offers subcollection under deals
 };
 
 export default COLLECTIONS;
