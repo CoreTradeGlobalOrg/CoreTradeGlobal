@@ -229,6 +229,36 @@ service cloud.firestore {
     }
 
     // ─────────────────────────────────────────────────────────────────────────
+    // Deals collection (private — only deal participants)
+    //
+    // All writes (create, update, delete) go through Cloud Functions using the
+    // Admin SDK, which bypasses these rules. Rules only govern client reads.
+    // ─────────────────────────────────────────────────────────────────────────
+
+    match /deals/{dealId} {
+      // isDealParticipant is defined locally (not top-level) because it reads
+      // resource.data, which is document-context-specific.
+      function isDealParticipant() {
+        return request.auth.uid == resource.data.buyerId ||
+               request.auth.uid == resource.data.sellerId;
+      }
+
+      // Participants and admins can read the deal document in real-time
+      allow read: if isAuthenticated() && (isDealParticipant() || isAdmin());
+
+      // All creates/updates/deletes go through Cloud Functions (Admin SDK bypasses rules)
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
+
+      // Offers subcollection — same participant-only read access
+      match /offers/{offerId} {
+        allow read: if isAuthenticated() && isDealParticipant();
+        allow write: if false; // All writes via Cloud Functions
+      }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
     // Newsletter collection (public create)
     // ─────────────────────────────────────────────────────────────────────────
 

@@ -9,6 +9,7 @@ const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { onDocumentCreated } = require('firebase-functions/v2/firestore');
 const { onSchedule } = require('firebase-functions/v2/scheduler');
 const admin = require('firebase-admin');
+const { Timestamp, FieldValue } = require('firebase-admin/firestore');
 
 // Initialize Firebase Admin SDK
 admin.initializeApp();
@@ -129,8 +130,8 @@ exports.inviteUser = onCall(
     }
 
     const uid = newUser.uid;
-    const now = admin.firestore.Timestamp.now();
-    const expiresAt = admin.firestore.Timestamp.fromDate(
+    const now = Timestamp.now();
+    const expiresAt = Timestamp.fromDate(
       new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days
     );
 
@@ -153,10 +154,15 @@ exports.inviteUser = onCall(
       });
 
       // Generate sign-in link for onboarding
-      const signInLink = await admin.auth().generateSignInWithEmailLink(email, {
+      // generateSignInWithEmailLink returns a link through __/auth/action which
+      // doesn't handle mode=signIn redirects. Reconstruct as a direct app link
+      // so the onboarding page can call signInWithEmailLink directly.
+      const rawLink = await admin.auth().generateSignInWithEmailLink(email, {
         url: `${APP_URL}/onboarding?uid=${uid}`,
         handleCodeInApp: true,
       });
+      const parsedLink = new URL(rawLink);
+      const signInLink = `${APP_URL}/onboarding?uid=${uid}&mode=${parsedLink.searchParams.get('mode')}&oobCode=${parsedLink.searchParams.get('oobCode')}&apiKey=${parsedLink.searchParams.get('apiKey')}&lang=${parsedLink.searchParams.get('lang') || 'en'}`;
 
       // Create invite document with TTL (expireAt = TTL field for Firebase Console TTL policy)
       await db.collection('invites').doc(uid).set({
@@ -234,8 +240,8 @@ exports.resendInvite = onCall(
       }
 
       const uid = userRecord.uid;
-      const now = admin.firestore.Timestamp.now();
-      const expiresAt = admin.firestore.Timestamp.fromDate(
+      const now = Timestamp.now();
+      const expiresAt = Timestamp.fromDate(
         new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days
       );
 
@@ -316,7 +322,7 @@ exports.setUserRole = onCall(
       // Update Firestore for display/query purposes
       await db.collection('users').doc(userId).update({
         role,
-        updatedAt: admin.firestore.Timestamp.now(),
+        updatedAt: Timestamp.now(),
       });
 
       console.log(`Set role ${role} for user ${userId} (by admin ${auth.uid})`);
@@ -435,8 +441,8 @@ exports.softDeleteUser = onCall(
       }
 
       // Calculate recovery deadline (15 days from now)
-      const now = admin.firestore.Timestamp.now();
-      const recoveryDeadline = admin.firestore.Timestamp.fromDate(
+      const now = Timestamp.now();
+      const recoveryDeadline = Timestamp.fromDate(
         new Date(Date.now() + 15 * 24 * 60 * 60 * 1000)
       );
 
@@ -515,10 +521,10 @@ exports.recoverAccount = onCall(
       // Recover the account
       await userRef.update({
         isDeleted: false,
-        deletedAt: admin.firestore.FieldValue.delete(),
-        deletionType: admin.firestore.FieldValue.delete(),
-        canRecoverUntil: admin.firestore.FieldValue.delete(),
-        updatedAt: admin.firestore.Timestamp.now(),
+        deletedAt: FieldValue.delete(),
+        deletionType: FieldValue.delete(),
+        canRecoverUntil: FieldValue.delete(),
+        updatedAt: Timestamp.now(),
       });
 
       console.log(`✅ User ${userId} recovered their account`);
@@ -578,7 +584,7 @@ exports.banUser = onCall(
         throw new HttpsError('permission-denied', 'Cannot ban another administrator.');
       }
 
-      const now = admin.firestore.Timestamp.now();
+      const now = Timestamp.now();
 
       // Update user document with ban flags
       await userRef.update({
@@ -589,7 +595,7 @@ exports.banUser = onCall(
         bannedBy: auth.uid,
         updatedAt: now,
         // Remove recovery fields if they exist from previous self-delete
-        canRecoverUntil: admin.firestore.FieldValue.delete(),
+        canRecoverUntil: FieldValue.delete(),
       });
 
       console.log(`🚫 User ${userId} banned by admin ${auth.uid}. Reason: ${reason || 'Not specified'}`);
@@ -647,12 +653,12 @@ exports.unbanUser = onCall(
       // Restore the account
       await userRef.update({
         isDeleted: false,
-        deletedAt: admin.firestore.FieldValue.delete(),
-        deletionType: admin.firestore.FieldValue.delete(),
-        banReason: admin.firestore.FieldValue.delete(),
-        bannedBy: admin.firestore.FieldValue.delete(),
-        canRecoverUntil: admin.firestore.FieldValue.delete(),
-        updatedAt: admin.firestore.Timestamp.now(),
+        deletedAt: FieldValue.delete(),
+        deletionType: FieldValue.delete(),
+        banReason: FieldValue.delete(),
+        bannedBy: FieldValue.delete(),
+        canRecoverUntil: FieldValue.delete(),
+        updatedAt: Timestamp.now(),
       });
 
       console.log(`✅ User ${userId} unbanned by admin ${auth.uid}`);
@@ -874,7 +880,7 @@ exports.sendMessageNotification = onDocumentCreated(
               .get()
               .then(snapshot => {
                 snapshot.forEach(doc => {
-                  doc.ref.update({ fcmToken: admin.firestore.FieldValue.delete() });
+                  doc.ref.update({ fcmToken: FieldValue.delete() });
                 });
               });
           }
@@ -892,6 +898,543 @@ exports.sendMessageNotification = onDocumentCreated(
     }
   }
 );
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Deal Negotiation Constants (mirrored from src/core/constants/dealConstants.js)
+// Cloud Functions are CommonJS — cannot import ESM from the Next.js app.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const DEAL_STATUS = {
+  NEGOTIATING: 'negotiating',
+  ACCEPTED: 'accepted',
+  REJECTED: 'rejected',
+  EXPIRED: 'expired',
+  WITHDRAWN: 'withdrawn',
+};
+
+const OFFER_STATUS = {
+  OPEN: 'open',
+  COUNTERED: 'countered',
+  ACCEPTED: 'accepted',
+  REJECTED: 'rejected',
+  EXPIRED: 'expired',
+  WITHDRAWN: 'withdrawn',
+};
+
+const EXPIRY_DEFAULT_HOURS = 72;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Deal Negotiation Cloud Functions
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Create Deal
+ *
+ * Atomically creates a deal document and its initial offer in a single Firestore
+ * transaction. Determines buyer/seller from product ownership.
+ *
+ * @param {Object} data - { conversationId, productId, initialOffer }
+ *   initialOffer: { price, quantity, unit, currency, conversionRate?, incoterm,
+ *                   namedPlace, deliveryDeadline, paymentTerms, insurancePreference,
+ *                   notes?, expiryHours? }
+ * @returns {Promise<{ success: boolean, dealId: string }>}
+ */
+exports.createDeal = onCall(async (request) => {
+  const { conversationId, productId, initialOffer } = request.data;
+  const uid = request.auth?.uid;
+
+  if (!uid) throw new HttpsError('unauthenticated', 'Must be logged in to create a deal.');
+  if (!conversationId || !productId || !initialOffer) {
+    throw new HttpsError('invalid-argument', 'conversationId, productId, and initialOffer are required.');
+  }
+  if (!initialOffer.price || !initialOffer.quantity || !initialOffer.incoterm) {
+    throw new HttpsError('invalid-argument', 'initialOffer must include price, quantity, and incoterm.');
+  }
+
+  // Fetch product to get seller ID and denormalized data
+  const productDoc = await db.collection('products').doc(productId).get();
+  if (!productDoc.exists) {
+    throw new HttpsError('not-found', 'Product not found.');
+  }
+  const product = productDoc.data();
+  const sellerId = product.userId;
+
+  // Determine buyer/seller:
+  // Product owner is always the seller.
+  // If the initiator IS the seller, fetch the conversation to find the buyer.
+  let buyerId;
+  let actualSellerId = sellerId;
+
+  if (uid === sellerId) {
+    // Seller initiated — find buyer from conversation participants
+    const convDoc = await db.collection('conversations').doc(conversationId).get();
+    if (!convDoc.exists) {
+      throw new HttpsError('not-found', 'Conversation not found.');
+    }
+    const conv = convDoc.data();
+    const participants = conv.participants || [];
+    buyerId = participants.find((p) => p !== sellerId);
+    if (!buyerId) {
+      throw new HttpsError('failed-precondition', 'Could not determine buyer from conversation participants.');
+    }
+  } else {
+    // Buyer initiated
+    buyerId = uid;
+  }
+
+  const now = Timestamp.now();
+  const expiryHours = initialOffer.expiryHours || EXPIRY_DEFAULT_HOURS;
+  const expiresAt = Timestamp.fromDate(
+    new Date(Date.now() + expiryHours * 60 * 60 * 1000)
+  );
+
+  const dealRef = db.collection('deals').doc(); // auto-ID
+  const offerRef = dealRef.collection('offers').doc(); // auto-ID
+
+  const initiatorRole = uid === actualSellerId ? 'seller' : 'buyer';
+
+  // latestOfferSnapshot: denormalized subset of offer terms for the deals list page
+  const latestOfferSnapshot = {
+    price: initialOffer.price,
+    quantity: initialOffer.quantity,
+    unit: initialOffer.unit,
+    currency: initialOffer.currency,
+    incoterm: initialOffer.incoterm,
+    namedPlace: initialOffer.namedPlace,
+    estimatedTotal: initialOffer.price * initialOffer.quantity,
+    expiresAt,
+    submittedBy: uid,
+  };
+
+  await db.runTransaction(async (transaction) => {
+    // Create the deal document
+    transaction.set(dealRef, {
+      buyerId,
+      sellerId: actualSellerId,
+      initiatedBy: uid,
+      productId,
+      productName: product.name || '',
+      productImage: product.images?.[0] || null,
+      productCategory: product.categoryName || null,
+      conversationId,
+      status: DEAL_STATUS.NEGOTIATING,
+      // After submitting, the OTHER party must respond first
+      currentTurnUid: uid === actualSellerId ? buyerId : actualSellerId,
+      round: 1,
+      latestOfferSnapshot,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    // Create the initial offer document
+    const { expiryHours: _expiryHours, ...offerTerms } = initialOffer;
+    transaction.set(offerRef, {
+      round: 1,
+      submittedBy: uid,
+      role: initiatorRole,
+      ...offerTerms,
+      conversionRate: initialOffer.conversionRate || null,
+      notes: initialOffer.notes || null,
+      attachments: [],
+      status: OFFER_STATUS.OPEN,
+      expiresAt,
+      estimatedTotal: initialOffer.price * initialOffer.quantity,
+      createdAt: now,
+      updatedAt: now,
+    });
+  });
+
+  // Post-transaction: send system message to conversation (non-blocking)
+  // Errors here do NOT fail the deal creation
+  try {
+    const dealLink = `/deals/${dealRef.id}`;
+    const systemMessageRef = db
+      .collection('conversations')
+      .doc(conversationId)
+      .collection('messages')
+      .doc();
+
+    await db.runTransaction(async (t) => {
+      const convRef = db.collection('conversations').doc(conversationId);
+      t.set(systemMessageRef, {
+        type: 'system',
+        content: `Deal initiated for ${product.name || 'this product'}. View deal: ${dealLink}`,
+        dealId: dealRef.id,
+        dealLink,
+        senderId: uid,
+        createdAt: now,
+        updatedAt: now,
+      });
+      t.update(convRef, {
+        'lastMessage.content': `Deal initiated for ${product.name || 'this product'}`,
+        'lastMessage.type': 'system',
+        'lastMessage.createdAt': now,
+        updatedAt: now,
+      });
+    });
+  } catch (msgError) {
+    console.error('createDeal: failed to send system message (non-fatal):', msgError);
+  }
+
+  console.log(`Deal created: ${dealRef.id} (buyer: ${buyerId}, seller: ${actualSellerId})`);
+  return { success: true, dealId: dealRef.id };
+});
+
+/**
+ * Submit Counter Offer
+ *
+ * Creates a new offer round in a deal. Enforces turn-based logic and
+ * round number check to prevent stale concurrent writes.
+ *
+ * @param {Object} data - { dealId, offer, expectedRound }
+ *   offer: { price, quantity, unit, currency, conversionRate?, incoterm,
+ *             namedPlace, deliveryDeadline, paymentTerms, insurancePreference,
+ *             notes?, expiryHours? }
+ * @returns {Promise<{ success: boolean, dealId: string }>}
+ */
+exports.submitCounterOffer = onCall(async (request) => {
+  const { dealId, offer, expectedRound } = request.data;
+  const uid = request.auth?.uid;
+
+  if (!uid) throw new HttpsError('unauthenticated', 'Must be logged in.');
+  if (!dealId || !offer) {
+    throw new HttpsError('invalid-argument', 'dealId and offer are required.');
+  }
+  if (expectedRound === undefined || expectedRound === null) {
+    throw new HttpsError('invalid-argument', 'expectedRound is required to prevent stale writes.');
+  }
+
+  await db.runTransaction(async (transaction) => {
+    const dealRef = db.collection('deals').doc(dealId);
+
+    // Find the open offer — query within transaction is not directly supported
+    // so we fetch the deal first, then query the offers subcollection
+    const dealSnap = await transaction.get(dealRef);
+
+    if (!dealSnap.exists) throw new HttpsError('not-found', 'Deal not found.');
+
+    const deal = dealSnap.data();
+
+    // State machine guards
+    if (deal.status !== DEAL_STATUS.NEGOTIATING) {
+      throw new HttpsError(
+        'failed-precondition',
+        `Deal is ${deal.status}. Only active negotiations can receive counter-offers.`
+      );
+    }
+    if (deal.currentTurnUid !== uid) {
+      throw new HttpsError('permission-denied', 'It is not your turn to respond.');
+    }
+    if (deal.round !== expectedRound) {
+      throw new HttpsError(
+        'aborted',
+        'Deal has been updated since you last loaded it. Please refresh.'
+      );
+    }
+
+    // Fetch all open offers to find the current one
+    // (Admin SDK: we can query outside the transaction and then lock via get in transaction)
+    const openOffersSnap = await dealRef
+      .collection('offers')
+      .where('status', '==', OFFER_STATUS.OPEN)
+      .orderBy('round', 'desc')
+      .limit(1)
+      .get();
+
+    if (openOffersSnap.empty) {
+      throw new HttpsError('not-found', 'No open offer found for this deal.');
+    }
+
+    const latestOfferDoc = openOffersSnap.docs[0];
+    const latestOfferRef = latestOfferDoc.ref;
+
+    // Lock the offer doc inside the transaction
+    const lockedOfferSnap = await transaction.get(latestOfferRef);
+    if (!lockedOfferSnap.exists) {
+      throw new HttpsError('not-found', 'Offer document not found.');
+    }
+    if (lockedOfferSnap.data().status !== OFFER_STATUS.OPEN) {
+      throw new HttpsError(
+        'failed-precondition',
+        `Offer is ${lockedOfferSnap.data().status}, cannot counter.`
+      );
+    }
+
+    const now = Timestamp.now();
+    const expiryHours = offer.expiryHours || EXPIRY_DEFAULT_HOURS;
+    const expiresAt = Timestamp.fromDate(
+      new Date(Date.now() + expiryHours * 60 * 60 * 1000)
+    );
+    const newRound = deal.round + 1;
+
+    // Determine the counter-offerer's role
+    const counterOffererRole = uid === deal.sellerId ? 'seller' : 'buyer';
+    // Flip the turn to the other party
+    const nextTurnUid = uid === deal.buyerId ? deal.sellerId : deal.buyerId;
+
+    const latestOfferSnapshot = {
+      price: offer.price,
+      quantity: offer.quantity,
+      unit: offer.unit,
+      currency: offer.currency,
+      incoterm: offer.incoterm,
+      namedPlace: offer.namedPlace,
+      estimatedTotal: offer.price * offer.quantity,
+      expiresAt,
+      submittedBy: uid,
+    };
+
+    // Mark old offer as countered
+    transaction.update(latestOfferRef, {
+      status: OFFER_STATUS.COUNTERED,
+      updatedAt: now,
+    });
+
+    // Create new offer document
+    const newOfferRef = dealRef.collection('offers').doc();
+    const { expiryHours: _expiryHours, ...offerTerms } = offer;
+    transaction.set(newOfferRef, {
+      round: newRound,
+      submittedBy: uid,
+      role: counterOffererRole,
+      ...offerTerms,
+      conversionRate: offer.conversionRate || null,
+      notes: offer.notes || null,
+      attachments: [],
+      status: OFFER_STATUS.OPEN,
+      expiresAt,
+      estimatedTotal: offer.price * offer.quantity,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    // Update deal: advance round, flip turn, update snapshot
+    transaction.update(dealRef, {
+      round: newRound,
+      currentTurnUid: nextTurnUid,
+      latestOfferSnapshot,
+      updatedAt: now,
+    });
+  });
+
+  console.log(`Counter-offer submitted for deal: ${dealId} by user: ${uid}`);
+  return { success: true, dealId };
+});
+
+/**
+ * Accept Offer
+ *
+ * Atomically accepts an open offer, setting both the offer and deal status
+ * to 'accepted'. Phase 3 triggers contract generation via onDocumentUpdated
+ * on deal.status change — this CF only sets the status.
+ *
+ * @param {Object} data - { dealId, offerId }
+ * @returns {Promise<{ success: boolean }>}
+ */
+exports.acceptOffer = onCall(async (request) => {
+  const { dealId, offerId } = request.data;
+  const uid = request.auth?.uid;
+
+  if (!uid) throw new HttpsError('unauthenticated', 'Must be logged in.');
+  if (!dealId || !offerId) {
+    throw new HttpsError('invalid-argument', 'dealId and offerId are required.');
+  }
+
+  await db.runTransaction(async (transaction) => {
+    const dealRef = db.collection('deals').doc(dealId);
+    const offerRef = dealRef.collection('offers').doc(offerId);
+
+    const [dealSnap, offerSnap] = await Promise.all([
+      transaction.get(dealRef),
+      transaction.get(offerRef),
+    ]);
+
+    if (!dealSnap.exists) throw new HttpsError('not-found', 'Deal not found.');
+    if (!offerSnap.exists) throw new HttpsError('not-found', 'Offer not found.');
+
+    const deal = dealSnap.data();
+    const offer = offerSnap.data();
+
+    // State machine guards
+    if (deal.status !== DEAL_STATUS.NEGOTIATING) {
+      throw new HttpsError(
+        'failed-precondition',
+        `Deal is ${deal.status}. Only negotiating deals can be accepted.`
+      );
+    }
+    if (deal.currentTurnUid !== uid) {
+      throw new HttpsError('permission-denied', 'It is not your turn to respond.');
+    }
+    if (offer.status !== OFFER_STATUS.OPEN) {
+      throw new HttpsError(
+        'failed-precondition',
+        `Offer is ${offer.status}, cannot accept.`
+      );
+    }
+
+    // Check offer has not expired
+    const now = Timestamp.now();
+    if (offer.expiresAt && offer.expiresAt.toMillis() <= now.toMillis()) {
+      throw new HttpsError(
+        'failed-precondition',
+        'Offer has expired and cannot be accepted.'
+      );
+    }
+
+    transaction.update(offerRef, {
+      status: OFFER_STATUS.ACCEPTED,
+      updatedAt: now,
+    });
+    transaction.update(dealRef, {
+      status: DEAL_STATUS.ACCEPTED,
+      updatedAt: now,
+    });
+  });
+
+  console.log(`Offer ${offerId} accepted for deal: ${dealId} by user: ${uid}`);
+  return { success: true };
+});
+
+/**
+ * Reject Offer
+ *
+ * Atomically rejects an open offer, setting both the offer and deal status
+ * to 'rejected'. Same guard structure as acceptOffer.
+ *
+ * @param {Object} data - { dealId, offerId }
+ * @returns {Promise<{ success: boolean }>}
+ */
+exports.rejectOffer = onCall(async (request) => {
+  const { dealId, offerId } = request.data;
+  const uid = request.auth?.uid;
+
+  if (!uid) throw new HttpsError('unauthenticated', 'Must be logged in.');
+  if (!dealId || !offerId) {
+    throw new HttpsError('invalid-argument', 'dealId and offerId are required.');
+  }
+
+  await db.runTransaction(async (transaction) => {
+    const dealRef = db.collection('deals').doc(dealId);
+    const offerRef = dealRef.collection('offers').doc(offerId);
+
+    const [dealSnap, offerSnap] = await Promise.all([
+      transaction.get(dealRef),
+      transaction.get(offerRef),
+    ]);
+
+    if (!dealSnap.exists) throw new HttpsError('not-found', 'Deal not found.');
+    if (!offerSnap.exists) throw new HttpsError('not-found', 'Offer not found.');
+
+    const deal = dealSnap.data();
+    const offer = offerSnap.data();
+
+    // State machine guards
+    if (deal.status !== DEAL_STATUS.NEGOTIATING) {
+      throw new HttpsError(
+        'failed-precondition',
+        `Deal is ${deal.status}. Only negotiating deals can be rejected.`
+      );
+    }
+    if (deal.currentTurnUid !== uid) {
+      throw new HttpsError('permission-denied', 'It is not your turn to respond.');
+    }
+    if (offer.status !== OFFER_STATUS.OPEN) {
+      throw new HttpsError(
+        'failed-precondition',
+        `Offer is ${offer.status}, cannot reject.`
+      );
+    }
+
+    const now = Timestamp.now();
+
+    transaction.update(offerRef, {
+      status: OFFER_STATUS.REJECTED,
+      updatedAt: now,
+    });
+    transaction.update(dealRef, {
+      status: DEAL_STATUS.REJECTED,
+      updatedAt: now,
+    });
+  });
+
+  console.log(`Offer ${offerId} rejected for deal: ${dealId} by user: ${uid}`);
+  return { success: true };
+});
+
+/**
+ * Withdraw Offer
+ *
+ * Allows the offer submitter to withdraw their open offer before the other
+ * party responds. Only the sender can withdraw; deal is also marked withdrawn.
+ *
+ * @param {Object} data - { dealId, offerId }
+ * @returns {Promise<{ success: boolean }>}
+ */
+exports.withdrawOffer = onCall(async (request) => {
+  const { dealId, offerId } = request.data;
+  const uid = request.auth?.uid;
+
+  if (!uid) throw new HttpsError('unauthenticated', 'Must be logged in.');
+  if (!dealId || !offerId) {
+    throw new HttpsError('invalid-argument', 'dealId and offerId are required.');
+  }
+
+  await db.runTransaction(async (transaction) => {
+    const dealRef = db.collection('deals').doc(dealId);
+    const offerRef = dealRef.collection('offers').doc(offerId);
+
+    const [dealSnap, offerSnap] = await Promise.all([
+      transaction.get(dealRef),
+      transaction.get(offerRef),
+    ]);
+
+    if (!dealSnap.exists) throw new HttpsError('not-found', 'Deal not found.');
+    if (!offerSnap.exists) throw new HttpsError('not-found', 'Offer not found.');
+
+    const deal = dealSnap.data();
+    const offer = offerSnap.data();
+
+    // Only the offer submitter can withdraw
+    if (offer.submittedBy !== uid) {
+      throw new HttpsError(
+        'permission-denied',
+        'Only the offer submitter can withdraw this offer.'
+      );
+    }
+    // Can only withdraw open offers
+    if (offer.status !== OFFER_STATUS.OPEN) {
+      throw new HttpsError(
+        'failed-precondition',
+        `Offer is ${offer.status}, cannot withdraw.`
+      );
+    }
+    // Deal must still be negotiating
+    if (deal.status !== DEAL_STATUS.NEGOTIATING) {
+      throw new HttpsError(
+        'failed-precondition',
+        `Deal is ${deal.status}. Cannot withdraw from a ${deal.status} deal.`
+      );
+    }
+
+    const now = Timestamp.now();
+
+    transaction.update(offerRef, {
+      status: OFFER_STATUS.WITHDRAWN,
+      updatedAt: now,
+    });
+    transaction.update(dealRef, {
+      status: DEAL_STATUS.WITHDRAWN,
+      updatedAt: now,
+    });
+  });
+
+  console.log(`Offer ${offerId} withdrawn for deal: ${dealId} by user: ${uid}`);
+  return { success: true };
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Scheduled Functions
+// ─────────────────────────────────────────────────────────────────────────────
 
 /**
  * Auto-Update Fair Statuses
@@ -943,7 +1486,7 @@ exports.updateFairStatuses = onSchedule(
           console.log(`📝 Fair "${data.name || doc.id}": ${data.status} → ${correctStatus}`);
           batch.update(doc.ref, {
             status: correctStatus,
-            updatedAt: admin.firestore.Timestamp.now(),
+            updatedAt: Timestamp.now(),
           });
           updatedCount++;
         }
