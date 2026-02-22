@@ -28,6 +28,7 @@ import { ROLES } from '@/core/constants/roles';
 const NAV_LINKS = [
   { label: 'Products', href: '/products', roles: null },
   { label: 'RFQs', href: '/requests', roles: [ROLES.MEMBER, ROLES.ADMIN] },
+  { label: 'My Deals', href: '/deals', roles: [ROLES.MEMBER, ROLES.ADMIN] },
   { label: 'Categories', href: '/categories', roles: null },
   { label: 'Fairs', href: '/fairs', roles: null },
   { label: 'News', href: '/news', roles: null },
