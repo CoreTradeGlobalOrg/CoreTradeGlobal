@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-20)
 ## Current Position
 
 Phase: 2 of 7 (Deal Creation and Negotiation S1)
-Plan: 2 of 4 in current phase
+Plan: 3 of 4 in current phase
 Status: In progress
-Last activity: 2026-02-22 -- Completed 02-01 (Deal Data Foundation)
+Last activity: 2026-02-22 -- Completed 02-02 (Deal Creation UI + My Deals List)
 
-Progress: [███░░░░░░░] 15%
+Progress: [████░░░░░░] 20%
 
 ## Performance Metrics
 
@@ -28,15 +28,16 @@ Progress: [███░░░░░░░] 15%
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-role-system-and-infrastructure | 3 | 16 min | 5 min |
-| 02-deal-creation-and-negotiation-s1 | 1 | 5 min | 5 min |
+| 02-deal-creation-and-negotiation-s1 | 2 | 25 min | 13 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01, 01-03, 01-02, 02-01
+- Last 5 plans: 01-01, 01-03, 01-02, 02-01, 02-02
 - Trend: Consistent 5 min per plan
 
 *Updated after each plan completion*
 | Phase 01 P04 | 8 | 2 tasks | 4 files |
 | Phase 02 P01 | 5 | 2 tasks | 12 files |
+| Phase 02 P02 | 20 | 2 tasks | 12 files |
 
 ## Accumulated Context
 
@@ -69,6 +70,8 @@ Recent decisions affecting current work:
 - [02-01]: System message in createDeal uses a separate runTransaction after deal transaction -- side effects must not be inside the deal transaction (prevents duplicate sends on retry)
 - [02-01]: isDealParticipant() is local to the deals match block -- reads resource.data which is document-context-specific
 - [02-01]: withdrawOffer sets deal.status to withdrawn -- sender can withdraw at any time before receiver responds; terminates the deal
+- [Phase 02]: NamedPlaceInput uses /api/locode/search Next.js API route — @geoapify/un-locode uses Node.js fs and cannot run client-side
+- [Phase 02]: Suspense boundary required around useSearchParams in /deals/new — Next.js app router requires this for static rendering compatibility
 
 ### Pending Todos
 
@@ -84,5 +87,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-22
-Stopped at: Completed 02-01-PLAN.md (Deal Data Foundation - Constants, Entities, Repositories, Cloud Functions, Rules, Indexes)
+Stopped at: Completed 02-02-PLAN.md (Deal Creation UI + My Deals List - Initiate Deal button, DealForm, IncotermsSelector, NamedPlaceInput, useCreateDeal, useDeals, DealCard, DealList)
 Resume file: None
