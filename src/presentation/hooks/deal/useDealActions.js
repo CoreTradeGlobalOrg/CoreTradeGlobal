@@ -44,7 +44,7 @@ export function useDealActions() {
     setError(null);
     try {
       const fn = httpsCallable(functions, 'submitCounterOffer');
-      await fn({ dealId, offerData, expectedRound });
+      await fn({ dealId, offer: offerData, expectedRound });
       toast.success('Counter-offer submitted!');
     } catch (err) {
       const msg = err?.message || 'Failed to submit counter-offer';
