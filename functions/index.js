@@ -1086,6 +1086,7 @@ exports.submitCounterOffer = onCall(async (request) => {
     throw new HttpsError('invalid-argument', 'expectedRound is required to prevent stale writes.');
   }
 
+  try {
   await db.runTransaction(async (transaction) => {
     const dealRef = db.collection('deals').doc(dealId);
 
@@ -1198,6 +1199,11 @@ exports.submitCounterOffer = onCall(async (request) => {
       updatedAt: now,
     });
   });
+  } catch (error) {
+    if (error instanceof HttpsError) throw error;
+    console.error('submitCounterOffer failed:', error);
+    throw new HttpsError('internal', error.message || 'Failed to submit counter-offer.');
+  }
 
   console.log(`Counter-offer submitted for deal: ${dealId} by user: ${uid}`);
   return { success: true, dealId };
