@@ -169,6 +169,10 @@
   background: rgba(168, 85, 247, 0.08);
 }
 
+.notification-item.deal.unread {
+  background: rgba(255, 215, 0, 0.08);
+}
+
 .notification-item-icon {
   width: 36px;
   height: 36px;
@@ -199,6 +203,11 @@
 .notification-item-icon.approval-icon {
   background: rgba(168, 85, 247, 0.15);
   color: #a855f7;
+}
+
+.notification-item-icon.deal-icon {
+  background: rgba(255, 215, 0, 0.15);
+  color: #FFD700;
 }
 
 .notification-item-content {
@@ -250,6 +259,10 @@
 
 .notification-unread-dot.approval {
   background: #a855f7;
+}
+
+.notification-unread-dot.deal {
+  background: #FFD700;
 }
 
 .notification-footer {
