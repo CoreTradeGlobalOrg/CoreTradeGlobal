@@ -59,10 +59,12 @@ export function CounterOfferForm({
         incoterm: latestOffer.incoterm,
         namedPlace: latestOffer.namedPlace,
         deliveryDeadline: latestOffer.deliveryDeadline instanceof Date
-          ? latestOffer.deliveryDeadline
+          ? latestOffer.deliveryDeadline.toISOString().split('T')[0]
+          : latestOffer.deliveryDeadline?.seconds
+          ? new Date(latestOffer.deliveryDeadline.seconds * 1000).toISOString().split('T')[0]
           : latestOffer.deliveryDeadline
-          ? new Date(latestOffer.deliveryDeadline)
-          : new Date(Date.now() + 30 * 24 * 3600 * 1000),
+          ? new Date(latestOffer.deliveryDeadline).toISOString().split('T')[0]
+          : new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString().split('T')[0],
         paymentTerms: latestOffer.paymentTerms,
         insurancePreference: latestOffer.insurancePreference,
         notes: latestOffer.notes ?? '',
@@ -76,7 +78,7 @@ export function CounterOfferForm({
         conversionRate: null,
         incoterm: 'FOB',
         namedPlace: '',
-        deliveryDeadline: new Date(Date.now() + 30 * 24 * 3600 * 1000),
+        deliveryDeadline: new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString().split('T')[0],
         paymentTerms: 'cash',
         insurancePreference: INSURANCE_PREFERENCE.BUYER_PROVIDES,
         notes: '',
@@ -234,10 +236,8 @@ export function CounterOfferForm({
             render={({ field }) => (
               <input
                 type="date"
-                value={field.value instanceof Date
-                  ? field.value.toISOString().split('T')[0]
-                  : field.value || ''}
-                onChange={(e) => field.onChange(e.target.value ? new Date(e.target.value) : null)}
+                value={field.value || ''}
+                onChange={(e) => field.onChange(e.target.value || '')}
                 min={new Date().toISOString().split('T')[0]}
                 className="w-full bg-[#0F1C2E] border border-[#2A3B52] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#FFD700]/50 transition-colors"
               />

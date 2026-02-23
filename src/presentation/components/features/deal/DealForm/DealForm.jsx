@@ -62,6 +62,10 @@ function FieldLabel({ children, required }) {
   );
 }
 
+// Shared className for <select> elements: appearance-none + custom chevron with proper padding
+const selectChevronBg = `appearance-none bg-[length:16px_16px] bg-[position:right_16px_center] bg-no-repeat`;
+const selectChevronUrl = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`;
+
 // Minimum date string (today) for the delivery deadline input
 function getTodayISODate() {
   return new Date().toISOString().split('T')[0];
@@ -129,10 +133,6 @@ export function DealForm({
     : null;
 
   const handleFormSubmit = async (data) => {
-    // Convert deliveryDeadline string to Date object (react-hook-form + Zod needs Date)
-    if (data.deliveryDeadline && typeof data.deliveryDeadline === 'string') {
-      data.deliveryDeadline = new Date(data.deliveryDeadline);
-    }
     // Clean null conversionRate if not shown
     if (!showConversionRate) {
       data.conversionRate = null;
@@ -143,8 +143,8 @@ export function DealForm({
   return (
     <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
 
-      {/* ── Row 1: Price + Currency + Conversion Rate ── */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* ── Row 1: Price + Currency ── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <FieldLabel required>Price per Unit</FieldLabel>
           <input
@@ -169,7 +169,8 @@ export function DealForm({
           <select
             {...register('currency')}
             disabled={loading}
-            className={`w-full px-3 py-3 rounded-xl border text-white text-sm bg-[#0A1628]
+            style={{ backgroundImage: selectChevronUrl }}
+            className={`${selectChevronBg} w-full px-3 pr-10 py-3 rounded-xl border text-white text-sm bg-[#0A1628]
               focus:outline-none focus:ring-2 transition-all duration-200
               ${errors.currency
                 ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20'
@@ -184,33 +185,32 @@ export function DealForm({
           </select>
           <FieldError message={errors.currency?.message} />
         </div>
-
-        {showConversionRate && (
-          <div>
-            <FieldLabel>
-              Conversion Rate{' '}
-              <span className="text-[#64748b] text-xs font-normal">
-                (1 {productCurrency} = ? {currency})
-              </span>
-            </FieldLabel>
-            <input
-              type="number"
-              step="0.000001"
-              min="0"
-              {...register('conversionRate', { valueAsNumber: true })}
-              disabled={loading}
-              placeholder="e.g. 1.08"
-              className={`w-full px-3 py-3 rounded-xl border text-white text-sm bg-[#0A1628] placeholder:text-[#4a5568]
-                focus:outline-none focus:ring-2 transition-all duration-200
-                ${errors.conversionRate
-                  ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20'
-                  : 'border-[rgba(255,255,255,0.1)] focus:border-[#FFD700] focus:ring-[#FFD700]/20'
-                } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
-            />
-            <FieldError message={errors.conversionRate?.message} />
-          </div>
-        )}
       </div>
+
+      {/* ── Conversion Rate (shown only when currency differs) ── */}
+      {showConversionRate && (
+        <div>
+          <FieldLabel>Conversion Rate</FieldLabel>
+          <input
+            type="number"
+            step="0.000001"
+            min="0"
+            {...register('conversionRate', { valueAsNumber: true })}
+            disabled={loading}
+            placeholder="e.g. 1.08"
+            className={`w-full md:w-1/2 px-3 py-3 rounded-xl border text-white text-sm bg-[#0A1628] placeholder:text-[#4a5568]
+              focus:outline-none focus:ring-2 transition-all duration-200
+              ${errors.conversionRate
+                ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20'
+                : 'border-[rgba(255,255,255,0.1)] focus:border-[#FFD700] focus:ring-[#FFD700]/20'
+              } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+          />
+          <p className="mt-1 text-xs text-[#64748b]">
+            1 {productCurrency} = ? {currency}
+          </p>
+          <FieldError message={errors.conversionRate?.message} />
+        </div>
+      )}
 
       {/* ── Estimated Total ── */}
       {estimatedTotal > 0 && (
@@ -251,7 +251,8 @@ export function DealForm({
           <select
             {...register('unit')}
             disabled={loading}
-            className={`w-full px-3 py-3 rounded-xl border text-white text-sm bg-[#0A1628]
+            style={{ backgroundImage: selectChevronUrl }}
+            className={`${selectChevronBg} w-full px-3 pr-10 py-3 rounded-xl border text-white text-sm bg-[#0A1628]
               focus:outline-none focus:ring-2 transition-all duration-200
               ${errors.unit
                 ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20'
@@ -316,12 +317,18 @@ export function DealForm({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <FieldLabel required>Delivery Deadline</FieldLabel>
+          <style>{`
+            input[type="date"].deal-date::-webkit-calendar-picker-indicator {
+              filter: invert(83%) sepia(40%) saturate(1000%) hue-rotate(360deg) brightness(103%) contrast(104%);
+              cursor: pointer;
+            }
+          `}</style>
           <input
             type="date"
             min={getTodayISODate()}
             {...register('deliveryDeadline')}
             disabled={loading}
-            className={`w-full px-3 py-3 rounded-xl border text-white text-sm bg-[#0A1628]
+            className={`deal-date w-full px-3 pr-10 py-3 rounded-xl border text-white text-sm bg-[#0A1628]
               focus:outline-none focus:ring-2 transition-all duration-200
               ${errors.deliveryDeadline
                 ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20'
@@ -336,7 +343,8 @@ export function DealForm({
           <select
             {...register('paymentTerms')}
             disabled={loading}
-            className={`w-full px-3 py-3 rounded-xl border text-white text-sm bg-[#0A1628]
+            style={{ backgroundImage: selectChevronUrl }}
+            className={`${selectChevronBg} w-full px-3 pr-10 py-3 rounded-xl border text-white text-sm bg-[#0A1628]
               focus:outline-none focus:ring-2 transition-all duration-200
               ${errors.paymentTerms
                 ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20'

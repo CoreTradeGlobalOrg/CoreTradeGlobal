@@ -1,5 +1,5 @@
 ---
-status: complete
+status: diagnosed
 phase: 02-deal-creation-and-negotiation-s1
 source: 02-01-SUMMARY.md, 02-02-SUMMARY.md, 02-03-SUMMARY.md, 02-04-SUMMARY.md
 started: 2026-02-23T00:00:00Z
@@ -94,11 +94,29 @@ expected: When the other party is also viewing the deal page, a green dot with "
 result: skipped
 reason: blocked by member permission issue - can't have two parties viewing simultaneously
 
+### 17. Counter Offer Submission (Member Role)
+expected: As a member (other party), counter offer form submits successfully
+result: issue
+reported: "as another party I cannot make counter offer, same permission issues"
+severity: major
+
+### 18. Delivery Deadline Validation
+expected: Setting delivery deadline in counter offer form works without errors
+result: issue
+reported: "deadline delivery i got this error 'Invalid input: expected string, received Date'"
+severity: major
+
+### 19. Dropdown Arrow Positioning
+expected: Select dropdown arrows in deal form are visually balanced with proper spacing from the right border
+result: issue
+reported: "dropdown arrows so close to right border"
+severity: cosmetic
+
 ## Summary
 
-total: 16
+total: 19
 passed: 5
-issues: 7
+issues: 10
 pending: 0
 skipped: 4
 
@@ -109,61 +127,153 @@ skipped: 4
   reason: "User reported: when logged in as a member I saw my deals but it when I try to navigate I got this error 'Missing or insufficient permissions.'"
   severity: major
   test: 1
-  artifacts: []
-  missing: []
+  root_cause: "Offers subcollection rule in firestore.rules uses isDealParticipant() which reads resource.data.buyerId/sellerId — but resource.data refers to the offer document (not parent deal), so these fields are undefined for non-admin users"
+  artifacts:
+    - path: "firestore.rules"
+      issue: "isDealParticipant() at line 241-243 reads resource.data which refers to offer doc in subcollection context"
+    - path: "firestore.rules"
+      issue: "Offers subcollection rule at line 254-258 calls isDealParticipant() which fails for offer docs"
+  missing:
+    - "Use get(/databases/$(database)/documents/deals/$(dealId)).data.buyerId in offers subcollection rule instead of resource.data.buyerId"
 
 - truth: "Deal creation page loads for member users"
   status: failed
   reason: "User reported: as an admin I can create but as member 'Missing or insufficient permissions.'"
   severity: major
   test: 3
-  artifacts: []
-  missing: []
+  root_cause: "Same Firestore offers subcollection rule issue — isDealParticipant() references resource.data on offer docs which lack buyerId/sellerId fields"
+  artifacts:
+    - path: "firestore.rules"
+      issue: "Offers subcollection rule at line 254-258 uses isDealParticipant() which fails for non-admin users"
+  missing:
+    - "Fix offers subcollection rule to use get() on parent deal document"
 
 - truth: "Product quantity and unit pre-fill into deal form, currency conversion API available"
   status: failed
   reason: "User reported: product's quantity and unit doesnt pass the deal screen, and unit and quantities are not same with the product's quantity. Need API for currency conversion rate."
   severity: major
   test: 6
-  artifacts: []
-  missing: []
+  root_cause: "Two bugs: (1) deals/new/page.jsx line 162 hardcodes quantity: undefined instead of reading product.stockQuantity. (2) Product uses UNECE unit codes (KGM, PCE, TNE) but DEAL_UNITS uses different values (kg, pieces, ton) — no mapping between the two systems."
+  artifacts:
+    - path: "src/app/(main)/deals/new/page.jsx"
+      issue: "Line 162: quantity: undefined — never reads product.stockQuantity"
+    - path: "src/app/(main)/deals/new/page.jsx"
+      issue: "Line 163: unit: product?.unit passes UNECE code which doesn't match DEAL_UNITS values"
+    - path: "src/core/constants/dealConstants.js"
+      issue: "Lines 65-72: DEAL_UNITS uses kg/ton/pieces, not UNECE codes KGM/TNE/PCE"
+  missing:
+    - "Read product.stockQuantity for quantity default"
+    - "Add UNECE-to-DEAL_UNITS mapping (KGM→kg, TNE→ton, PCE→pieces, MTR→metre, MTK→m2, CH→containers)"
 
 - truth: "Other party receives notification sound and push notification when deal is created"
   status: failed
   reason: "User reported: can't hear any notification sound or push notification for other user"
   severity: major
   test: 7
-  artifacts: []
-  missing: []
+  root_cause: "Two root causes: (A) FCM push notifications for deal events are sent by CF but NotificationListener.jsx and firebase-messaging-sw.js only handle 'new_message' type — deal_event type is silently dropped/shown as 'New Message'. (B) Web Audio chime in useDeal.js only fires when user is already viewing the specific deal page, not globally. Secondary: duplicate system messages — createDeal posts one AND onDealOfferCreated posts another."
+  artifacts:
+    - path: "src/presentation/components/common/NotificationListener/NotificationListener.jsx"
+      issue: "Lines 75-116: foreground FCM handler only processes senderName/messageContent, ignores deal_event type"
+    - path: "public/firebase-messaging-sw.js"
+      issue: "Lines 28-53, 56-89: background handler ignores deal_event type, click navigates to /messages/undefined"
+    - path: "src/presentation/hooks/deal/useDeal.js"
+      issue: "Lines 119-131: chime only plays when user is already on the deal page"
+    - path: "functions/index.js"
+      issue: "Lines 1058-1088 + 1694-1721: duplicate system messages on deal creation"
+  missing:
+    - "Add deal_event type handling in NotificationListener.jsx foreground handler"
+    - "Add deal_event type handling in firebase-messaging-sw.js background handler with correct click URL"
+    - "Remove duplicate system message from either createDeal or onDealOfferCreated"
 
 - truth: "My Deals page works for member role (not just admin)"
   status: failed
   reason: "User reported: as an admin pass as a member permission error"
   severity: major
   test: 8
-  artifacts: []
-  missing: []
+  root_cause: "Same root cause as test 1 — offers subcollection Firestore rule uses isDealParticipant() which reads resource.data from offer doc"
+  artifacts:
+    - path: "firestore.rules"
+      issue: "Offers subcollection rule at line 254-258"
+  missing:
+    - "Fix offers subcollection rule to use get() on parent deal document"
 
 - truth: "Deal card status badges testable for all states (member can access deal detail)"
   status: failed
   reason: "User reported: can't check accepted or rejected due to member can not go to deal detail also permission"
   severity: major
   test: 9
-  artifacts: []
-  missing: []
+  root_cause: "Same root cause as test 1 — offers subcollection Firestore rule"
+  artifacts:
+    - path: "firestore.rules"
+      issue: "Offers subcollection rule at line 254-258"
+  missing:
+    - "Fix offers subcollection rule to use get() on parent deal document"
 
 - truth: "Deal negotiation page accessible by member users"
   status: failed
   reason: "User reported: as admin pass, member permission error again"
   severity: major
   test: 10
-  artifacts: []
-  missing: []
+  root_cause: "Same root cause as test 1 — offers subcollection Firestore rule"
+  artifacts:
+    - path: "firestore.rules"
+      issue: "Offers subcollection rule at line 254-258"
+  missing:
+    - "Fix offers subcollection rule to use get() on parent deal document"
 
 - truth: "Deal initiated system message shows as formatted text with a 'Check the Deal' button linking to deal detail"
   status: failed
   reason: "User reported: system message shows 'Deal initiated for Industrial Lighting. View deal: /deals/MtzFs6Mj26WttiSOPPbG' but should be formatted text with a check the deal button"
   severity: major
   test: 14
-  artifacts: []
-  missing: []
+  root_cause: "MessageThread.jsx has no rendering branch for message.type === 'system'. All messages render as plain chat bubbles using {message.content}. The structured dealId and dealLink fields stored on the Firestore message document are never read by the renderer."
+  artifacts:
+    - path: "functions/index.js"
+      issue: "Lines 1070-1078: content field embeds raw URL path as text instead of keeping it in dealLink only"
+    - path: "src/presentation/components/features/messaging/MessageThread/MessageThread.jsx"
+      issue: "Lines 174-262: no branch for type === 'system', no reading of dealId/dealLink"
+    - path: "src/presentation/components/features/messaging/MessageThread/MessageThread.css"
+      issue: "No system message or deal button styles"
+  missing:
+    - "Add type === 'system' rendering branch in MessageThread.jsx with Link button using message.dealLink"
+    - "Add system message CSS styles (centered bubble, gold-bordered 'Check the Deal' button)"
+    - "Clean up content field in CF to not embed raw URL (dealLink field already carries it)"
+    - "Import Link from next/link in MessageThread.jsx"
+
+- truth: "Counter offer works for member role (other party)"
+  status: fixed
+  reason: "User reported: as another party I cannot make counter offer, same permission issues"
+  severity: major
+  test: 17
+  root_cause: "Firestore rules fix (02-05) is in codebase but not deployed to Firebase. Rules need firebase deploy --only firestore:rules"
+  artifacts:
+    - path: "firestore.rules"
+      issue: "Rules committed but not deployed to Firebase"
+  missing:
+    - "Deploy Firestore rules: firebase deploy --only firestore:rules"
+
+- truth: "Delivery deadline in counter offer form validates without type errors"
+  status: fixed
+  reason: "User reported: Invalid input: expected string, received Date"
+  severity: major
+  test: 18
+  root_cause: "CounterOfferForm.jsx onChange converts string to Date object via new Date(e.target.value), but Zod schema expects string. Also pre-fill defaults use Date objects instead of ISO strings."
+  artifacts:
+    - path: "src/presentation/components/features/deal/CounterOfferForm/CounterOfferForm.jsx"
+      issue: "Line 240: onChange wraps value in new Date() instead of keeping string"
+    - path: "src/presentation/components/features/deal/CounterOfferForm/CounterOfferForm.jsx"
+      issue: "Lines 61-65, 81: Pre-fill defaults use Date objects instead of YYYY-MM-DD strings"
+  missing:
+    - "Keep deliveryDeadline as string (YYYY-MM-DD) throughout form — APPLIED"
+
+- truth: "Dropdown arrows in deal form have proper spacing from right border"
+  status: fixed
+  reason: "User reported: dropdown arrows so close to right border"
+  severity: cosmetic
+  test: 19
+  root_cause: "selectChevronBg uses bg-[position:right_12px_center] placing 16px icon only 12px from edge"
+  artifacts:
+    - path: "src/presentation/components/features/deal/DealForm/DealForm.jsx"
+      issue: "Line 66: right_12px_center too tight"
+  missing:
+    - "Change to right_16px_center — APPLIED"
