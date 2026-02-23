@@ -50,7 +50,7 @@ Plans:
   3. An offer follows valid state transitions only (open -> countered -> accepted/rejected/expired) -- invalid transitions are rejected at the data layer
   4. Both parties receive in-app and email notifications when a counter-offer is received
   5. All deal state transitions are atomic -- concurrent acceptance and counter-offer cannot corrupt deal state
-**Plans**: 6 plans
+**Plans**: 7 plans
 
 Plans:
 - [x] 02-01-PLAN.md -- Data foundation: constants, entities, validation, repositories, Cloud Functions (state machine), Firestore rules, indexes
@@ -59,6 +59,7 @@ Plans:
 - [x] 02-04-PLAN.md -- Notifications (in-app + FCM + Resend email), expiry checker, reminders, navbar link, end-to-end verification
 - [ ] 02-05-PLAN.md -- UAT gap closure: Fix Firestore offers subcollection rules for member access, product quantity/unit pre-fill with UNECE mapping
 - [ ] 02-06-PLAN.md -- UAT gap closure: Fix FCM deal notification handlers, remove duplicate system messages, add system message rendering in chat
+- [ ] 02-07-PLAN.md -- Verification gap closure: Fix submitCounterOffer parameter name mismatch (offerData -> offer)
 
 ### Phase 3: Contract Agreement (S2)
 **Goal**: Both deal parties can review and individually approve contract clauses populated from the negotiation outcome, and the deal cannot advance until both approve
