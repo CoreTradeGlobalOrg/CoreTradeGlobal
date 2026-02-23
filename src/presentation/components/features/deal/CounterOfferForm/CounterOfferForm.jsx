@@ -18,10 +18,15 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { offerSchema } from '@/core/validation/offerSchema';
 import { DEAL_STATUS, PAYMENT_TERMS, DEAL_UNITS, INSURANCE_PREFERENCE, EXPIRY_DEFAULT_HOURS } from '@/core/constants/dealConstants';
+import { CURRENCIES } from '@/core/constants/currencies';
 import { getIncotermByCode } from '@/core/constants/incoterms';
 import { IncotermsSelector } from '../IncotermsSelector/IncotermsSelector';
 import { NamedPlaceInput } from '../NamedPlaceInput/NamedPlaceInput';
 import { Loader2, Clock, Send } from 'lucide-react';
+
+// Custom chevron for select elements — matches DealForm styling
+const selectChevronBg = `appearance-none bg-[length:16px_16px] bg-[position:right_16px_center] bg-no-repeat`;
+const selectChevronUrl = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CounterOfferForm
@@ -163,12 +168,17 @@ export function CounterOfferForm({
           </div>
           <div>
             <label className="block text-xs text-[#8899AA] mb-1">Currency *</label>
-            <input
-              type="text"
-              maxLength={3}
+            <select
               {...register('currency')}
-              className="w-full bg-[#0F1C2E] border border-[#2A3B52] rounded-lg px-3 py-2 text-sm text-white placeholder-[#4A5B6E] focus:outline-none focus:border-[#FFD700]/50 transition-colors uppercase"
-            />
+              style={{ backgroundImage: selectChevronUrl }}
+              className={`${selectChevronBg} w-full bg-[#0F1C2E] border border-[#2A3B52] rounded-lg px-3 pr-10 py-2 text-sm text-white focus:outline-none focus:border-[#FFD700]/50 transition-colors`}
+            >
+              {CURRENCIES.map((c) => (
+                <option key={c.value} value={c.value} className="bg-[#0F1C2E]">
+                  {c.label}
+                </option>
+              ))}
+            </select>
             {errors.currency && <p className="text-xs text-red-400 mt-1">{errors.currency.message}</p>}
           </div>
         </div>
@@ -190,10 +200,11 @@ export function CounterOfferForm({
             <label className="block text-xs text-[#8899AA] mb-1">Unit *</label>
             <select
               {...register('unit')}
-              className="w-full bg-[#0F1C2E] border border-[#2A3B52] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#FFD700]/50 transition-colors"
+              style={{ backgroundImage: selectChevronUrl }}
+              className={`${selectChevronBg} w-full bg-[#0F1C2E] border border-[#2A3B52] rounded-lg px-3 pr-10 py-2 text-sm text-white focus:outline-none focus:border-[#FFD700]/50 transition-colors`}
             >
               {DEAL_UNITS.map((u) => (
-                <option key={u.value} value={u.value}>{u.label}</option>
+                <option key={u.value} value={u.value} className="bg-[#0F1C2E]">{u.label}</option>
               ))}
             </select>
             {errors.unit && <p className="text-xs text-red-400 mt-1">{errors.unit.message}</p>}
@@ -230,6 +241,12 @@ export function CounterOfferForm({
         {/* Delivery deadline */}
         <div>
           <label className="block text-xs text-[#8899AA] mb-1">Delivery Deadline *</label>
+          <style>{`
+            input[type="date"].counter-offer-date::-webkit-calendar-picker-indicator {
+              filter: invert(83%) sepia(40%) saturate(1000%) hue-rotate(360deg) brightness(103%) contrast(104%);
+              cursor: pointer;
+            }
+          `}</style>
           <Controller
             name="deliveryDeadline"
             control={control}
@@ -239,7 +256,7 @@ export function CounterOfferForm({
                 value={field.value || ''}
                 onChange={(e) => field.onChange(e.target.value || '')}
                 min={new Date().toISOString().split('T')[0]}
-                className="w-full bg-[#0F1C2E] border border-[#2A3B52] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#FFD700]/50 transition-colors"
+                className="counter-offer-date w-full bg-[#0F1C2E] border border-[#2A3B52] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#FFD700]/50 transition-colors"
               />
             )}
           />
@@ -251,10 +268,11 @@ export function CounterOfferForm({
           <label className="block text-xs text-[#8899AA] mb-1">Payment Terms *</label>
           <select
             {...register('paymentTerms')}
-            className="w-full bg-[#0F1C2E] border border-[#2A3B52] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#FFD700]/50 transition-colors"
+            style={{ backgroundImage: selectChevronUrl }}
+            className={`${selectChevronBg} w-full bg-[#0F1C2E] border border-[#2A3B52] rounded-lg px-3 pr-10 py-2 text-sm text-white focus:outline-none focus:border-[#FFD700]/50 transition-colors`}
           >
             {PAYMENT_TERMS.map((p) => (
-              <option key={p.value} value={p.value}>{p.label}</option>
+              <option key={p.value} value={p.value} className="bg-[#0F1C2E]">{p.label}</option>
             ))}
           </select>
           {errors.paymentTerms && <p className="text-xs text-red-400 mt-1">{errors.paymentTerms.message}</p>}
@@ -265,11 +283,12 @@ export function CounterOfferForm({
           <label className="block text-xs text-[#8899AA] mb-1">Insurance *</label>
           <select
             {...register('insurancePreference')}
-            className="w-full bg-[#0F1C2E] border border-[#2A3B52] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#FFD700]/50 transition-colors"
+            style={{ backgroundImage: selectChevronUrl }}
+            className={`${selectChevronBg} w-full bg-[#0F1C2E] border border-[#2A3B52] rounded-lg px-3 pr-10 py-2 text-sm text-white focus:outline-none focus:border-[#FFD700]/50 transition-colors`}
           >
-            <option value={INSURANCE_PREFERENCE.SELLER_PROVIDES}>Seller Provides</option>
-            <option value={INSURANCE_PREFERENCE.BUYER_PROVIDES}>Buyer Provides</option>
-            <option value={INSURANCE_PREFERENCE.NONE}>None</option>
+            <option value={INSURANCE_PREFERENCE.SELLER_PROVIDES} className="bg-[#0F1C2E]">Seller Provides</option>
+            <option value={INSURANCE_PREFERENCE.BUYER_PROVIDES} className="bg-[#0F1C2E]">Buyer Provides</option>
+            <option value={INSURANCE_PREFERENCE.NONE} className="bg-[#0F1C2E]">None</option>
           </select>
           {errors.insurancePreference && <p className="text-xs text-red-400 mt-1">{errors.insurancePreference.message}</p>}
         </div>
