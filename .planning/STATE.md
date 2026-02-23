@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-02-20)
 Phase: 2 of 7 (Deal Creation and Negotiation S1)
 Plan: 6 of 6 in current phase -- Phase 02 COMPLETE
 Status: Phase complete
-Last activity: 2026-02-23 -- Completed 02-06 (Fix Deal Notifications + System Message Rendering)
+Last activity: 2026-02-23 -- Completed 02-07 (Fix submitCounterOffer parameter name mismatch)
 
 Progress: [████████░░] 40%
 
@@ -42,6 +42,7 @@ Progress: [████████░░] 40%
 | Phase 02 P04 | 3 | 2 tasks | 3 files |
 | Phase 02 P05 | 2 | 2 tasks | 3 files |
 | Phase 02 P06 | 2 | 2 tasks | 5 files |
+| Phase 02 P07 | 1 | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -89,6 +90,7 @@ Recent decisions affecting current work:
 - [Phase 02]: system message branch returns early in messages.map() before isOwn check -- clean separation for system vs regular messages
 - [02-05]: Offers subcollection rule uses get() on parent deal document -- resource.data in /offers/{offerId} context refers to offer doc, not deal doc; isDealParticipant() was reading wrong resource
 - [02-05]: UNECE_TO_DEAL_UNIT mapping in dealConstants.js -- products store UNECE codes, deal form uses simplified units; mapping at form pre-fill time with fallback to raw unit code
+- [Phase 02-07]: Only the wire key name changes (offerData -> offer); the local variable remains offerData for function signature clarity
 
 ### Pending Todos
 
@@ -104,5 +106,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-23
-Stopped at: Completed 02-05-PLAN.md (Firestore member permissions fix + UNECE unit mapping + deal form quantity/unit pre-fill)
+Stopped at: Completed 02-07-PLAN.md (Fix submitCounterOffer parameter name mismatch - counter-offer flow unblocked)
 Resume file: None
