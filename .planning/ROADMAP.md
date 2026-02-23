@@ -50,13 +50,15 @@ Plans:
   3. An offer follows valid state transitions only (open -> countered -> accepted/rejected/expired) -- invalid transitions are rejected at the data layer
   4. Both parties receive in-app and email notifications when a counter-offer is received
   5. All deal state transitions are atomic -- concurrent acceptance and counter-offer cannot corrupt deal state
-**Plans**: 4 plans
+**Plans**: 6 plans
 
 Plans:
-- [ ] 02-01-PLAN.md -- Data foundation: constants, entities, validation, repositories, Cloud Functions (state machine), Firestore rules, indexes
-- [ ] 02-02-PLAN.md -- Deal creation flow: "Initiate Deal" in chat, /deals/new page with Incoterms + UN/LOCODE, My Deals list page
-- [ ] 02-03-PLAN.md -- Deal negotiation page: offer timeline, counter-offer form, sidebar, countdown timer, presence indicator
-- [ ] 02-04-PLAN.md -- Notifications (in-app + FCM + Resend email), expiry checker, reminders, navbar link, end-to-end verification
+- [x] 02-01-PLAN.md -- Data foundation: constants, entities, validation, repositories, Cloud Functions (state machine), Firestore rules, indexes
+- [x] 02-02-PLAN.md -- Deal creation flow: "Initiate Deal" in chat, /deals/new page with Incoterms + UN/LOCODE, My Deals list page
+- [x] 02-03-PLAN.md -- Deal negotiation page: offer timeline, counter-offer form, sidebar, countdown timer, presence indicator
+- [x] 02-04-PLAN.md -- Notifications (in-app + FCM + Resend email), expiry checker, reminders, navbar link, end-to-end verification
+- [ ] 02-05-PLAN.md -- UAT gap closure: Fix Firestore offers subcollection rules for member access, product quantity/unit pre-fill with UNECE mapping
+- [ ] 02-06-PLAN.md -- UAT gap closure: Fix FCM deal notification handlers, remove duplicate system messages, add system message rendering in chat
 
 ### Phase 3: Contract Agreement (S2)
 **Goal**: Both deal parties can review and individually approve contract clauses populated from the negotiation outcome, and the deal cannot advance until both approve
@@ -140,7 +142,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 (parallel with 3-4) -> 6 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Role System and Infrastructure | 4/4 | Complete   | 2026-02-22 |
-| 2. Deal Creation and Negotiation (S1) | 2/4 | In Progress|  |
+| 2. Deal Creation and Negotiation (S1) | 4/6 | In Progress|  |
 | 3. Contract Agreement (S2) | 0/0 | Not started | - |
 | 4. Provider Portals and Insurance/Logistics Quotes (S3) | 0/0 | Not started | - |
 | 5. Legal Consulting | 0/0 | Not started | - |
@@ -149,4 +151,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 (parallel with 3-4) -> 6 
 
 ---
 *Roadmap created: 2026-02-20*
-*Last updated: 2026-02-21*
+*Last updated: 2026-02-23*
