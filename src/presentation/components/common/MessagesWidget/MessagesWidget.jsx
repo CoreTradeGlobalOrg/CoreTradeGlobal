@@ -10,7 +10,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { MessageCircle, X, ArrowLeft, Minimize2, FileText, Package, MapPin, DollarSign } from 'lucide-react';
+import { MessageCircle, X, ArrowLeft, Minimize2, FileText, Package, MapPin, DollarSign, Handshake } from 'lucide-react';
 import Link from 'next/link';
 import { useMessages } from '@/presentation/contexts/MessagesContext';
 import { useAuth } from '@/presentation/contexts/AuthContext';
@@ -197,12 +197,36 @@ export function MessagesWidget() {
                 <h3>Messages</h3>
               </div>
             )}
-            <button
-              className="messages-widget-close"
-              onClick={() => setIsWidgetOpen(false)}
-            >
-              {isMobile ? <X className="w-5 h-5" /> : <Minimize2 className="w-5 h-5" />}
-            </button>
+            <div className="flex items-center gap-1 ml-auto flex-shrink-0">
+              {/* Deal button — View Deal if exists, Initiate Deal if not */}
+              {activeConversation?.metadata?.dealId ? (
+                <Link
+                  href={`/deals/${activeConversation.metadata.dealId}`}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[rgba(255,215,0,0.1)] border border-[rgba(255,215,0,0.4)] text-[#FFD700] text-xs font-semibold hover:bg-[rgba(255,215,0,0.15)] hover:border-[#FFD700] transition-all duration-200"
+                  onClick={() => setIsWidgetOpen(false)}
+                  title="View Deal"
+                >
+                  <Handshake className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Deal</span>
+                </Link>
+              ) : activeConversation?.metadata?.productId && activeConversation?.type === 'direct' ? (
+                <Link
+                  href={`/deals/new?conversationId=${activeConversationId}&productId=${activeConversation.metadata.productId}`}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-[rgba(255,215,0,0.4)] text-[#FFD700] text-xs font-semibold hover:bg-[rgba(255,215,0,0.08)] hover:border-[#FFD700] transition-all duration-200"
+                  onClick={() => setIsWidgetOpen(false)}
+                  title="Initiate Deal"
+                >
+                  <Handshake className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Deal</span>
+                </Link>
+              ) : null}
+              <button
+                className="messages-widget-close"
+                onClick={() => setIsWidgetOpen(false)}
+              >
+                {isMobile ? <X className="w-5 h-5" /> : <Minimize2 className="w-5 h-5" />}
+              </button>
+            </div>
           </div>
 
           {/* Content */}
@@ -244,6 +268,30 @@ export function MessagesWidget() {
                       <span className="messages-widget-rfq-name">{activeConversation.metadata.requestName || 'View RFQ Details'}</span>
                     </div>
                   </button>
+                )}
+
+                {/* Deal Banner */}
+                {activeConversation?.metadata?.dealId && (
+                  <Link
+                    href={`/deals/${activeConversation.metadata.dealId}`}
+                    className="messages-widget-deal-banner"
+                    onClick={() => setIsWidgetOpen(false)}
+                  >
+                    <div className="messages-widget-deal-icon">
+                      <Handshake className="w-4 h-4" />
+                    </div>
+                    <div className="messages-widget-deal-info">
+                      <span className="messages-widget-deal-label">Active Deal</span>
+                      <span className="messages-widget-deal-status">
+                        {activeConversation.metadata.dealStatus === 'negotiating' ? 'Negotiating' :
+                         activeConversation.metadata.dealStatus === 'accepted' ? 'Accepted' :
+                         activeConversation.metadata.dealStatus === 'rejected' ? 'Rejected' :
+                         activeConversation.metadata.dealStatus === 'withdrawn' ? 'Withdrawn' :
+                         activeConversation.metadata.dealStatus === 'expired' ? 'Expired' : 'View Deal'}
+                      </span>
+                    </div>
+                    <span className="text-[#FFD700] text-xs">→</span>
+                  </Link>
                 )}
 
                 <div className="messages-widget-messages">

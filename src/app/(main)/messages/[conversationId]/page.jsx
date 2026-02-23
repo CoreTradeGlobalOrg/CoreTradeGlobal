@@ -181,8 +181,16 @@ export default function ConversationPage() {
               </>
             )}
 
-            {/* Initiate Deal button — shown only for product-based direct conversations */}
-            {conversation.metadata?.productId && conversation.type === 'direct' && (
+            {/* Deal button — View Deal if exists, Initiate Deal if not */}
+            {conversation.metadata?.dealId ? (
+              <Link
+                href={`/deals/${conversation.metadata.dealId}`}
+                className="ml-auto flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-xl bg-[rgba(255,215,0,0.1)] border border-[rgba(255,215,0,0.4)] text-[#FFD700] text-sm font-semibold hover:bg-[rgba(255,215,0,0.15)] hover:border-[#FFD700] transition-all duration-200"
+              >
+                <Handshake className="w-4 h-4" />
+                <span className="hidden sm:inline">View Deal</span>
+              </Link>
+            ) : conversation.metadata?.productId && conversation.type === 'direct' ? (
               <Link
                 href={`/deals/new?conversationId=${conversationId}&productId=${conversation.metadata.productId}`}
                 className="ml-auto flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-xl border border-[rgba(255,215,0,0.4)] text-[#FFD700] text-sm font-semibold hover:bg-[rgba(255,215,0,0.08)] hover:border-[#FFD700] transition-all duration-200"
@@ -190,7 +198,7 @@ export default function ConversationPage() {
                 <Handshake className="w-4 h-4" />
                 <span className="hidden sm:inline">Initiate Deal</span>
               </Link>
-            )}
+            ) : null}
           </div>
 
           {/* Messages area with sticky banners */}
@@ -236,6 +244,29 @@ export default function ConversationPage() {
                   <span className="conversation-rfq-name">{conversation.metadata.requestName || 'View RFQ Details'}</span>
                 </div>
               </button>
+            )}
+
+            {/* Deal context banner */}
+            {conversation.metadata?.dealId && (
+              <Link
+                href={`/deals/${conversation.metadata.dealId}`}
+                className="conversation-deal-banner"
+              >
+                <div className="conversation-deal-icon">
+                  <Handshake className="w-5 h-5" />
+                </div>
+                <div className="conversation-deal-info">
+                  <span className="conversation-deal-label">Active Deal</span>
+                  <span className="conversation-deal-status">
+                    {conversation.metadata.dealStatus === 'negotiating' ? 'Negotiating' :
+                     conversation.metadata.dealStatus === 'accepted' ? 'Accepted' :
+                     conversation.metadata.dealStatus === 'rejected' ? 'Rejected' :
+                     conversation.metadata.dealStatus === 'withdrawn' ? 'Withdrawn' :
+                     conversation.metadata.dealStatus === 'expired' ? 'Expired' : 'View Deal'}
+                  </span>
+                </div>
+                <span className="conversation-deal-arrow">→</span>
+              </Link>
             )}
 
             <MessageThread

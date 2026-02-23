@@ -1053,6 +1053,13 @@ exports.createDeal = onCall(async (request) => {
       createdAt: now,
       updatedAt: now,
     });
+
+    // Link deal to conversation metadata for persistent banner
+    const conversationRef = db.collection('conversations').doc(conversationId);
+    transaction.update(conversationRef, {
+      'metadata.dealId': dealRef.id,
+      'metadata.dealStatus': DEAL_STATUS.NEGOTIATING,
+    });
   });
 
   // Note: system message is posted by onDealOfferCreated trigger (round === 1 = new_deal)
@@ -1757,6 +1764,17 @@ exports.onDealStatusChanged = onDocumentUpdated(
       const eventType = eventTypeMap[after.status];
 
       await sendDealNotifications(dealId, eventType, actorUid, after);
+
+      // Update deal status on conversation metadata
+      if (after.conversationId) {
+        try {
+          await db.collection('conversations').doc(after.conversationId).update({
+            'metadata.dealStatus': after.status,
+          });
+        } catch (metaErr) {
+          console.error('onDealStatusChanged: failed to update conversation metadata (non-fatal):', metaErr);
+        }
+      }
 
       // Post system message to conversation (if conversationId is linked)
       if (after.conversationId) {
