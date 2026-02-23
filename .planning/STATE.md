@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-02-20)
 Phase: 2 of 7 (Deal Creation and Negotiation S1)
 Plan: 6 of 6 in current phase -- Phase 02 COMPLETE
 Status: Phase complete
-Last activity: 2026-02-23 -- Completed 02-07 (Fix submitCounterOffer parameter name mismatch)
+Last activity: 2026-02-23 - Completed quick task 1: Deal notification click navigates to deal page
 
 Progress: [████████░░] 40%
 
@@ -95,6 +95,12 @@ Recent decisions affecting current work:
 ### Pending Todos
 
 None yet.
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 1 | Deal notification click navigates to deal page | 2026-02-23 | 7358c13 | [1-when-user-click-notification-for-deal-i-](./quick/1-when-user-click-notification-for-deal-i-/) |
 
 ### Blockers/Concerns
 
