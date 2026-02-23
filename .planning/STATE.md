@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-20)
 ## Current Position
 
 Phase: 2 of 7 (Deal Creation and Negotiation S1)
-Plan: 3 of 4 in current phase
+Plan: 5 of 6 in current phase
 Status: In progress
-Last activity: 2026-02-22 -- Completed 02-02 (Deal Creation UI + My Deals List)
+Last activity: 2026-02-23 -- Completed 02-05 (Firestore member permissions fix + UNECE unit mapping)
 
-Progress: [████░░░░░░] 20%
+Progress: [████░░░░░░] 22%
 
 ## Performance Metrics
 
@@ -40,6 +40,8 @@ Progress: [████░░░░░░] 20%
 | Phase 02 P02 | 20 | 2 tasks | 12 files |
 | Phase 02 P03 | 10 | 2 tasks | 11 files |
 | Phase 02 P04 | 3 | 2 tasks | 3 files |
+| Phase 02 P05 | 2 | 2 tasks | 3 files |
+| Phase 02 P06 | 2 | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -81,6 +83,12 @@ Recent decisions affecting current work:
 - [Phase 02-04]: Smart FCM suppression: viewingDealId + viewingDealSince 60s staleness from useDealPresence heartbeat
 - [Phase 02-04]: All deal notification side effects called OUTSIDE Firestore transactions -- prevents duplicate sends on retry
 - [Phase 02-04]: remindersSet uses arrayUnion for race-condition-safe expiry reminder dedup
+- [Phase 02]: deal_event type detection in both foreground and background FCM handlers -- single dispatch point for both contexts
+- [Phase 02]: clickUrl stored in notification.data at show time, read at notificationclick -- avoids reconstructing URL in service worker context
+- [Phase 02]: Duplicate system message removed from createDeal; onDealOfferCreated trigger is sole owner of system message posting for new_deal events
+- [Phase 02]: system message branch returns early in messages.map() before isOwn check -- clean separation for system vs regular messages
+- [02-05]: Offers subcollection rule uses get() on parent deal document -- resource.data in /offers/{offerId} context refers to offer doc, not deal doc; isDealParticipant() was reading wrong resource
+- [02-05]: UNECE_TO_DEAL_UNIT mapping in dealConstants.js -- products store UNECE codes, deal form uses simplified units; mapping at form pre-fill time with fallback to raw unit code
 
 ### Pending Todos
 
@@ -95,6 +103,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-22
-Stopped at: Completed 02-02-PLAN.md (Deal Creation UI + My Deals List - Initiate Deal button, DealForm, IncotermsSelector, NamedPlaceInput, useCreateDeal, useDeals, DealCard, DealList)
+Last session: 2026-02-23
+Stopped at: Completed 02-05-PLAN.md (Firestore member permissions fix + UNECE unit mapping + deal form quantity/unit pre-fill)
 Resume file: None
