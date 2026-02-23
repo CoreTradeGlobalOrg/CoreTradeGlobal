@@ -20,6 +20,7 @@ import { useAuth } from '@/presentation/contexts/AuthContext';
 import { DealForm } from '@/presentation/components/features/deal/DealForm/DealForm';
 import { useCreateDeal } from '@/presentation/hooks/deal/useCreateDeal';
 import { container } from '@/core/di/container';
+import { UNECE_TO_DEAL_UNIT } from '@/core/constants/dealConstants';
 import toast from 'react-hot-toast';
 
 // ── Loading fallback ──────────────────────────────────────────────────────────
@@ -159,8 +160,8 @@ function NewDealContent() {
   const defaultValues = {
     price: product?.price && product.price > 0 ? product.price : undefined,
     currency: product?.currency || 'USD',
-    quantity: 1,
-    unit: 'pieces',
+    quantity: product?.stockQuantity && product.stockQuantity > 0 ? product.stockQuantity : undefined,
+    unit: UNECE_TO_DEAL_UNIT[product?.unit] || product?.unit || '',
   };
 
   return (
@@ -169,7 +170,7 @@ function NewDealContent() {
         {/* ── Back Link ── */}
         <Link
           href={conversationId ? `/messages/${conversationId}` : '/messages'}
-          className="inline-flex items-center gap-2 text-[#64748b] hover:text-white text-sm mb-6 transition-colors"
+          className="inline-flex items-center gap-2 text-[#FFD700] hover:text-white text-sm font-semibold mb-6 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           Back to conversation

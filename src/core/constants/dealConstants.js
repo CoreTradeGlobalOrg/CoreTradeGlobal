@@ -71,6 +71,35 @@ export const DEAL_UNITS = [
   { value: 'containers', label: 'Containers' },
 ];
 
+/**
+ * Maps UNECE product unit codes to DEAL_UNITS values.
+ * Used when pre-filling the deal form from product data.
+ * Products use UNECE codes (KGM, TNE, PCE); deals use simplified values (kg, ton, pieces).
+ */
+export const UNECE_TO_DEAL_UNIT = {
+  KGM: 'kg',
+  GRM: 'kg',      // Gram -> closest deal unit is kg
+  TNE: 'ton',
+  LBR: 'kg',      // Pound -> closest deal unit is kg
+  PCE: 'pieces',
+  SET: 'pieces',   // Set -> closest is pieces
+  PR: 'pieces',    // Pair -> closest is pieces
+  DZN: 'pieces',   // Dozen -> closest is pieces
+  GRO: 'pieces',   // Gross -> closest is pieces
+  KIT: 'pieces',   // Kit -> closest is pieces
+  MTR: 'metre',
+  CMT: 'metre',    // Centimeter -> closest is metre
+  MMT: 'metre',    // Millimeter -> closest is metre
+  FOT: 'metre',    // Foot -> closest is metre
+  INH: 'metre',    // Inch -> closest is metre
+  MTK: 'm2',
+  CMK: 'm2',       // Square centimeter -> closest is m2
+  CH: 'containers',
+  CT: 'containers', // Carton -> closest is containers
+  PX: 'containers', // Pallet -> closest is containers
+  PK: 'containers', // Package -> closest is containers
+};
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Insurance Preference
 // ─────────────────────────────────────────────────────────────────────────────
@@ -149,6 +178,7 @@ export default {
   OFFER_STATUS,
   PAYMENT_TERMS,
   DEAL_UNITS,
+  UNECE_TO_DEAL_UNIT,
   INSURANCE_PREFERENCE,
   EXPIRY_DEFAULT_HOURS,
   VALID_DEAL_TRANSITIONS,
