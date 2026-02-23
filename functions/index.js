@@ -18,12 +18,15 @@ admin.initializeApp();
 const db = admin.firestore();
 const messaging = admin.messaging();
 
-// Initialize Resend for transactional email
+// Lazy Resend initialization — only created when first email is sent.
 // Set RESEND_API_KEY in functions/.env or via firebase functions:config:set resend.api_key='re_xxxxx'
-// In Phase 2 development, onboarding@resend.dev sender is used (custom domain not required yet)
-const resend = new Resend(
-  process.env.RESEND_API_KEY || null
-);
+let _resend = null;
+function getResend() {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) return null;
+  if (!_resend) _resend = new Resend(apiKey);
+  return _resend;
+}
 
 /**
  * Role constants (duplicated here to avoid ESM import in CJS Cloud Functions)
@@ -1052,37 +1055,8 @@ exports.createDeal = onCall(async (request) => {
     });
   });
 
-  // Post-transaction: send system message to conversation (non-blocking)
-  // Errors here do NOT fail the deal creation
-  try {
-    const dealLink = `/deals/${dealRef.id}`;
-    const systemMessageRef = db
-      .collection('conversations')
-      .doc(conversationId)
-      .collection('messages')
-      .doc();
-
-    await db.runTransaction(async (t) => {
-      const convRef = db.collection('conversations').doc(conversationId);
-      t.set(systemMessageRef, {
-        type: 'system',
-        content: `Deal initiated for ${product.name || 'this product'}. View deal: ${dealLink}`,
-        dealId: dealRef.id,
-        dealLink,
-        senderId: uid,
-        createdAt: now,
-        updatedAt: now,
-      });
-      t.update(convRef, {
-        'lastMessage.content': `Deal initiated for ${product.name || 'this product'}`,
-        'lastMessage.type': 'system',
-        'lastMessage.createdAt': now,
-        updatedAt: now,
-      });
-    });
-  } catch (msgError) {
-    console.error('createDeal: failed to send system message (non-fatal):', msgError);
-  }
+  // Note: system message is posted by onDealOfferCreated trigger (round === 1 = new_deal)
+  // to avoid duplicate messages. Do NOT post system message here.
 
   console.log(`Deal created: ${dealRef.id} (buyer: ${buyerId}, seller: ${actualSellerId})`);
   return { success: true, dealId: dealRef.id };
@@ -1457,6 +1431,11 @@ exports.withdrawOffer = onCall(async (request) => {
  */
 async function sendDealEmail(to, subject, htmlBody) {
   if (!to || !subject || !htmlBody) return;
+  const resend = getResend();
+  if (!resend) {
+    console.warn('sendDealEmail: RESEND_API_KEY not set, skipping email.');
+    return;
+  }
   try {
     await resend.emails.send({
       from: 'CoreTradeGlobal <onboarding@resend.dev>',
@@ -1691,8 +1670,8 @@ exports.onDealOfferCreated = onDocumentCreated(
           const now = Timestamp.now();
           const content =
             eventType === 'new_deal'
-              ? `New offer submitted for ${deal.productName || 'this product'}`
-              : `Counter-offer submitted for ${deal.productName || 'this product'}`;
+              ? `Deal initiated for ${deal.productName || 'this product'}`
+              : `Counter-offer (Round ${offer.round}) for ${deal.productName || 'this product'}`;
 
           await db.runTransaction(async (t) => {
             t.set(systemMsgRef, {

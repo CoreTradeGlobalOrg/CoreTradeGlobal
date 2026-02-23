@@ -75,25 +75,60 @@ export function NotificationListener() {
         unsubscribe = onMessage(messaging, (payload) => {
           console.log('[FCM] Foreground message received:', payload);
 
-          // Use data fields since we're using data-only messages
-          const notificationTitle = payload.data?.senderName || 'New Message';
-          const notificationBody = payload.data?.messageContent || 'You have a new message';
+          const dataType = payload.data?.type;
 
-          // Try native Notification API first (works better in Chrome)
+          // Determine notification content based on type
+          let notificationTitle;
+          let notificationBody;
+          let clickUrl;
+          let tag;
+
+          if (dataType === 'deal_event') {
+            // Deal event notifications
+            const eventType = payload.data?.eventType || 'update';
+            const eventLabels = {
+              new_deal: 'New Deal',
+              counter_offer: 'Counter-Offer Received',
+              accepted: 'Deal Accepted',
+              rejected: 'Deal Rejected',
+              withdrawn: 'Deal Withdrawn',
+              expired: 'Deal Expired',
+              renewed: 'Offer Renewed',
+            };
+            notificationTitle = eventLabels[eventType] || 'Deal Update';
+            notificationBody = `You have a deal ${eventType.replace('_', ' ')} notification`;
+            clickUrl = payload.data?.click_action || `/deals/${payload.data?.dealId}`;
+            tag = `deal-${payload.data?.dealId || 'unknown'}`;
+          } else {
+            // Default: message notifications (existing behavior)
+            notificationTitle = payload.data?.senderName || 'New Message';
+            notificationBody = payload.data?.messageContent || 'You have a new message';
+            clickUrl = payload.data?.conversationId
+              ? `/messages/${payload.data.conversationId}`
+              : '/messages';
+            tag = payload.data?.conversationId || 'message';
+          }
+
+          // Show notification
           try {
             const notification = new Notification(notificationTitle, {
               body: notificationBody,
               icon: '/icons/icon-192x192.png',
-              tag: payload.data?.conversationId || 'message',
-              data: payload.data,
+              tag,
+              data: { ...payload.data, clickUrl },
             });
 
             notification.onclick = () => {
               window.focus();
-              const conversationId = payload.data?.conversationId;
-              if (conversationId && openConversationRef.current) {
-                // Open FAB with the conversation instead of navigating
-                openConversationRef.current(conversationId);
+              if (dataType === 'deal_event') {
+                // Navigate to deal page
+                window.location.href = clickUrl;
+              } else {
+                // Open FAB with the conversation (existing behavior)
+                const conversationId = payload.data?.conversationId;
+                if (conversationId && openConversationRef.current) {
+                  openConversationRef.current(conversationId);
+                }
               }
               notification.close();
             };
@@ -107,8 +142,8 @@ export function NotificationListener() {
               reg.showNotification(notificationTitle, {
                 body: notificationBody,
                 icon: '/icons/icon-192x192.png',
-                tag: payload.data?.conversationId || 'message',
-                data: payload.data,
+                tag,
+                data: { ...payload.data, clickUrl },
               });
               console.log('[FCM] Notification shown via service worker');
             });

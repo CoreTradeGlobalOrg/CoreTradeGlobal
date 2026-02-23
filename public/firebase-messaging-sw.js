@@ -28,24 +28,47 @@ const messaging = firebase.messaging();
 messaging.onBackgroundMessage((payload) => {
   console.log('[firebase-messaging-sw.js] Received background message:', payload);
 
-  // Use data fields since we're using data-only messages
-  const notificationTitle = payload.data?.senderName || 'New Message';
+  const dataType = payload.data?.type;
+
+  let notificationTitle;
+  let notificationBody;
+  let tag;
+  let clickUrl;
+
+  if (dataType === 'deal_event') {
+    const eventType = payload.data?.eventType || 'update';
+    const eventLabels = {
+      new_deal: 'New Deal',
+      counter_offer: 'Counter-Offer Received',
+      accepted: 'Deal Accepted',
+      rejected: 'Deal Rejected',
+      withdrawn: 'Deal Withdrawn',
+      expired: 'Deal Expired',
+      renewed: 'Offer Renewed',
+    };
+    notificationTitle = eventLabels[eventType] || 'Deal Update';
+    notificationBody = 'You have a deal ' + (eventType.replace('_', ' ')) + ' notification';
+    tag = 'deal-' + (payload.data?.dealId || 'unknown');
+    clickUrl = payload.data?.click_action || ('/deals/' + payload.data?.dealId);
+  } else {
+    notificationTitle = payload.data?.senderName || 'New Message';
+    notificationBody = payload.data?.messageContent || 'You have a new message';
+    tag = payload.data?.conversationId || 'message';
+    clickUrl = payload.data?.conversationId
+      ? ('/messages/' + payload.data.conversationId)
+      : '/messages';
+  }
+
   const notificationOptions = {
-    body: payload.data?.messageContent || 'You have a new message',
+    body: notificationBody,
     icon: '/icons/icon-192x192.png',
     badge: '/icons/icon-192x192.png',
-    tag: payload.data?.conversationId || 'message',
-    data: payload.data,
+    tag: tag,
+    data: { ...payload.data, clickUrl },
     vibrate: [100, 50, 100],
     actions: [
-      {
-        action: 'open',
-        title: 'Open',
-      },
-      {
-        action: 'close',
-        title: 'Close',
-      },
+      { action: 'open', title: 'Open' },
+      { action: 'close', title: 'Close' },
     ],
   };
 
@@ -62,25 +85,22 @@ self.addEventListener('notificationclick', (event) => {
     return;
   }
 
-  // Build full URL to open
-  const conversationId = event.notification.data?.conversationId;
-  const path = conversationId ? `/messages/${conversationId}` : '/messages';
+  // Use clickUrl from notification data (set in onBackgroundMessage)
+  const clickUrl = event.notification.data?.clickUrl;
+  const path = clickUrl || '/';
   const urlToOpen = new URL(path, self.location.origin).href;
 
   console.log('[firebase-messaging-sw.js] Opening URL:', urlToOpen);
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-      // Check if there's already an open window on our origin
       for (const client of clientList) {
         if (client.url.startsWith(self.location.origin) && 'focus' in client) {
-          // Navigate existing window to the conversation
           return client.focus().then(() => {
             return client.navigate(urlToOpen);
           });
         }
       }
-      // Open new window if none exists
       if (clients.openWindow) {
         return clients.openWindow(urlToOpen);
       }
