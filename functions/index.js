@@ -1758,6 +1758,42 @@ exports.onDealStatusChanged = onDocumentUpdated(
 
       await sendDealNotifications(dealId, eventType, actorUid, after);
 
+      // Post system message to conversation (if conversationId is linked)
+      if (after.conversationId) {
+        try {
+          const statusMessages = {
+            accepted: `Deal accepted for ${after.productName || 'this product'}`,
+            rejected: `Deal rejected for ${after.productName || 'this product'}`,
+            withdrawn: `Offer withdrawn for ${after.productName || 'this product'}`,
+            expired: `Offer expired for ${after.productName || 'this product'}`,
+          };
+          const content = statusMessages[after.status] || `Deal status changed to ${after.status}`;
+          const conversationRef = db.collection('conversations').doc(after.conversationId);
+          const systemMsgRef = conversationRef.collection('messages').doc();
+          const now = Timestamp.now();
+
+          await db.runTransaction(async (t) => {
+            t.set(systemMsgRef, {
+              type: 'system',
+              content,
+              dealId,
+              dealLink: `/deals/${dealId}`,
+              senderId: actorUid,
+              createdAt: now,
+              updatedAt: now,
+            });
+            t.update(conversationRef, {
+              'lastMessage.content': content,
+              'lastMessage.type': 'system',
+              'lastMessage.createdAt': now,
+              updatedAt: now,
+            });
+          });
+        } catch (msgErr) {
+          console.error('onDealStatusChanged: failed to post system message (non-fatal):', msgErr);
+        }
+      }
+
       console.log(`onDealStatusChanged: deal ${dealId} transitioned ${before.status} → ${after.status}`);
       return null;
     } catch (err) {
