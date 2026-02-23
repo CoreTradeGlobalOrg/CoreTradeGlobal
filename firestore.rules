@@ -252,8 +252,14 @@ service cloud.firestore {
       allow delete: if false;
 
       // Offers subcollection — same participant-only read access
+      // NOTE: resource.data inside this subcollection refers to the OFFER document,
+      // not the parent deal. isDealParticipant() reads resource.data.buyerId/sellerId
+      // which don't exist on offers. Use get() to read the parent deal document instead.
       match /offers/{offerId} {
-        allow read: if isAuthenticated() && isDealParticipant();
+        allow read: if isAuthenticated() && (
+          request.auth.uid == get(/databases/$(database)/documents/deals/$(dealId)).data.buyerId ||
+          request.auth.uid == get(/databases/$(database)/documents/deals/$(dealId)).data.sellerId
+        );
         allow write: if false; // All writes via Cloud Functions
       }
     }
