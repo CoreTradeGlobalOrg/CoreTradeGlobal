@@ -100,7 +100,7 @@ export function DealPage({ deal, offers, currentUserUid, actions, otherPartyView
   const otherPartyUid = isBuyer ? deal.sellerId : deal.buyerId;
 
   return (
-    <div className="min-h-screen bg-[#0F1C2E] p-4 sm:p-6">
+    <div className="min-h-screen bg-[#0F1C2E] pt-[120px] pb-4 px-4 sm:pb-6 sm:px-6">
       <div className="max-w-6xl mx-auto space-y-4">
 
         {/* Product Hero — full width */}

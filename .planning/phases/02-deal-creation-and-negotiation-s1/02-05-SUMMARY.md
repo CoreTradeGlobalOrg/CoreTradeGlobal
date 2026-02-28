@@ -95,6 +95,16 @@ None - no external service configuration required.
 - Deal form pre-fills quantity and unit correctly from product data
 - Ready for Plan 06 (UAT gap closure for remaining issues)
 
+## Self-Check: PASSED
+
+- FOUND: `firestore.rules`
+- FOUND: `src/core/constants/dealConstants.js`
+- FOUND: `src/app/(main)/deals/new/page.jsx`
+- FOUND: `02-05-SUMMARY.md`
+- FOUND commit: `d7d8358` (Task 1 - Firestore rules fix)
+- FOUND commit: `a929ccd` (Task 2 - UNECE mapping + pre-fill)
+- FOUND commit: `451806c` (docs - metadata)
+
 ---
 *Phase: 02-deal-creation-and-negotiation-s1*
 *Completed: 2026-02-23*

@@ -60,10 +60,14 @@ export const offerSchema = z.object({
     .string({ required_error: 'Named place is required' })
     .min(1, 'Named place is required'),
 
-  // Delivery deadline (must be a future date)
+  // Delivery deadline (must be a future date) — HTML date input returns a string (YYYY-MM-DD)
   deliveryDeadline: z
-    .date({ required_error: 'Delivery deadline is required', invalid_type_error: 'Delivery deadline must be a valid date' })
-    .refine((date) => date > new Date(), {
+    .string({ required_error: 'Delivery deadline is required' })
+    .min(1, 'Delivery deadline is required')
+    .refine((val) => !isNaN(Date.parse(val)), {
+      message: 'Delivery deadline must be a valid date',
+    })
+    .refine((val) => new Date(val) > new Date(), {
       message: 'Delivery deadline must be in the future',
     }),
 

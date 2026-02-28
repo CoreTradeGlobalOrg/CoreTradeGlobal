@@ -68,8 +68,8 @@ service cloud.firestore {
     // ─────────────────────────────────────────────────────────────────────────
 
     match /users/{userId} {
-      // Any authenticated user can read user profiles (for company listings, messaging)
-      allow read: if isAuthenticated();
+      // Public can read user profiles (for company listings on homepage)
+      allow read: if true;
 
       // Users can create their own profile during registration
       allow create: if isOwner(userId);

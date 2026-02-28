@@ -52,7 +52,7 @@ export default function ForbiddenPage() {
         {/* Return link */}
         <Link
           href="/"
-          className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-[#FFD700] text-[#0F1B2B] font-bold text-sm hover:bg-white transition-colors"
+          className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-[#FFD700] !text-[#0F1B2B] font-bold text-sm hover:bg-white transition-colors"
         >
           Return to Dashboard
         </Link>

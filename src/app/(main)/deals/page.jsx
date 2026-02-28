@@ -64,7 +64,7 @@ export default function DealsPage() {
   // ── Loading skeleton ──
   if (authLoading || dealsLoading) {
     return (
-      <main className="min-h-screen bg-radial-navy pt-24 pb-12">
+      <main className="min-h-screen bg-radial-navy pt-[120px] pb-12">
         <div className="max-w-4xl mx-auto px-4">
           <div className="mb-8">
             <div className="h-8 w-32 bg-[rgba(255,255,255,0.07)] rounded-lg animate-pulse mb-2" />
@@ -84,7 +84,7 @@ export default function DealsPage() {
   }
 
   return (
-    <main className="min-h-screen bg-radial-navy pt-24 pb-12">
+    <main className="min-h-screen bg-radial-navy pt-[120px] pb-12">
       <div className="max-w-4xl mx-auto px-4">
 
         {/* ── Page Header ── */}

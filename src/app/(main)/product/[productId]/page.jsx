@@ -362,7 +362,7 @@ export default function ProductDetailPage() {
             )}
 
             {/* Seller Info Card */}
-            {seller && !isOwnProduct && (
+            {seller && currentUser?.uid !== product?.userId && (
               <RestrictedCard>
                 <div className="glass-card p-6">
                   <div className="flex flex-col gap-4">

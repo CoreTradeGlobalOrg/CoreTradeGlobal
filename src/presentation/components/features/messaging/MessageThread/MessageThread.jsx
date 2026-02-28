@@ -182,7 +182,7 @@ export function MessageThread({ conversationId, participantDetails = {} }) {
                     {message.dealLink && (
                       <Link href={message.dealLink} className="system-message-deal-btn">
                         <Handshake className="w-4 h-4" />
-                        Check the Deal
+                        View Deal
                       </Link>
                     )}
                     <span className="system-message-time">{formatTime(message.createdAt)}</span>

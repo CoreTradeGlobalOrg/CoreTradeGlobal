@@ -7,6 +7,7 @@
 
 import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
+import { getFirestore } from 'firebase-admin/firestore';
 
 let adminApp;
 
@@ -51,12 +52,26 @@ export async function verifyIdToken(idToken) {
   try {
     const auth = getAdminAuth();
     const decodedToken = await auth.verifyIdToken(idToken);
+    let role = decodedToken.role || null;
+
+    // Fallback: check Firestore for legacy accounts without custom claims
+    if (!role) {
+      try {
+        const db = getFirestore();
+        const userDoc = await db.collection('users').doc(decodedToken.uid).get();
+        if (userDoc.exists) {
+          role = userDoc.data().role || null;
+        }
+      } catch (fsError) {
+        console.error('Firestore role fallback failed:', fsError);
+      }
+    }
+
     return {
       valid: true,
       uid: decodedToken.uid,
       email: decodedToken.email,
-      // Role from custom claims — the single source of truth for role enforcement
-      role: decodedToken.role || null,
+      role,
     };
   } catch (error) {
     console.error('Token verification failed:', error);

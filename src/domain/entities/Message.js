@@ -49,7 +49,7 @@ export class Message {
    * @returns {Message}
    */
   static fromFirestore(data) {
-    return new Message(
+    const msg = new Message(
       data.id,
       data.conversationId,
       data.senderId,
@@ -61,6 +61,10 @@ export class Message {
       data.attachments || [],
       data.createdAt?.toDate?.() || data.createdAt || new Date()
     );
+    // Preserve deal-related fields for system messages
+    if (data.dealId) msg.dealId = data.dealId;
+    if (data.dealLink) msg.dealLink = data.dealLink;
+    return msg;
   }
 
   /**

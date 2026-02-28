@@ -146,10 +146,26 @@ export function OnboardingWizard({ uid: initialUid }) {
   const [marketingEmails, setMarketingEmails] = useState(false);
   const [completing, setCompleting] = useState(false);
 
-  // Pre-fill email from localStorage if same device
+  // Pre-fill email: try URL search params (from invite link), then localStorage
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const uid = params.get('uid');
     const stored = localStorage.getItem('emailForSignIn');
-    if (stored) setEmailForLink(stored);
+
+    if (uid) {
+      // Fetch email from Firestore invite doc using the uid from the invite link
+      getDoc(doc(db, 'invites', uid)).then((snap) => {
+        if (snap.exists()) {
+          setEmailForLink(snap.data().email);
+        } else if (stored) {
+          setEmailForLink(stored);
+        }
+      }).catch(() => {
+        if (stored) setEmailForLink(stored);
+      });
+    } else if (stored) {
+      setEmailForLink(stored);
+    }
   }, []);
 
   // Step 1 form
@@ -198,8 +214,10 @@ export function OnboardingWizard({ uid: initialUid }) {
   };
 
   const goBack = () => {
+    // Prevent going back to step 1 — the sign-in link is single-use and already consumed
+    if (step <= 2) return;
     setDirection(-1);
-    setStep((s) => Math.max(s - 1, 1));
+    setStep((s) => s - 1);
   };
 
   // ── Step 1: Verify Identity & Set Password ───────────────────────────────
@@ -561,24 +579,14 @@ export function OnboardingWizard({ uid: initialUid }) {
                   <p className="text-gray-400 text-center py-4">Could not load profile data.</p>
                 )}
 
-                <div className="flex gap-3">
-                  <button
-                    type="button"
-                    onClick={goBack}
-                    className="flex items-center gap-2 px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-medium rounded-xl transition-all"
-                  >
-                    <ArrowLeft className="w-4 h-4" />
-                    Back
-                  </button>
-                  <button
-                    type="button"
-                    onClick={onStep2Continue}
-                    className="flex-1 flex items-center justify-center gap-2 p-4 bg-gradient-to-br from-[#FFD700] to-[#FDB931] text-[#0F1B2B] font-bold rounded-full shadow-[0_4px_20px_rgba(255,215,0,0.2)] hover:-translate-y-0.5 transition-all"
-                  >
-                    Looks Good, Continue
-                    <ArrowRight className="w-5 h-5" />
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={onStep2Continue}
+                  className="w-full flex items-center justify-center gap-2 p-4 bg-gradient-to-br from-[#FFD700] to-[#FDB931] text-[#0F1B2B] font-bold rounded-full shadow-[0_4px_20px_rgba(255,215,0,0.2)] hover:-translate-y-0.5 transition-all"
+                >
+                  Looks Good, Continue
+                  <ArrowRight className="w-5 h-5" />
+                </button>
               </div>
             )}
 
@@ -660,7 +668,7 @@ export function OnboardingWizard({ uid: initialUid }) {
                     type="button"
                     onClick={handlePhotoUpload}
                     disabled={!photoFile || photoUploading}
-                    className="flex-1 flex items-center justify-center gap-2 p-4 bg-gradient-to-br from-[#FFD700] to-[#FDB931] text-[#0F1B2B] font-bold rounded-full shadow-[0_4px_20px_rgba(255,215,0,0.2)] hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex-1 flex items-center justify-center gap-2 p-4 bg-gradient-to-br from-[#FFD700] to-[#FDB931] text-[#0F1B2B] font-bold rounded-full shadow-[0_4px_20px_rgba(255,215,0,0.2)] hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                   >
                     {photoUploading ? (
                       <>
@@ -670,7 +678,7 @@ export function OnboardingWizard({ uid: initialUid }) {
                     ) : (
                       <>
                         Upload & Continue
-                        <ArrowRight className="w-4 h-4" />
+                        <ArrowRight className="w-4 h-4 flex-shrink-0" />
                       </>
                     )}
                   </button>

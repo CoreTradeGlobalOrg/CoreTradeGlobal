@@ -90,8 +90,13 @@ export function getClientIP(request) {
 
 // Pre-configured rate limiters for common use cases
 export const authLimiter = rateLimit({
+  maxRequests: 10,
+  windowMs: 60 * 1000, // 10 requests per minute (session refresh on each auth state change)
+});
+
+export const loginLimiter = rateLimit({
   maxRequests: 5,
-  windowMs: 15 * 60 * 1000, // 5 requests per 15 minutes
+  windowMs: 15 * 60 * 1000, // 5 requests per 15 minutes (brute-force protection)
 });
 
 export const passwordResetLimiter = rateLimit({

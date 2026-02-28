@@ -53,7 +53,7 @@ const VALID_INVITE_ROLES = [
  * App URL for generating invite sign-in links.
  * Set APP_URL environment variable or configure via functions.config().app.url
  */
-const APP_URL = process.env.APP_URL || 'https://core-trade-global.web.app';
+const APP_URL = process.env.APP_URL || 'https://coretradeglobal.com';
 
 /**
  * Helper function to check if user is admin
@@ -1435,8 +1435,7 @@ exports.withdrawOffer = onCall(async (request) => {
  * sendDealEmail — wraps Resend SDK call.
  *
  * Non-blocking: email failure does NOT fail the Cloud Function.
- * From address uses onboarding@resend.dev for Phase 2 development.
- * Switch to a verified custom domain before production.
+ * From address uses verified custom domain coretradeglobal.com.
  *
  * @param {string} to - Recipient email address
  * @param {string} subject - Email subject line
@@ -1451,7 +1450,7 @@ async function sendDealEmail(to, subject, htmlBody) {
   }
   try {
     await resend.emails.send({
-      from: 'CoreTradeGlobal <onboarding@resend.dev>',
+      from: 'CoreTradeGlobal <info@coretradeglobal.com>',
       to,
       subject,
       html: htmlBody,
