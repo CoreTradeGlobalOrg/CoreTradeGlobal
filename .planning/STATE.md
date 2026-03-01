@@ -1,3 +1,16 @@
+---
+gsd_state_version: 1.0
+milestone: v1.0
+milestone_name: milestone
+status: unknown
+last_updated: "2026-03-01T14:49:39.285Z"
+progress:
+  total_phases: 3
+  completed_phases: 2
+  total_plans: 13
+  completed_plans: 12
+---
+
 # Project State
 
 ## Project Reference
@@ -5,16 +18,16 @@
 See: .planning/PROJECT.md (updated 2026-02-20)
 
 **Core value:** A member can complete an entire international trade deal -- negotiate, get legal advice, insure cargo, arrange shipping, and track delivery -- without leaving the platform.
-**Current focus:** Phase 2: Deal Creation and Negotiation (S1)
+**Current focus:** Phase 3: Contract Agreement (S2)
 
 ## Current Position
 
-Phase: 2 of 7 (Deal Creation and Negotiation S1)
-Plan: 6 of 6 in current phase -- Phase 02 COMPLETE
-Status: Phase complete
-Last activity: 2026-02-23 - Completed quick task 1: Deal notification click navigates to deal page
+Phase: 3 of 7 (Contract Agreement S2)
+Plan: 1 of 3 in current phase
+Status: In progress
+Last activity: 2026-03-01 - Completed 03-01: Contract data layer and Cloud Functions
 
-Progress: [████████░░] 40%
+Progress: [████████░░] 43%
 
 ## Performance Metrics
 
@@ -43,6 +56,7 @@ Progress: [████████░░] 40%
 | Phase 02 P05 | 2 | 2 tasks | 3 files |
 | Phase 02 P06 | 2 | 2 tasks | 5 files |
 | Phase 02 P07 | 1 | 1 tasks | 1 files |
+| Phase 03 P01 | 7 | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -91,6 +105,10 @@ Recent decisions affecting current work:
 - [02-05]: Offers subcollection rule uses get() on parent deal document -- resource.data in /offers/{offerId} context refers to offer doc, not deal doc; isDealParticipant() was reading wrong resource
 - [02-05]: UNECE_TO_DEAL_UNIT mapping in dealConstants.js -- products store UNECE codes, deal form uses simplified units; mapping at form pre-fill time with fallback to raw unit code
 - [Phase 02-07]: Only the wire key name changes (offerData -> offer); the local variable remains offerData for function signature clarity
+- [Phase 03-01]: CONTRACT_APPROVED added to DEAL_STATUS; ACCEPTED is transitional (not terminal) — enables contract approval flow before deal completion
+- [Phase 03-01]: dealBuyerId/dealSellerId denormalized on contract doc — saveDraftApprovals determines isBuyer without extra Firestore read (follows Phase 2 denormalization pattern)
+- [Phase 03-01]: deadline stored as null on contract doc — enforcement (scheduled CF, auto-expiry) deferred to future phase; field is forward-compatible placeholder
+- [Phase 03-01]: submitContractApproval uses runTransaction — prevents race condition where both parties submit simultaneously and both see otherHasSubmitted=false
 
 ### Pending Todos
 
@@ -111,6 +129,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-23
-Stopped at: Completed quick-1-PLAN.md (deal notification click handler in NotificationBell)
+Last session: 2026-03-01
+Stopped at: Completed 03-01-PLAN.md (contract data layer and Cloud Functions)
 Resume file: None
