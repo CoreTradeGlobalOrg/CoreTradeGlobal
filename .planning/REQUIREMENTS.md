@@ -32,7 +32,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **AGMT-02**: Each contract clause requires individual checkbox approval per party
 - [x] **AGMT-03**: Party approval status tracked (pending/approved per side)
 - [x] **AGMT-04**: Deal cannot advance to insurance/logistics stage until both parties approve
-- [ ] **AGMT-05**: Financial summary and document requirements displayed before approval
+- [x] **AGMT-05**: Financial summary and document requirements displayed before approval
 
 ### Legal Consulting
 
@@ -130,7 +130,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | AGMT-02 | Phase 3 | Complete |
 | AGMT-03 | Phase 3 | Complete |
 | AGMT-04 | Phase 3 | Complete |
-| AGMT-05 | Phase 3 | Pending |
+| AGMT-05 | Phase 3 | Complete |
 | LEGAL-01 | Phase 5 | Pending |
 | LEGAL-02 | Phase 5 | Pending |
 | LEGAL-03 | Phase 5 | Pending |

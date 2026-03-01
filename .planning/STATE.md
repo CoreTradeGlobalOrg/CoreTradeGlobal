@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: unknown
-last_updated: "2026-03-01T14:49:39.285Z"
+status: in_progress
+last_updated: "2026-03-01T14:57:08Z"
 progress:
   total_phases: 3
   completed_phases: 2
   total_plans: 13
-  completed_plans: 12
+  completed_plans: 13
 ---
 
 # Project State
@@ -23,11 +23,11 @@ See: .planning/PROJECT.md (updated 2026-02-20)
 ## Current Position
 
 Phase: 3 of 7 (Contract Agreement S2)
-Plan: 1 of 3 in current phase
+Plan: 2 of 3 in current phase (checkpoint: awaiting human verification of contract UI)
 Status: In progress
-Last activity: 2026-03-01 - Completed 03-01: Contract data layer and Cloud Functions
+Last activity: 2026-03-01 - Completed 03-02: Contract review UI (awaiting Task 3 human verification)
 
-Progress: [████████░░] 43%
+Progress: [█████████░] 47%
 
 ## Performance Metrics
 
@@ -57,6 +57,7 @@ Progress: [████████░░] 43%
 | Phase 02 P06 | 2 | 2 tasks | 5 files |
 | Phase 02 P07 | 1 | 1 tasks | 1 files |
 | Phase 03 P01 | 7 | 2 tasks | 8 files |
+| Phase 03 P02 | 6 | 2 tasks | 11 files |
 
 ## Accumulated Context
 
@@ -109,6 +110,9 @@ Recent decisions affecting current work:
 - [Phase 03-01]: dealBuyerId/dealSellerId denormalized on contract doc — saveDraftApprovals determines isBuyer without extra Firestore read (follows Phase 2 denormalization pattern)
 - [Phase 03-01]: deadline stored as null on contract doc — enforcement (scheduled CF, auto-expiry) deferred to future phase; field is forward-compatible placeholder
 - [Phase 03-01]: submitContractApproval uses runTransaction — prevents race condition where both parties submit simultaneously and both see otherHasSubmitted=false
+- [Phase 03-02]: isTerminal fallback in DealPage updated — ACCEPTED removed, CONTRACT_APPROVED added to match Deal.isTerminal() entity from Plan 01
+- [Phase 03-02]: CounterOfferForm guard changed to deal.status === NEGOTIATING — ACCEPTED is non-terminal but must not show counter-offer form
+- [Phase 03-02]: hasExpanded restored from server approvedClauses on load — prevents Pitfall 6 (checkbox disable after page refresh)
 
 ### Pending Todos
 
@@ -130,5 +134,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-01
-Stopped at: Completed 03-01-PLAN.md (contract data layer and Cloud Functions)
+Stopped at: Completed 03-02-PLAN.md tasks 1 and 2; awaiting human verification (Task 3 checkpoint) for contract UI end-to-end flow
 Resume file: None
