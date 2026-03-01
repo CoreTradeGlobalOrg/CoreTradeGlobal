@@ -1122,3 +1122,61 @@ a:hover {
     flex: 1;
   }
 }
+
+/* ── Print-only helper (hidden on screen) ──────────────────────────────── */
+.print-only {
+  display: none;
+}
+
+/* ── Contract PDF Print Styles ──────────────────────────────────────────── */
+@media print {
+  /* Hide non-printable elements */
+  nav,
+  .no-print,
+  button,
+  footer,
+  .print-hide {
+    display: none !important;
+  }
+
+  /* Show print-only elements */
+  .print-only {
+    display: block !important;
+  }
+
+  /* Reset background for printing */
+  body {
+    background: white !important;
+    color: black !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Contract content fills page */
+  .contract-content {
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 20px !important;
+  }
+
+  /* Remove sticky positioning for print */
+  .lg\:sticky {
+    position: static !important;
+  }
+
+  /* Ensure clause sections do not break mid-clause */
+  .clause-section {
+    break-inside: avoid;
+  }
+
+  /* Force accordion sections open for print */
+  .accordion-content {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  /* Remove padding-top from main layout (navbar is hidden on print) */
+  .pt-\[120px\] {
+    padding-top: 20px !important;
+  }
+}

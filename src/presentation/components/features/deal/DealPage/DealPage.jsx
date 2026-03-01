@@ -14,6 +14,8 @@
 
 'use client';
 
+import Link from 'next/link';
+import { FileText } from 'lucide-react';
 import { ProductHero } from '../ProductHero/ProductHero';
 import { OfferTimeline } from '../OfferTimeline/OfferTimeline';
 import { CounterOfferForm } from '../CounterOfferForm/CounterOfferForm';
@@ -27,11 +29,11 @@ import { DEAL_STATUS } from '@/core/constants/dealConstants';
 
 function TerminalBanner({ status }) {
   const configs = {
-    [DEAL_STATUS.ACCEPTED]: {
-      label: 'Deal Accepted',
-      sub: 'Both parties have agreed on the terms. Contract generation is in progress.',
+    [DEAL_STATUS.CONTRACT_APPROVED]: {
+      label: 'Contract Approved',
+      sub: 'Both parties approved all contract clauses. Ready for insurance and logistics quotes.',
       bg: 'bg-emerald-900/20',
-      border: 'border-emerald-700/50',
+      border: 'border-emerald-500/30',
       text: 'text-emerald-400',
     },
     [DEAL_STATUS.REJECTED]: {
@@ -86,10 +88,10 @@ export function DealPage({ deal, offers, currentUserUid, actions, otherPartyView
   if (!deal) return null;
 
   const isTerminal = deal.isTerminal?.() ?? [
-    DEAL_STATUS.ACCEPTED,
     DEAL_STATUS.REJECTED,
     DEAL_STATUS.EXPIRED,
     DEAL_STATUS.WITHDRAWN,
+    DEAL_STATUS.CONTRACT_APPROVED,
   ].includes(deal.status);
 
   // Latest offer for pre-fill and sidebar summary
@@ -107,8 +109,27 @@ export function DealPage({ deal, offers, currentUserUid, actions, otherPartyView
         <ProductHero deal={deal} />
 
         {/* Countdown timer */}
-        {latestOffer?.expiresAt && !isTerminal && (
+        {latestOffer?.expiresAt && !isTerminal && deal.status !== DEAL_STATUS.ACCEPTED && (
           <CountdownTimer expiresAt={latestOffer.expiresAt} />
+        )}
+
+        {/* Contract ready banner — deal accepted, awaiting contract approval */}
+        {deal.status === DEAL_STATUS.ACCEPTED && (
+          <div className="rounded-xl border border-[#FFD700]/30 bg-[#FFD700]/5 px-4 py-3">
+            <div className="flex items-center gap-2 mb-1">
+              <FileText size={16} className="text-[#FFD700]" />
+              <p className="text-sm font-semibold text-[#FFD700]">Deal Accepted — Contract Ready</p>
+            </div>
+            <p className="text-xs text-[#8899AA] mt-0.5">
+              Both parties agreed on terms. Review and approve the contract to proceed.
+            </p>
+            <Link
+              href={`/deals/${deal.id}/contract`}
+              className="mt-2 inline-block text-xs font-semibold text-[#FFD700] underline hover:text-[#FFE44D] transition-colors"
+            >
+              View Contract &rarr;
+            </Link>
+          </div>
         )}
 
         {/* Terminal banner (when deal is closed) */}
@@ -135,8 +156,8 @@ export function DealPage({ deal, offers, currentUserUid, actions, otherPartyView
               />
             </div>
 
-            {/* Counter-Offer Form (or waiting message) */}
-            {!isTerminal && (
+            {/* Counter-Offer Form — only visible during active negotiation */}
+            {deal.status === DEAL_STATUS.NEGOTIATING && (
               <CounterOfferForm
                 deal={deal}
                 latestOffer={latestOffer}
