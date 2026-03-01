@@ -17,11 +17,12 @@
  * Represents the overall state of a negotiation deal.
  */
 export const DEAL_STATUS = {
-  NEGOTIATING: 'negotiating',   // Active negotiation in progress
-  ACCEPTED: 'accepted',         // Both parties agreed — triggers contract generation
-  REJECTED: 'rejected',         // One party rejected the offer
-  EXPIRED: 'expired',           // All offers expired without acceptance
-  WITHDRAWN: 'withdrawn',       // A party withdrew from the negotiation
+  NEGOTIATING: 'negotiating',           // Active negotiation in progress
+  ACCEPTED: 'accepted',                 // Both parties agreed — triggers contract generation
+  REJECTED: 'rejected',                 // One party rejected the offer
+  EXPIRED: 'expired',                   // All offers expired without acceptance
+  WITHDRAWN: 'withdrawn',               // A party withdrew from the negotiation
+  CONTRACT_APPROVED: 'contract_approved', // Both parties approved all contract clauses — deal complete
 };
 
 /**
@@ -143,8 +144,11 @@ export const VALID_DEAL_TRANSITIONS = {
     DEAL_STATUS.EXPIRED,
     DEAL_STATUS.WITHDRAWN,
   ],
-  // Terminal states — no further transitions allowed
-  [DEAL_STATUS.ACCEPTED]: [],
+  // ACCEPTED is transitional — contract approval process begins
+  [DEAL_STATUS.ACCEPTED]: [DEAL_STATUS.CONTRACT_APPROVED],
+  // Terminal states — no further transitions allowed in negotiation flow
+  // (CONTRACT_APPROVED is a gateway for Phase 4 logistics/insurance)
+  [DEAL_STATUS.CONTRACT_APPROVED]: [],
   [DEAL_STATUS.REJECTED]: [],
   [DEAL_STATUS.EXPIRED]: [],
   [DEAL_STATUS.WITHDRAWN]: [],
@@ -184,3 +188,4 @@ export default {
   VALID_DEAL_TRANSITIONS,
   VALID_OFFER_TRANSITIONS,
 };
+

@@ -138,17 +138,35 @@ export class Deal {
   }
 
   /**
-   * Check if deal is in a terminal state (no further actions possible)
-   * Terminal = accepted, rejected, expired, or withdrawn
+   * Check if deal is in a terminal state (no further actions possible in negotiation)
+   * Terminal = contract_approved, rejected, expired, or withdrawn.
+   * NOTE: ACCEPTED is now transitional (awaiting contract approval), not terminal.
    * @returns {boolean}
    */
   isTerminal() {
     return [
-      DEAL_STATUS.ACCEPTED,
+      DEAL_STATUS.CONTRACT_APPROVED,
       DEAL_STATUS.REJECTED,
       DEAL_STATUS.EXPIRED,
       DEAL_STATUS.WITHDRAWN,
     ].includes(this.status);
+  }
+
+  /**
+   * Check if deal has been accepted but is awaiting contract approval.
+   * This is a transitional state — contract generation is in progress.
+   * @returns {boolean}
+   */
+  isAcceptedAwaitingContract() {
+    return this.status === DEAL_STATUS.ACCEPTED;
+  }
+
+  /**
+   * Check if deal has been fully approved via contract signing by both parties.
+   * @returns {boolean}
+   */
+  isContractApproved() {
+    return this.status === DEAL_STATUS.CONTRACT_APPROVED;
   }
 
   // ─────────────────────────────────────────────────────────────────────────

@@ -262,6 +262,17 @@ service cloud.firestore {
         );
         allow write: if false; // All writes via Cloud Functions
       }
+
+      // Contract subcollection — participant-only read, all writes via Cloud Functions
+      // The contract document lives at deals/{dealId}/contract/main and is auto-generated
+      // by the onDealAccepted Cloud Function when a deal transitions to 'accepted' status.
+      match /contract/{contractDoc} {
+        allow read: if isAuthenticated() && (
+          request.auth.uid == get(/databases/$(database)/documents/deals/$(dealId)).data.buyerId ||
+          request.auth.uid == get(/databases/$(database)/documents/deals/$(dealId)).data.sellerId
+        );
+        allow write: if false; // All writes via Cloud Functions (Admin SDK)
+      }
     }
 
     // ─────────────────────────────────────────────────────────────────────────
