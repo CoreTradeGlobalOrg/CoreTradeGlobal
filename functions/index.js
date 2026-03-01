@@ -921,6 +921,14 @@ const DEAL_STATUS = {
   REJECTED: 'rejected',
   EXPIRED: 'expired',
   WITHDRAWN: 'withdrawn',
+  CONTRACT_APPROVED: 'contract_approved', // Both parties approved all contract clauses
+};
+
+const CONTRACT_STATUS = {
+  PENDING: 'pending',
+  BUYER_APPROVED: 'buyer_approved',
+  SELLER_APPROVED: 'seller_approved',
+  BOTH_APPROVED: 'both_approved',
 };
 
 const OFFER_STATUS = {
@@ -1503,6 +1511,16 @@ function getDealEventCopy(eventType, productName) {
       body: `The expired offer on ${name} has been renewed with a new deadline.`,
       subject: `Offer renewed on ${name}`,
     },
+    contract_approved_by_party: {
+      title: `Contract update on ${name}`,
+      body: `A party has approved all contract clauses for the deal on ${name}.`,
+      subject: `Contract clause approval on ${name}`,
+    },
+    contract_both_approved: {
+      title: `Contract fully approved on ${name}`,
+      body: `Contract fully approved — deal ready to proceed for ${name}.`,
+      subject: `Contract fully approved on ${name}`,
+    },
   };
   return map[eventType] || {
     title: `Deal update on ${name}`,
@@ -1898,6 +1916,415 @@ exports.renewOffer = onCall(async (request) => {
   }
 
   console.log(`renewOffer: offer ${offerId} renewed for deal ${dealId} by ${uid}`);
+  return { success: true };
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Contract Approval Cloud Functions
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * buildContractClausesCJS — inline CJS version of buildContractClauses from contractConstants.js.
+ *
+ * Cannot import ESM from Next.js app in Cloud Functions (CommonJS).
+ * Generates the same 8 clause objects from accepted offer + deal data.
+ *
+ * @param {Object} offer - Accepted offer document data
+ * @param {Object} deal  - Parent deal document data
+ * @returns {Object[]} Array of 8 clause objects
+ */
+function buildContractClausesCJS(offer, deal) {
+  const INCOTERMS_DESCRIPTIONS = {
+    EXW: 'Seller makes goods available at their premises. Buyer bears all costs and risk.',
+    FCA: 'Seller delivers goods to carrier at named place. Risk transfers at delivery to carrier.',
+    CPT: 'Seller pays freight to named destination. Risk transfers when goods handed to carrier.',
+    CIP: 'Seller pays freight and insurance to named destination.',
+    DAP: 'Seller delivers to named destination. Buyer handles import customs and duties.',
+    DPU: 'Seller delivers and unloads goods at named destination.',
+    DDP: 'Maximum seller obligation. Seller pays all costs including duties.',
+    FAS: 'Sea/inland waterway only. Seller delivers alongside vessel at named port.',
+    FOB: 'Sea/inland waterway only. Risk transfers when goods loaded on vessel.',
+    CFR: 'Sea only. Seller pays freight to destination port. Risk transfers at loading.',
+    CIF: 'Sea only. Seller pays freight and insurance to destination port.',
+  };
+
+  const PAYMENT_TERMS_LABELS = {
+    cash: 'Cash',
+    '30_days': '30-Day Payment',
+    '60_days': '60-Day Payment',
+    '90_days': '90-Day Payment',
+    lc: 'Letter of Credit (LC)',
+    dap: 'Documents Against Payment',
+  };
+
+  const currency = offer.currency || 'USD';
+  const unit = offer.unit || '';
+  const price = offer.price || 0;
+  const quantity = offer.quantity || 0;
+
+  // Format with a simple locale-safe approach (Intl is available in Node.js)
+  const formatCurrency = (amount) => {
+    try {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency,
+        minimumFractionDigits: 2,
+      }).format(amount);
+    } catch {
+      return `${currency} ${amount.toFixed(2)}`;
+    }
+  };
+
+  const totalValue = offer.estimatedTotal || price * quantity;
+  const formattedPrice = formatCurrency(price);
+  const formattedTotal = formatCurrency(totalValue);
+
+  // Format delivery deadline
+  let deliveryDeadlineValue = 'To be agreed';
+  if (offer.deliveryDeadline) {
+    try {
+      const date = offer.deliveryDeadline?.toDate
+        ? offer.deliveryDeadline.toDate()
+        : new Date(offer.deliveryDeadline);
+      deliveryDeadlineValue = date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      });
+    } catch {
+      deliveryDeadlineValue = String(offer.deliveryDeadline);
+    }
+  }
+
+  // Insurance clause
+  const insurancePref = offer.insurancePreference;
+  let insuranceValue;
+  if (insurancePref === 'seller_provides') {
+    insuranceValue = 'Seller provides cargo insurance';
+  } else if (insurancePref === 'buyer_provides') {
+    insuranceValue = 'Buyer provides cargo insurance';
+  } else {
+    insuranceValue = 'No insurance required (per Incoterm default)';
+  }
+
+  const incotermDescription = INCOTERMS_DESCRIPTIONS[offer.incoterm] || offer.incoterm;
+
+  return [
+    {
+      id: 'price',
+      section: 'trade_terms',
+      sectionTitle: 'Trade Terms',
+      title: 'Unit Price',
+      value: `${formattedPrice} per ${unit}`,
+      sourceLabel: 'From negotiation',
+    },
+    {
+      id: 'quantity',
+      section: 'trade_terms',
+      sectionTitle: 'Trade Terms',
+      title: 'Quantity',
+      value: `${quantity} ${unit}`,
+      sourceLabel: 'From negotiation',
+    },
+    {
+      id: 'total_value',
+      section: 'trade_terms',
+      sectionTitle: 'Trade Terms',
+      title: 'Total Contract Value',
+      value: formattedTotal,
+      sourceLabel: 'Calculated from price x quantity',
+    },
+    {
+      id: 'incoterm',
+      section: 'delivery',
+      sectionTitle: 'Delivery & Shipping',
+      title: 'Incoterm',
+      value: `${offer.incoterm} — ${incotermDescription}`,
+      sourceLabel: 'From negotiation',
+    },
+    {
+      id: 'named_place',
+      section: 'delivery',
+      sectionTitle: 'Delivery & Shipping',
+      title: 'Named Place',
+      value: offer.namedPlace || 'To be agreed',
+      sourceLabel: 'From negotiation',
+    },
+    {
+      id: 'delivery_deadline',
+      section: 'delivery',
+      sectionTitle: 'Delivery & Shipping',
+      title: 'Delivery Deadline',
+      value: deliveryDeadlineValue,
+      sourceLabel: 'From negotiation',
+    },
+    {
+      id: 'payment_terms',
+      section: 'payment',
+      sectionTitle: 'Payment',
+      title: 'Payment Terms',
+      value: PAYMENT_TERMS_LABELS[offer.paymentTerms] || offer.paymentTerms || 'To be agreed',
+      sourceLabel: 'From negotiation',
+    },
+    {
+      id: 'insurance',
+      section: 'insurance',
+      sectionTitle: 'Insurance & Risk',
+      title: 'Insurance Responsibility',
+      value: insuranceValue,
+      sourceLabel: 'From Incoterm default',
+    },
+  ];
+}
+
+/**
+ * onDealAccepted — Firestore trigger
+ *
+ * Fires when a deal document is updated and its status transitions to 'accepted'.
+ * Auto-generates the contract document at deals/{dealId}/contract/main by:
+ * 1. Fetching the accepted offer from the deals/{dealId}/offers subcollection
+ * 2. Building clause array from the offer terms (via buildContractClausesCJS)
+ * 3. Writing the contract document with denormalized buyer/seller IDs
+ *
+ * NOTE: This trigger intentionally does NOT send a notification — the existing
+ * onDealStatusChanged trigger handles the 'accepted' event notification.
+ *
+ * Per user decision: a 1500ms delay is added for UX feel ("Generating contract...").
+ */
+exports.onDealAccepted = onDocumentUpdated(
+  'deals/{dealId}',
+  async (event) => {
+    const before = event.data?.before?.data();
+    const after = event.data?.after?.data();
+
+    if (!before || !after) return null;
+
+    // Only fire when deal transitions to 'accepted'
+    if (before.status === after.status || after.status !== DEAL_STATUS.ACCEPTED) return null;
+
+    const { dealId } = event.params;
+
+    try {
+      // Fetch the accepted offer from the offers subcollection
+      const offersQuery = await db
+        .collection('deals')
+        .doc(dealId)
+        .collection('offers')
+        .where('status', '==', OFFER_STATUS.ACCEPTED)
+        .limit(1)
+        .get();
+
+      if (offersQuery.empty) {
+        console.error(`onDealAccepted: no accepted offer found for deal ${dealId}`);
+        return null;
+      }
+
+      const acceptedOffer = offersQuery.docs[0].data();
+
+      // Build clauses from the accepted offer + deal data
+      const clauses = buildContractClausesCJS(acceptedOffer, after);
+
+      // 1500ms delay for UX feel — "Generating contract..."
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+
+      // Write the contract document
+      const contractRef = db.collection('deals').doc(dealId).collection('contract').doc('main');
+      await contractRef.set({
+        dealId,
+        dealBuyerId: after.buyerId,   // denormalized for saveDraftApprovals buyer/seller lookup
+        dealSellerId: after.sellerId, // denormalized for saveDraftApprovals buyer/seller lookup
+        generatedAt: Timestamp.now(),
+        deadline: null,               // placeholder — enforcement deferred to future phase
+        clauses,
+        buyerApproval: { approvedClauses: [], hasSubmitted: false, submittedAt: null },
+        sellerApproval: { approvedClauses: [], hasSubmitted: false, submittedAt: null },
+        status: CONTRACT_STATUS.PENDING,
+      });
+
+      console.log(`onDealAccepted: contract generated for deal ${dealId}`);
+      return null;
+    } catch (err) {
+      console.error(`onDealAccepted: error generating contract for deal ${dealId}:`, err);
+      return null;
+    }
+  }
+);
+
+/**
+ * saveDraftApprovals — onCall
+ *
+ * Saves a party's current clause approval selections as a draft.
+ * This is a non-transactional best-effort save — safe to call on every checkbox change.
+ * Debounce-safe: always replaces the full array (not arrayUnion).
+ *
+ * Guards:
+ * - Auth required
+ * - Contract must exist
+ * - Caller must be a deal participant (checked via denormalized fields on contract)
+ * - Cannot modify after submission (hasSubmitted === true)
+ *
+ * @param {Object} data - { dealId, approvedClauses }
+ * @returns {Promise<{ success: boolean }>}
+ */
+exports.saveDraftApprovals = onCall(async (request) => {
+  const { dealId, approvedClauses } = request.data;
+  const uid = request.auth?.uid;
+
+  if (!uid) throw new HttpsError('unauthenticated', 'Must be logged in.');
+  if (!dealId) throw new HttpsError('invalid-argument', 'dealId is required.');
+  if (!Array.isArray(approvedClauses)) {
+    throw new HttpsError('invalid-argument', 'approvedClauses must be an array.');
+  }
+
+  const contractRef = db.collection('deals').doc(dealId).collection('contract').doc('main');
+  const contractDoc = await contractRef.get();
+
+  if (!contractDoc.exists) {
+    throw new HttpsError('not-found', 'Contract not found.');
+  }
+
+  const contractData = contractDoc.data();
+
+  // Participation check using denormalized fields — no extra deal fetch required
+  if (uid !== contractData.dealBuyerId && uid !== contractData.dealSellerId) {
+    throw new HttpsError('permission-denied', 'You are not a participant in this deal.');
+  }
+
+  const isBuyer = contractData.dealBuyerId === uid;
+  const approvalKey = isBuyer ? 'buyerApproval.approvedClauses' : 'sellerApproval.approvedClauses';
+  const hasSubmittedKey = isBuyer ? 'buyerApproval.hasSubmitted' : 'sellerApproval.hasSubmitted';
+
+  // Cannot modify after submission
+  const myApproval = isBuyer ? contractData.buyerApproval : contractData.sellerApproval;
+  if (myApproval?.hasSubmitted === true) {
+    throw new HttpsError('failed-precondition', 'Cannot modify approvals after submission.');
+  }
+
+  // Replace full array (not arrayUnion — draft save always reflects current UI state)
+  await contractRef.update({ [approvalKey]: approvedClauses });
+
+  console.log(`saveDraftApprovals: saved ${approvedClauses.length} clause approvals for ${uid} on deal ${dealId}`);
+  return { success: true };
+});
+
+/**
+ * submitContractApproval — onCall
+ *
+ * Atomically submits a party's final clause approvals and advances the deal to
+ * 'contract_approved' if both parties have now submitted.
+ *
+ * Uses runTransaction to prevent the race condition where both parties submit
+ * simultaneously and both read otherHasSubmitted = false.
+ *
+ * Guards (inside transaction):
+ * - Deal exists, contract exists
+ * - Caller is a deal participant
+ * - Deal status is 'accepted' (not already contract_approved)
+ * - Party has not already submitted (hasSubmitted === false)
+ * - Party has approved ALL clauses (approvedClauses.length === clauses.length)
+ *
+ * @param {Object} data - { dealId }
+ * @returns {Promise<{ success: boolean }>}
+ */
+exports.submitContractApproval = onCall(async (request) => {
+  const { dealId } = request.data;
+  const uid = request.auth?.uid;
+
+  if (!uid) throw new HttpsError('unauthenticated', 'Must be logged in.');
+  if (!dealId) throw new HttpsError('invalid-argument', 'dealId is required.');
+
+  const dealRef = db.collection('deals').doc(dealId);
+  const contractRef = dealRef.collection('contract').doc('main');
+
+  let isFullyApproved = false;
+  let deal;
+
+  await db.runTransaction(async (t) => {
+    // Read both documents in parallel inside the transaction
+    const [dealSnap, contractSnap] = await Promise.all([
+      t.get(dealRef),
+      t.get(contractRef),
+    ]);
+
+    if (!dealSnap.exists) throw new HttpsError('not-found', 'Deal not found.');
+    if (!contractSnap.exists) throw new HttpsError('not-found', 'Contract not found.');
+
+    deal = dealSnap.data();
+    const contract = contractSnap.data();
+
+    // Participation guard
+    if (uid !== deal.buyerId && uid !== deal.sellerId) {
+      throw new HttpsError('permission-denied', 'You are not a participant in this deal.');
+    }
+
+    // Status guard — deal must still be in 'accepted' state
+    if (deal.status !== DEAL_STATUS.ACCEPTED) {
+      throw new HttpsError(
+        'failed-precondition',
+        `Deal is ${deal.status}. Contract approval requires deal status 'accepted'.`
+      );
+    }
+
+    const isBuyer = uid === deal.buyerId;
+    const approvalKey = isBuyer ? 'buyerApproval' : 'sellerApproval';
+    const otherApprovalKey = isBuyer ? 'sellerApproval' : 'buyerApproval';
+
+    const myApproval = contract[approvalKey] || {};
+    const otherApproval = contract[otherApprovalKey] || {};
+
+    // Re-submission guard
+    if (myApproval.hasSubmitted === true) {
+      throw new HttpsError('failed-precondition', 'You have already submitted your approval.');
+    }
+
+    // All-clauses guard
+    const totalClauses = (contract.clauses || []).length;
+    const myApprovedCount = (myApproval.approvedClauses || []).length;
+    if (myApprovedCount !== totalClauses) {
+      throw new HttpsError(
+        'failed-precondition',
+        `You must approve all ${totalClauses} clauses before submitting (${myApprovedCount} approved).`
+      );
+    }
+
+    const now = Timestamp.now();
+
+    // Build update data for the contract
+    const contractUpdate = {
+      [`${approvalKey}.hasSubmitted`]: true,
+      [`${approvalKey}.submittedAt`]: now,
+    };
+
+    // Check if the other party has already submitted
+    if (otherApproval.hasSubmitted === true) {
+      // Both parties have now submitted — advance the deal
+      contractUpdate.status = CONTRACT_STATUS.BOTH_APPROVED;
+      isFullyApproved = true;
+
+      t.update(contractRef, contractUpdate);
+      t.update(dealRef, {
+        status: DEAL_STATUS.CONTRACT_APPROVED,
+        updatedAt: now,
+      });
+    } else {
+      // Only this party has submitted so far
+      contractUpdate.status = isBuyer ? CONTRACT_STATUS.BUYER_APPROVED : CONTRACT_STATUS.SELLER_APPROVED;
+      t.update(contractRef, contractUpdate);
+    }
+  });
+
+  // Post-transaction notifications (outside transaction — prevents duplicate sends on retry)
+  if (deal) {
+    if (isFullyApproved) {
+      // Both parties approved — notify both (pass 'system' as senderUid to send to all participants)
+      await sendDealNotifications(dealId, 'contract_both_approved', 'system', deal);
+    } else {
+      // One party submitted — notify the other party only (pass uid as senderUid to exclude submitter)
+      await sendDealNotifications(dealId, 'contract_approved_by_party', uid, deal);
+    }
+  }
+
+  console.log(`submitContractApproval: ${uid} submitted approval for deal ${dealId}${isFullyApproved ? ' — BOTH APPROVED' : ''}`);
   return { success: true };
 });
 
