@@ -70,10 +70,11 @@ Plans:
   2. Each contract clause has an individual checkbox -- a party must approve each clause separately, and their approval status is tracked independently from the other party
   3. The deal cannot advance to the insurance/logistics stage until both parties have approved all clauses -- attempting to advance with one party pending is blocked
   4. A financial summary and document requirements are clearly displayed before a party commits their approval
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 03-01: TBD
+- [ ] 03-01-PLAN.md — Data foundation: contractConstants, Contract entity, ContractRepository, deal status extension, Firestore rules, Cloud Functions (onDealAccepted, saveDraftApprovals, submitContractApproval), contract approval notifications
+- [ ] 03-02-PLAN.md — Contract page UI: route, hooks, accordion clause layout, dual-party real-time approval, financial sidebar, PDF export, DealPage integration, verification checkpoint
 
 ### Phase 4: Provider Portals and Insurance/Logistics Quotes (S3)
 **Goal**: Insurance and logistics providers can receive and respond to quote requests, and buyers can compare quotes and select providers -- with server-enforced validity and correct data visibility
