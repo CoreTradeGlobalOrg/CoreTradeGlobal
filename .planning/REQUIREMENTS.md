@@ -47,12 +47,12 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Insurance & Logistics Quotes (S3)
 
-- [ ] **QUOTE-01**: Buyer can view and compare insurance quotes from multiple providers
-- [ ] **QUOTE-02**: Buyer can view and compare logistics quotes from multiple providers
+- [x] **QUOTE-01**: Buyer can view and compare insurance quotes from multiple providers
+- [x] **QUOTE-02**: Buyer can view and compare logistics quotes from multiple providers
 - [x] **QUOTE-03**: Quotes display provider details, price, coverage/mode, and validity countdown
 - [x] **QUOTE-04**: Quote validity timer enforced server-side via Cloud Function
 - [x] **QUOTE-05**: Buyer can select and confirm one insurance and one logistics provider per deal
-- [ ] **QUOTE-06**: Cost breakdown summary displayed after provider selection
+- [x] **QUOTE-06**: Cost breakdown summary displayed after provider selection
 
 ### Provider Portals
 
@@ -139,12 +139,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 | LEGAL-06 | Phase 5 | Pending |
 | LEGAL-07 | Phase 5 | Pending |
 | LEGAL-08 | Phase 5 | Pending |
-| QUOTE-01 | Phase 4 | Pending |
-| QUOTE-02 | Phase 4 | Pending |
+| QUOTE-01 | Phase 4 | Complete |
+| QUOTE-02 | Phase 4 | Complete |
 | QUOTE-03 | Phase 4 | Complete |
 | QUOTE-04 | Phase 4 | Complete |
 | QUOTE-05 | Phase 4 | Complete |
-| QUOTE-06 | Phase 4 | Pending |
+| QUOTE-06 | Phase 4 | Complete |
 | PORTAL-01 | Phase 4 | Complete |
 | PORTAL-02 | Phase 4 | Complete |
 | PORTAL-03 | Phase 4 | Complete |

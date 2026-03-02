@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-last_updated: "2026-03-02T16:24:37.547Z"
+last_updated: "2026-03-02T16:25:44.511Z"
 progress:
   total_phases: 4
   completed_phases: 3
   total_plans: 18
-  completed_plans: 16
+  completed_plans: 17
 ---
 
 # Project State
@@ -23,9 +23,9 @@ See: .planning/PROJECT.md (updated 2026-02-20)
 ## Current Position
 
 Phase: 4 of 7 (Provider Portals and Insurance/Logistics Quotes S3)
-Plan: 3 of 5 in current phase (04-03 complete)
+Plan: 4 of 5 in current phase (04-04 complete)
 Status: In progress
-Last activity: 2026-03-02 - Completed 04-03: Provider portal UI with kanban dashboard, quote forms, and real-time hooks
+Last activity: 2026-03-02 - Completed 04-04: Buyer quotes comparison page with filter/sort/ribbon/selection/confirm flow
 
 Progress: [██████████] 53%
 
@@ -61,6 +61,7 @@ Progress: [██████████] 53%
 | Phase 04 P01 | 4 | 2 tasks | 10 files |
 | Phase 04 P02 | 4 | 2 tasks | 3 files |
 | Phase 04 P03 | 5 | 2 tasks | 11 files |
+| Phase 04 P04 | 6 | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -126,6 +127,9 @@ Recent decisions affecting current work:
 - [Phase 04-02]: Firestore providerQuotes rules use denormalized buyerId/sellerId — avoids get() calls in security rules
 - [Phase 04]: [04-03]: useQuoteActions imported in QuoteDetailView — no prop drilling through ProviderDashboard to forms
 - [Phase 04]: [04-03]: QuotesPage placeholder in Plan 03 fixed empty scaffold preventing build — full implementation in Plan 04-04
+- [Phase 04]: useQuotesForDeal uses quotesMapRef for two-level subscription aggregation — avoids stale closures when per-request subscriptions fire asynchronously
+- [Phase 04]: Ribbon assignment uses no-duplicate guard: Cheapest set first, then Fastest if different card, then Best Value — prevents same card getting multiple ribbons
+- [Phase 04]: Partial provider selection allowed on QuotesSidebar confirm button — buyer does not need to select both insurance and logistics to proceed
 
 ### Pending Todos
 
@@ -147,5 +151,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Completed 04-03-PLAN.md — provider portal UI with kanban dashboard, quote forms, and real-time hooks
+Stopped at: Completed 04-04-PLAN.md — buyer quotes comparison page, useQuotesForDeal hook, QuotesPage, QuotesSidebar, InsuranceQuoteCard, LogisticsQuoteCard
 Resume file: None
