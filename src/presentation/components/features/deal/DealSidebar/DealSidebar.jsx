@@ -101,9 +101,17 @@ function ProgressTracker({ dealStatus }) {
     DEAL_STATUS.REJECTED,
     DEAL_STATUS.EXPIRED,
     DEAL_STATUS.WITHDRAWN,
+    DEAL_STATUS.CONTRACT_APPROVED,
+    DEAL_STATUS.PROVIDERS_SELECTED,
   ].includes(dealStatus);
 
-  const activeStep = dealStatus === DEAL_STATUS.ACCEPTED ? 'agreement' : 'negotiation';
+  const getActiveStep = (status) => {
+    if (status === DEAL_STATUS.PROVIDERS_SELECTED) return 'tracking';
+    if (status === DEAL_STATUS.CONTRACT_APPROVED) return 'quotes';
+    if (status === DEAL_STATUS.ACCEPTED) return 'agreement';
+    return 'negotiation';
+  };
+  const activeStep = getActiveStep(dealStatus);
 
   return (
     <div className="relative">

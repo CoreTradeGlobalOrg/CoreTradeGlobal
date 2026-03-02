@@ -15,7 +15,7 @@
 'use client';
 
 import Link from 'next/link';
-import { FileText } from 'lucide-react';
+import { FileText, Package } from 'lucide-react';
 import { ProductHero } from '../ProductHero/ProductHero';
 import { OfferTimeline } from '../OfferTimeline/OfferTimeline';
 import { CounterOfferForm } from '../CounterOfferForm/CounterOfferForm';
@@ -29,13 +29,6 @@ import { DEAL_STATUS } from '@/core/constants/dealConstants';
 
 function TerminalBanner({ status }) {
   const configs = {
-    [DEAL_STATUS.CONTRACT_APPROVED]: {
-      label: 'Contract Approved',
-      sub: 'Both parties approved all contract clauses. Ready for insurance and logistics quotes.',
-      bg: 'bg-emerald-900/20',
-      border: 'border-emerald-500/30',
-      text: 'text-emerald-400',
-    },
     [DEAL_STATUS.REJECTED]: {
       label: 'Deal Rejected',
       sub: 'This deal was rejected. No further actions are available.',
@@ -56,6 +49,13 @@ function TerminalBanner({ status }) {
       bg: 'bg-[#1A283B]',
       border: 'border-[#2A3B52]',
       text: 'text-[#8899AA]',
+    },
+    [DEAL_STATUS.PROVIDERS_SELECTED]: {
+      label: 'Providers Selected',
+      sub: 'Insurance and logistics providers have been confirmed for this deal.',
+      bg: 'bg-blue-900/10',
+      border: 'border-blue-500/30',
+      text: 'text-blue-400',
     },
   };
 
@@ -92,6 +92,7 @@ export function DealPage({ deal, offers, currentUserUid, actions, otherPartyView
     DEAL_STATUS.EXPIRED,
     DEAL_STATUS.WITHDRAWN,
     DEAL_STATUS.CONTRACT_APPROVED,
+    DEAL_STATUS.PROVIDERS_SELECTED,
   ].includes(deal.status);
 
   // Latest offer for pre-fill and sidebar summary
@@ -113,21 +114,44 @@ export function DealPage({ deal, offers, currentUserUid, actions, otherPartyView
           <CountdownTimer expiresAt={latestOffer.expiresAt} />
         )}
 
-        {/* Contract ready banner — deal accepted, awaiting contract approval */}
+        {/* Contract banner — only for accepted (awaiting approval) */}
         {deal.status === DEAL_STATUS.ACCEPTED && (
           <div className="rounded-xl border border-[#FFD700]/30 bg-[#FFD700]/5 px-4 py-3">
             <div className="flex items-center gap-2 mb-1">
               <FileText size={16} className="text-[#FFD700]" />
-              <p className="text-sm font-semibold text-[#FFD700]">Deal Accepted — Contract Ready</p>
+              <p className="text-sm font-semibold text-[#FFD700]">
+                Deal Accepted — Contract Ready
+              </p>
             </div>
             <p className="text-xs text-[#8899AA] mt-0.5">
               Both parties agreed on terms. Review and approve the contract to proceed.
             </p>
             <Link
               href={`/deals/${deal.id}/contract`}
-              className="mt-2 inline-block text-xs font-semibold text-[#FFD700] underline hover:text-[#FFE44D] transition-colors"
+              className="mt-2 inline-block text-xs font-semibold text-[#FFD700] hover:text-[#FFE44D] underline transition-colors"
             >
               View Contract &rarr;
+            </Link>
+          </div>
+        )}
+
+        {/* Quotes banner — only for contract_approved (next step is selecting providers) */}
+        {deal.status === DEAL_STATUS.CONTRACT_APPROVED && (
+          <div className="rounded-xl border border-blue-500/30 bg-blue-900/10 px-4 py-3">
+            <div className="flex items-center gap-2 mb-1">
+              <Package size={16} className="text-blue-400" />
+              <p className="text-sm font-semibold text-blue-400">
+                Insurance and Logistics Quotes Available
+              </p>
+            </div>
+            <p className="text-xs text-[#8899AA] mt-0.5">
+              Quote requests have been sent to all registered providers. Review and select your providers.
+            </p>
+            <Link
+              href={`/deals/${deal.id}/quotes`}
+              className="mt-2 inline-block text-xs font-semibold text-blue-400 hover:text-blue-300 underline"
+            >
+              Compare Quotes
             </Link>
           </div>
         )}
