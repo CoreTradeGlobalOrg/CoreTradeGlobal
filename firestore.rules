@@ -276,6 +276,43 @@ service cloud.firestore {
     }
 
     // ─────────────────────────────────────────────────────────────────────────
+    // Quote Requests collection (Phase 4 — insurance/logistics provider portals)
+    //
+    // Created by broadcastQuoteRequests Cloud Function (Admin SDK).
+    // All writes go through Cloud Functions — client writes denied.
+    // Read access: assigned provider, buyer, seller, or admin.
+    //
+    // providerQuotes subcollection uses denormalized buyerId/sellerId on the
+    // quote doc itself — avoids get() calls per Pitfall 4 (no extra reads in rules).
+    // ─────────────────────────────────────────────────────────────────────────
+
+    match /quoteRequests/{requestId} {
+      // Assigned provider, buyer, seller, or admin can read
+      allow read: if isAuthenticated() && (
+        isAdmin() ||
+        request.auth.uid == resource.data.providerUid ||
+        request.auth.uid == resource.data.buyerId ||
+        request.auth.uid == resource.data.sellerId
+      );
+      // All writes via Cloud Functions (Admin SDK bypasses rules)
+      allow write: if false;
+
+      // providerQuotes subcollection
+      match /providerQuotes/{quoteId} {
+        // Provider who owns the quote, buyer, seller, or admin can read.
+        // Uses denormalized buyerId/sellerId on quote doc (avoids get() per Pitfall 4).
+        allow read: if isAuthenticated() && (
+          isAdmin() ||
+          request.auth.uid == resource.data.providerUid ||
+          request.auth.uid == resource.data.buyerId ||
+          request.auth.uid == resource.data.sellerId
+        );
+        // All writes via Cloud Functions (Admin SDK bypasses rules)
+        allow write: if false;
+      }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
     // Newsletter collection (public create)
     // ─────────────────────────────────────────────────────────────────────────
 

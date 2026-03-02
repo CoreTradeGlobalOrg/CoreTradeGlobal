@@ -2721,6 +2721,258 @@ exports.acceptQuote = onCall(async (request) => {
 });
 
 /**
+ * declineQuoteRequest — onCall
+ *
+ * Allows an assigned provider to decline a pending quote request.
+ * Can only decline while status is 'pending' (before submitting a quote).
+ *
+ * @param {Object} data - { requestId }
+ * @returns {Promise<{ success: boolean }>}
+ */
+exports.declineQuoteRequest = onCall(async (request) => {
+  const { requestId } = request.data;
+  const uid = request.auth?.uid;
+
+  if (!uid) throw new HttpsError('unauthenticated', 'Must be logged in.');
+  if (!requestId) throw new HttpsError('invalid-argument', 'requestId is required.');
+
+  const requestRef = db.collection('quoteRequests').doc(requestId);
+  const requestDoc = await requestRef.get();
+
+  if (!requestDoc.exists) throw new HttpsError('not-found', 'Quote request not found.');
+
+  const quoteRequest = requestDoc.data();
+
+  // Authorization
+  if (quoteRequest.providerUid !== uid) {
+    throw new HttpsError('permission-denied', 'You are not the assigned provider for this request.');
+  }
+
+  // Status guard: can only decline pending requests
+  if (quoteRequest.status !== QUOTE_REQUEST_STATUS.PENDING) {
+    throw new HttpsError(
+      'failed-precondition',
+      `Cannot decline a request with status '${quoteRequest.status}'. Only pending requests can be declined.`
+    );
+  }
+
+  await requestRef.update({
+    status: QUOTE_REQUEST_STATUS.DECLINED,
+    updatedAt: Timestamp.now(),
+  });
+
+  console.log(`declineQuoteRequest: provider ${uid} declined request ${requestId}`);
+  return { success: true };
+});
+
+/**
+ * withdrawQuote — onCall
+ *
+ * Allows a provider to withdraw their active quote, reverting the request
+ * to 'pending' so they may submit a new one.
+ *
+ * @param {Object} data - { requestId, quoteId }
+ * @returns {Promise<{ success: boolean }>}
+ */
+exports.withdrawQuote = onCall(async (request) => {
+  const { requestId, quoteId } = request.data;
+  const uid = request.auth?.uid;
+
+  if (!uid) throw new HttpsError('unauthenticated', 'Must be logged in.');
+  if (!requestId || !quoteId) {
+    throw new HttpsError('invalid-argument', 'requestId and quoteId are required.');
+  }
+
+  const requestRef = db.collection('quoteRequests').doc(requestId);
+  const quoteRef = requestRef.collection('providerQuotes').doc(quoteId);
+
+  const [requestDoc, quoteDoc] = await Promise.all([
+    requestRef.get(),
+    quoteRef.get(),
+  ]);
+
+  if (!requestDoc.exists) throw new HttpsError('not-found', 'Quote request not found.');
+  if (!quoteDoc.exists) throw new HttpsError('not-found', 'Quote not found.');
+
+  const quoteRequest = requestDoc.data();
+  const quote = quoteDoc.data();
+
+  // Authorization
+  if (quoteRequest.providerUid !== uid) {
+    throw new HttpsError('permission-denied', 'You are not the assigned provider for this request.');
+  }
+
+  // Status guard: can only withdraw active quotes
+  if (quote.status !== QUOTE_STATUS.ACTIVE) {
+    throw new HttpsError(
+      'failed-precondition',
+      `Quote is ${quote.status}. Only active quotes can be withdrawn.`
+    );
+  }
+
+  const now = Timestamp.now();
+
+  // Update quote status to withdrawn
+  await quoteRef.update({ status: QUOTE_STATUS.WITHDRAWN, updatedAt: now });
+
+  // Revert request status back to pending
+  await requestRef.update({ status: QUOTE_REQUEST_STATUS.PENDING, updatedAt: now });
+
+  console.log(`withdrawQuote: provider ${uid} withdrew quote ${quoteId} for request ${requestId}`);
+  return { success: true };
+});
+
+/**
+ * confirmProviderSelection — onCall
+ *
+ * Allows the buyer to confirm their provider selections, advancing the deal
+ * to 'providers_selected' status. Requires at least one selected provider.
+ *
+ * After transaction: marks non-selected quoteRequests as 'not_selected' in batch.
+ * Notifies all providers of outcome.
+ *
+ * @param {Object} data - { dealId }
+ * @returns {Promise<{ success: boolean }>}
+ */
+exports.confirmProviderSelection = onCall(async (request) => {
+  const { dealId } = request.data;
+  const uid = request.auth?.uid;
+
+  if (!uid) throw new HttpsError('unauthenticated', 'Must be logged in.');
+  if (!dealId) throw new HttpsError('invalid-argument', 'dealId is required.');
+
+  const dealRef = db.collection('deals').doc(dealId);
+  let deal;
+
+  await db.runTransaction(async (t) => {
+    const dealSnap = await t.get(dealRef);
+
+    if (!dealSnap.exists) throw new HttpsError('not-found', 'Deal not found.');
+
+    deal = dealSnap.data();
+
+    // Authorization: only the buyer can confirm
+    if (deal.buyerId !== uid) {
+      throw new HttpsError('permission-denied', 'Only the buyer can confirm provider selections.');
+    }
+
+    // Status guard
+    if (deal.status !== DEAL_STATUS.CONTRACT_APPROVED) {
+      throw new HttpsError(
+        'failed-precondition',
+        `Deal is ${deal.status}. Provider selection requires deal status 'contract_approved'.`
+      );
+    }
+
+    // At least one provider must be selected
+    const hasInsurance = !!deal.selectedInsuranceQuoteId;
+    const hasLogistics = !!deal.selectedLogisticsQuoteId;
+    if (!hasInsurance && !hasLogistics) {
+      throw new HttpsError(
+        'failed-precondition',
+        'At least one provider (insurance or logistics) must be selected before confirming.'
+      );
+    }
+
+    const now = Timestamp.now();
+    t.update(dealRef, {
+      status: DEAL_STATUS.PROVIDERS_SELECTED,
+      updatedAt: now,
+    });
+  });
+
+  // Post-transaction: mark non-selected quoteRequests as not_selected (batch)
+  try {
+    const allRequestsSnap = await db
+      .collection('quoteRequests')
+      .where('dealId', '==', dealId)
+      .get();
+
+    if (!allRequestsSnap.empty) {
+      const now = Timestamp.now();
+      const batch = db.batch();
+      const selectedRequestIds = [
+        deal.selectedInsuranceRequestId,
+        deal.selectedLogisticsRequestId,
+      ].filter(Boolean);
+
+      for (const reqDoc of allRequestsSnap.docs) {
+        if (
+          !selectedRequestIds.includes(reqDoc.id) &&
+          reqDoc.data().status !== QUOTE_REQUEST_STATUS.SELECTED &&
+          reqDoc.data().status !== QUOTE_REQUEST_STATUS.DECLINED
+        ) {
+          batch.update(reqDoc.ref, {
+            status: QUOTE_REQUEST_STATUS.NOT_SELECTED,
+            updatedAt: now,
+          });
+        }
+      }
+      await batch.commit();
+    }
+  } catch (err) {
+    console.error('confirmProviderSelection: failed to mark non-selected requests (non-fatal):', err);
+  }
+
+  // Post-transaction notifications (non-blocking)
+  if (deal) {
+    try {
+      const allRequestsSnap = await db
+        .collection('quoteRequests')
+        .where('dealId', '==', dealId)
+        .get();
+
+      const now = Timestamp.now();
+      const selectedRequestIds = [
+        deal.selectedInsuranceRequestId,
+        deal.selectedLogisticsRequestId,
+      ].filter(Boolean);
+
+      for (const reqDoc of allRequestsSnap.docs) {
+        const reqData = reqDoc.data();
+        const isSelected = selectedRequestIds.includes(reqDoc.id);
+        const eventType = isSelected ? 'quote_accepted' : 'quote_not_selected';
+        const title = isSelected
+          ? 'Your quote has been selected!'
+          : 'A provider has been selected for this deal';
+        const body = isSelected
+          ? 'The buyer has confirmed your selection for this deal.'
+          : 'The buyer has selected another provider for this deal.';
+
+        try {
+          await db
+            .collection('users')
+            .doc(reqData.providerUid)
+            .collection('notifications')
+            .add({
+              type: 'quote',
+              eventType,
+              title,
+              body,
+              dealId,
+              requestId: reqDoc.id,
+              isRead: false,
+              createdAt: now,
+              link: `/deals/${dealId}`,
+            });
+        } catch (notifErr) {
+          console.error(`confirmProviderSelection: failed to notify provider ${reqData.providerUid} (non-fatal):`, notifErr);
+        }
+      }
+    } catch (err) {
+      console.error('confirmProviderSelection: error sending provider notifications (non-fatal):', err);
+    }
+  }
+
+  console.log(`confirmProviderSelection: buyer ${uid} confirmed provider selections for deal ${dealId}`);
+  return { success: true };
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Scheduled Functions
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
  * Auto-Update Fair Statuses
  *
  * Runs twice daily (midnight and noon UTC) to automatically update
@@ -3015,6 +3267,76 @@ exports.sendExpiryReminders = onSchedule(
       console.log('sendExpiryReminders: complete.');
     } catch (error) {
       console.error('sendExpiryReminders: error:', error);
+      throw error;
+    }
+  }
+);
+
+/**
+ * checkExpiredQuotes
+ *
+ * Runs every 30 minutes. Expires overdue quote requests (deadline passed without response)
+ * and active provider quotes whose validUntil has passed.
+ *
+ * Uses batch writes (not transactions) for bulk updates — same pattern as checkExpiredOffers.
+ */
+exports.checkExpiredQuotes = onSchedule(
+  {
+    schedule: 'every 30 minutes',
+    timeZone: 'UTC',
+    retryCount: 3,
+  },
+  async () => {
+    console.log('checkExpiredQuotes: running...');
+
+    try {
+      const now = Timestamp.now();
+      let expiredRequestCount = 0;
+      let expiredQuoteCount = 0;
+
+      // 1. Expire overdue quote requests (pending, deadline <= now)
+      const expiredRequestsSnap = await db
+        .collection('quoteRequests')
+        .where('status', '==', QUOTE_REQUEST_STATUS.PENDING)
+        .where('deadline', '<=', now)
+        .get();
+
+      if (!expiredRequestsSnap.empty) {
+        const requestBatch = db.batch();
+        expiredRequestsSnap.forEach((doc) => {
+          requestBatch.update(doc.ref, {
+            status: QUOTE_REQUEST_STATUS.DECLINED,
+            updatedAt: now,
+          });
+          expiredRequestCount++;
+        });
+        await requestBatch.commit();
+      }
+
+      // 2. Expire active provider quotes whose validUntil has passed
+      const expiredQuotesSnap = await db
+        .collectionGroup('providerQuotes')
+        .where('status', '==', QUOTE_STATUS.ACTIVE)
+        .where('validUntil', '<=', now)
+        .get();
+
+      if (!expiredQuotesSnap.empty) {
+        const quoteBatch = db.batch();
+        expiredQuotesSnap.forEach((doc) => {
+          quoteBatch.update(doc.ref, {
+            status: QUOTE_STATUS.EXPIRED,
+            updatedAt: now,
+          });
+          expiredQuoteCount++;
+        });
+        await quoteBatch.commit();
+      }
+
+      console.log(
+        `checkExpiredQuotes: expired ${expiredRequestCount} request(s), ${expiredQuoteCount} quote(s).`
+      );
+    } catch (error) {
+      console.error('checkExpiredQuotes: error:', error);
       throw error;
     }
   }
