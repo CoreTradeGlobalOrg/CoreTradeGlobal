@@ -37,7 +37,7 @@ const NAV_LINKS = [
   // Provider-only navigation
   {
     label: 'Provider Dashboard',
-    href: '/provider',
+    href: '/provider/dashboard',
     roles: [ROLES.LOGISTICS_PROVIDER, ROLES.INSURANCE_PROVIDER],
   },
   // Lawyer-only navigation
