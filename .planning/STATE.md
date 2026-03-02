@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: in_progress
-last_updated: "2026-03-01T14:57:08Z"
+status: unknown
+last_updated: "2026-03-02T16:14:53.856Z"
 progress:
-  total_phases: 3
-  completed_phases: 2
-  total_plans: 13
-  completed_plans: 13
+  total_phases: 4
+  completed_phases: 3
+  total_plans: 18
+  completed_plans: 15
 ---
 
 # Project State
@@ -18,16 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-20)
 
 **Core value:** A member can complete an entire international trade deal -- negotiate, get legal advice, insure cargo, arrange shipping, and track delivery -- without leaving the platform.
-**Current focus:** Phase 3: Contract Agreement (S2)
+**Current focus:** Phase 4: Provider Portals and Insurance/Logistics Quotes (S3)
 
 ## Current Position
 
-Phase: 3 of 7 (Contract Agreement S2)
-Plan: 2 of 3 in current phase (checkpoint: awaiting human verification of contract UI)
+Phase: 4 of 7 (Provider Portals and Insurance/Logistics Quotes S3)
+Plan: 2 of 5 in current phase (04-02 complete)
 Status: In progress
-Last activity: 2026-03-01 - Completed 03-02: Contract review UI (awaiting Task 3 human verification)
+Last activity: 2026-03-02 - Completed 04-02: Server-side quote request broadcasting and provider quote lifecycle Cloud Functions
 
-Progress: [█████████░] 47%
+Progress: [██████████] 53%
 
 ## Performance Metrics
 
@@ -58,6 +58,8 @@ Progress: [█████████░] 47%
 | Phase 02 P07 | 1 | 1 tasks | 1 files |
 | Phase 03 P01 | 7 | 2 tasks | 8 files |
 | Phase 03 P02 | 6 | 2 tasks | 11 files |
+| Phase 04 P01 | 4 | 2 tasks | 10 files |
+| Phase 04 P02 | 4 | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -113,6 +115,14 @@ Recent decisions affecting current work:
 - [Phase 03-02]: isTerminal fallback in DealPage updated — ACCEPTED removed, CONTRACT_APPROVED added to match Deal.isTerminal() entity from Plan 01
 - [Phase 03-02]: CounterOfferForm guard changed to deal.status === NEGOTIATING — ACCEPTED is non-terminal but must not show counter-offer form
 - [Phase 03-02]: hasExpanded restored from server approvedClauses on load — prevents Pitfall 6 (checkbox disable after page refresh)
+- [Phase 04-01]: providerQuotes subcollection name (not quotes) avoids collision with existing requests/{id}/quotes subcollection
+- [Phase 04-01]: PROVIDERS_SELECTED is terminal for full deal lifecycle; CONTRACT_APPROVED is now a Phase 4 gateway (not the final terminal state)
+- [Phase 04-01]: Deal.isAwaitingQuotes() is a semantic alias for isContractApproved() — improves Phase 4 UI code readability without behavior change
+- [Phase 04-01]: Quote entity uses null defaults for type-specific fields — single class covers both insurance and logistics shapes
+- [Phase 04-01]: collectionGroup(providerQuotes) with dealId filter enables buyer view; requires composite Firestore index on providerQuotes: dealId + createdAt
+- [Phase 04-02]: broadcastQuoteRequests uses explicit allowlist for logistics dealSnapshot — eliminates price leakage risk (PORTAL-05)
+- [Phase 04-02]: acceptQuote server-side expiry check inside runTransaction — client timers are display-only (QUOTE-04)
+- [Phase 04-02]: Firestore providerQuotes rules use denormalized buyerId/sellerId — avoids get() calls in security rules
 
 ### Pending Todos
 
@@ -133,6 +143,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-01
-Stopped at: Completed 03-02-PLAN.md tasks 1 and 2; awaiting human verification (Task 3 checkpoint) for contract UI end-to-end flow
+Last session: 2026-03-02
+Stopped at: Completed 04-02-PLAN.md — server-side quote lifecycle Cloud Functions, Firestore rules, and composite indexes
 Resume file: None

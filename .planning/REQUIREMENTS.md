@@ -49,18 +49,18 @@ Requirements for initial release. Each maps to roadmap phases.
 
 - [ ] **QUOTE-01**: Buyer can view and compare insurance quotes from multiple providers
 - [ ] **QUOTE-02**: Buyer can view and compare logistics quotes from multiple providers
-- [ ] **QUOTE-03**: Quotes display provider details, price, coverage/mode, and validity countdown
-- [ ] **QUOTE-04**: Quote validity timer enforced server-side via Cloud Function
-- [ ] **QUOTE-05**: Buyer can select and confirm one insurance and one logistics provider per deal
+- [x] **QUOTE-03**: Quotes display provider details, price, coverage/mode, and validity countdown
+- [x] **QUOTE-04**: Quote validity timer enforced server-side via Cloud Function
+- [x] **QUOTE-05**: Buyer can select and confirm one insurance and one logistics provider per deal
 - [ ] **QUOTE-06**: Cost breakdown summary displayed after provider selection
 
 ### Provider Portals
 
 - [ ] **PORTAL-01**: Insurance providers can view incoming quote requests with full deal info including price
-- [ ] **PORTAL-02**: Insurance providers can submit quotes with ICC coverage (A/B/C), premium, extras, and validity period
+- [x] **PORTAL-02**: Insurance providers can submit quotes with ICC coverage (A/B/C), premium, extras, and validity period
 - [ ] **PORTAL-03**: Logistics providers can view incoming quote requests with all deal info except price
-- [ ] **PORTAL-04**: Logistics providers can submit quotes with transport mode, pricing, timeline, and validity period
-- [ ] **PORTAL-05**: Provider data visibility rules enforced at data layer — logistics providers never see deal price
+- [x] **PORTAL-04**: Logistics providers can submit quotes with transport mode, pricing, timeline, and validity period
+- [x] **PORTAL-05**: Provider data visibility rules enforced at data layer — logistics providers never see deal price
 
 ### Tracking & Summary (S4)
 
@@ -141,15 +141,15 @@ Which phases cover which requirements. Updated during roadmap creation.
 | LEGAL-08 | Phase 5 | Pending |
 | QUOTE-01 | Phase 4 | Pending |
 | QUOTE-02 | Phase 4 | Pending |
-| QUOTE-03 | Phase 4 | Pending |
-| QUOTE-04 | Phase 4 | Pending |
-| QUOTE-05 | Phase 4 | Pending |
+| QUOTE-03 | Phase 4 | Complete |
+| QUOTE-04 | Phase 4 | Complete |
+| QUOTE-05 | Phase 4 | Complete |
 | QUOTE-06 | Phase 4 | Pending |
 | PORTAL-01 | Phase 4 | Pending |
-| PORTAL-02 | Phase 4 | Pending |
+| PORTAL-02 | Phase 4 | Complete |
 | PORTAL-03 | Phase 4 | Pending |
-| PORTAL-04 | Phase 4 | Pending |
-| PORTAL-05 | Phase 4 | Pending |
+| PORTAL-04 | Phase 4 | Complete |
+| PORTAL-05 | Phase 4 | Complete |
 | TRACK-01 | Phase 6 | Pending |
 | TRACK-02 | Phase 6 | Pending |
 | TRACK-03 | Phase 6 | Pending |
