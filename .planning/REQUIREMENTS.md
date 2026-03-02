@@ -56,9 +56,9 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Provider Portals
 
-- [ ] **PORTAL-01**: Insurance providers can view incoming quote requests with full deal info including price
+- [x] **PORTAL-01**: Insurance providers can view incoming quote requests with full deal info including price
 - [x] **PORTAL-02**: Insurance providers can submit quotes with ICC coverage (A/B/C), premium, extras, and validity period
-- [ ] **PORTAL-03**: Logistics providers can view incoming quote requests with all deal info except price
+- [x] **PORTAL-03**: Logistics providers can view incoming quote requests with all deal info except price
 - [x] **PORTAL-04**: Logistics providers can submit quotes with transport mode, pricing, timeline, and validity period
 - [x] **PORTAL-05**: Provider data visibility rules enforced at data layer — logistics providers never see deal price
 
@@ -145,9 +145,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | QUOTE-04 | Phase 4 | Complete |
 | QUOTE-05 | Phase 4 | Complete |
 | QUOTE-06 | Phase 4 | Pending |
-| PORTAL-01 | Phase 4 | Pending |
+| PORTAL-01 | Phase 4 | Complete |
 | PORTAL-02 | Phase 4 | Complete |
-| PORTAL-03 | Phase 4 | Pending |
+| PORTAL-03 | Phase 4 | Complete |
 | PORTAL-04 | Phase 4 | Complete |
 | PORTAL-05 | Phase 4 | Complete |
 | TRACK-01 | Phase 6 | Pending |
