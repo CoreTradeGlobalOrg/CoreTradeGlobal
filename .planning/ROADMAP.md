@@ -86,11 +86,14 @@ Plans:
   3. A buyer can view and compare multiple insurance quotes and multiple logistics quotes side-by-side, with provider details, pricing, coverage/mode, and a live validity countdown
   4. Quote validity is enforced server-side -- a buyer cannot accept an expired quote even if the client-side timer shows it as valid
   5. After selecting one insurance and one logistics provider, the buyer sees a cost breakdown summary confirming their selections
-**Plans**: TBD
+**Plans**: 5 plans
 
 Plans:
-- [ ] 04-01: TBD
-- [ ] 04-02: TBD
+- [ ] 04-01-PLAN.md — Quote constants, entities, repositories, DI registration, deal status extension (PROVIDERS_SELECTED), DealCard badge
+- [ ] 04-02-PLAN.md — Cloud Functions (broadcast, submit, accept, decline, withdraw, confirm, expiry checker), Firestore rules, indexes
+- [ ] 04-03-PLAN.md — Provider portal: kanban dashboard, request cards, insurance and logistics quote forms, hooks, route
+- [ ] 04-04-PLAN.md — Buyer quotes comparison: filter/sort/ribbons, quote cards, cost breakdown sidebar, selection confirmation
+- [ ] 04-05-PLAN.md — DealPage integration (quotes banner, providers_selected terminal), ProgressTracker update, end-to-end verification checkpoint
 
 ### Phase 5: Legal Consulting
 **Goal**: Either deal party can independently hire a lawyer who gets a private, encrypted channel with their client and can review deals, draft contracts, and provide risk analysis -- without blocking the trade flow
