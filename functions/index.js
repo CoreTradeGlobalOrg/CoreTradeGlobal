@@ -922,6 +922,22 @@ const DEAL_STATUS = {
   EXPIRED: 'expired',
   WITHDRAWN: 'withdrawn',
   CONTRACT_APPROVED: 'contract_approved', // Both parties approved all contract clauses
+  PROVIDERS_SELECTED: 'providers_selected', // Buyer confirmed insurance/logistics provider selections
+};
+
+const QUOTE_REQUEST_STATUS = {
+  PENDING: 'pending',
+  QUOTED: 'quoted',
+  DECLINED: 'declined',
+  SELECTED: 'selected',
+  NOT_SELECTED: 'not_selected',
+};
+
+const QUOTE_STATUS = {
+  ACTIVE: 'active',
+  WITHDRAWN: 'withdrawn',
+  EXPIRED: 'expired',
+  ACCEPTED: 'accepted',
 };
 
 const CONTRACT_STATUS = {
@@ -1749,13 +1765,73 @@ exports.onDealStatusChanged = onDocumentUpdated(
     const after = event.data?.after?.data();
 
     if (!before || !after) return null;
-
-    // Only fire on terminal status transitions
-    const terminalStatuses = ['accepted', 'rejected', 'withdrawn', 'expired'];
     if (before.status === after.status) return null;
-    if (!terminalStatuses.includes(after.status)) return null;
 
     const { dealId } = event.params;
+
+    // ── Contract generation on 'accepted' transition ──────────────────────────
+    // Merged from the removed onDealAccepted trigger to avoid duplicate triggers
+    // on the same 'deals/{dealId}' path (Firebase Functions v2 deployment error).
+    if (after.status === DEAL_STATUS.ACCEPTED) {
+      try {
+        // Fetch the accepted offer from the offers subcollection
+        const offersQuery = await db
+          .collection('deals')
+          .doc(dealId)
+          .collection('offers')
+          .where('status', '==', OFFER_STATUS.ACCEPTED)
+          .limit(1)
+          .get();
+
+        if (offersQuery.empty) {
+          console.error(`onDealStatusChanged: no accepted offer found for deal ${dealId}`);
+        } else {
+          const acceptedOffer = offersQuery.docs[0].data();
+
+          // Build clauses from the accepted offer + deal data
+          const clauses = buildContractClausesCJS(acceptedOffer, after);
+
+          // 1500ms delay for UX feel — "Generating contract..."
+          await new Promise((resolve) => setTimeout(resolve, 1500));
+
+          // Write the contract document
+          const contractRef = db.collection('deals').doc(dealId).collection('contract').doc('main');
+          await contractRef.set({
+            dealId,
+            dealBuyerId: after.buyerId,   // denormalized for saveDraftApprovals buyer/seller lookup
+            dealSellerId: after.sellerId, // denormalized for saveDraftApprovals buyer/seller lookup
+            generatedAt: Timestamp.now(),
+            deadline: null,               // placeholder — enforcement deferred to future phase
+            clauses,
+            buyerApproval: { approvedClauses: [], hasSubmitted: false, submittedAt: null },
+            sellerApproval: { approvedClauses: [], hasSubmitted: false, submittedAt: null },
+            status: CONTRACT_STATUS.PENDING,
+          });
+
+          console.log(`onDealStatusChanged: contract generated for deal ${dealId}`);
+        }
+      } catch (err) {
+        console.error(`onDealStatusChanged: error generating contract for deal ${dealId}:`, err);
+        // Non-fatal — do not block notification/message steps below
+      }
+    }
+
+    // ── Broadcast quote requests on contract_approved transition (Phase 4) ───
+    if (
+      before.status !== DEAL_STATUS.CONTRACT_APPROVED &&
+      after.status === DEAL_STATUS.CONTRACT_APPROVED
+    ) {
+      try {
+        await broadcastQuoteRequests(dealId, after);
+      } catch (err) {
+        console.error(`broadcastQuoteRequests failed for deal ${dealId}:`, err);
+        // Non-fatal — do not block existing contract_approved flow
+      }
+    }
+
+    // ── Notifications and system messages for terminal status transitions ─────
+    const terminalStatuses = ['accepted', 'rejected', 'withdrawn', 'expired'];
+    if (!terminalStatuses.includes(after.status)) return null;
 
     try {
       // Determine the actor who triggered the change
@@ -2077,78 +2153,6 @@ function buildContractClausesCJS(offer, deal) {
   ];
 }
 
-/**
- * onDealAccepted — Firestore trigger
- *
- * Fires when a deal document is updated and its status transitions to 'accepted'.
- * Auto-generates the contract document at deals/{dealId}/contract/main by:
- * 1. Fetching the accepted offer from the deals/{dealId}/offers subcollection
- * 2. Building clause array from the offer terms (via buildContractClausesCJS)
- * 3. Writing the contract document with denormalized buyer/seller IDs
- *
- * NOTE: This trigger intentionally does NOT send a notification — the existing
- * onDealStatusChanged trigger handles the 'accepted' event notification.
- *
- * Per user decision: a 1500ms delay is added for UX feel ("Generating contract...").
- */
-exports.onDealAccepted = onDocumentUpdated(
-  'deals/{dealId}',
-  async (event) => {
-    const before = event.data?.before?.data();
-    const after = event.data?.after?.data();
-
-    if (!before || !after) return null;
-
-    // Only fire when deal transitions to 'accepted'
-    if (before.status === after.status || after.status !== DEAL_STATUS.ACCEPTED) return null;
-
-    const { dealId } = event.params;
-
-    try {
-      // Fetch the accepted offer from the offers subcollection
-      const offersQuery = await db
-        .collection('deals')
-        .doc(dealId)
-        .collection('offers')
-        .where('status', '==', OFFER_STATUS.ACCEPTED)
-        .limit(1)
-        .get();
-
-      if (offersQuery.empty) {
-        console.error(`onDealAccepted: no accepted offer found for deal ${dealId}`);
-        return null;
-      }
-
-      const acceptedOffer = offersQuery.docs[0].data();
-
-      // Build clauses from the accepted offer + deal data
-      const clauses = buildContractClausesCJS(acceptedOffer, after);
-
-      // 1500ms delay for UX feel — "Generating contract..."
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
-      // Write the contract document
-      const contractRef = db.collection('deals').doc(dealId).collection('contract').doc('main');
-      await contractRef.set({
-        dealId,
-        dealBuyerId: after.buyerId,   // denormalized for saveDraftApprovals buyer/seller lookup
-        dealSellerId: after.sellerId, // denormalized for saveDraftApprovals buyer/seller lookup
-        generatedAt: Timestamp.now(),
-        deadline: null,               // placeholder — enforcement deferred to future phase
-        clauses,
-        buyerApproval: { approvedClauses: [], hasSubmitted: false, submittedAt: null },
-        sellerApproval: { approvedClauses: [], hasSubmitted: false, submittedAt: null },
-        status: CONTRACT_STATUS.PENDING,
-      });
-
-      console.log(`onDealAccepted: contract generated for deal ${dealId}`);
-      return null;
-    } catch (err) {
-      console.error(`onDealAccepted: error generating contract for deal ${dealId}:`, err);
-      return null;
-    }
-  }
-);
 
 /**
  * saveDraftApprovals — onCall
@@ -2329,8 +2333,392 @@ exports.submitContractApproval = onCall(async (request) => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Scheduled Functions
+// Quote Request / Provider Portal Cloud Functions (Phase 4)
 // ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * broadcastQuoteRequests — private helper (not exported)
+ *
+ * Called from onDealStatusChanged when deal transitions to contract_approved.
+ * Creates one quoteRequest document per insurance/logistics provider.
+ *
+ * Price separation (PORTAL-05):
+ * - Insurance providers: receive full dealSnapshot including price and estimatedTotal
+ * - Logistics providers: explicit allowlist only — price and estimatedTotal NEVER included
+ *
+ * IMPORTANT: Must be called OUTSIDE transactions (same pattern as sendDealNotifications).
+ *
+ * @param {string} dealId
+ * @param {Object} dealData — deal document data (after snapshot)
+ */
+async function broadcastQuoteRequests(dealId, dealData) {
+  const snapshot = dealData.latestOfferSnapshot || {};
+
+  // Query all insurance and logistics providers
+  const providersSnap = await db
+    .collection('users')
+    .where('role', 'in', [ROLES.INSURANCE_PROVIDER, ROLES.LOGISTICS_PROVIDER])
+    .get();
+
+  if (providersSnap.empty) {
+    console.log(`broadcastQuoteRequests: no providers found for deal ${dealId}`);
+    return;
+  }
+
+  const now = Timestamp.now();
+  // Deadline: 72 hours from broadcast
+  const deadline = Timestamp.fromMillis(Date.now() + 72 * 60 * 60 * 1000);
+
+  const batch = db.batch();
+
+  // Insurance dealSnapshot — full fields including price
+  const insuranceDealSnapshot = {
+    productName: dealData.productName || null,
+    productImage: dealData.productImage || null,
+    quantity: snapshot.quantity || null,
+    unit: snapshot.unit || null,
+    incoterm: snapshot.incoterm || null,
+    namedPlace: snapshot.namedPlace || null,
+    paymentTerms: snapshot.paymentTerms || null,
+    deliveryDeadline: snapshot.deliveryDeadline || null,
+    currency: snapshot.currency || null,
+    price: snapshot.price || null,
+    estimatedTotal: snapshot.estimatedTotal || null,
+  };
+
+  // Logistics dealSnapshot — explicit allowlist; price/estimatedTotal intentionally excluded (PORTAL-05)
+  const logisticsDealSnapshot = {
+    productName: dealData.productName || null,
+    productImage: dealData.productImage || null,
+    quantity: snapshot.quantity || null,
+    unit: snapshot.unit || null,
+    incoterm: snapshot.incoterm || null,
+    namedPlace: snapshot.namedPlace || null,
+    paymentTerms: snapshot.paymentTerms || null,
+    deliveryDeadline: snapshot.deliveryDeadline || null,
+    currency: snapshot.currency || null,
+    // price and estimatedTotal are intentionally omitted for logistics providers
+  };
+
+  let count = 0;
+  for (const providerDoc of providersSnap.docs) {
+    const providerData = providerDoc.data();
+    const providerType = providerData.role; // logistics_provider or insurance_provider
+    const dealSnapshot =
+      providerType === ROLES.INSURANCE_PROVIDER ? insuranceDealSnapshot : logisticsDealSnapshot;
+
+    const requestRef = db.collection('quoteRequests').doc();
+    batch.set(requestRef, {
+      dealId,
+      providerUid: providerDoc.id,
+      providerType,
+      dealSnapshot,
+      buyerId: dealData.buyerId,
+      sellerId: dealData.sellerId,
+      status: QUOTE_REQUEST_STATUS.PENDING,
+      deadline,
+      createdAt: now,
+      updatedAt: now,
+    });
+    count++;
+  }
+
+  await batch.commit();
+  console.log(`broadcastQuoteRequests: created ${count} quote request(s) for deal ${dealId}`);
+}
+
+/**
+ * submitQuote — onCall
+ *
+ * Allows an assigned provider to submit (or update) a quote for a quote request.
+ * Insurance and logistics payloads are validated separately.
+ * On edit: updates existing quote document.
+ * On new: creates quote in providerQuotes subcollection.
+ *
+ * @param {Object} data - { requestId, quoteData }
+ * @returns {Promise<{ success: boolean }>}
+ */
+exports.submitQuote = onCall(async (request) => {
+  const { requestId, quoteData } = request.data;
+  const uid = request.auth?.uid;
+
+  if (!uid) throw new HttpsError('unauthenticated', 'Must be logged in.');
+  if (!requestId || !quoteData) {
+    throw new HttpsError('invalid-argument', 'requestId and quoteData are required.');
+  }
+
+  // Read the quote request
+  const requestRef = db.collection('quoteRequests').doc(requestId);
+  const requestDoc = await requestRef.get();
+
+  if (!requestDoc.exists) {
+    throw new HttpsError('not-found', 'Quote request not found.');
+  }
+
+  const quoteRequest = requestDoc.data();
+
+  // Authorization: caller must be the assigned provider
+  if (quoteRequest.providerUid !== uid) {
+    throw new HttpsError('permission-denied', 'You are not the assigned provider for this request.');
+  }
+
+  // Status guard: only pending or quoted (edit scenario) allowed
+  if (
+    quoteRequest.status !== QUOTE_REQUEST_STATUS.PENDING &&
+    quoteRequest.status !== QUOTE_REQUEST_STATUS.QUOTED
+  ) {
+    throw new HttpsError(
+      'failed-precondition',
+      `Cannot submit quote for a request with status '${quoteRequest.status}'.`
+    );
+  }
+
+  // Deadline guard
+  if (quoteRequest.deadline && quoteRequest.deadline.toMillis() <= Timestamp.now().toMillis()) {
+    throw new HttpsError('failed-precondition', 'The quote request deadline has passed.');
+  }
+
+  const providerType = quoteRequest.providerType;
+  const { validityHours, notes, currency } = quoteData;
+  const finalCurrency = currency || 'USD';
+
+  // Validate validityHours
+  const allowedValidityHours = [12, 24, 48, 72];
+  if (!validityHours || !allowedValidityHours.includes(Number(validityHours))) {
+    throw new HttpsError('invalid-argument', 'validityHours must be 12, 24, 48, or 72.');
+  }
+
+  // Type-specific validation
+  if (providerType === ROLES.INSURANCE_PROVIDER) {
+    const { iccCoverage, premiumAmount, coverageAmount, deductiblePct, claimsPaymentDays, policyStartDate, policyEndDate, coverageScope } = quoteData;
+    if (!['A', 'B', 'C'].includes(iccCoverage)) {
+      throw new HttpsError('invalid-argument', 'iccCoverage must be A, B, or C.');
+    }
+    if (!premiumAmount || Number(premiumAmount) <= 0) {
+      throw new HttpsError('invalid-argument', 'premiumAmount must be greater than 0.');
+    }
+    if (!coverageAmount || Number(coverageAmount) <= 0) {
+      throw new HttpsError('invalid-argument', 'coverageAmount must be greater than 0.');
+    }
+    if (deductiblePct === undefined || Number(deductiblePct) < 0 || Number(deductiblePct) > 100) {
+      throw new HttpsError('invalid-argument', 'deductiblePct must be between 0 and 100.');
+    }
+    if (!claimsPaymentDays || Number(claimsPaymentDays) <= 0) {
+      throw new HttpsError('invalid-argument', 'claimsPaymentDays must be greater than 0.');
+    }
+    if (!policyStartDate || !policyEndDate) {
+      throw new HttpsError('invalid-argument', 'policyStartDate and policyEndDate are required.');
+    }
+    if (!coverageScope) {
+      throw new HttpsError('invalid-argument', 'coverageScope is required.');
+    }
+  } else if (providerType === ROLES.LOGISTICS_PROVIDER) {
+    const { transportMode, freightCost, estimatedTransitDays, loadingDate, estimatedArrival } = quoteData;
+    if (!['sea', 'air', 'road', 'rail', 'multimodal'].includes(transportMode)) {
+      throw new HttpsError('invalid-argument', 'transportMode must be sea, air, road, rail, or multimodal.');
+    }
+    if (!freightCost || Number(freightCost) <= 0) {
+      throw new HttpsError('invalid-argument', 'freightCost must be greater than 0.');
+    }
+    if (!estimatedTransitDays || Number(estimatedTransitDays) <= 0) {
+      throw new HttpsError('invalid-argument', 'estimatedTransitDays must be greater than 0.');
+    }
+    if (!loadingDate || !estimatedArrival) {
+      throw new HttpsError('invalid-argument', 'loadingDate and estimatedArrival are required.');
+    }
+  } else {
+    throw new HttpsError('failed-precondition', `Unknown provider type: ${providerType}`);
+  }
+
+  // Compute validUntil
+  const validUntil = Timestamp.fromMillis(Date.now() + Number(validityHours) * 60 * 60 * 1000);
+  const now = Timestamp.now();
+
+  // Build the quote document fields
+  const quoteDocData = {
+    requestId,
+    dealId: quoteRequest.dealId,
+    providerUid: uid,
+    providerType,
+    // Denormalized for Firestore rules (avoids get() call in rules)
+    buyerId: quoteRequest.buyerId,
+    sellerId: quoteRequest.sellerId,
+    ...quoteData,
+    currency: finalCurrency,
+    validUntil,
+    status: QUOTE_STATUS.ACTIVE,
+    updatedAt: now,
+  };
+
+  // Check if a quote already exists for this request/provider
+  const existingQuotesSnap = await db
+    .collection('quoteRequests')
+    .doc(requestId)
+    .collection('providerQuotes')
+    .where('providerUid', '==', uid)
+    .limit(1)
+    .get();
+
+  if (!existingQuotesSnap.empty) {
+    // UPDATE existing quote
+    await existingQuotesSnap.docs[0].ref.update(quoteDocData);
+  } else {
+    // CREATE new quote
+    quoteDocData.createdAt = now;
+    await db
+      .collection('quoteRequests')
+      .doc(requestId)
+      .collection('providerQuotes')
+      .add(quoteDocData);
+  }
+
+  // Update quoteRequest status to 'quoted'
+  await requestRef.update({
+    status: QUOTE_REQUEST_STATUS.QUOTED,
+    updatedAt: now,
+  });
+
+  // Notify buyer of new/updated quote (simple in-app notification)
+  try {
+    await db
+      .collection('users')
+      .doc(quoteRequest.buyerId)
+      .collection('notifications')
+      .add({
+        type: 'quote',
+        eventType: 'quote_received',
+        title: `New quote received for your deal`,
+        body: `A ${providerType === ROLES.INSURANCE_PROVIDER ? 'insurance' : 'logistics'} provider has submitted a quote for your deal.`,
+        dealId: quoteRequest.dealId,
+        requestId,
+        isRead: false,
+        createdAt: now,
+        link: `/deals/${quoteRequest.dealId}`,
+      });
+  } catch (err) {
+    console.error('submitQuote: failed to send buyer notification (non-fatal):', err);
+  }
+
+  console.log(`submitQuote: ${uid} submitted quote for request ${requestId} (deal: ${quoteRequest.dealId})`);
+  return { success: true };
+});
+
+/**
+ * acceptQuote — onCall
+ *
+ * Allows the buyer to accept a provider quote. Uses runTransaction with
+ * server-side validUntil expiry check (QUOTE-04).
+ *
+ * Updates:
+ * - quote.status → 'accepted'
+ * - quoteRequest.status → 'selected'
+ * - deal.selectedInsuranceQuoteId / selectedInsuranceRequestId  (or logistics equivalent)
+ *
+ * @param {Object} data - { quoteRequestId, quoteId }
+ * @returns {Promise<{ success: boolean }>}
+ */
+exports.acceptQuote = onCall(async (request) => {
+  const { quoteRequestId, quoteId } = request.data;
+  const uid = request.auth?.uid;
+
+  if (!uid) throw new HttpsError('unauthenticated', 'Must be logged in.');
+  if (!quoteRequestId || !quoteId) {
+    throw new HttpsError('invalid-argument', 'quoteRequestId and quoteId are required.');
+  }
+
+  const quoteRequestRef = db.collection('quoteRequests').doc(quoteRequestId);
+  const quoteRef = quoteRequestRef.collection('providerQuotes').doc(quoteId);
+
+  let providerType;
+  let dealId;
+
+  await db.runTransaction(async (t) => {
+    const [quoteRequestSnap, quoteSnap] = await Promise.all([
+      t.get(quoteRequestRef),
+      t.get(quoteRef),
+    ]);
+
+    if (!quoteRequestSnap.exists) throw new HttpsError('not-found', 'Quote request not found.');
+    if (!quoteSnap.exists) throw new HttpsError('not-found', 'Quote not found.');
+
+    const quoteRequest = quoteRequestSnap.data();
+    const quote = quoteSnap.data();
+
+    // Authorization: only the buyer can accept
+    if (quoteRequest.buyerId !== uid) {
+      throw new HttpsError('permission-denied', 'Only the buyer can accept a quote.');
+    }
+
+    // SERVER-SIDE EXPIRY CHECK (QUOTE-04)
+    if (quote.validUntil.toMillis() <= Timestamp.now().toMillis()) {
+      throw new HttpsError('failed-precondition', 'This quote has expired.');
+    }
+
+    // Status guard
+    if (quote.status !== QUOTE_STATUS.ACTIVE) {
+      throw new HttpsError(
+        'failed-precondition',
+        `Quote is ${quote.status}. Only active quotes can be accepted.`
+      );
+    }
+
+    providerType = quote.providerType;
+    dealId = quoteRequest.dealId;
+
+    const dealRef = db.collection('deals').doc(dealId);
+    const now = Timestamp.now();
+
+    // Update quote status to accepted
+    t.update(quoteRef, { status: QUOTE_STATUS.ACCEPTED, updatedAt: now });
+
+    // Update quoteRequest status to selected
+    t.update(quoteRequestRef, { status: QUOTE_REQUEST_STATUS.SELECTED, updatedAt: now });
+
+    // Update deal with selected quote reference
+    const dealUpdate = { updatedAt: now };
+    if (providerType === ROLES.INSURANCE_PROVIDER) {
+      dealUpdate.selectedInsuranceQuoteId = quoteId;
+      dealUpdate.selectedInsuranceRequestId = quoteRequestId;
+    } else {
+      dealUpdate.selectedLogisticsQuoteId = quoteId;
+      dealUpdate.selectedLogisticsRequestId = quoteRequestId;
+    }
+    t.update(dealRef, dealUpdate);
+  });
+
+  // Post-transaction notifications
+  const now = Timestamp.now();
+  if (dealId) {
+    try {
+      // Notify winning provider
+      const quoteSnap = await quoteRef.get();
+      const quoteData = quoteSnap.data();
+      if (quoteData) {
+        await db
+          .collection('users')
+          .doc(quoteData.providerUid)
+          .collection('notifications')
+          .add({
+            type: 'quote',
+            eventType: 'quote_accepted',
+            title: 'Your quote has been accepted!',
+            body: `The buyer has accepted your ${providerType === ROLES.INSURANCE_PROVIDER ? 'insurance' : 'logistics'} quote.`,
+            dealId,
+            requestId: quoteRequestId,
+            quoteId,
+            isRead: false,
+            createdAt: now,
+            link: `/deals/${dealId}`,
+          });
+      }
+    } catch (err) {
+      console.error('acceptQuote: failed to send provider notification (non-fatal):', err);
+    }
+  }
+
+  console.log(`acceptQuote: buyer ${uid} accepted quote ${quoteId} on request ${quoteRequestId}`);
+  return { success: true };
+});
 
 /**
  * Auto-Update Fair Statuses
