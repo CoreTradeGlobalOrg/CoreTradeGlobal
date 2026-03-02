@@ -139,12 +139,14 @@ export class Deal {
 
   /**
    * Check if deal is in a terminal state (no further actions possible in negotiation)
-   * Terminal = contract_approved, rejected, expired, or withdrawn.
+   * Terminal = providers_selected, contract_approved, rejected, expired, or withdrawn.
    * NOTE: ACCEPTED is now transitional (awaiting contract approval), not terminal.
+   * NOTE: CONTRACT_APPROVED is also terminal for negotiation but is a gateway for Phase 4.
    * @returns {boolean}
    */
   isTerminal() {
     return [
+      DEAL_STATUS.PROVIDERS_SELECTED,
       DEAL_STATUS.CONTRACT_APPROVED,
       DEAL_STATUS.REJECTED,
       DEAL_STATUS.EXPIRED,
@@ -166,6 +168,25 @@ export class Deal {
    * @returns {boolean}
    */
   isContractApproved() {
+    return this.status === DEAL_STATUS.CONTRACT_APPROVED;
+  }
+
+  /**
+   * Check if buyer has selected insurance and/or logistics providers.
+   * This is the final terminal status for deals that go through Phase 4.
+   * @returns {boolean}
+   */
+  isProvidersSelected() {
+    return this.status === DEAL_STATUS.PROVIDERS_SELECTED;
+  }
+
+  /**
+   * Semantic alias: check if deal is awaiting provider quotes.
+   * A deal in contract_approved status has triggered quote requests to providers.
+   * Used in Phase 4 UI code for readability.
+   * @returns {boolean}
+   */
+  isAwaitingQuotes() {
     return this.status === DEAL_STATUS.CONTRACT_APPROVED;
   }
 

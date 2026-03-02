@@ -17,12 +17,13 @@
  * Represents the overall state of a negotiation deal.
  */
 export const DEAL_STATUS = {
-  NEGOTIATING: 'negotiating',           // Active negotiation in progress
-  ACCEPTED: 'accepted',                 // Both parties agreed — triggers contract generation
-  REJECTED: 'rejected',                 // One party rejected the offer
-  EXPIRED: 'expired',                   // All offers expired without acceptance
-  WITHDRAWN: 'withdrawn',               // A party withdrew from the negotiation
-  CONTRACT_APPROVED: 'contract_approved', // Both parties approved all contract clauses — deal complete
+  NEGOTIATING: 'negotiating',               // Active negotiation in progress
+  ACCEPTED: 'accepted',                     // Both parties agreed — triggers contract generation
+  REJECTED: 'rejected',                     // One party rejected the offer
+  EXPIRED: 'expired',                       // All offers expired without acceptance
+  WITHDRAWN: 'withdrawn',                   // A party withdrew from the negotiation
+  CONTRACT_APPROVED: 'contract_approved',   // Both parties approved all contract clauses — Phase 4 quote requests triggered
+  PROVIDERS_SELECTED: 'providers_selected', // Buyer selected insurance and/or logistics providers — deal fully complete
 };
 
 /**
@@ -146,9 +147,10 @@ export const VALID_DEAL_TRANSITIONS = {
   ],
   // ACCEPTED is transitional — contract approval process begins
   [DEAL_STATUS.ACCEPTED]: [DEAL_STATUS.CONTRACT_APPROVED],
-  // Terminal states — no further transitions allowed in negotiation flow
-  // (CONTRACT_APPROVED is a gateway for Phase 4 logistics/insurance)
-  [DEAL_STATUS.CONTRACT_APPROVED]: [],
+  // CONTRACT_APPROVED is a gateway for Phase 4 — transitions to PROVIDERS_SELECTED after quote selection
+  [DEAL_STATUS.CONTRACT_APPROVED]: [DEAL_STATUS.PROVIDERS_SELECTED],
+  // Terminal states — no further transitions allowed
+  [DEAL_STATUS.PROVIDERS_SELECTED]: [],
   [DEAL_STATUS.REJECTED]: [],
   [DEAL_STATUS.EXPIRED]: [],
   [DEAL_STATUS.WITHDRAWN]: [],

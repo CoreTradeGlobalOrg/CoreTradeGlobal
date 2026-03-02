@@ -30,6 +30,9 @@ export const COLLECTIONS = {
   // Deals & Negotiation
   DEALS: 'deals',                // Deal negotiations
 
+  // Phase 4: Provider Portals & Quotes
+  QUOTE_REQUESTS: 'quoteRequests', // Quote requests sent to providers on contract_approved
+
   // Newsletter (existing)
   NEWSLETTER: 'newsletter',      // Newsletter subscribers
 };
@@ -44,6 +47,8 @@ export const SUBCOLLECTIONS = {
   NOTIFICATIONS: 'notifications',
   REVIEWS: 'reviews',
   OFFERS: 'offers',              // Offers subcollection under deals
+  // Phase 4: named `providerQuotes` (not `quotes`) to avoid collision with requests/{id}/quotes
+  PROVIDER_QUOTES: 'providerQuotes', // Provider quote submissions under quoteRequests
 };
 
 export default COLLECTIONS;

@@ -37,6 +37,14 @@ const STATUS_CONFIG = {
     label: 'Withdrawn',
     className: 'bg-[rgba(100,116,139,0.15)] text-[#64748b] border-[rgba(100,116,139,0.3)]',
   },
+  [DEAL_STATUS.CONTRACT_APPROVED]: {
+    label: 'Contract Approved',
+    className: 'bg-[rgba(255,215,0,0.15)] text-[#FFD700] border-[rgba(255,215,0,0.3)]',
+  },
+  [DEAL_STATUS.PROVIDERS_SELECTED]: {
+    label: 'Providers Selected',
+    className: 'bg-[rgba(59,130,246,0.15)] text-[#3b82f6] border-[rgba(59,130,246,0.3)]',
+  },
 };
 
 function formatRelativeTime(date) {
