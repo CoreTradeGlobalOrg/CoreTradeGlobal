@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-last_updated: "2026-03-03T16:27:14.915Z"
+last_updated: "2026-03-03T17:05:33.362Z"
 progress:
   total_phases: 4
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 19
-  completed_plans: 18
+  completed_plans: 19
 ---
 
 # Project State
@@ -63,6 +63,7 @@ Progress: [██████████] 58%
 | Phase 04 P03 | 5 | 2 tasks | 11 files |
 | Phase 04 P04 | 6 | 2 tasks | 6 files |
 | Phase 04 P06 | 10 | 2 tasks | 8 files |
+| Phase 04 P05 | 5 | 1 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -133,6 +134,9 @@ Recent decisions affecting current work:
 - [Phase 04]: Partial provider selection allowed on QuotesSidebar confirm button — buyer does not need to select both insurance and logistics to proceed
 - [Phase 04]: QuoteDetailWithExistingQuote extracted as wrapper component — React hooks rules forbid conditional hook calls; wrapper ensures useQuoteForRequest is always called unconditionally
 - [Phase 04]: existingQuote passes null during quoteLoading to render form immediately in new-quote mode; populates within milliseconds via Firestore real-time
+- [Phase 04-05]: CONTRACT_APPROVED remains in isTerminal fallback in DealPage — user directed to /quotes page, not deal forms
+- [Phase 04-05]: ACCEPTED and CONTRACT_APPROVED banners fully split — each status owns its own JSX block for clarity and independent control
+- [Phase 04-05]: ProgressTracker getActiveStep: extensible function returning step id string covering negotiation -> agreement -> quotes -> tracking
 
 ### Pending Todos
 
@@ -154,5 +158,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-03
-Stopped at: Completed 04-06-PLAN.md — providerType normalization fix, useQuoteForRequest hook, ProviderDashboard existingQuote wire, Cloud Functions deployed
+Stopped at: Completed 04-05-PLAN.md — DealPage quotes banner and providers_selected terminal state integrated, ProgressTracker getActiveStep extended, SUMMARY created
 Resume file: None
