@@ -86,7 +86,7 @@ Plans:
   3. A buyer can view and compare multiple insurance quotes and multiple logistics quotes side-by-side, with provider details, pricing, coverage/mode, and a live validity countdown
   4. Quote validity is enforced server-side -- a buyer cannot accept an expired quote even if the client-side timer shows it as valid
   5. After selecting one insurance and one logistics provider, the buyer sees a cost breakdown summary confirming their selections
-**Plans**: 5 plans
+**Plans**: 6 plans
 
 Plans:
 - [ ] 04-01-PLAN.md — Quote constants, entities, repositories, DI registration, deal status extension (PROVIDERS_SELECTED), DealCard badge
@@ -94,6 +94,7 @@ Plans:
 - [ ] 04-03-PLAN.md — Provider portal: kanban dashboard, request cards, insurance and logistics quote forms, hooks, route
 - [ ] 04-04-PLAN.md — Buyer quotes comparison: filter/sort/ribbons, quote cards, cost breakdown sidebar, selection confirmation
 - [ ] 04-05-PLAN.md — DealPage integration (quotes banner, providers_selected terminal), ProgressTracker update, end-to-end verification checkpoint
+- [ ] 04-06-PLAN.md — UAT gap closure: providerType normalization fix, useQuoteForRequest hook, withdraw button visibility
 
 ### Phase 5: Legal Consulting
 **Goal**: Either deal party can independently hire a lawyer who gets a private, encrypted channel with their client and can review deals, draft contracts, and provide risk analysis -- without blocking the trade flow
@@ -149,11 +150,11 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 (parallel with 3-4) -> 6 
 | 1. Role System and Infrastructure | 4/4 | Complete   | 2026-02-22 |
 | 2. Deal Creation and Negotiation (S1) | 7/7 | Complete   | 2026-02-23 |
 | 3. Contract Agreement (S2) | 2/2 | Complete   | 2026-03-01 |
-| 4. Provider Portals and Insurance/Logistics Quotes (S3) | 4/5 | In Progress|  |
+| 4. Provider Portals and Insurance/Logistics Quotes (S3) | 4/6 | In Progress|  |
 | 5. Legal Consulting | 0/0 | Not started | - |
 | 6. Trade Summary and Shipment Tracking (S4) | 0/0 | Not started | - |
 | 7. Platform Hardening | 0/0 | Not started | - |
 
 ---
 *Roadmap created: 2026-02-20*
-*Last updated: 2026-02-23*
+*Last updated: 2026-03-03*
