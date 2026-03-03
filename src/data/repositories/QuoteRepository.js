@@ -42,12 +42,14 @@ export class QuoteRepository {
    * Path: quoteRequests/{requestId}/providerQuotes
    *
    * @param {string} requestId - Parent QuoteRequest document ID
+   * @param {string} userId - Current user's UID (required for Firestore rules — participants array-contains)
    * @param {Function} callback - Called with Quote[] on each update
    * @returns {Function} Unsubscribe function — call on component unmount
    */
-  subscribeToQuotesForRequest(requestId, callback) {
+  subscribeToQuotesForRequest(requestId, userId, callback) {
     const q = query(
       collection(db, 'quoteRequests', requestId, 'providerQuotes'),
+      where('participants', 'array-contains', userId),
       orderBy('createdAt', 'desc')
     );
 

@@ -58,13 +58,15 @@ export class QuoteRequestRepository {
    * Used by the buyer quote comparison page to show all providers' request statuses.
    *
    * @param {string} dealId - Deal ID to subscribe to
+   * @param {string} userId - Current user's UID (required for Firestore rules — participants array-contains)
    * @param {Function} callback - Called with QuoteRequest[] on each update
    * @returns {Function} Unsubscribe function — call on component unmount
    */
-  subscribeToRequestsForDeal(dealId, callback) {
+  subscribeToRequestsForDeal(dealId, userId, callback) {
     const q = query(
       collection(db, 'quoteRequests'),
       where('dealId', '==', dealId),
+      where('participants', 'array-contains', userId),
       orderBy('createdAt', 'desc')
     );
 

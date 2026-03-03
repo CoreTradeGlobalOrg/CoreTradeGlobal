@@ -84,6 +84,62 @@ async function isUserAdmin(userId) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
+ * Build branded HTML email for invite/onboarding links.
+ */
+function buildInviteEmailHtml(name, role, signInLink) {
+  const roleName = role.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+  return `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; background: #f9f9f9;">
+      <div style="background: #0F1B2B; padding: 24px; border-radius: 8px 8px 0 0;">
+        <h1 style="color: #FFD700; margin: 0; font-size: 20px;">CoreTradeGlobal</h1>
+      </div>
+      <div style="background: #ffffff; padding: 32px; border-radius: 0 0 8px 8px; border: 1px solid #e0e0e0;">
+        <p style="color: #333333; font-size: 16px; line-height: 1.6;">
+          Hi ${name},
+        </p>
+        <p style="color: #333333; font-size: 16px; line-height: 1.6;">
+          You have been invited to join CoreTradeGlobal as a <strong>${roleName}</strong>.
+          Click the button below to set up your account.
+        </p>
+        <div style="margin-top: 32px; text-align: center;">
+          <a href="${signInLink}"
+             style="display: inline-block; background: #0F1B2B; color: #FFD700; text-decoration: none;
+                    padding: 14px 32px; border-radius: 6px; font-weight: bold; font-size: 15px;">
+            Accept Invite &amp; Set Up Account
+          </a>
+        </div>
+        <p style="margin-top: 24px; font-size: 13px; color: #888888;">
+          This link expires in 7 days. If you did not expect this invitation, you can ignore this email.
+        </p>
+      </div>
+    </div>
+  `;
+}
+
+/**
+ * Send an invite email via Resend. Non-blocking — failure does not fail the CF.
+ */
+async function sendInviteEmail(to, name, role, signInLink) {
+  const resend = getResend();
+  if (!resend) {
+    console.warn('sendInviteEmail: RESEND_API_KEY not set, skipping email.');
+    return;
+  }
+  const roleName = role.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+  try {
+    await resend.emails.send({
+      from: 'CoreTradeGlobal <info@coretradeglobal.com>',
+      to,
+      subject: `You're invited to CoreTradeGlobal as ${roleName}`,
+      html: buildInviteEmailHtml(name, role, signInLink),
+    });
+    console.log(`sendInviteEmail: sent invite to ${to} (${role})`);
+  } catch (err) {
+    console.error(`sendInviteEmail: failed to send to ${to}:`, err);
+  }
+}
+
+/**
  * Invite User (Admin only)
  *
  * Creates a Firebase Auth user with a specific role, sets custom claims,
@@ -189,6 +245,9 @@ exports.inviteUser = onCall(
         signInLink, // Stored for resend capability
       });
 
+      // Send invite email via Resend (non-blocking)
+      await sendInviteEmail(email, name, role, signInLink);
+
       console.log(`Invited user ${uid} (${email}) with role ${role}`);
 
       return { success: true, uid };
@@ -256,11 +315,15 @@ exports.resendInvite = onCall(
         new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days
       );
 
-      // Regenerate sign-in link
-      const signInLink = await admin.auth().generateSignInWithEmailLink(email, {
+      // Regenerate sign-in link (reconstruct as direct app link like inviteUser)
+      const rawLink = await admin.auth().generateSignInWithEmailLink(email, {
         url: `${APP_URL}/onboarding?uid=${uid}`,
         handleCodeInApp: true,
       });
+      const parsedLink = new URL(rawLink);
+      const signInLink = `${APP_URL}/onboarding?uid=${uid}&mode=${parsedLink.searchParams.get('mode')}&oobCode=${parsedLink.searchParams.get('oobCode')}&apiKey=${parsedLink.searchParams.get('apiKey')}&lang=${parsedLink.searchParams.get('lang') || 'en'}`;
+
+      const displayName = name || userRecord.displayName || email;
 
       // Update the invite doc: new expiry + new sign-in link
       await db.collection('invites').doc(uid).update({
@@ -270,9 +333,12 @@ exports.resendInvite = onCall(
         signInLink,
         resentAt: now,
         resentBy: auth.uid,
-        name: name || userRecord.displayName || null,
+        name: displayName,
         company: company || null,
       });
+
+      // Send invite email via Resend (non-blocking)
+      await sendInviteEmail(email, displayName, role, signInLink);
 
       console.log(`Resent invite for ${uid} (${email}) with role ${role}`);
 
@@ -2403,9 +2469,13 @@ async function broadcastQuoteRequests(dealId, dealData) {
   let count = 0;
   for (const providerDoc of providersSnap.docs) {
     const providerData = providerDoc.data();
-    const providerType = providerData.role; // logistics_provider or insurance_provider
+    // Normalize role to short-form providerType: 'insurance' or 'logistics'
+    // Frontend entities and hooks filter by short-form values.
+    const providerType = providerData.role === ROLES.INSURANCE_PROVIDER
+      ? 'insurance'
+      : 'logistics';
     const dealSnapshot =
-      providerType === ROLES.INSURANCE_PROVIDER ? insuranceDealSnapshot : logisticsDealSnapshot;
+      providerType === 'insurance' ? insuranceDealSnapshot : logisticsDealSnapshot;
 
     const requestRef = db.collection('quoteRequests').doc();
     batch.set(requestRef, {
@@ -2415,6 +2485,7 @@ async function broadcastQuoteRequests(dealId, dealData) {
       dealSnapshot,
       buyerId: dealData.buyerId,
       sellerId: dealData.sellerId,
+      participants: [dealData.buyerId, dealData.sellerId, providerDoc.id],
       status: QUOTE_REQUEST_STATUS.PENDING,
       deadline,
       createdAt: now,
@@ -2478,7 +2549,13 @@ exports.submitQuote = onCall(async (request) => {
     throw new HttpsError('failed-precondition', 'The quote request deadline has passed.');
   }
 
-  const providerType = quoteRequest.providerType;
+  // Normalize providerType: support both old ('insurance_provider') and new ('insurance') forms
+  const rawProviderType = quoteRequest.providerType;
+  const isInsurance = rawProviderType === ROLES.INSURANCE_PROVIDER || rawProviderType === 'insurance';
+  const isLogistics = rawProviderType === ROLES.LOGISTICS_PROVIDER || rawProviderType === 'logistics';
+  // Always store the short-form going forward
+  const providerType = isInsurance ? 'insurance' : isLogistics ? 'logistics' : rawProviderType;
+
   const { validityHours, notes, currency } = quoteData;
   const finalCurrency = currency || 'USD';
 
@@ -2489,7 +2566,7 @@ exports.submitQuote = onCall(async (request) => {
   }
 
   // Type-specific validation
-  if (providerType === ROLES.INSURANCE_PROVIDER) {
+  if (isInsurance) {
     const { iccCoverage, premiumAmount, coverageAmount, deductiblePct, claimsPaymentDays, policyStartDate, policyEndDate, coverageScope } = quoteData;
     if (!['A', 'B', 'C'].includes(iccCoverage)) {
       throw new HttpsError('invalid-argument', 'iccCoverage must be A, B, or C.');
@@ -2512,7 +2589,7 @@ exports.submitQuote = onCall(async (request) => {
     if (!coverageScope) {
       throw new HttpsError('invalid-argument', 'coverageScope is required.');
     }
-  } else if (providerType === ROLES.LOGISTICS_PROVIDER) {
+  } else if (isLogistics) {
     const { transportMode, freightCost, estimatedTransitDays, loadingDate, estimatedArrival } = quoteData;
     if (!['sea', 'air', 'road', 'rail', 'multimodal'].includes(transportMode)) {
       throw new HttpsError('invalid-argument', 'transportMode must be sea, air, road, rail, or multimodal.');
@@ -2543,6 +2620,7 @@ exports.submitQuote = onCall(async (request) => {
     // Denormalized for Firestore rules (avoids get() call in rules)
     buyerId: quoteRequest.buyerId,
     sellerId: quoteRequest.sellerId,
+    participants: [quoteRequest.buyerId, quoteRequest.sellerId, uid],
     ...quoteData,
     currency: finalCurrency,
     validUntil,
@@ -2588,7 +2666,7 @@ exports.submitQuote = onCall(async (request) => {
         type: 'quote',
         eventType: 'quote_received',
         title: `New quote received for your deal`,
-        body: `A ${providerType === ROLES.INSURANCE_PROVIDER ? 'insurance' : 'logistics'} provider has submitted a quote for your deal.`,
+        body: `A ${(providerType === 'insurance') ? 'insurance' : 'logistics'} provider has submitted a quote for your deal.`,
         dealId: quoteRequest.dealId,
         requestId,
         isRead: false,
@@ -2675,8 +2753,9 @@ exports.acceptQuote = onCall(async (request) => {
     t.update(quoteRequestRef, { status: QUOTE_REQUEST_STATUS.SELECTED, updatedAt: now });
 
     // Update deal with selected quote reference
+    // Support both old ('insurance_provider') and new ('insurance') providerType values
     const dealUpdate = { updatedAt: now };
-    if (providerType === ROLES.INSURANCE_PROVIDER) {
+    if (providerType === ROLES.INSURANCE_PROVIDER || providerType === 'insurance') {
       dealUpdate.selectedInsuranceQuoteId = quoteId;
       dealUpdate.selectedInsuranceRequestId = quoteRequestId;
     } else {
@@ -2702,7 +2781,7 @@ exports.acceptQuote = onCall(async (request) => {
             type: 'quote',
             eventType: 'quote_accepted',
             title: 'Your quote has been accepted!',
-            body: `The buyer has accepted your ${providerType === ROLES.INSURANCE_PROVIDER ? 'insurance' : 'logistics'} quote.`,
+            body: `The buyer has accepted your ${(providerType === ROLES.INSURANCE_PROVIDER || providerType === 'insurance') ? 'insurance' : 'logistics'} quote.`,
             dealId,
             requestId: quoteRequestId,
             quoteId,
@@ -3341,3 +3420,4 @@ exports.checkExpiredQuotes = onSchedule(
     }
   }
 );
+

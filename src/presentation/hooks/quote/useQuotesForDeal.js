@@ -42,7 +42,7 @@ import { QUOTE_STATUS } from '@/core/constants/quoteConstants';
  *   loading: boolean
  * }}
  */
-export function useQuotesForDeal(dealId) {
+export function useQuotesForDeal(dealId, userId) {
   const [quoteRequests, setQuoteRequests] = useState([]);
   const [allQuotes, setAllQuotes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -55,7 +55,7 @@ export function useQuotesForDeal(dealId) {
     unsubscribesRef.current.forEach((unsub) => unsub());
     unsubscribesRef.current = [];
 
-    if (!dealId) {
+    if (!dealId || !userId) {
       setQuoteRequests([]);
       setAllQuotes([]);
       setLoading(false);
@@ -80,7 +80,7 @@ export function useQuotesForDeal(dealId) {
     // Level 1: Subscribe to all quote requests for the deal
     const unsubRequests = container
       .getQuoteRequestRepository()
-      .subscribeToRequestsForDeal(dealId, (requests) => {
+      .subscribeToRequestsForDeal(dealId, userId, (requests) => {
         setQuoteRequests(requests);
 
         // Level 2: For each new request, subscribe to its providerQuotes if not already subscribed
@@ -91,7 +91,7 @@ export function useQuotesForDeal(dealId) {
 
             const unsubQuotes = container
               .getQuoteRepository()
-              .subscribeToQuotesForRequest(request.id, (quotes) => {
+              .subscribeToQuotesForRequest(request.id, userId, (quotes) => {
                 quotesMapRef[request.id] = quotes;
                 aggregateQuotes();
               });
@@ -119,7 +119,7 @@ export function useQuotesForDeal(dealId) {
       unsubscribesRef.current.forEach((unsub) => unsub());
       unsubscribesRef.current = [];
     };
-  }, [dealId]);
+  }, [dealId, userId]);
 
   // ── Derived state (memoized) ───────────────────────────────────────────────
 

@@ -12,6 +12,17 @@
 
 import { QUOTE_REQUEST_STATUS } from '@/core/constants/quoteConstants';
 
+/**
+ * Normalize providerType from Firestore.
+ * Old documents store 'insurance_provider'/'logistics_provider' (the user role),
+ * but the frontend expects short-form 'insurance'/'logistics'.
+ */
+function normalizeProviderType(raw) {
+  if (raw === 'insurance_provider') return 'insurance';
+  if (raw === 'logistics_provider') return 'logistics';
+  return raw; // already short-form or unknown
+}
+
 export class QuoteRequest {
   /**
    * Constructor
@@ -64,7 +75,7 @@ export class QuoteRequest {
       data.id,
       data.dealId,
       data.providerUid,
-      data.providerType,
+      normalizeProviderType(data.providerType),
       data.dealSnapshot || {},
       data.buyerId,
       data.sellerId,
