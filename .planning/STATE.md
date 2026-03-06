@@ -148,6 +148,7 @@ None yet.
 |---|-------------|------|--------|-----------|
 | 1 | Deal notification click navigates to deal page | 2026-02-23 | 7358c13 | [1-when-user-click-notification-for-deal-i-](./quick/1-when-user-click-notification-for-deal-i-/) |
 | 2 | Fix navbar for provider dashboard and admin nav override | 2026-03-06 | 33373f5 | [2-fix-navbar-for-provider-dashboard-and-si](./quick/2-fix-navbar-for-provider-dashboard-and-si/) |
+| 3 | Extract QuoteDetailView to /provider/quotes/[requestId] route | 2026-03-06 | 1d0d858 | [3-separate-provider-quote-detail-into-its-](./quick/3-separate-provider-quote-detail-into-its-/) |
 
 ### Blockers/Concerns
 
@@ -158,6 +159,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-03
-Stopped at: Completed 04-05-PLAN.md — DealPage quotes banner and providers_selected terminal state integrated, ProgressTracker getActiveStep extended, SUMMARY created
+Last session: 2026-03-06
+Stopped at: Completed quick-3 — Extracted QuoteDetailView to /provider/quotes/[requestId] route, added subscribeToRequest to repository, created useQuoteRequest hook
 Resume file: None
