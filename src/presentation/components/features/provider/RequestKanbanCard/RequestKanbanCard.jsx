@@ -10,6 +10,7 @@
 
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { Shield, Truck, MapPin, Package } from 'lucide-react';
 import { CountdownTimer } from '@/presentation/components/features/deal/CountdownTimer/CountdownTimer';
 import { QUOTE_REQUEST_STATUS } from '@/core/constants/quoteConstants';
@@ -45,9 +46,9 @@ const STATUS_BADGE = {
  *
  * @param {Object} props
  * @param {import('@/domain/entities/QuoteRequest').QuoteRequest} props.request - Quote request entity
- * @param {Function} props.onClick - Callback when card is clicked
  */
-export function RequestKanbanCard({ request, onClick }) {
+export function RequestKanbanCard({ request }) {
+  const router = useRouter();
   const { dealSnapshot, status, deadline, providerType } = request;
 
   const productName = dealSnapshot?.productName || 'Unknown Product';
@@ -61,7 +62,7 @@ export function RequestKanbanCard({ request, onClick }) {
 
   return (
     <button
-      onClick={onClick}
+      onClick={() => router.push(`/provider/quotes/${request.id}`)}
       className="w-full text-left rounded-xl border border-[#1E2D3D] bg-[#0A1628] p-4 hover:border-blue-500/30 hover:bg-[#0D1F38] transition-all duration-200 cursor-pointer group"
     >
       {/* Header: Product name + provider type icon */}

@@ -2,7 +2,7 @@
  * ProviderDashboard Component
  *
  * Kanban-style layout with 4 columns: New Requests, Quoted, Declined, Selected.
- * When a card is selected, shows QuoteDetailView side-by-side with deal info and quote form.
+ * Clicking a card navigates to /provider/quotes/{requestId} for the detail view.
  *
  * Per design: shared layout for both insurance and logistics providers.
  * Only the quote form fields differ per provider type.
@@ -10,11 +10,8 @@
 
 'use client';
 
-import { useState } from 'react';
 import { LayoutGrid, Shield, Truck } from 'lucide-react';
 import { RequestKanbanCard } from '@/presentation/components/features/provider/RequestKanbanCard/RequestKanbanCard';
-import { QuoteDetailView } from '@/presentation/components/features/provider/QuoteDetailView/QuoteDetailView';
-import { useQuoteForRequest } from '@/presentation/hooks/quote/useQuoteForRequest';
 import { ROLES } from '@/core/constants/roles';
 
 /**
@@ -62,27 +59,6 @@ function SkeletonCard() {
 }
 
 /**
- * Wrapper that loads the provider's existing quote for the selected request.
- * Extracted as a component so useQuoteForRequest hook is always called
- * unconditionally (React hooks rules).
- */
-function QuoteDetailWithExistingQuote({ request, providerType, providerUid, onBack }) {
-  const { quote: existingQuote, loading: quoteLoading } = useQuoteForRequest(
-    request.id,
-    providerUid
-  );
-
-  return (
-    <QuoteDetailView
-      request={request}
-      providerType={providerType}
-      onBack={onBack}
-      existingQuote={quoteLoading ? null : existingQuote}
-    />
-  );
-}
-
-/**
  * ProviderDashboard
  *
  * @param {Object} props
@@ -92,21 +68,7 @@ function QuoteDetailWithExistingQuote({ request, providerType, providerUid, onBa
  * @param {string} props.providerUid
  */
 export function ProviderDashboard({ columns, loading, providerType, providerUid }) {
-  const [selectedRequest, setSelectedRequest] = useState(null);
-
   const isInsurance = providerType === 'insurance';
-
-  // If a request is selected, show the detail/quote form view
-  if (selectedRequest) {
-    return (
-      <QuoteDetailWithExistingQuote
-        request={selectedRequest}
-        providerType={providerType}
-        providerUid={providerUid}
-        onBack={() => setSelectedRequest(null)}
-      />
-    );
-  }
 
   const totalCount = Object.values(columns).reduce((sum, col) => sum + col.length, 0);
 
@@ -182,7 +144,6 @@ export function ProviderDashboard({ columns, loading, providerType, providerUid 
                       <RequestKanbanCard
                         key={request.id}
                         request={request}
-                        onClick={() => setSelectedRequest(request)}
                       />
                     ))
                   )}
