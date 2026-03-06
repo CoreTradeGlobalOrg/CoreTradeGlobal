@@ -125,13 +125,16 @@ export function Navbar() {
     return pathname === path || (path !== '/' && pathname.startsWith(path));
   };
 
+  // Show loading state while role is still resolving (prevents flash of default nav)
+  const roleLoading = loading || (isAuthenticated && !user?.role);
+
   /**
    * Filter nav links by user role.
    * - roles: null  → always visible
    * - roles: [...]  → only visible when user.role is in the list
    */
   const visibleLinks = NAV_LINKS.filter(
-    (link) => link.roles === null || (user && (user.role === ROLES.ADMIN || link.roles.includes(user.role)))
+    (link) => link.roles === null || (user && link.roles.includes(user.role))
   );
 
   return (
@@ -160,20 +163,28 @@ export function Navbar() {
 
       {/* Desktop Navigation Links */}
       <div className="nav-links hidden md:flex">
-        {visibleLinks.map((link) => (
-          <Link
-            key={link.href}
-            href={link.href}
-            className={`nav-link ${isActive(link.href) ? 'font-bold opacity-100' : ''}`}
-            style={{ color: isActive(link.href) ? '#FFD700' : undefined }}
-            onClick={(e) => handleNavClick(link.href, e)}
-          >
-            {link.label}
-          </Link>
-        ))}
+        {roleLoading ? (
+          <div className="flex items-center gap-4">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="w-16 h-4 bg-[rgba(255,255,255,0.1)] rounded animate-pulse" />
+            ))}
+          </div>
+        ) : (
+          visibleLinks.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className={`nav-link ${isActive(link.href) ? 'font-bold opacity-100' : ''}`}
+              style={{ color: isActive(link.href) ? '#FFD700' : undefined }}
+              onClick={(e) => handleNavClick(link.href, e)}
+            >
+              {link.label}
+            </Link>
+          ))
+        )}
 
         {/* Auth Section */}
-        {loading ? (
+        {roleLoading ? (
           <div className="w-20 h-8 bg-[rgba(255,255,255,0.1)] rounded-full animate-pulse" />
         ) : isAuthenticated && user ? (
           <div className="flex items-center gap-3">
@@ -272,20 +283,28 @@ export function Navbar() {
       {isMobileMenuOpen && (
         <div className="md:hidden absolute top-full left-0 right-0 bg-[#0F1B2B] border-t border-[rgba(255,255,255,0.1)] shadow-lg">
           <div className="px-6 py-4 space-y-1">
-            {visibleLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="block py-3 transition-colors hover:text-[#FFD700]"
-                style={{ color: isActive(link.href) ? '#FFD700' : '#FFFFFF', fontWeight: isActive(link.href) ? 600 : 400 }}
-                onClick={(e) => handleNavClick(link.href, e)}
-              >
-                {link.label}
-              </Link>
-            ))}
+            {roleLoading ? (
+              <div className="space-y-3">
+                {[...Array(4)].map((_, i) => (
+                  <div key={i} className="w-24 h-4 bg-[rgba(255,255,255,0.1)] rounded animate-pulse" />
+                ))}
+              </div>
+            ) : (
+              visibleLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="block py-3 transition-colors hover:text-[#FFD700]"
+                  style={{ color: isActive(link.href) ? '#FFD700' : '#FFFFFF', fontWeight: isActive(link.href) ? 600 : 400 }}
+                  onClick={(e) => handleNavClick(link.href, e)}
+                >
+                  {link.label}
+                </Link>
+              ))
+            )}
 
             <div className="pt-4 mt-2 border-t border-[rgba(255,255,255,0.1)] space-y-1">
-              {loading ? (
+              {roleLoading ? (
                 <div className="w-full h-10 bg-[rgba(255,255,255,0.1)] rounded-full animate-pulse" />
               ) : isAuthenticated && user ? (
                 <>
