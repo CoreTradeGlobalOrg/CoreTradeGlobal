@@ -11,7 +11,7 @@
  * All subscription methods return an unsubscribe function for cleanup on unmount.
  */
 
-import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
+import { collection, doc, query, where, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '@/core/config/firebase.config';
 import { QuoteRequest } from '@/domain/entities/QuoteRequest';
 
@@ -49,6 +49,33 @@ export class QuoteRequestRepository {
       },
       (error) => {
         console.error('QuoteRequestRepository.subscribeToRequestsForProvider error:', error);
+      }
+    );
+  }
+
+  /**
+   * Subscribe to a single quote request by ID.
+   * Used by the provider quote detail page for real-time updates on a specific request.
+   *
+   * @param {string} requestId - QuoteRequest document ID
+   * @param {Function} callback - Called with QuoteRequest|null on each update
+   * @returns {Function} Unsubscribe function — call on component unmount
+   */
+  subscribeToRequest(requestId, callback) {
+    const docRef = doc(db, 'quoteRequests', requestId);
+
+    return onSnapshot(
+      docRef,
+      (snap) => {
+        if (!snap.exists()) {
+          callback(null);
+          return;
+        }
+        const request = QuoteRequest.fromFirestore({ id: snap.id, ...snap.data() });
+        callback(request);
+      },
+      (error) => {
+        console.error('QuoteRequestRepository.subscribeToRequest error:', error);
       }
     );
   }
