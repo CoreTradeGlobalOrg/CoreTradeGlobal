@@ -89,7 +89,7 @@ Recent decisions affecting current work:
 - [01-02]: Force getIdToken(true) twice in onboarding -- after sign-in and after completion for fresh claims
 - [Phase 01]: connectFunctionsEmulator enabled in dev mode -- httpsCallable routes to local emulator, fixing CORS errors
 - [Phase 01]: cors:true removed from all onCall definitions -- it is onRequest-only and misleading on onCall
-- [Phase 01]: Admin navbar override: ROLES.ADMIN check in visibleLinks filter so admin sees all role-restricted nav links
+- [Phase 01]: Admin navbar override: ROLES.ADMIN check in visibleLinks filter so admin sees all role-restricted nav links — SUPERSEDED by quick-2: admin now sees member-equivalent links only via explicit roles array
 - [Phase 01]: Session body sends only idToken (not role) -- role read from verified JWT claims server-side
 - [02-01]: Two-query merge for My Deals list (buyerId + sellerId queries merged client-side) -- Firestore cannot OR across different field names
 - [02-01]: DEAL_STATUS/OFFER_STATUS constants duplicated in functions/index.js -- Cloud Functions are CJS and cannot import ESM from Next.js app
@@ -147,6 +147,7 @@ None yet.
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 1 | Deal notification click navigates to deal page | 2026-02-23 | 7358c13 | [1-when-user-click-notification-for-deal-i-](./quick/1-when-user-click-notification-for-deal-i-/) |
+| 2 | Fix navbar for provider dashboard and admin nav override | 2026-03-06 | 33373f5 | [2-fix-navbar-for-provider-dashboard-and-si](./quick/2-fix-navbar-for-provider-dashboard-and-si/) |
 
 ### Blockers/Concerns
 
