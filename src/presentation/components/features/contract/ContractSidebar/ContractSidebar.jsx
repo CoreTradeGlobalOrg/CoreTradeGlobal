@@ -4,8 +4,7 @@
  * Sticky sidebar displaying:
  * 1. Financial Summary — unit price, quantity, total value, Incoterms, currency
  * 2. Required Documents — Incoterm-driven checklist
- * 3. Estimated Additional Costs — Phase 4 placeholder
- * 4. Download PDF button — triggers window.print()
+ * 3. Download PDF button — triggers window.print()
  */
 
 'use client';
@@ -99,24 +98,6 @@ export function ContractSidebar({ deal, contract, isBuyer }) {
           </ul>
         </div>
       )}
-
-      {/* Estimated Costs placeholder — Phase 4 */}
-      <div className="rounded-xl border border-dashed border-white/10 bg-white/[0.01] p-4 opacity-60">
-        <h3 className="text-sm font-semibold text-white mb-1">Estimated Additional Costs</h3>
-        <p className="text-xs text-[#8899AA] mb-3">
-          Costs will be available after provider quotes (Phase 4)
-        </p>
-        <ul className="space-y-2">
-          <li className="flex items-start justify-between">
-            <span className="text-xs text-[#8899AA]">Insurance premium</span>
-            <span className="text-xs text-[#4A5B6E] italic">TBD</span>
-          </li>
-          <li className="flex items-start justify-between">
-            <span className="text-xs text-[#8899AA]">Logistics cost</span>
-            <span className="text-xs text-[#4A5B6E] italic">TBD</span>
-          </li>
-        </ul>
-      </div>
 
       {/* Download PDF button */}
       <button

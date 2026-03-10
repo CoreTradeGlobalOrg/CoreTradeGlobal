@@ -14,7 +14,9 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { CheckCircle, ArrowRight } from 'lucide-react';
 
 import { CLAUSE_SECTIONS } from '@/core/constants/contractConstants';
@@ -91,7 +93,24 @@ function WaitingBanner({ otherPartyLabel }) {
 // Completion Banner
 // ─────────────────────────────────────────────────────────────────────────────
 
-function CompletionBanner() {
+function CompletionBanner({ dealId }) {
+  const router = useRouter();
+  const [countdown, setCountdown] = useState(5);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCountdown((prev) => prev - 1);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Navigate when countdown reaches 0 (outside of setState to avoid React warning)
+  useEffect(() => {
+    if (countdown <= 0) {
+      router.push(`/deals/${dealId}/quotes`);
+    }
+  }, [countdown, dealId, router]);
+
   return (
     <div className="rounded-xl border border-emerald-500/30 bg-emerald-900/20 px-4 py-4">
       <div className="flex items-center gap-2 mb-1">
@@ -101,12 +120,15 @@ function CompletionBanner() {
         </p>
       </div>
       <p className="text-xs text-[#8899AA] mb-3">
-        The contract is now fully executed. Insurance and logistics quotes are the next step.
+        The contract is now fully executed. Redirecting to quotes in {countdown}s...
       </p>
-      <div className="flex items-center gap-1.5 text-xs text-[#8899AA]">
+      <Link
+        href={`/deals/${dealId}/quotes`}
+        className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-400 hover:text-emerald-300 underline transition-colors"
+      >
         <ArrowRight size={12} />
-        <span>Insurance &amp; Logistics Quotes — Coming in Phase 4</span>
-      </div>
+        Compare Insurance &amp; Logistics Quotes
+      </Link>
     </div>
   );
 }
@@ -160,7 +182,7 @@ export function ContractPage({ deal, contract, currentUserUid, actions }) {
         />
 
         {/* Completion banner */}
-        {isFullyApproved && <CompletionBanner />}
+        {isFullyApproved && <CompletionBanner dealId={deal.id} />}
 
         {/* One-party waiting banner */}
         {!isFullyApproved && hasISubmitted && !hasOtherSubmitted && (
