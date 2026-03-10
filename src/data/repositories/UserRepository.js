@@ -8,7 +8,7 @@
  * UserRepository = User data/profile operations
  */
 
-import { COLLECTIONS } from '@/core/constants/collections';
+import { COLLECTIONS, SUBCOLLECTIONS } from '@/core/constants/collections';
 
 export class UserRepository {
   /**
@@ -138,6 +138,34 @@ export class UserRepository {
     });
 
     return documentMeta;
+  }
+
+  /**
+   * Get all users with lawyer role for the directory
+   * @param {Object} options - Filter options
+   * @param {number} options.limitCount - Max results (default 50)
+   * @returns {Promise<Object[]>} Array of lawyer user objects
+   */
+  async getLawyers({ limitCount = 50 } = {}) {
+    return this.firestoreDataSource.query(COLLECTIONS.USERS, {
+      where: [['role', '==', 'lawyer']],
+      orderBy: [['displayName', 'asc']],
+      limit: limitCount,
+    });
+  }
+
+  /**
+   * Get reviews for a lawyer from their reviews subcollection
+   * @param {string} lawyerId
+   * @returns {Promise<Object[]>}
+   */
+  async getLawyerReviews(lawyerId) {
+    return this.firestoreDataSource.querySubcollection(
+      COLLECTIONS.USERS,
+      lawyerId,
+      SUBCOLLECTIONS.REVIEWS,
+      { orderBy: [['createdAt', 'desc']], limit: 20 }
+    );
   }
 
   /**
