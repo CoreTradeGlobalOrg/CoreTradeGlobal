@@ -14,6 +14,8 @@
 
 'use client';
 
+import { useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { FileText, Package } from 'lucide-react';
 import { ProductHero } from '../ProductHero/ProductHero';
@@ -22,6 +24,7 @@ import { CounterOfferForm } from '../CounterOfferForm/CounterOfferForm';
 import { DealSidebar } from '../DealSidebar/DealSidebar';
 import { CountdownTimer } from '../CountdownTimer/CountdownTimer';
 import { DEAL_STATUS } from '@/core/constants/dealConstants';
+import { LegalBanner } from '@/presentation/components/features/legal/LegalBanner/LegalBanner';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Terminal State Banner
@@ -85,6 +88,35 @@ function TerminalBanner({ status }) {
  * @param {boolean} [props.otherPartyViewing]
  */
 export function DealPage({ deal, offers, currentUserUid, actions, otherPartyViewing }) {
+  const router = useRouter();
+  const prevStatusRef = useRef(null);
+
+  // Auto-navigate when deal status transitions to next stage
+  useEffect(() => {
+    if (!deal) return;
+
+    // Skip first render — don't redirect on initial page load
+    if (prevStatusRef.current === null) {
+      prevStatusRef.current = deal.status;
+      return;
+    }
+
+    // Skip if status hasn't changed
+    if (prevStatusRef.current === deal.status) return;
+
+    const prevStatus = prevStatusRef.current;
+    prevStatusRef.current = deal.status;
+
+    if (deal.status === DEAL_STATUS.ACCEPTED && prevStatus === DEAL_STATUS.NEGOTIATING) {
+      const timer = setTimeout(() => router.push(`/deals/${deal.id}/contract`), 2000);
+      return () => clearTimeout(timer);
+    }
+    if (deal.status === DEAL_STATUS.CONTRACT_APPROVED) {
+      const timer = setTimeout(() => router.push(`/deals/${deal.id}/quotes`), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [deal?.status, deal?.id, router]);
+
   if (!deal) return null;
 
   const isTerminal = deal.isTerminal?.() ?? [
@@ -158,6 +190,9 @@ export function DealPage({ deal, offers, currentUserUid, actions, otherPartyView
 
         {/* Terminal banner (when deal is closed) */}
         {isTerminal && <TerminalBanner status={deal.status} />}
+
+        {/* Legal banner — visible at ALL deal stages; manages its own show/hide logic */}
+        <LegalBanner dealId={deal.id} currentUserUid={currentUserUid} />
 
         {/* Main content + sidebar */}
         <div className="flex flex-col lg:flex-row gap-4">
