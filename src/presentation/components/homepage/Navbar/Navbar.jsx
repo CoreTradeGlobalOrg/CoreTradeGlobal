@@ -40,9 +40,8 @@ const NAV_LINKS = [
     href: '/provider/dashboard',
     roles: [ROLES.LOGISTICS_PROVIDER, ROLES.INSURANCE_PROVIDER],
   },
-  // Lawyer-only navigation
-  { label: 'Client Channels', href: '/lawyer/channels', roles: [ROLES.LAWYER] },
-  { label: 'Deal Review', href: '/lawyer/deals', roles: [ROLES.LAWYER] },
+  // Lawyer-only navigation — admin included for oversight
+  { label: 'Lawyer Dashboard', href: '/lawyer/dashboard', roles: [ROLES.LAWYER, ROLES.ADMIN] },
 ];
 
 import { usePathname } from 'next/navigation';
