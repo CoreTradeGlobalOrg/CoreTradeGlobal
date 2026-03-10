@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-last_updated: "2026-03-10T15:02:25.859Z"
+last_updated: "2026-03-10T15:11:40.385Z"
 progress:
   total_phases: 5
   completed_phases: 4
   total_plans: 25
-  completed_plans: 22
+  completed_plans: 23
 ---
 
 # Project State
@@ -23,11 +23,11 @@ See: .planning/PROJECT.md (updated 2026-02-20)
 ## Current Position
 
 Phase: 5 of 7 (Legal Consulting)
-Plan: 3 of 5 in current phase (05-03 complete — Lawyer directory and profile adaptation)
+Plan: 4 of 5 in current phase (05-04 complete — LegalBanner on DealPage, LawyerDashboard, legal hooks)
 Status: In progress
-Last activity: 2026-03-10 - Completed 05-03: /lawyers directory page, LawyerCard, LawyerDirectory with search/filters, LawyerProfileContent, profile page role adaptation
+Last activity: 2026-03-10 - Completed 05-04: LegalBanner on DealPage at all stages, LawyerDashboard at /lawyer/dashboard, useLegalEngagement/useLegalEngagements/useLegalActions hooks
 
-Progress: [██████████] 60%
+Progress: [██████████] 64%
 
 ## Performance Metrics
 
@@ -66,6 +66,7 @@ Progress: [██████████] 60%
 | Phase 04 P05 | 5 | 1 tasks | 2 files |
 | Phase 05 P02 | 8 | 2 tasks | 1 files |
 | Phase 05-legal-consulting P03 | 5 | 2 tasks | 7 files |
+| Phase 05-legal-consulting P04 | 8 | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -148,6 +149,9 @@ Recent decisions affecting current work:
 - [Phase 05-02]: /deals/[dealId]/legal intentionally NOT in middleware lawyerRoutes — Firestore rules handle participant-only access; members must reach legal channel page
 - [Phase 05-legal-consulting]: Client-side filter for lawyer directory: Firestore cannot combine multiple array-contains filters; fetch-all + useMemo is correct for small lawyer population
 - [Phase 05-legal-consulting]: Profile page role-gate: member sections wrapped in role \!== 'lawyer' fragment; LawyerProfileContent replaces body while shared header stays unchanged
+- [Phase 05-04]: LegalBanner localStorage dismiss uses per-deal key (dealId_legal_banner_dismissed) — prevents one dismissed deal from hiding banner on other deals
+- [Phase 05-04]: LegalBanner loading guard returns null — prevents flash of promotional content while subscription resolves
+- [Phase 05-04]: LawyerDashboard completed section collapsed by default — keeps dashboard focused on actionable pending/active items
 
 ### Pending Todos
 
@@ -170,5 +174,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-10
-Stopped at: Completed 05-03 — Lawyer directory /lawyers page, LawyerCard, LawyerDirectory, LawyerProfileContent, profile page role adaptation
+Stopped at: Completed 05-04 — LegalBanner on DealPage, LawyerDashboard at /lawyer/dashboard, useLegalEngagement/useLegalEngagements/useLegalActions hooks
 Resume file: None
