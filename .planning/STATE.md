@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-last_updated: "2026-03-03T17:05:33.362Z"
+last_updated: "2026-03-10T14:52:00Z"
 progress:
-  total_phases: 4
+  total_phases: 7
   completed_phases: 4
   total_plans: 19
   completed_plans: 19
@@ -18,16 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-20)
 
 **Core value:** A member can complete an entire international trade deal -- negotiate, get legal advice, insure cargo, arrange shipping, and track delivery -- without leaving the platform.
-**Current focus:** Phase 4: Provider Portals and Insurance/Logistics Quotes (S3)
+**Current focus:** Phase 5: Legal Consulting
 
 ## Current Position
 
-Phase: 4 of 7 (Provider Portals and Insurance/Logistics Quotes S3)
-Plan: 6 of 6 in current phase (04-06 complete — Phase 4 fully done)
+Phase: 5 of 7 (Legal Consulting)
+Plan: 1 of 5 in current phase (05-01 complete — data foundation)
 Status: In progress
-Last activity: 2026-03-03 - Completed 04-06: providerType normalization fix, useQuoteForRequest hook, ProviderDashboard existingQuote wire, Cloud Functions deployed
+Last activity: 2026-03-10 - Completed 05-01: LegalEngagement/LegalMessage entities, LegalEngagementRepository (9 methods), LegalMessageRepository (4 methods), Firestore rules with participants isolation, composite indexes
 
-Progress: [██████████] 58%
+Progress: [██████████] 60%
 
 ## Performance Metrics
 
@@ -137,6 +137,10 @@ Recent decisions affecting current work:
 - [Phase 04-05]: CONTRACT_APPROVED remains in isTerminal fallback in DealPage — user directed to /quotes page, not deal forms
 - [Phase 04-05]: ACCEPTED and CONTRACT_APPROVED banners fully split — each status owns its own JSX block for clarity and independent control
 - [Phase 04-05]: ProgressTracker getActiveStep: extensible function returning step id string covering negotiation -> agreement -> quotes -> tracking
+- [05-01]: participants array [clientId, lawyerId] stored on engagement doc enables array-contains queries and security rule isolation without get() calls at the collection level
+- [05-01]: contractDrafts and riskItems returned as plain objects (not entities) — no behavior methods needed, just data display; timestamps converted inline in repository callbacks
+- [05-01]: lawyerIds array on deal document (with resource.data.get('lawyerIds', []) safe default) lets lawyers read deal context without forced migration of older deal documents
+- [05-01]: Storage paths use legal/attachments/ and legal/drafts/ prefixes to namespace legal files from conversation attachments
 
 ### Pending Todos
 
@@ -154,11 +158,10 @@ None yet.
 
 - [Research]: Verify Next.js 16.1.4 patch status for CVE-2025-29927 before provider portals ship (Phase 4)
 - [Research]: Price-separation data model needs concrete schema decision before Phase 4 implementation
-- [Research]: E2E encryption key management lifecycle needs decision before Phase 5 implementation
-- [Research]: Legal channel collection placement (top-level vs subcollection) needs resolution before Phase 5
+- [Research]: Verify Next.js security patch CVE-2025-29927 status before provider portals ship
 
 ## Session Continuity
 
-Last session: 2026-03-06
-Stopped at: Completed quick-3 — Extracted QuoteDetailView to /provider/quotes/[requestId] route, added subscribeToRequest to repository, created useQuoteRequest hook
+Last session: 2026-03-10
+Stopped at: Completed 05-01 — Legal data foundation: entities, repositories, Firestore rules, composite indexes
 Resume file: None

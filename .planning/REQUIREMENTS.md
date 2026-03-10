@@ -36,9 +36,9 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Legal Consulting
 
-- [ ] **LEGAL-01**: Buyer can independently hire a lawyer for a deal
-- [ ] **LEGAL-02**: Seller can independently hire a different lawyer for the same deal
-- [ ] **LEGAL-03**: Private messaging channel between client and their lawyer, isolated from opposing party
+- [x] **LEGAL-01**: Buyer can independently hire a lawyer for a deal
+- [x] **LEGAL-02**: Seller can independently hire a different lawyer for the same deal
+- [x] **LEGAL-03**: Private messaging channel between client and their lawyer, isolated from opposing party
 - [ ] **LEGAL-04**: Lawyer can view full deal details (trade info, parties, documents)
 - [ ] **LEGAL-05**: Lawyer can create and revise contract drafts with version history
 - [ ] **LEGAL-06**: Risk analysis panel with severity levels (low/medium/high)
@@ -131,9 +131,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | AGMT-03 | Phase 3 | Complete |
 | AGMT-04 | Phase 3 | Complete |
 | AGMT-05 | Phase 3 | Complete |
-| LEGAL-01 | Phase 5 | Pending |
-| LEGAL-02 | Phase 5 | Pending |
-| LEGAL-03 | Phase 5 | Pending |
+| LEGAL-01 | Phase 5 | Complete |
+| LEGAL-02 | Phase 5 | Complete |
+| LEGAL-03 | Phase 5 | Complete |
 | LEGAL-04 | Phase 5 | Pending |
 | LEGAL-05 | Phase 5 | Pending |
 | LEGAL-06 | Phase 5 | Pending |
