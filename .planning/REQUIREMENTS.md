@@ -39,10 +39,10 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **LEGAL-01**: Buyer can independently hire a lawyer for a deal
 - [x] **LEGAL-02**: Seller can independently hire a different lawyer for the same deal
 - [x] **LEGAL-03**: Private messaging channel between client and their lawyer, isolated from opposing party
-- [ ] **LEGAL-04**: Lawyer can view full deal details (trade info, parties, documents)
-- [ ] **LEGAL-05**: Lawyer can create and revise contract drafts with version history
-- [ ] **LEGAL-06**: Risk analysis panel with severity levels (low/medium/high)
-- [ ] **LEGAL-07**: Quick-action buttons (approve, request info, request changes, attach file)
+- [x] **LEGAL-04**: Lawyer can view full deal details (trade info, parties, documents)
+- [x] **LEGAL-05**: Lawyer can create and revise contract drafts with version history
+- [x] **LEGAL-06**: Risk analysis panel with severity levels (low/medium/high)
+- [x] **LEGAL-07**: Quick-action buttons (approve, request info, request changes, attach file)
 - [x] **LEGAL-08**: Legal consulting is optional — parties can proceed without hiring a lawyer
 
 ### Insurance & Logistics Quotes (S3)
@@ -134,10 +134,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | LEGAL-01 | Phase 5 | Complete |
 | LEGAL-02 | Phase 5 | Complete |
 | LEGAL-03 | Phase 5 | Complete |
-| LEGAL-04 | Phase 5 | Pending |
-| LEGAL-05 | Phase 5 | Pending |
-| LEGAL-06 | Phase 5 | Pending |
-| LEGAL-07 | Phase 5 | Pending |
+| LEGAL-04 | Phase 5 | Complete |
+| LEGAL-05 | Phase 5 | Complete |
+| LEGAL-06 | Phase 5 | Complete |
+| LEGAL-07 | Phase 5 | Complete |
 | LEGAL-08 | Phase 5 | Complete |
 | QUOTE-01 | Phase 4 | Complete |
 | QUOTE-02 | Phase 4 | Complete |

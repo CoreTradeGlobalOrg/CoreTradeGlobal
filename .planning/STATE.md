@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-last_updated: "2026-03-10T15:11:40.385Z"
+last_updated: "2026-03-10T15:22:21.629Z"
 progress:
   total_phases: 5
   completed_phases: 4
   total_plans: 25
-  completed_plans: 23
+  completed_plans: 24
 ---
 
 # Project State
@@ -22,12 +22,12 @@ See: .planning/PROJECT.md (updated 2026-02-20)
 
 ## Current Position
 
-Phase: 5 of 7 (Legal Consulting)
-Plan: 4 of 5 in current phase (05-04 complete — LegalBanner on DealPage, LawyerDashboard, legal hooks)
-Status: In progress
-Last activity: 2026-03-10 - Completed 05-04: LegalBanner on DealPage at all stages, LawyerDashboard at /lawyer/dashboard, useLegalEngagement/useLegalEngagements/useLegalActions hooks
+Phase: 5 of 7 (Legal Consulting) — COMPLETE
+Plan: 5 of 5 in current phase (05-05 complete — 3-panel legal channel UI at /deals/[dealId]/legal)
+Status: Phase 05 complete — ready for Phase 06 or 07
+Last activity: 2026-03-10 - Completed 05-05: 3-panel legal channel, useLegalMessages, useLegalChannel hooks, ChannelLeft/Center/Right/QuickActionToolbar
 
-Progress: [██████████] 64%
+Progress: [████████████] 68%
 
 ## Performance Metrics
 
@@ -67,6 +67,7 @@ Progress: [██████████] 64%
 | Phase 05 P02 | 8 | 2 tasks | 1 files |
 | Phase 05-legal-consulting P03 | 5 | 2 tasks | 7 files |
 | Phase 05-legal-consulting P04 | 8 | 2 tasks | 8 files |
+| Phase 05-legal-consulting P05 | 7 | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -152,6 +153,9 @@ Recent decisions affecting current work:
 - [Phase 05-04]: LegalBanner localStorage dismiss uses per-deal key (dealId_legal_banner_dismissed) — prevents one dismissed deal from hiding banner on other deals
 - [Phase 05-04]: LegalBanner loading guard returns null — prevents flash of promotional content while subscription resolves
 - [Phase 05-04]: LawyerDashboard completed section collapsed by default — keeps dashboard focused on actionable pending/active items
+- [05-05]: useLegalChannel uses closure flags (draftsLoaded/risksLoaded) — sets loading=false only when both parallel subscriptions have fired, preventing partial data render
+- [05-05]: Lawyer engagement lookup uses subscribeToEngagementsForLawyer + dealId filter (not subscribeToEngagementForDeal) — lawyers don't have deterministic clientId-based engagement ID
+- [05-05]: QuickActionToolbar risk form uses absolute-positioned overlay above toolbar — contextual form without modal or layout shift in center panel
 
 ### Pending Todos
 
@@ -174,5 +178,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-10
-Stopped at: Completed 05-04 — LegalBanner on DealPage, LawyerDashboard at /lawyer/dashboard, useLegalEngagement/useLegalEngagements/useLegalActions hooks
+Stopped at: Completed 05-05 — 3-panel legal channel at /deals/[dealId]/legal, useLegalMessages, useLegalChannel, ChannelLeft/Center/Right/QuickActionToolbar. Phase 05 fully complete.
 Resume file: None
