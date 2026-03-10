@@ -243,8 +243,10 @@ service cloud.firestore {
                request.auth.uid == resource.data.sellerId;
       }
 
-      // Participants and admins can read the deal document in real-time
-      allow read: if isAuthenticated() && (isDealParticipant() || isAdmin());
+      // Participants, admins, and assigned lawyers can read the deal document in real-time.
+      // Lawyers are stored in the lawyerIds array on the deal doc (Phase 5).
+      // get('lawyerIds', []) provides a safe default for older deals that don't have this field.
+      allow read: if isAuthenticated() && (isDealParticipant() || isAdmin() || request.auth.uid in resource.data.get('lawyerIds', []));
 
       // All creates/updates/deletes go through Cloud Functions (Admin SDK bypasses rules)
       allow create: if false;
@@ -287,28 +289,80 @@ service cloud.firestore {
     // ─────────────────────────────────────────────────────────────────────────
 
     match /quoteRequests/{requestId} {
-      // Assigned provider, buyer, seller, or admin can read
+      // Assigned provider, buyer, seller, or admin can read.
+      // Provider queries use where('providerUid', '==', uid) → satisfies providerUid check.
+      // Buyer/seller queries use where('participants', 'array-contains', uid) → satisfies in check.
       allow read: if isAuthenticated() && (
         isAdmin() ||
         request.auth.uid == resource.data.providerUid ||
-        request.auth.uid == resource.data.buyerId ||
-        request.auth.uid == resource.data.sellerId
+        request.auth.uid in resource.data.participants
       );
       // All writes via Cloud Functions (Admin SDK bypasses rules)
       allow write: if false;
 
       // providerQuotes subcollection
       match /providerQuotes/{quoteId} {
-        // Provider who owns the quote, buyer, seller, or admin can read.
-        // Uses denormalized buyerId/sellerId on quote doc (avoids get() per Pitfall 4).
+        // Provider, buyer, seller, or admin can read.
+        // Uses participants array for query-satisfiable access checks.
         allow read: if isAuthenticated() && (
           isAdmin() ||
           request.auth.uid == resource.data.providerUid ||
-          request.auth.uid == resource.data.buyerId ||
-          request.auth.uid == resource.data.sellerId
+          request.auth.uid in resource.data.participants
         );
         // All writes via Cloud Functions (Admin SDK bypasses rules)
         allow write: if false;
+      }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Legal Engagements collection (Phase 5 — legal consulting)
+    //
+    // Created and updated exclusively by Cloud Functions (Admin SDK).
+    // Client reads are gated on participants array-contains for complete isolation:
+    //   only clientId and lawyerId can access the engagement and its subcollections.
+    // Opposing deal parties have zero access.
+    //
+    // Messages: participants can create while status == 'active'; immutable after creation.
+    // Contract drafts: participants can upload; immutable after upload.
+    // Risk items: lawyerId only can create/update; immutable for client.
+    // ─────────────────────────────────────────────────────────────────────────
+
+    match /legalEngagements/{engagementId} {
+      function isEngagementParticipant() {
+        return request.auth.uid in resource.data.participants;
+      }
+
+      allow read: if isAuthenticated() && isEngagementParticipant();
+      allow create: if false;  // Cloud Functions only
+      allow update: if false;  // Cloud Functions only
+      allow delete: if false;
+
+      match /legalMessages/{messageId} {
+        allow read: if isAuthenticated() &&
+          request.auth.uid in get(/databases/$(database)/documents/legalEngagements/$(engagementId)).data.participants;
+        allow create: if isAuthenticated() &&
+          request.auth.uid in get(/databases/$(database)/documents/legalEngagements/$(engagementId)).data.participants &&
+          get(/databases/$(database)/documents/legalEngagements/$(engagementId)).data.status == 'active' &&
+          request.resource.data.senderId == request.auth.uid;
+        allow update, delete: if false;
+      }
+
+      match /contractDrafts/{draftId} {
+        allow read: if isAuthenticated() &&
+          request.auth.uid in get(/databases/$(database)/documents/legalEngagements/$(engagementId)).data.participants;
+        allow create: if isAuthenticated() &&
+          request.auth.uid in get(/databases/$(database)/documents/legalEngagements/$(engagementId)).data.participants &&
+          get(/databases/$(database)/documents/legalEngagements/$(engagementId)).data.status == 'active';
+        allow update, delete: if false;
+      }
+
+      match /riskItems/{riskId} {
+        allow read: if isAuthenticated() &&
+          request.auth.uid in get(/databases/$(database)/documents/legalEngagements/$(engagementId)).data.participants;
+        allow create, update: if isAuthenticated() &&
+          request.auth.uid == get(/databases/$(database)/documents/legalEngagements/$(engagementId)).data.lawyerId &&
+          get(/databases/$(database)/documents/legalEngagements/$(engagementId)).data.status == 'active';
+        allow delete: if false;
       }
     }
 
