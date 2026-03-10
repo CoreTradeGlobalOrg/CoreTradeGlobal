@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-last_updated: "2026-03-10T14:52:00Z"
+last_updated: "2026-03-10T15:01:03.506Z"
 progress:
-  total_phases: 7
+  total_phases: 5
   completed_phases: 4
-  total_plans: 19
-  completed_plans: 19
+  total_plans: 25
+  completed_plans: 21
 ---
 
 # Project State
@@ -23,9 +23,9 @@ See: .planning/PROJECT.md (updated 2026-02-20)
 ## Current Position
 
 Phase: 5 of 7 (Legal Consulting)
-Plan: 1 of 5 in current phase (05-01 complete — data foundation)
+Plan: 2 of 5 in current phase (05-02 complete — Cloud Functions for engagement lifecycle)
 Status: In progress
-Last activity: 2026-03-10 - Completed 05-01: LegalEngagement/LegalMessage entities, LegalEngagementRepository (9 methods), LegalMessageRepository (4 methods), Firestore rules with participants isolation, composite indexes
+Last activity: 2026-03-10 - Completed 05-02: hireLayyer, respondToHireRequest, closeLegalEngagement, submitLawyerReview Cloud Functions + sendLegalNotification helper
 
 Progress: [██████████] 60%
 
@@ -64,6 +64,7 @@ Progress: [██████████] 60%
 | Phase 04 P04 | 6 | 2 tasks | 6 files |
 | Phase 04 P06 | 10 | 2 tasks | 8 files |
 | Phase 04 P05 | 5 | 1 tasks | 2 files |
+| Phase 05 P02 | 8 | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -141,6 +142,9 @@ Recent decisions affecting current work:
 - [05-01]: contractDrafts and riskItems returned as plain objects (not entities) — no behavior methods needed, just data display; timestamps converted inline in repository callbacks
 - [05-01]: lawyerIds array on deal document (with resource.data.get('lawyerIds', []) safe default) lets lawyers read deal context without forced migration of older deal documents
 - [05-01]: Storage paths use legal/attachments/ and legal/drafts/ prefixes to namespace legal files from conversation attachments
+- [Phase 05-02]: ENGAGEMENT_STATUS constant duplicated in functions/index.js (CJS) — same pattern as DEAL_STATUS/QUOTE_STATUS; cannot import ESM from Cloud Functions
+- [Phase 05-02]: Deterministic engagement ID (dealId_clientId) prevents duplicate active/pending engagements; re-hire allowed after completed/declined
+- [Phase 05-02]: /deals/[dealId]/legal intentionally NOT in middleware lawyerRoutes — Firestore rules handle participant-only access; members must reach legal channel page
 
 ### Pending Todos
 
@@ -163,5 +167,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-10
-Stopped at: Completed 05-01 — Legal data foundation: entities, repositories, Firestore rules, composite indexes
+Stopped at: Completed 05-02 — Legal Cloud Functions: hireLayyer, respondToHireRequest, closeLegalEngagement, submitLawyerReview + sendLegalNotification helper
 Resume file: None

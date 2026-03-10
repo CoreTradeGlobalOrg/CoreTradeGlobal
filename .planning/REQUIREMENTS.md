@@ -43,7 +43,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [ ] **LEGAL-05**: Lawyer can create and revise contract drafts with version history
 - [ ] **LEGAL-06**: Risk analysis panel with severity levels (low/medium/high)
 - [ ] **LEGAL-07**: Quick-action buttons (approve, request info, request changes, attach file)
-- [ ] **LEGAL-08**: Legal consulting is optional — parties can proceed without hiring a lawyer
+- [x] **LEGAL-08**: Legal consulting is optional — parties can proceed without hiring a lawyer
 
 ### Insurance & Logistics Quotes (S3)
 
@@ -138,7 +138,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | LEGAL-05 | Phase 5 | Pending |
 | LEGAL-06 | Phase 5 | Pending |
 | LEGAL-07 | Phase 5 | Pending |
-| LEGAL-08 | Phase 5 | Pending |
+| LEGAL-08 | Phase 5 | Complete |
 | QUOTE-01 | Phase 4 | Complete |
 | QUOTE-02 | Phase 4 | Complete |
 | QUOTE-03 | Phase 4 | Complete |
