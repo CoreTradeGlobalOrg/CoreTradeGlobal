@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-last_updated: "2026-03-10T15:01:03.506Z"
+last_updated: "2026-03-10T15:02:25.859Z"
 progress:
   total_phases: 5
   completed_phases: 4
   total_plans: 25
-  completed_plans: 21
+  completed_plans: 22
 ---
 
 # Project State
@@ -23,9 +23,9 @@ See: .planning/PROJECT.md (updated 2026-02-20)
 ## Current Position
 
 Phase: 5 of 7 (Legal Consulting)
-Plan: 2 of 5 in current phase (05-02 complete — Cloud Functions for engagement lifecycle)
+Plan: 3 of 5 in current phase (05-03 complete — Lawyer directory and profile adaptation)
 Status: In progress
-Last activity: 2026-03-10 - Completed 05-02: hireLayyer, respondToHireRequest, closeLegalEngagement, submitLawyerReview Cloud Functions + sendLegalNotification helper
+Last activity: 2026-03-10 - Completed 05-03: /lawyers directory page, LawyerCard, LawyerDirectory with search/filters, LawyerProfileContent, profile page role adaptation
 
 Progress: [██████████] 60%
 
@@ -65,6 +65,7 @@ Progress: [██████████] 60%
 | Phase 04 P06 | 10 | 2 tasks | 8 files |
 | Phase 04 P05 | 5 | 1 tasks | 2 files |
 | Phase 05 P02 | 8 | 2 tasks | 1 files |
+| Phase 05-legal-consulting P03 | 5 | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -145,6 +146,8 @@ Recent decisions affecting current work:
 - [Phase 05-02]: ENGAGEMENT_STATUS constant duplicated in functions/index.js (CJS) — same pattern as DEAL_STATUS/QUOTE_STATUS; cannot import ESM from Cloud Functions
 - [Phase 05-02]: Deterministic engagement ID (dealId_clientId) prevents duplicate active/pending engagements; re-hire allowed after completed/declined
 - [Phase 05-02]: /deals/[dealId]/legal intentionally NOT in middleware lawyerRoutes — Firestore rules handle participant-only access; members must reach legal channel page
+- [Phase 05-legal-consulting]: Client-side filter for lawyer directory: Firestore cannot combine multiple array-contains filters; fetch-all + useMemo is correct for small lawyer population
+- [Phase 05-legal-consulting]: Profile page role-gate: member sections wrapped in role \!== 'lawyer' fragment; LawyerProfileContent replaces body while shared header stays unchanged
 
 ### Pending Todos
 
@@ -167,5 +170,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-10
-Stopped at: Completed 05-02 — Legal Cloud Functions: hireLayyer, respondToHireRequest, closeLegalEngagement, submitLawyerReview + sendLegalNotification helper
+Stopped at: Completed 05-03 — Lawyer directory /lawyers page, LawyerCard, LawyerDirectory, LawyerProfileContent, profile page role adaptation
 Resume file: None
