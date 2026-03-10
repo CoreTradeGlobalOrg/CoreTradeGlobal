@@ -35,6 +35,7 @@ import { useCategories } from '@/presentation/hooks/category/useCategories';
 import { ConfirmDialog } from '@/presentation/components/common/ConfirmDialog/ConfirmDialog';
 import { CompanyDocuments } from '@/presentation/components/features/profile/CompanyDocuments/CompanyDocuments';
 import { RoleBadge } from '@/presentation/components/common/RoleBadge/RoleBadge';
+import { LawyerProfileContent } from '@/presentation/components/features/legal/LawyerProfile/LawyerProfileContent';
 
 function ProfileContent() {
   const { user: currentUser, loading: authLoading, isAuthenticated } = useAuth();
@@ -824,17 +825,29 @@ function ProfileContent() {
           </form>
         </div>
 
-        {/* Company Documents Section */}
-        <div className="glass-card p-6">
-          <CompanyDocuments
-            userId={userId}
-            documents={profileUser?.companyDocuments || []}
+        {/* Lawyer-specific content: replaces products/requests sections */}
+        {profileUser?.role === 'lawyer' && (
+          <LawyerProfileContent
+            profileUser={profileUser}
             isOwnProfile={isOwnProfile}
-            onDocumentsChange={(newDocs) => {
-              setProfileUser(prev => ({ ...prev, companyDocuments: newDocs }));
-            }}
+            currentUser={currentUser}
           />
-        </div>
+        )}
+
+        {/* Member-specific sections: only shown for non-lawyer profiles */}
+        {profileUser?.role !== 'lawyer' && (
+          <>
+            {/* Company Documents Section */}
+            <div className="glass-card p-6">
+              <CompanyDocuments
+                userId={userId}
+                documents={profileUser?.companyDocuments || []}
+                isOwnProfile={isOwnProfile}
+                onDocumentsChange={(newDocs) => {
+                  setProfileUser(prev => ({ ...prev, companyDocuments: newDocs }));
+                }}
+              />
+            </div>
 
         {/* Products Section */}
         <div className="glass-card p-6">
@@ -998,6 +1011,8 @@ function ProfileContent() {
               </div>
             </div>
           </div>
+        )}
+          </>
         )}
 
         {/* Product Modal */}
