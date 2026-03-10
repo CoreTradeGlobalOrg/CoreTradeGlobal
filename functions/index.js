@@ -1024,6 +1024,15 @@ const OFFER_STATUS = {
 
 const EXPIRY_DEFAULT_HOURS = 72;
 
+// Legal engagement status constants (duplicated from src/core/constants/legalConstants.js)
+// Cloud Functions are CommonJS — cannot import ESM from the Next.js app.
+const ENGAGEMENT_STATUS = {
+  PENDING: 'pending',
+  ACTIVE: 'active',
+  COMPLETED: 'completed',
+  DECLINED: 'declined',
+};
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Deal Negotiation Cloud Functions
 // ─────────────────────────────────────────────────────────────────────────────
@@ -3373,6 +3382,7 @@ exports.checkExpiredQuotes = onSchedule(
       let expiredRequestCount = 0;
       let expiredQuoteCount = 0;
 
+
       // 1. Expire overdue quote requests (pending, deadline <= now)
       const expiredRequestsSnap = await db
         .collection('quoteRequests')
@@ -3421,3 +3431,470 @@ exports.checkExpiredQuotes = onSchedule(
   }
 );
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Legal Consulting Cloud Functions (Phase 5)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * getLegalEventTitle — returns a short notification title for a legal event type.
+ *
+ * @param {string} eventType
+ * @returns {string}
+ */
+function getLegalEventTitle(eventType) {
+  const map = {
+    hire_request: 'New legal consultation request',
+    hire_accepted: 'Legal consultation accepted',
+    hire_declined: 'Legal consultation declined',
+    engagement_completed: 'Legal consultation completed',
+    new_message: 'New message from your lawyer',
+    new_draft: 'New contract draft shared',
+    risk_update: 'Risk assessment updated',
+  };
+  return map[eventType] || 'Legal consultation update';
+}
+
+/**
+ * getLegalEventBody — returns a notification body for a legal event type.
+ *
+ * @param {string} eventType
+ * @param {string} dealProductName
+ * @returns {string}
+ */
+function getLegalEventBody(eventType, dealProductName) {
+  const name = dealProductName || 'your deal';
+  const map = {
+    hire_request: `A client has requested your legal services for ${name}.`,
+    hire_accepted: `Your legal consultation request for ${name} has been accepted.`,
+    hire_declined: `Your legal consultation request for ${name} has been declined. You can hire another lawyer.`,
+    engagement_completed: `The legal consultation session for ${name} has ended.`,
+    new_message: `You have a new message regarding the legal consultation for ${name}.`,
+    new_draft: `A new contract draft has been shared for ${name}.`,
+    risk_update: `The risk assessment for ${name} has been updated.`,
+  };
+  return map[eventType] || `There is a new update for your legal consultation on ${name}.`;
+}
+
+/**
+ * buildLegalEmailHtml — builds a branded HTML email for legal events.
+ *
+ * Follows the same pattern as buildDealEmailHtml.
+ *
+ * @param {string} eventType
+ * @param {string} dealProductName
+ * @param {string} dealId
+ * @returns {string}
+ */
+function buildLegalEmailHtml(eventType, dealProductName, dealId) {
+  const body = getLegalEventBody(eventType, dealProductName);
+  const legalUrl = `${APP_URL}/deals/${dealId}/legal`;
+  return `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; background: #f9f9f9;">
+      <div style="background: #0F1B2B; padding: 24px; border-radius: 8px 8px 0 0;">
+        <h1 style="color: #FFD700; margin: 0; font-size: 20px;">CoreTradeGlobal</h1>
+      </div>
+      <div style="background: #ffffff; padding: 32px; border-radius: 0 0 8px 8px; border: 1px solid #e0e0e0;">
+        <p style="color: #333333; font-size: 16px; line-height: 1.6;">${body}</p>
+        <div style="margin-top: 32px;">
+          <a href="${legalUrl}"
+             style="display: inline-block; background: #0F1B2B; color: #FFD700; text-decoration: none;
+                    padding: 12px 24px; border-radius: 6px; font-weight: bold; font-size: 15px;">
+            View Legal Channel
+          </a>
+        </div>
+        <p style="margin-top: 24px; font-size: 13px; color: #888888;">
+          You are receiving this email because you are a participant in a legal consultation on CoreTradeGlobal.
+        </p>
+      </div>
+    </div>
+  `;
+}
+
+/**
+ * sendLegalNotification — orchestrates in-app + email notification for legal events.
+ *
+ * Follows sendDealNotifications pattern: sends to a single recipient, non-blocking email.
+ * IMPORTANT: Call this OUTSIDE transactions to prevent duplicate sends on transaction retries.
+ *
+ * @param {string} engagementId
+ * @param {string} eventType - 'hire_request' | 'hire_accepted' | 'hire_declined' | 'engagement_completed' | 'new_message' | 'new_draft' | 'risk_update'
+ * @param {string} recipientId - UID of the notification recipient
+ * @param {string} dealProductName - denormalized product name for display
+ * @param {string} dealId - for deep-linking notifications
+ */
+async function sendLegalNotification(engagementId, eventType, recipientId, dealProductName, dealId) {
+  const title = getLegalEventTitle(eventType);
+  const body = getLegalEventBody(eventType, dealProductName);
+  const now = Timestamp.now();
+
+  // --- a) Firestore in-app notification ---
+  try {
+    await db.collection('users').doc(recipientId).collection('notifications').add({
+      type: 'legal',
+      eventType,
+      title,
+      body,
+      engagementId,
+      dealId,
+      isRead: false,
+      createdAt: now,
+      link: `/deals/${dealId}/legal`,
+    });
+  } catch (err) {
+    console.error(`sendLegalNotification: failed to create in-app notification for ${recipientId}:`, err);
+  }
+
+  // --- b) Email notification (non-blocking) ---
+  try {
+    const userDoc = await db.collection('users').doc(recipientId).get();
+    if (userDoc.exists) {
+      const userData = userDoc.data();
+      if (userData?.email) {
+        const subject = getLegalEventTitle(eventType);
+        const htmlBody = buildLegalEmailHtml(eventType, dealProductName, dealId);
+        await sendDealEmail(userData.email, subject, htmlBody).catch((err) =>
+          console.error(`sendLegalNotification: email failed for ${recipientId}:`, err)
+        );
+      }
+    }
+  } catch (err) {
+    console.error(`sendLegalNotification: error fetching user ${recipientId} for email:`, err);
+  }
+}
+
+/**
+ * hireLayyer — onCall
+ *
+ * Allows a deal participant (buyer or seller) to request legal consulting from a lawyer.
+ * Uses a deterministic engagement ID (${dealId}_${clientId}) to prevent duplicate
+ * engagement documents for the same client on the same deal.
+ *
+ * Updates deal.lawyerIds via arrayUnion to grant lawyer read access via Firestore rules.
+ *
+ * @param {Object} data - { dealId, lawyerId }
+ * @returns {Promise<{ engagementId: string, status: string }>}
+ */
+exports.hireLayyer = onCall(async (request) => {
+  const { dealId, lawyerId } = request.data;
+  const uid = request.auth?.uid;
+
+  if (!uid) throw new HttpsError('unauthenticated', 'Must be logged in.');
+  if (!dealId || !lawyerId) {
+    throw new HttpsError('invalid-argument', 'dealId and lawyerId are required.');
+  }
+
+  // Fetch deal to verify caller is a participant
+  const dealRef = db.collection('deals').doc(dealId);
+  const dealDoc = await dealRef.get();
+  if (!dealDoc.exists) throw new HttpsError('not-found', 'Deal not found.');
+
+  const deal = dealDoc.data();
+  if (uid !== deal.buyerId && uid !== deal.sellerId) {
+    throw new HttpsError('permission-denied', 'You must be a deal participant to hire a lawyer.');
+  }
+
+  // Verify the target user is actually a lawyer
+  const lawyerDoc = await db.collection('users').doc(lawyerId).get();
+  if (!lawyerDoc.exists) throw new HttpsError('not-found', 'Lawyer not found.');
+  const lawyerUser = lawyerDoc.data();
+  if (lawyerUser.role !== ROLES.LAWYER) {
+    throw new HttpsError('invalid-argument', 'The selected user is not a lawyer.');
+  }
+
+  // Fetch caller's display info
+  const callerDoc = await db.collection('users').doc(uid).get();
+  const callerUser = callerDoc.exists ? callerDoc.data() : {};
+
+  // Deterministic engagement ID: prevents duplicate engagements per client per deal
+  const engagementId = `${dealId}_${uid}`;
+  const engagementRef = db.collection('legalEngagements').doc(engagementId);
+
+  // Check for existing engagement
+  const existingDoc = await engagementRef.get();
+  if (existingDoc.exists) {
+    const existing = existingDoc.data();
+    if (existing.status === ENGAGEMENT_STATUS.PENDING || existing.status === ENGAGEMENT_STATUS.ACTIVE) {
+      throw new HttpsError(
+        'already-exists',
+        'You already have an active legal engagement for this deal.'
+      );
+    }
+    // If completed or declined: allow re-hire (overwrite below)
+  }
+
+  const now = Timestamp.now();
+  const dealProductName = deal.productName || deal.product?.name || 'Deal';
+  const clientDisplayName = callerUser.displayName || callerUser.companyName || 'Client';
+  const lawyerDisplayName = lawyerUser.displayName || lawyerUser.companyName || 'Lawyer';
+
+  // Create (or overwrite) the engagement document
+  await engagementRef.set({
+    clientId: uid,
+    lawyerId,
+    dealId,
+    participants: [uid, lawyerId],
+    dealProductName,
+    clientDisplayName,
+    lawyerDisplayName,
+    status: ENGAGEMENT_STATUS.PENDING,
+    createdAt: now,
+    updatedAt: now,
+  });
+
+  // Update deal to add lawyer to lawyerIds (enables lawyer deal read access via Firestore rules)
+  await dealRef.update({
+    lawyerIds: FieldValue.arrayUnion(lawyerId),
+    updatedAt: now,
+  });
+
+  // Notify lawyer of hire request (outside transaction — non-duplicate pattern)
+  await sendLegalNotification(engagementId, 'hire_request', lawyerId, dealProductName, dealId);
+
+  console.log(`hireLayyer: engagement ${engagementId} created (client: ${uid}, lawyer: ${lawyerId})`);
+  return { engagementId, status: ENGAGEMENT_STATUS.PENDING };
+});
+
+/**
+ * respondToHireRequest — onCall
+ *
+ * Allows a lawyer to accept or decline a pending hire request.
+ * Uses runTransaction to prevent concurrent accept/decline race conditions.
+ * On accept: transitions to 'active' and posts a system message to legalMessages.
+ * On decline: transitions to 'declined' (client can re-hire a different lawyer).
+ *
+ * @param {Object} data - { engagementId, action: 'accept' | 'decline' }
+ * @returns {Promise<{ status: string }>}
+ */
+exports.respondToHireRequest = onCall(async (request) => {
+  const { engagementId, action } = request.data;
+  const uid = request.auth?.uid;
+
+  if (!uid) throw new HttpsError('unauthenticated', 'Must be logged in.');
+  if (!engagementId || !action) {
+    throw new HttpsError('invalid-argument', 'engagementId and action are required.');
+  }
+  if (action !== 'accept' && action !== 'decline') {
+    throw new HttpsError('invalid-argument', 'action must be "accept" or "decline".');
+  }
+
+  let engagement;
+  let newStatus;
+
+  await db.runTransaction(async (t) => {
+    const engagementRef = db.collection('legalEngagements').doc(engagementId);
+    const engagementSnap = await t.get(engagementRef);
+
+    if (!engagementSnap.exists) throw new HttpsError('not-found', 'Engagement not found.');
+
+    engagement = engagementSnap.data();
+
+    // Authorization: only the lawyer can respond
+    if (engagement.lawyerId !== uid) {
+      throw new HttpsError('permission-denied', 'Only the assigned lawyer can respond to this hire request.');
+    }
+
+    // Status guard: can only respond to pending requests
+    if (engagement.status !== ENGAGEMENT_STATUS.PENDING) {
+      throw new HttpsError(
+        'failed-precondition',
+        `Engagement is ${engagement.status}. Can only respond to pending requests.`
+      );
+    }
+
+    newStatus = action === 'accept' ? ENGAGEMENT_STATUS.ACTIVE : ENGAGEMENT_STATUS.DECLINED;
+    const now = Timestamp.now();
+
+    t.update(engagementRef, {
+      status: newStatus,
+      updatedAt: now,
+    });
+  });
+
+  // Post-transaction: add system message if accepted (outside transaction — non-duplicate pattern)
+  if (action === 'accept' && engagement) {
+    try {
+      await db
+        .collection('legalEngagements')
+        .doc(engagementId)
+        .collection('legalMessages')
+        .add({
+          type: 'system',
+          content: 'Legal consulting session started. All conversations are encrypted and recorded.',
+          senderId: 'system',
+          createdAt: Timestamp.now(),
+          updatedAt: Timestamp.now(),
+        });
+    } catch (err) {
+      console.error('respondToHireRequest: failed to post system message (non-fatal):', err);
+    }
+  }
+
+  // Notify client of lawyer's response (outside transaction)
+  if (engagement) {
+    const eventType = action === 'accept' ? 'hire_accepted' : 'hire_declined';
+    await sendLegalNotification(
+      engagementId,
+      eventType,
+      engagement.clientId,
+      engagement.dealProductName,
+      engagement.dealId
+    );
+  }
+
+  console.log(`respondToHireRequest: engagement ${engagementId} → ${newStatus} (lawyer: ${uid})`);
+  return { status: newStatus };
+});
+
+/**
+ * closeLegalEngagement — onCall
+ *
+ * Allows either participant (client or lawyer) to close an active engagement.
+ * Transitions status to 'completed' via runTransaction, adds a read-only system message,
+ * and notifies the OTHER participant of the closure.
+ *
+ * @param {Object} data - { engagementId }
+ * @returns {Promise<{ status: string }>}
+ */
+exports.closeLegalEngagement = onCall(async (request) => {
+  const { engagementId } = request.data;
+  const uid = request.auth?.uid;
+
+  if (!uid) throw new HttpsError('unauthenticated', 'Must be logged in.');
+  if (!engagementId) throw new HttpsError('invalid-argument', 'engagementId is required.');
+
+  let engagement;
+
+  await db.runTransaction(async (t) => {
+    const engagementRef = db.collection('legalEngagements').doc(engagementId);
+    const engagementSnap = await t.get(engagementRef);
+
+    if (!engagementSnap.exists) throw new HttpsError('not-found', 'Engagement not found.');
+
+    engagement = engagementSnap.data();
+
+    // Authorization: caller must be a participant
+    const participants = engagement.participants || [];
+    if (!participants.includes(uid)) {
+      throw new HttpsError('permission-denied', 'You are not a participant in this engagement.');
+    }
+
+    // Status guard: can only close active engagements
+    if (engagement.status !== ENGAGEMENT_STATUS.ACTIVE) {
+      throw new HttpsError(
+        'failed-precondition',
+        `Engagement is ${engagement.status}. Only active engagements can be closed.`
+      );
+    }
+
+    t.update(engagementRef, {
+      status: ENGAGEMENT_STATUS.COMPLETED,
+      updatedAt: Timestamp.now(),
+    });
+  });
+
+  // Post-transaction: add read-only system message (outside transaction — non-duplicate pattern)
+  if (engagement) {
+    try {
+      await db
+        .collection('legalEngagements')
+        .doc(engagementId)
+        .collection('legalMessages')
+        .add({
+          type: 'system',
+          content: 'Legal consulting session ended. This channel is now read-only.',
+          senderId: 'system',
+          createdAt: Timestamp.now(),
+          updatedAt: Timestamp.now(),
+        });
+    } catch (err) {
+      console.error('closeLegalEngagement: failed to post system message (non-fatal):', err);
+    }
+
+    // Notify the OTHER participant
+    const otherParticipantId = (engagement.participants || []).find((p) => p !== uid);
+    if (otherParticipantId) {
+      await sendLegalNotification(
+        engagementId,
+        'engagement_completed',
+        otherParticipantId,
+        engagement.dealProductName,
+        engagement.dealId
+      );
+    }
+  }
+
+  console.log(`closeLegalEngagement: engagement ${engagementId} completed (closed by: ${uid})`);
+  return { status: ENGAGEMENT_STATUS.COMPLETED };
+});
+
+/**
+ * submitLawyerReview — onCall
+ *
+ * Allows a client to submit a review for a lawyer after the engagement is completed.
+ * Validates engagement is completed before writing the review.
+ * Writes review to users/{lawyerId}/reviews/{auto-id}.
+ *
+ * @param {Object} data - { engagementId, rating, comment? }
+ *   rating: integer 1-5
+ *   comment: optional string, max 1000 chars
+ * @returns {Promise<{ success: boolean }>}
+ */
+exports.submitLawyerReview = onCall(async (request) => {
+  const { engagementId, rating, comment } = request.data;
+  const uid = request.auth?.uid;
+
+  if (!uid) throw new HttpsError('unauthenticated', 'Must be logged in.');
+  if (!engagementId) throw new HttpsError('invalid-argument', 'engagementId is required.');
+
+  // Validate rating
+  const ratingInt = Number(rating);
+  if (!Number.isInteger(ratingInt) || ratingInt < 1 || ratingInt > 5) {
+    throw new HttpsError('invalid-argument', 'rating must be an integer between 1 and 5.');
+  }
+
+  // Validate comment
+  if (comment !== undefined && comment !== null && typeof comment !== 'string') {
+    throw new HttpsError('invalid-argument', 'comment must be a string.');
+  }
+  if (comment && comment.length > 1000) {
+    throw new HttpsError('invalid-argument', 'comment must be 1000 characters or fewer.');
+  }
+
+  // Read engagement to verify status and caller identity
+  const engagementDoc = await db.collection('legalEngagements').doc(engagementId).get();
+  if (!engagementDoc.exists) throw new HttpsError('not-found', 'Engagement not found.');
+
+  const engagement = engagementDoc.data();
+
+  // Authorization: only the client can submit a review
+  if (engagement.clientId !== uid) {
+    throw new HttpsError('permission-denied', 'Only the client can submit a review for this engagement.');
+  }
+
+  // Status guard: engagement must be completed
+  if (engagement.status !== ENGAGEMENT_STATUS.COMPLETED) {
+    throw new HttpsError(
+      'failed-precondition',
+      'You can only review a lawyer after the engagement is completed.'
+    );
+  }
+
+  // Fetch reviewer display name
+  const reviewerDoc = await db.collection('users').doc(uid).get();
+  const reviewerData = reviewerDoc.exists ? reviewerDoc.data() : {};
+  const reviewerName = reviewerData.displayName || reviewerData.companyName || 'Anonymous';
+
+  // Write review to lawyer's reviews subcollection
+  await db.collection('users').doc(engagement.lawyerId).collection('reviews').add({
+    reviewerId: uid,
+    reviewerName,
+    engagementId,
+    dealId: engagement.dealId,
+    rating: ratingInt,
+    comment: comment || '',
+    createdAt: Timestamp.now(),
+  });
+
+  console.log(`submitLawyerReview: client ${uid} reviewed lawyer ${engagement.lawyerId} for engagement ${engagementId} (rating: ${ratingInt})`);
+  return { success: true };
+});
