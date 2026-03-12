@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-stopped_at: "Completed 05-07: fix hire-a-lawyer flow — dealId persists through full navigation, LegalBanner button contrast fixed"
-last_updated: "2026-03-12T03:39:18.782Z"
+stopped_at: "Completed 05-08: /lawyer/channels and /lawyer/deals real pages + Navbar with 3 lawyer links. Phase 05 UAT gap closure complete."
+last_updated: "2026-03-12T03:39:43.270Z"
 last_activity: "2026-03-10 - Completed 05-05: 3-panel legal channel, useLegalMessages, useLegalChannel hooks, ChannelLeft/Center/Right/QuickActionToolbar"
 progress:
   total_phases: 7
   completed_phases: 4
   total_plans: 27
-  completed_plans: 25
+  completed_plans: 26
   percent: 68
 ---
 
@@ -72,6 +72,7 @@ Progress: [████████████] 68%
 | Phase 05-legal-consulting P04 | 8 | 2 tasks | 8 files |
 | Phase 05-legal-consulting P05 | 7 | 2 tasks | 8 files |
 | Phase 05-legal-consulting P07 | 2 | 2 tasks | 5 files |
+| Phase 05-legal-consulting P08 | 8 | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -163,6 +164,8 @@ Recent decisions affecting current work:
 - [Phase 05-legal-consulting]: text-black replaces text-[#0F1C2E] on Find a Lawyer button for contrast on gold #FFD700 background
 - [Phase 05-legal-consulting]: dealId forwarded as URL query param through multi-hop navigation (LegalBanner->lawyers->LawyerCard->profile) avoiding global state
 - [Phase 05-legal-consulting]: Suspense boundary only needed in page.jsx for useSearchParams (Next.js app router); non-page use client components do not need Suspense
+- [Phase 05-legal-consulting]: LawyerDeals excludes pending engagements -- only confirmed (active + completed) deals shown since pending have no accepted channel
+- [Phase 05-legal-consulting]: Navbar lawyer links order: Lawyer Dashboard, Client Channels, Deal Review -- dashboard first as primary landing
 
 ### Pending Todos
 
@@ -184,6 +187,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-12T03:39:18.779Z
-Stopped at: Completed 05-07: fix hire-a-lawyer flow — dealId persists through full navigation, LegalBanner button contrast fixed
+Last session: 2026-03-12T03:39:43.267Z
+Stopped at: Completed 05-08: /lawyer/channels and /lawyer/deals real pages + Navbar with 3 lawyer links. Phase 05 UAT gap closure complete.
 Resume file: None
