@@ -2,13 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: unknown
-last_updated: "2026-03-10T15:22:21.629Z"
+status: completed
+stopped_at: "Completed 05-07: fix hire-a-lawyer flow — dealId persists through full navigation, LegalBanner button contrast fixed"
+last_updated: "2026-03-12T03:39:18.782Z"
+last_activity: "2026-03-10 - Completed 05-05: 3-panel legal channel, useLegalMessages, useLegalChannel hooks, ChannelLeft/Center/Right/QuickActionToolbar"
 progress:
-  total_phases: 5
+  total_phases: 7
   completed_phases: 4
-  total_plans: 25
-  completed_plans: 24
+  total_plans: 27
+  completed_plans: 25
+  percent: 68
 ---
 
 # Project State
@@ -68,6 +71,7 @@ Progress: [████████████] 68%
 | Phase 05-legal-consulting P03 | 5 | 2 tasks | 7 files |
 | Phase 05-legal-consulting P04 | 8 | 2 tasks | 8 files |
 | Phase 05-legal-consulting P05 | 7 | 2 tasks | 8 files |
+| Phase 05-legal-consulting P07 | 2 | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -156,6 +160,9 @@ Recent decisions affecting current work:
 - [05-05]: useLegalChannel uses closure flags (draftsLoaded/risksLoaded) — sets loading=false only when both parallel subscriptions have fired, preventing partial data render
 - [05-05]: Lawyer engagement lookup uses subscribeToEngagementsForLawyer + dealId filter (not subscribeToEngagementForDeal) — lawyers don't have deterministic clientId-based engagement ID
 - [05-05]: QuickActionToolbar risk form uses absolute-positioned overlay above toolbar — contextual form without modal or layout shift in center panel
+- [Phase 05-legal-consulting]: text-black replaces text-[#0F1C2E] on Find a Lawyer button for contrast on gold #FFD700 background
+- [Phase 05-legal-consulting]: dealId forwarded as URL query param through multi-hop navigation (LegalBanner->lawyers->LawyerCard->profile) avoiding global state
+- [Phase 05-legal-consulting]: Suspense boundary only needed in page.jsx for useSearchParams (Next.js app router); non-page use client components do not need Suspense
 
 ### Pending Todos
 
@@ -177,6 +184,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-10
-Stopped at: Completed 05-05 — 3-panel legal channel at /deals/[dealId]/legal, useLegalMessages, useLegalChannel, ChannelLeft/Center/Right/QuickActionToolbar. Phase 05 fully complete.
+Last session: 2026-03-12T03:39:18.779Z
+Stopped at: Completed 05-07: fix hire-a-lawyer flow — dealId persists through full navigation, LegalBanner button contrast fixed
 Resume file: None
