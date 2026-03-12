@@ -111,7 +111,8 @@ service cloud.firestore {
     // ─────────────────────────────────────────────────────────────────────────
 
     match /invites/{inviteId} {
-      allow read: if isAdmin();
+      // Invited user can read their own invite (needed during onboarding to get email)
+      allow read: if isAdmin() || (isAuthenticated() && isOwner(inviteId));
       allow write: if isAdmin();
     }
 
