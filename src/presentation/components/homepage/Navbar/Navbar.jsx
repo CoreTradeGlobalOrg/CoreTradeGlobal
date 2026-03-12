@@ -42,6 +42,8 @@ const NAV_LINKS = [
   },
   // Lawyer-only navigation — admin included for oversight
   { label: 'Lawyer Dashboard', href: '/lawyer/dashboard', roles: [ROLES.LAWYER, ROLES.ADMIN] },
+  { label: 'Client Channels', href: '/lawyer/channels', roles: [ROLES.LAWYER, ROLES.ADMIN] },
+  { label: 'Deal Review', href: '/lawyer/deals', roles: [ROLES.LAWYER, ROLES.ADMIN] },
 ];
 
 import { usePathname } from 'next/navigation';
