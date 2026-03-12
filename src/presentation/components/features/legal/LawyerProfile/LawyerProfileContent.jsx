@@ -19,9 +19,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Star, CheckCircle, Clock, Briefcase, Award, MessageCircle, GraduationCap, Globe2, Gavel } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { container } from '@/core/di/container';
+import { useLegalActions } from '@/presentation/hooks/legal/useLegalActions';
 
 // -----------------------------------------------------------------------
 // Helpers
@@ -165,15 +167,23 @@ export function LawyerProfileContent({ profileUser, isOwnProfile }) {
     responseTime,
   } = profileUser || {};
 
-  const handleHireClick = () => {
-    toast('Select a deal first to hire this lawyer', {
-      icon: 'ℹ️',
-      style: {
-        background: '#1c304a',
-        color: '#fff',
-        border: '1px solid rgba(255,255,255,0.1)',
-      },
-    });
+  const searchParams = useSearchParams();
+  const dealId = searchParams.get('dealId');
+  const { hireLawyer, loading: hireLoading } = useLegalActions();
+
+  const handleHireClick = async () => {
+    if (!dealId) {
+      toast('Select a deal first to hire this lawyer', {
+        icon: 'ℹ️',
+        style: {
+          background: '#1c304a',
+          color: '#fff',
+          border: '1px solid rgba(255,255,255,0.1)',
+        },
+      });
+      return;
+    }
+    await hireLawyer(dealId, id);
   };
 
   return (
@@ -313,9 +323,10 @@ export function LawyerProfileContent({ profileUser, isOwnProfile }) {
           ) : (
             <button
               onClick={handleHireClick}
-              className="w-full sm:w-auto px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white text-sm font-bold transition-all shadow-lg hover:shadow-purple-500/25"
+              disabled={hireLoading}
+              className="w-full sm:w-auto px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white text-sm font-bold transition-all shadow-lg hover:shadow-purple-500/25 disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              Hire This Lawyer
+              {hireLoading ? 'Hiring...' : 'Hire This Lawyer'}
             </button>
           )}
         </div>
