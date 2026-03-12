@@ -16,8 +16,8 @@ const adminRoutes = ['/admin'];
 // Routes only for logistics_provider, insurance_provider, or admin
 const providerRoutes = ['/provider'];
 
-// Routes only for lawyer or admin
-const lawyerRoutes = ['/lawyer'];
+// Routes only for lawyer or admin (use '/lawyer/' to avoid matching '/lawyers' directory)
+const lawyerRoutes = ['/lawyer/'];
 
 // Routes only for guests (redirects to home if already logged in)
 const guestOnlyRoutes = ['/login', '/register'];

@@ -3545,20 +3545,24 @@ async function sendLegalNotification(engagementId, eventType, recipientId, dealP
   }
 
   // --- b) Email notification (non-blocking) ---
-  try {
-    const userDoc = await db.collection('users').doc(recipientId).get();
-    if (userDoc.exists) {
-      const userData = userDoc.data();
-      if (userData?.email) {
-        const subject = getLegalEventTitle(eventType);
-        const htmlBody = buildLegalEmailHtml(eventType, dealProductName, dealId);
-        await sendDealEmail(userData.email, subject, htmlBody).catch((err) =>
-          console.error(`sendLegalNotification: email failed for ${recipientId}:`, err)
-        );
+  // Skip email for high-frequency or low-urgency events — in-app notification is sufficient
+  const skipEmailEvents = ['engagement_closed', 'new_message'];
+  if (!skipEmailEvents.includes(eventType)) {
+    try {
+      const userDoc = await db.collection('users').doc(recipientId).get();
+      if (userDoc.exists) {
+        const userData = userDoc.data();
+        if (userData?.email) {
+          const subject = getLegalEventTitle(eventType);
+          const htmlBody = buildLegalEmailHtml(eventType, dealProductName, dealId);
+          await sendDealEmail(userData.email, subject, htmlBody).catch((err) =>
+            console.error(`sendLegalNotification: email failed for ${recipientId}:`, err)
+          );
+        }
       }
+    } catch (err) {
+      console.error(`sendLegalNotification: error fetching user ${recipientId} for email:`, err);
     }
-  } catch (err) {
-    console.error(`sendLegalNotification: error fetching user ${recipientId} for email:`, err);
   }
 }
 

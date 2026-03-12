@@ -78,6 +78,7 @@ export function LegalChannel({ engagement, deal, currentUser, isLawyer, isReadOn
   // Mobile panel visibility
   const [showLeft, setShowLeft] = useState(false);
   const [showRight, setShowRight] = useState(false);
+  const [showCloseDialog, setShowCloseDialog] = useState(false);
 
   // Hooks
   const { messages, sendMessage, uploadAndSendAttachment, sending } = useLegalMessages(
@@ -90,14 +91,13 @@ export function LegalChannel({ engagement, deal, currentUser, isLawyer, isReadOn
   );
   const { closeLegalEngagement, loading: actionLoading } = useLegalActions();
 
-  const handleCloseEngagement = async () => {
+  const handleCloseEngagement = () => {
     if (!engagement?.id) return;
-    if (
-      !window.confirm(
-        'Are you sure you want to close this legal engagement? This cannot be undone.'
-      )
-    )
-      return;
+    setShowCloseDialog(true);
+  };
+
+  const confirmCloseEngagement = async () => {
+    setShowCloseDialog(false);
     await closeLegalEngagement(engagement.id);
   };
 
@@ -228,6 +228,34 @@ export function LegalChannel({ engagement, deal, currentUser, isLawyer, isReadOn
           />
         </div>
       </div>
+
+      {/* ── Close Engagement Dialog ──────────────────────────────────────── */}
+      {showCloseDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="bg-[#1A283B] border border-[rgba(255,255,255,0.1)] rounded-2xl p-6 max-w-sm w-full mx-4 shadow-2xl">
+            <h3 className="text-lg font-semibold text-white mb-2">Close Engagement</h3>
+            <p className="text-sm text-[#8899AA] mb-6">
+              Are you sure you want to close this legal engagement? The channel will become
+              read-only and this action cannot be undone.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setShowCloseDialog(false)}
+                className="px-4 py-2 rounded-lg bg-[rgba(255,255,255,0.08)] hover:bg-[rgba(255,255,255,0.12)] text-white text-sm font-medium transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmCloseEngagement}
+                disabled={actionLoading}
+                className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-500 text-white text-sm font-medium transition-colors disabled:opacity-50"
+              >
+                {actionLoading ? 'Closing...' : 'Close Engagement'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

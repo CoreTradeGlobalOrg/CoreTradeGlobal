@@ -147,9 +147,9 @@ function ContractTab({ drafts, onUploadDraft, isLawyer, isReadOnly }) {
       {/* Latest draft card */}
       <div className="p-3 rounded-xl border border-purple-500/20 bg-purple-500/5">
         <div className="flex items-start justify-between gap-2 mb-2">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 min-w-0">
             <FileText size={16} className="text-purple-300 flex-shrink-0" />
-            <span className="text-sm font-medium text-white truncate">{latestDraft.fileName}</span>
+            <span className="text-sm font-medium text-white truncate min-w-0">{latestDraft.fileName}</span>
           </div>
           <VersionBadge version={latestDraft.version} isLatest={true} />
         </div>
