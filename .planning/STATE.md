@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-stopped_at: "Completed 05-08: /lawyer/channels and /lawyer/deals real pages + Navbar with 3 lawyer links. Phase 05 UAT gap closure complete."
-last_updated: "2026-03-12T03:39:43.270Z"
+stopped_at: "Completed 05-06 Task 1 verification: Navbar + notification triggers confirmed. Task 2 checkpoint:human-verify awaiting deployment and E2E flow verification."
+last_updated: "2026-03-12T03:50:05.328Z"
 last_activity: "2026-03-10 - Completed 05-05: 3-panel legal channel, useLegalMessages, useLegalChannel hooks, ChannelLeft/Center/Right/QuickActionToolbar"
 progress:
   total_phases: 7
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 27
-  completed_plans: 26
+  completed_plans: 27
   percent: 68
 ---
 
@@ -73,6 +73,7 @@ Progress: [████████████] 68%
 | Phase 05-legal-consulting P05 | 7 | 2 tasks | 8 files |
 | Phase 05-legal-consulting P07 | 2 | 2 tasks | 5 files |
 | Phase 05-legal-consulting P08 | 8 | 2 tasks | 5 files |
+| Phase 05-legal-consulting P06 | 1 | 1 tasks | 0 files |
 
 ## Accumulated Context
 
@@ -166,6 +167,7 @@ Recent decisions affecting current work:
 - [Phase 05-legal-consulting]: Suspense boundary only needed in page.jsx for useSearchParams (Next.js app router); non-page use client components do not need Suspense
 - [Phase 05-legal-consulting]: LawyerDeals excludes pending engagements -- only confirmed (active + completed) deals shown since pending have no accepted channel
 - [Phase 05-legal-consulting]: Navbar lawyer links order: Lawyer Dashboard, Client Channels, Deal Review -- dashboard first as primary landing
+- [Phase 05-legal-consulting]: Plan 05-06 Task 1 was pre-completed by gap closure plans 05-07 and 05-08 — no re-implementation needed; system message exclusion from onLegalMessageCreated trigger is key correctness detail
 
 ### Pending Todos
 
@@ -187,6 +189,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-12T03:39:43.267Z
-Stopped at: Completed 05-08: /lawyer/channels and /lawyer/deals real pages + Navbar with 3 lawyer links. Phase 05 UAT gap closure complete.
+Last session: 2026-03-12T03:50:05.325Z
+Stopped at: Completed 05-06 Task 1 verification: Navbar + notification triggers confirmed. Task 2 checkpoint:human-verify awaiting deployment and E2E flow verification.
 Resume file: None
