@@ -62,7 +62,7 @@ function LawyerCardSkeleton() {
   );
 }
 
-export function LawyerDirectory() {
+export function LawyerDirectory({ dealId }) {
   const { lawyers, loading, error, filters, setFilter, clearFilters } =
     useLawyerDirectory();
 
@@ -241,7 +241,7 @@ export function LawyerDirectory() {
         {!loading && !error && lawyers.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {lawyers.map((lawyer) => (
-              <LawyerCard key={lawyer.id} lawyer={lawyer} />
+              <LawyerCard key={lawyer.id} lawyer={lawyer} dealId={dealId} />
             ))}
           </div>
         )}

@@ -139,7 +139,7 @@ function PromotionalBanner({ dealId, onDismiss }) {
         <div className="flex flex-row sm:flex-col gap-2 sm:items-end flex-shrink-0">
           <Link
             href={`/lawyers?dealId=${dealId}`}
-            className="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-[#FFD700] text-[#0F1C2E] text-sm font-semibold hover:bg-[#FFE44D] transition-colors"
+            className="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-[#FFD700] text-black text-sm font-semibold hover:bg-[#FFE44D] transition-colors"
           >
             Find a Lawyer
           </Link>

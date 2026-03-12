@@ -60,9 +60,9 @@ function InitialsAvatar({ name }) {
 }
 
 /**
- * @param {{ lawyer: Object }} props
+ * @param {{ lawyer: Object, dealId?: string }} props
  */
-export function LawyerCard({ lawyer }) {
+export function LawyerCard({ lawyer, dealId }) {
   const {
     id,
     displayName,
@@ -77,7 +77,7 @@ export function LawyerCard({ lawyer }) {
 
   return (
     <Link
-      href={`/profile/${id}`}
+      href={dealId ? `/profile/${id}?dealId=${dealId}` : `/profile/${id}`}
       className="glass-card p-5 flex flex-col gap-4 group hover:border-[rgba(255,255,255,0.25)] hover:shadow-lg transition-all cursor-pointer"
     >
       {/* Top row: avatar + name + availability */}
