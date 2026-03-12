@@ -85,6 +85,12 @@ service cloud.firestore {
       // Admin can delete user records (hard delete goes through deleteUser Cloud Function)
       allow delete: if isAdmin();
 
+      // Lawyer reviews subcollection (public read — shown on lawyer profiles)
+      match /reviews/{reviewId} {
+        allow read: if true;
+        allow write: if false; // All writes via Cloud Functions (submitLawyerReview)
+      }
+
       // User notifications subcollection (private)
       match /notifications/{notificationId} {
         allow read: if isOwner(userId);

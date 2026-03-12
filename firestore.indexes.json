@@ -251,8 +251,8 @@
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "clientId",
-          "order": "ASCENDING"
+          "fieldPath": "participants",
+          "arrayConfig": "CONTAINS"
         }
       ]
     },

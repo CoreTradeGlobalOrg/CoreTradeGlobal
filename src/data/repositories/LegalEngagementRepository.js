@@ -125,7 +125,7 @@ export class LegalEngagementRepository {
     const q = query(
       collection(db, COLLECTIONS.LEGAL_ENGAGEMENTS),
       where('dealId', '==', dealId),
-      where('clientId', '==', clientId)
+      where('participants', 'array-contains', clientId)
     );
 
     return onSnapshot(
