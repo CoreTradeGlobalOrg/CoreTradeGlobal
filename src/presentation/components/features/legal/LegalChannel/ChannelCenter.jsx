@@ -144,37 +144,36 @@ function ChatBubble({ message, isOwn, showSender }) {
   const isAttachment = message.type === LEGAL_MESSAGE_TYPE.ATTACHMENT;
 
   return (
-    <div className={`flex flex-col ${isOwn ? 'items-end' : 'items-start'} gap-1`}>
+    <div className={`flex flex-col ${isOwn ? 'items-end' : 'items-start'} gap-1 max-w-[75%]`}>
       {showSender && (
         <span className="text-xs text-[#4A5B6E] px-1">
           {message.senderName}
         </span>
       )}
-      <div className="max-w-[75%]">
-        {isAttachment && message.attachments?.length > 0 ? (
-          <div className="space-y-1">
-            {message.attachments.map((att, i) => (
-              <AttachmentBubble key={`${att.storagePath || i}`} attachment={att} />
-            ))}
-          </div>
-        ) : (
-          <div
-            className={`
-              px-3 py-2 rounded-2xl text-sm leading-relaxed break-words overflow-hidden
-              ${
-                isOwn
-                  ? 'bg-purple-600 text-white rounded-tr-sm'
-                  : 'bg-[#1A283B] border border-[rgba(255,255,255,0.08)] text-white rounded-tl-sm'
-              }
-            `}
-          >
-            {message.content}
-          </div>
-        )}
-        <span className={`text-[10px] text-[#4A5B6E] px-1 ${isOwn ? 'text-right' : 'text-left'}`}>
-          {format(date, 'h:mm a')}
-        </span>
-      </div>
+      {isAttachment && message.attachments?.length > 0 ? (
+        <div className="space-y-1">
+          {message.attachments.map((att, i) => (
+            <AttachmentBubble key={`${att.storagePath || i}`} attachment={att} />
+          ))}
+        </div>
+      ) : (
+        <div
+          className={`
+            inline-block px-3 py-2 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap
+            ${
+              isOwn
+                ? 'bg-purple-600 text-white rounded-tr-sm'
+                : 'bg-[#1A283B] border border-[rgba(255,255,255,0.08)] text-white rounded-tl-sm'
+            }
+          `}
+          style={{ overflowWrap: 'anywhere' }}
+        >
+          {message.content}
+        </div>
+      )}
+      <span className={`block text-[10px] text-[#4A5B6E] px-1 ${isOwn ? 'text-right' : 'text-left'}`}>
+        {format(date, 'h:mm a')}
+      </span>
     </div>
   );
 }
