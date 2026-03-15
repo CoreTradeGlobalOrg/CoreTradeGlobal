@@ -9,7 +9,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Bell, MessageSquare, FileText, X, Check, Trash2, CheckCircle, XCircle, UserPlus, Handshake } from 'lucide-react';
+import { Bell, MessageSquare, FileText, X, Check, Trash2, CheckCircle, XCircle, UserPlus, Handshake, Scale } from 'lucide-react';
 import { useMessages } from '@/presentation/contexts/MessagesContext';
 import { useMarkAsRead } from '@/presentation/hooks/messaging/useMarkAsRead';
 import './NotificationBell.css';
@@ -49,6 +49,9 @@ export function NotificationBell() {
     } else if ((notification.type === 'quote_accepted' || notification.type === 'quote_rejected') && notification.data?.requestId) {
       // Navigate to RFQ detail page (for quote submitter to see status)
       router.push(`/request/${notification.data.requestId}`);
+    } else if (notification.type === 'legal' && (notification.link || notification.dealId)) {
+      // Navigate to legal channel
+      router.push(notification.link || `/deals/${notification.dealId}/legal`);
     } else if (notification.type === 'deal' && (notification.dealId || notification.link)) {
       // Navigate to deal detail page
       router.push(notification.link || `/deals/${notification.dealId}`);
@@ -73,6 +76,8 @@ export function NotificationBell() {
         return <UserPlus className="w-4 h-4" />;
       case 'deal':
         return <Handshake className="w-4 h-4" />;
+      case 'legal':
+        return <Scale className="w-4 h-4" />;
       default:
         return <MessageSquare className="w-4 h-4" />;
     }
@@ -90,6 +95,8 @@ export function NotificationBell() {
       case 'new_user_approval':
         return 'approval-icon';
       case 'deal':
+        return 'deal-icon';
+      case 'legal':
         return 'deal-icon';
       default:
         return '';

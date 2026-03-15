@@ -160,7 +160,7 @@ function ChatBubble({ message, isOwn, showSender }) {
         ) : (
           <div
             className={`
-              px-3 py-2 rounded-2xl text-sm leading-relaxed
+              px-3 py-2 rounded-2xl text-sm leading-relaxed break-words overflow-hidden
               ${
                 isOwn
                   ? 'bg-purple-600 text-white rounded-tr-sm'
@@ -210,12 +210,25 @@ export function ChannelCenter({
 }) {
   const [inputText, setInputText] = useState('');
   const messagesEndRef = useRef(null);
+  const messagesContainerRef = useRef(null);
   const textareaRef = useRef(null);
   const fileInputRef = useRef(null);
+  const isNearBottomRef = useRef(true);
 
-  // Auto-scroll to bottom on new messages
+  // Track scroll position to determine if user is near bottom
+  const handleScroll = useCallback(() => {
+    const container = messagesContainerRef.current;
+    if (!container) return;
+    const threshold = 100;
+    isNearBottomRef.current =
+      container.scrollHeight - container.scrollTop - container.clientHeight < threshold;
+  }, []);
+
+  // Auto-scroll to bottom only when user is already near bottom
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (isNearBottomRef.current) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
   }, [messages]);
 
   // Auto-resize textarea
@@ -303,7 +316,11 @@ export function ChannelCenter({
   return (
     <div className="flex flex-col h-full bg-[#0F1C2E]">
       {/* ── Message list ─────────────────────────────────────────────────── */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-2">
+      <div
+        ref={messagesContainerRef}
+        onScroll={handleScroll}
+        className="flex-1 overflow-y-auto px-4 py-4 space-y-2"
+      >
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full gap-3 text-center">
             <div className="w-12 h-12 rounded-full bg-purple-500/10 border border-purple-500/20 flex items-center justify-center">
@@ -384,10 +401,10 @@ export function ChannelCenter({
               onChange={(e) => setInputText(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Type a message... (Enter to send, Shift+Enter for new line)"
-              rows={1}
+              rows={2}
               disabled={sending}
-              className="flex-1 bg-[rgba(255,255,255,0.06)] border border-[rgba(255,255,255,0.1)] rounded-xl px-3 py-2 text-sm text-white placeholder-[#4A5B6E] focus:outline-none focus:border-purple-500/60 resize-none transition-colors disabled:opacity-50"
-              style={{ minHeight: '38px', maxHeight: '120px' }}
+              className="flex-1 bg-[rgba(255,255,255,0.06)] border border-[rgba(255,255,255,0.1)] rounded-xl px-3 py-2.5 text-sm text-white placeholder-[#4A5B6E] focus:outline-none focus:border-purple-500/60 resize-none transition-colors disabled:opacity-50"
+              style={{ minHeight: '52px', maxHeight: '150px' }}
             />
 
             {/* Send button */}
