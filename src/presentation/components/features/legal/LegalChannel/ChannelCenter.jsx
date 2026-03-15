@@ -212,7 +212,8 @@ export function ChannelCenter({
   const messagesContainerRef = useRef(null);
   const textareaRef = useRef(null);
   const fileInputRef = useRef(null);
-  const isNearBottomRef = useRef(true);
+  const isNearBottomRef = useRef(false);
+  const prevMessageCountRef = useRef(0);
 
   // Track scroll position to determine if user is near bottom
   const handleScroll = useCallback(() => {
@@ -223,11 +224,12 @@ export function ChannelCenter({
       container.scrollHeight - container.scrollTop - container.clientHeight < threshold;
   }, []);
 
-  // Auto-scroll to bottom only when user is already near bottom
+  // Auto-scroll only when a NEW message arrives and user is near bottom
   useEffect(() => {
-    if (isNearBottomRef.current) {
+    if (messages.length > prevMessageCountRef.current && isNearBottomRef.current) {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
+    prevMessageCountRef.current = messages.length;
   }, [messages]);
 
   // Auto-resize textarea

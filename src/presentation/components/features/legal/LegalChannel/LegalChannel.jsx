@@ -102,7 +102,7 @@ export function LegalChannel({ engagement, deal, currentUser, isLawyer, isReadOn
   };
 
   return (
-    <div className="flex flex-col h-screen bg-[#0F1C2E] overflow-hidden pt-[80px]">
+    <div className="flex flex-col h-screen bg-[#0F1C2E] overflow-hidden pt-[100px]">
       {/* ── Header bar ─────────────────────────────────────────────────────── */}
       <div className="flex-shrink-0 flex items-center justify-between px-4 py-2 bg-[#0D1927] border-b border-[rgba(255,255,255,0.08)] h-12">
         {/* Left: back + title */}
@@ -174,7 +174,7 @@ export function LegalChannel({ engagement, deal, currentUser, isLawyer, isReadOn
           className={`
             flex-shrink-0 w-72 border-r border-[rgba(255,255,255,0.08)] bg-[#0D1927] overflow-y-auto
             md:block
-            ${showLeft ? 'block absolute inset-y-0 left-0 z-20 top-[128px]' : 'hidden'}
+            ${showLeft ? 'block absolute inset-y-0 left-0 z-20 top-[148px]' : 'hidden'}
           `}
         >
           <ChannelLeft
@@ -214,7 +214,7 @@ export function LegalChannel({ engagement, deal, currentUser, isLawyer, isReadOn
           className={`
             flex-shrink-0 w-80 border-l border-[rgba(255,255,255,0.08)] bg-[#0D1927] overflow-y-auto
             md:block
-            ${showRight ? 'block absolute inset-y-0 right-0 z-20 top-[128px]' : 'hidden'}
+            ${showRight ? 'block absolute inset-y-0 right-0 z-20 top-[148px]' : 'hidden'}
           `}
         >
           <ChannelRight

@@ -27,8 +27,8 @@ import { Scale, ShieldOff, Clock, ArrowLeft } from 'lucide-react';
 
 function LegalChannelSkeleton() {
   return (
-    <div className="min-h-screen bg-[#0F1C2E] pt-[80px] animate-pulse">
-      <div className="flex h-[calc(100vh-80px)]">
+    <div className="min-h-screen bg-[#0F1C2E] pt-[100px] animate-pulse">
+      <div className="flex h-[calc(100vh-100px)]">
         <div className="w-64 bg-[#1A283B] border-r border-[rgba(255,255,255,0.08)]" />
         <div className="flex-1 bg-[#0F1C2E]" />
         <div className="w-64 bg-[#1A283B] border-l border-[rgba(255,255,255,0.08)]" />
