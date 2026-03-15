@@ -244,9 +244,9 @@ function RevisionsTab({ drafts }) {
                 </div>
 
                 {/* Draft info */}
-                <div className={`flex-1 rounded-lg p-3 ${isLatest ? 'border border-purple-500/20 bg-purple-500/5' : 'border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)]'}`}>
-                  <div className="flex items-start justify-between gap-2 mb-1">
-                    <p className="text-xs font-medium text-white truncate">{draft.fileName}</p>
+                <div className={`flex-1 min-w-0 rounded-lg p-3 ${isLatest ? 'border border-purple-500/20 bg-purple-500/5' : 'border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)]'}`}>
+                  <div className="flex items-start justify-between gap-2 mb-1 min-w-0">
+                    <p className="text-xs font-medium text-white truncate min-w-0">{draft.fileName}</p>
                     {isLatest && (
                       <span className="text-[10px] bg-purple-500/20 text-purple-300 px-1.5 py-0.5 rounded-full flex-shrink-0">
                         Latest
