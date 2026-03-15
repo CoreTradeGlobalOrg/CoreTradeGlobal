@@ -3447,7 +3447,8 @@ function getLegalEventTitle(eventType) {
     hire_accepted: 'Legal consultation accepted',
     hire_declined: 'Legal consultation declined',
     engagement_completed: 'Legal consultation completed',
-    new_message: 'New message from your lawyer',
+    new_message_from_lawyer: 'New message from your lawyer',
+    new_message_from_client: 'New message from your client',
     new_draft: 'New contract draft shared',
     risk_update: 'Risk assessment updated',
   };
@@ -3468,7 +3469,8 @@ function getLegalEventBody(eventType, dealProductName) {
     hire_accepted: `Your legal consultation request for ${name} has been accepted.`,
     hire_declined: `Your legal consultation request for ${name} has been declined. You can hire another lawyer.`,
     engagement_completed: `The legal consultation session for ${name} has ended.`,
-    new_message: `You have a new message regarding the legal consultation for ${name}.`,
+    new_message_from_lawyer: `Your lawyer sent a message regarding ${name}.`,
+    new_message_from_client: `Your client sent a message regarding ${name}.`,
     new_draft: `A new contract draft has been shared for ${name}.`,
     risk_update: `The risk assessment for ${name} has been updated.`,
   };
@@ -3546,7 +3548,7 @@ async function sendLegalNotification(engagementId, eventType, recipientId, dealP
 
   // --- b) Email notification (non-blocking) ---
   // Skip email for high-frequency or low-urgency events — in-app notification is sufficient
-  const skipEmailEvents = ['engagement_closed', 'new_message'];
+  const skipEmailEvents = ['engagement_closed', 'new_message_from_lawyer', 'new_message_from_client'];
   if (!skipEmailEvents.includes(eventType)) {
     try {
       const userDoc = await db.collection('users').doc(recipientId).get();
@@ -3938,16 +3940,19 @@ exports.onLegalMessageCreated = onDocumentCreated(
 
       // Determine recipient: notify the other participant
       let recipientId;
+      let messageEventType;
       if (senderId === clientId) {
         recipientId = lawyerId;
+        messageEventType = 'new_message_from_client';
       } else if (senderId === lawyerId) {
         recipientId = clientId;
+        messageEventType = 'new_message_from_lawyer';
       } else {
         console.error(`onLegalMessageCreated: senderId ${senderId} is not a participant of engagement ${engagementId}`);
         return;
       }
 
-      await sendLegalNotification(engagementId, 'new_message', recipientId, dealProductName, dealId);
+      await sendLegalNotification(engagementId, messageEventType, recipientId, dealProductName, dealId);
     } catch (err) {
       console.error('onLegalMessageCreated: unexpected error (non-fatal):', err);
     }
