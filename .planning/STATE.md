@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-stopped_at: "Completed 05-09: lawyer redirect from pending legal page + risk items includeMetadataChanges fix"
-last_updated: "2026-03-18T11:48:54.500Z"
+stopped_at: "Completed 05-10: duplicate hire guard + ReviewPromptBanner review flow"
+last_updated: "2026-03-18T11:49:40.873Z"
 last_activity: "2026-03-10 - Completed 05-05: 3-panel legal channel, useLegalMessages, useLegalChannel hooks, ChannelLeft/Center/Right/QuickActionToolbar"
 progress:
   total_phases: 7
   completed_phases: 4
   total_plans: 30
-  completed_plans: 28
+  completed_plans: 29
   percent: 68
 ---
 
@@ -75,6 +75,7 @@ Progress: [████████████] 68%
 | Phase 05-legal-consulting P08 | 8 | 2 tasks | 5 files |
 | Phase 05-legal-consulting P06 | 1 | 1 tasks | 0 files |
 | Phase 05-legal-consulting P09 | 2 | 2 tasks | 3 files |
+| Phase 05-legal-consulting P10 | 3 | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -172,6 +173,8 @@ Recent decisions affecting current work:
 - [Phase 05-09]: Lawyer redirect uses router.replace (not push) to prevent back-button loop to pending screen
 - [Phase 05-09]: hire_request notification link is conditionally /lawyer/dashboard — all other legal event links remain /deals/{dealId}/legal
 - [Phase 05-09]: includeMetadataChanges: true on subscribeToRiskItems fires callback on both local optimistic write and server confirmation — solves rapid risk item gap without data model changes
+- [Phase 05-10]: hireLayyer CF uses db.runTransaction for atomic existence check + set — prevents concurrent duplicate engagement docs
+- [Phase 05-10]: submitLawyerReview CF sets reviewedAt on engagement doc — client-side ReviewPromptBanner self-hides via engagement.reviewedAt
 
 ### Pending Todos
 
@@ -193,6 +196,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-18T11:48:54.497Z
-Stopped at: Completed 05-09: lawyer redirect from pending legal page + risk items includeMetadataChanges fix
+Last session: 2026-03-18T11:49:40.869Z
+Stopped at: Completed 05-10: duplicate hire guard + ReviewPromptBanner review flow
 Resume file: None
