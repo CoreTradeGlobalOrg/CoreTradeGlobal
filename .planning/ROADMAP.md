@@ -106,7 +106,7 @@ Plans:
   3. A lawyer can view full deal details (trade info, parties, documents) and can create, revise, and share contract drafts with version history
   4. A lawyer can provide risk analysis with severity levels (low/medium/high) and use quick-action buttons (approve, request info, request changes, attach file) within their channel
   5. Legal consulting is optional -- a deal can proceed through all stages (negotiation, agreement, quotes, tracking) without either party hiring a lawyer
-**Plans**: 8 plans
+**Plans**: 11 plans
 
 Plans:
 - [x] 05-01-PLAN.md — Data layer: entities, repositories, Firestore rules, composite indexes, Cloud Functions
@@ -117,6 +117,9 @@ Plans:
 - [ ] 05-06-PLAN.md — Navbar lawyer links, notification triggers, end-to-end verification
 - [ ] 05-07-PLAN.md — UAT gap closure: Fix dealId persistence through hire flow, LegalBanner text contrast
 - [ ] 05-08-PLAN.md — UAT gap closure: Build real /lawyer/channels and /lawyer/deals pages, update Navbar
+- [ ] 05-09-PLAN.md — UAT gap closure: Fix pending page role gate for lawyer, risk real-time subscription, notification link
+- [ ] 05-10-PLAN.md — UAT gap closure: Fix duplicate engagement creation, build review prompt UI
+- [ ] 05-11-PLAN.md — UAT gap closure: Approve draft flow (contract-to-deal), deploy all Cloud Functions
 
 ### Phase 6: Trade Summary and Shipment Tracking (S4)
 **Goal**: Both deal parties can view a complete trade summary with shipment tracking and milestone timeline, and every role sees a relevant dashboard
@@ -157,10 +160,10 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 (parallel with 3-4) -> 6 
 | 2. Deal Creation and Negotiation (S1) | 7/7 | Complete   | 2026-02-23 |
 | 3. Contract Agreement (S2) | 2/2 | Complete   | 2026-03-01 |
 | 4. Provider Portals and Insurance/Logistics Quotes (S3) | 6/6 | Complete   | 2026-03-03 |
-| 5. Legal Consulting | 8/8 | Complete   | 2026-03-12 |
+| 5. Legal Consulting | 8/11 | In Progress | - |
 | 6. Trade Summary and Shipment Tracking (S4) | 0/0 | Not started | - |
 | 7. Platform Hardening | 0/0 | Not started | - |
 
 ---
 *Roadmap created: 2026-02-20*
-*Last updated: 2026-03-12*
+*Last updated: 2026-03-18*
