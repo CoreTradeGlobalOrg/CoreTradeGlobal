@@ -1,5 +1,5 @@
 ---
-status: complete
+status: diagnosed
 phase: 05-legal-consulting
 source: 05-01-SUMMARY.md, 05-02-SUMMARY.md, 05-03-SUMMARY.md, 05-04-SUMMARY.md, 05-05-SUMMARY.md, 05-06-SUMMARY.md, 05-07-SUMMARY.md, 05-08-SUMMARY.md
 started: 2026-03-18T08:30:00Z
@@ -112,9 +112,15 @@ skipped: 2
   reason: "User reported: I got bug when lawyer got notification for new legal request recieved but when I click that notification it says awaiting Lawyer Acceptance even I logged in as lawyer. But I can accept on Lawyer Dashboard"
   severity: major
   test: 4
-  root_cause: ""
-  artifacts: []
-  missing: []
+  root_cause: "page.jsx line 142 has role-blind pending gate — isPending() check renders client-facing 'Awaiting Lawyer Acceptance' for ALL users including the lawyer. isLawyerRole is computed (line 51) but never used in the pending check. Notification link in sendLegalNotification (functions/index.js:3543) sends lawyer to /deals/{dealId}/legal instead of /lawyer/dashboard."
+  artifacts:
+    - path: "src/app/(main)/deals/[dealId]/legal/page.jsx"
+      issue: "Lines 141-168: isPending() gate is role-blind, shows client text to lawyer"
+    - path: "functions/index.js"
+      issue: "Line 3543: hire_request notification link sends lawyer to /deals/{dealId}/legal instead of /lawyer/dashboard"
+  missing:
+    - "page.jsx: Branch isPending() on isLawyerRole — if lawyer, redirect to /lawyer/dashboard or show inline accept/decline"
+    - "functions/index.js: For hire_request events, set notification link to /lawyer/dashboard"
   debug_session: ""
 
 - truth: "Risk items added by lawyer should update in real-time for client (all items, not just first 2), and notification text should correctly identify sender role"
@@ -122,9 +128,17 @@ skipped: 2
   reason: "User reported: I added 4 risk as lawyer but somehow client just updated live 2 risk after that I need to reload to page to fetch the other 2 risk, still notification message for lawyer is 'new message from your lawyer' it should be new message for your client because client send that message or actions, other stuff passed"
   severity: major
   test: 8
-  root_cause: ""
-  artifacts: []
-  missing: []
+  root_cause: "Risk real-time: subscribeToRiskItems uses orderBy('createdAt', 'desc') with serverTimestamp(). Rapid additions cause pending/null timestamps in Firestore cache, and onSnapshot with orderBy may not include docs with unresolved timestamps. Notification text: Cloud Function code was already fixed in commit 1dc2da7 but likely not redeployed — production still runs old code with hardcoded 'new_message' event type."
+  artifacts:
+    - path: "src/data/repositories/LegalEngagementRepository.js"
+      issue: "Lines 191-212: subscribeToRiskItems onSnapshot lacks includeMetadataChanges:true, misses pending-write docs"
+    - path: "src/data/repositories/LegalEngagementRepository.js"
+      issue: "Lines 250-258: addRiskItem uses serverTimestamp() for createdAt causing ordering issues"
+    - path: "functions/index.js"
+      issue: "Lines 3919-3959: Code is correct but likely not deployed — needs firebase deploy"
+  missing:
+    - "Add includeMetadataChanges:true to subscribeToRiskItems onSnapshot call"
+    - "Redeploy Cloud Functions: firebase deploy --only functions"
   debug_session: ""
 
 - truth: "Client should see a review prompt after engagement is completed to rate and review the lawyer"
@@ -132,17 +146,38 @@ skipped: 2
   reason: "User reported: no client sees nothing after engagement is completed"
   severity: major
   test: 11
-  root_cause: ""
-  artifacts: []
-  missing: []
-  debug_session: ""
+  root_cause: "Review UI component was never built. Backend is complete: submitLawyerReview Cloud Function exists, useLegalActions.js exports submitReview(), LawyerProfileContent has ReviewsSection that displays reviews. But zero ReviewPrompt/ReviewDialog/ReviewForm components exist in src/. ChannelCenter.jsx only shows read-only banner on completed engagements."
+  artifacts:
+    - path: "src/presentation/components/features/legal/LegalChannel/ChannelCenter.jsx"
+      issue: "Lines 425-432: Read-only banner is the only completed-state UI, no review prompt"
+    - path: "src/presentation/hooks/legal/useLegalActions.js"
+      issue: "Lines 123-138: submitReview exported but never called by any component"
+  missing:
+    - "Build ReviewPromptBanner component with star rating input + comment textarea"
+    - "Render in ChannelCenter.jsx when isReadOnly && !isLawyer && !hasReviewed"
+    - "Add reviewedAt field to engagement doc (set by CF on review submission) to prevent duplicate prompts"
+  debug_session: ".planning/debug/no-review-prompt-after-engagement-close.md"
 
 - truth: "Notifications should correctly identify sender role, legalEngagements should not create duplicate docs, and approved contract drafts should flow back to the real deal for buyer/seller"
   status: failed
   reason: "User reported: we canceled the sending an email. lawyer gets notification like client 'New Message from Lawyer' when client send a message. Very serious bug: legalEngagements docs on firestore create duplicated entries. Contract drafts created by lawyer have no path to apply to the real deal for buyer/seller — when client clicks approve action we need to update the deal contract for buyer-seller."
   severity: major
   test: 16
-  root_cause: ""
-  artifacts: []
-  missing: []
-  debug_session: ""
+  root_cause: "Duplicate engagements: handleHireClick in LawyerProfileContent.jsx has no debounce/loading guard — double-click fires multiple httpsCallable calls. Server-side hireLayyer uses get()+set() without transaction so concurrent requests both pass existence check. Notification text: Code fix exists but not deployed (same as test 8). Contract-to-deal flow: Feature does not exist at all — no Approve Draft button, no approveDraft Cloud Function, no connection between contractDrafts subcollection and deal's contracts."
+  artifacts:
+    - path: "src/presentation/components/features/legal/LawyerProfile/LawyerProfileContent.jsx"
+      issue: "Line 174-186: handleHireClick has no loading guard, allows concurrent calls"
+    - path: "functions/index.js"
+      issue: "Lines 3619-3648: hireLayyer uses get()+set() without Firestore transaction"
+    - path: "src/presentation/components/features/legal/LegalChannel/ChannelRight.jsx"
+      issue: "ContractTab (lines 100-204) has no Approve Draft action"
+    - path: "src/data/repositories/LegalEngagementRepository.js"
+      issue: "No approval-related methods exist"
+  missing:
+    - "LawyerProfileContent: Disable hire button while hireLoading is true"
+    - "functions/index.js: Wrap hireLayyer existence check + write in Firestore transaction"
+    - "Redeploy Cloud Functions for notification fix"
+    - "Build Approve Draft button in ContractTab for client (non-lawyer) on latest draft"
+    - "Build approveLegalDraft Cloud Function that copies draft to deal's contract"
+    - "Add approveDraft action to useLegalActions.js"
+  debug_session: ".planning/debug/phase05-uat-gaps.md"
