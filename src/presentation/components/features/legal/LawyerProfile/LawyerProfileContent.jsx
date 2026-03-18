@@ -172,6 +172,7 @@ export function LawyerProfileContent({ profileUser, isOwnProfile }) {
   const { hireLawyer, loading: hireLoading } = useLegalActions();
 
   const handleHireClick = async () => {
+    if (hireLoading) return;
     if (!dealId) {
       toast('Select a deal first to hire this lawyer', {
         icon: 'ℹ️',

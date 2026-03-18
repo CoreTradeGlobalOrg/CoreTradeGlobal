@@ -3615,39 +3615,42 @@ exports.hireLayyer = onCall(async (request) => {
   const engagementId = `${dealId}_${uid}`;
   const engagementRef = db.collection('legalEngagements').doc(engagementId);
 
-  // Check for existing engagement
-  const existingDoc = await engagementRef.get();
-  if (existingDoc.exists) {
-    const existing = existingDoc.data();
-    if (existing.status === ENGAGEMENT_STATUS.PENDING || existing.status === ENGAGEMENT_STATUS.ACTIVE) {
-      throw new HttpsError(
-        'already-exists',
-        'You already have an active legal engagement for this deal.'
-      );
-    }
-    // If completed or declined: allow re-hire (overwrite below)
-  }
-
   const now = Timestamp.now();
   const dealProductName = deal.productName || deal.product?.name || 'Deal';
   const clientDisplayName = callerUser.displayName || callerUser.companyName || 'Client';
   const lawyerDisplayName = lawyerUser.displayName || lawyerUser.companyName || 'Lawyer';
 
-  // Create (or overwrite) the engagement document
-  await engagementRef.set({
-    clientId: uid,
-    lawyerId,
-    dealId,
-    participants: [uid, lawyerId],
-    dealProductName,
-    clientDisplayName,
-    lawyerDisplayName,
-    status: ENGAGEMENT_STATUS.PENDING,
-    createdAt: now,
-    updatedAt: now,
+  // Atomic existence check + write in a transaction to prevent concurrent duplicate creation
+  const result = await db.runTransaction(async (t) => {
+    const existingDoc = await t.get(engagementRef);
+    if (existingDoc.exists) {
+      const existing = existingDoc.data();
+      if (existing.status === ENGAGEMENT_STATUS.PENDING || existing.status === ENGAGEMENT_STATUS.ACTIVE) {
+        throw new HttpsError(
+          'already-exists',
+          'You already have an active legal engagement for this deal.'
+        );
+      }
+      // If completed or declined: allow re-hire (overwrite below)
+    }
+
+    t.set(engagementRef, {
+      clientId: uid,
+      lawyerId,
+      dealId,
+      participants: [uid, lawyerId],
+      dealProductName,
+      clientDisplayName,
+      lawyerDisplayName,
+      status: ENGAGEMENT_STATUS.PENDING,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    return { engagementId, status: ENGAGEMENT_STATUS.PENDING };
   });
 
-  // Update deal to add lawyer to lawyerIds (enables lawyer deal read access via Firestore rules)
+  // Update deal to add lawyer to lawyerIds (side effect — outside transaction)
   await dealRef.update({
     lawyerIds: FieldValue.arrayUnion(lawyerId),
     updatedAt: now,
@@ -3657,7 +3660,7 @@ exports.hireLayyer = onCall(async (request) => {
   await sendLegalNotification(engagementId, 'hire_request', lawyerId, dealProductName, dealId);
 
   console.log(`hireLayyer: engagement ${engagementId} created (client: ${uid}, lawyer: ${lawyerId})`);
-  return { engagementId, status: ENGAGEMENT_STATUS.PENDING };
+  return result;
 });
 
 /**
