@@ -3540,7 +3540,7 @@ async function sendLegalNotification(engagementId, eventType, recipientId, dealP
       dealId,
       isRead: false,
       createdAt: now,
-      link: `/deals/${dealId}/legal`,
+      link: eventType === 'hire_request' ? '/lawyer/dashboard' : `/deals/${dealId}/legal`,
     });
   } catch (err) {
     console.error(`sendLegalNotification: failed to create in-app notification for ${recipientId}:`, err);

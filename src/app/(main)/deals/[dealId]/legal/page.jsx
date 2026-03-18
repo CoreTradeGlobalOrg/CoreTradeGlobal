@@ -140,6 +140,21 @@ function LegalChannelPageInner() {
 
   // ── Pending engagement ─────────────────────────────────────────────────────
   if (engagement && engagement.isPending()) {
+    // Lawyer visiting a pending engagement should be sent to their dashboard
+    // where the accept/decline buttons are — not the client-facing waiting screen.
+    if (isLawyerRole) {
+      router.replace('/lawyer/dashboard');
+      return (
+        <div className="min-h-screen bg-[#0F1C2E] flex items-center justify-center p-6">
+          <div className="text-center max-w-sm">
+            <Clock size={48} className="text-amber-400 mx-auto mb-4" />
+            <p className="text-sm text-[#8899AA]">Redirecting to dashboard...</p>
+          </div>
+        </div>
+      );
+    }
+
+    // Client: show the "Awaiting Lawyer Acceptance" screen unchanged
     return (
       <div className="min-h-screen bg-[#0F1C2E] flex items-center justify-center p-6">
         <div className="text-center max-w-sm">
