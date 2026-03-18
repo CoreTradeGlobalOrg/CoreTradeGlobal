@@ -3893,6 +3893,8 @@ exports.submitLawyerReview = onCall(async (request) => {
   const reviewerData = reviewerDoc.exists ? reviewerDoc.data() : {};
   const reviewerName = reviewerData.displayName || reviewerData.companyName || 'Anonymous';
 
+  const reviewedAt = Timestamp.now();
+
   // Write review to lawyer's reviews subcollection
   await db.collection('users').doc(engagement.lawyerId).collection('reviews').add({
     reviewerId: uid,
@@ -3901,7 +3903,12 @@ exports.submitLawyerReview = onCall(async (request) => {
     dealId: engagement.dealId,
     rating: ratingInt,
     comment: comment || '',
-    createdAt: Timestamp.now(),
+    createdAt: reviewedAt,
+  });
+
+  // Mark engagement as reviewed to prevent duplicate submissions and hide the review banner
+  await db.collection('legalEngagements').doc(engagementId).update({
+    reviewedAt,
   });
 
   console.log(`submitLawyerReview: client ${uid} reviewed lawyer ${engagement.lawyerId} for engagement ${engagementId} (rating: ${ratingInt})`);

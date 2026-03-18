@@ -36,6 +36,7 @@ import {
 import { format, isSameDay, differenceInMinutes } from 'date-fns';
 import { LEGAL_MESSAGE_TYPE, ALLOWED_LEGAL_FILE_TYPES } from '@/core/constants/legalConstants';
 import { QuickActionToolbar } from './QuickActionToolbar';
+import { ReviewPromptBanner } from './ReviewPromptBanner';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -206,6 +207,8 @@ export function ChannelCenter({
   sending,
   onUploadDraft,
   onAddRisk,
+  onSubmitReview,
+  reviewLoading,
 }) {
   const [inputText, setInputText] = useState('');
   const messagesEndRef = useRef(null);
@@ -419,6 +422,15 @@ export function ChannelCenter({
             </button>
           </div>
         </div>
+      )}
+
+      {/* Review prompt — only for client on completed, unreviewed engagement */}
+      {isReadOnly && !isLawyer && !engagement?.reviewedAt && (
+        <ReviewPromptBanner
+          onSubmit={onSubmitReview}
+          loading={reviewLoading}
+          engagement={engagement}
+        />
       )}
 
       {/* Read-only notice */}
