@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-stopped_at: "Completed 05-06 Task 1 verification: Navbar + notification triggers confirmed. Task 2 checkpoint:human-verify awaiting deployment and E2E flow verification."
-last_updated: "2026-03-12T03:50:05.328Z"
+stopped_at: "Completed 05-09: lawyer redirect from pending legal page + risk items includeMetadataChanges fix"
+last_updated: "2026-03-18T11:48:54.500Z"
 last_activity: "2026-03-10 - Completed 05-05: 3-panel legal channel, useLegalMessages, useLegalChannel hooks, ChannelLeft/Center/Right/QuickActionToolbar"
 progress:
   total_phases: 7
-  completed_phases: 5
-  total_plans: 27
-  completed_plans: 27
+  completed_phases: 4
+  total_plans: 30
+  completed_plans: 28
   percent: 68
 ---
 
@@ -74,6 +74,7 @@ Progress: [████████████] 68%
 | Phase 05-legal-consulting P07 | 2 | 2 tasks | 5 files |
 | Phase 05-legal-consulting P08 | 8 | 2 tasks | 5 files |
 | Phase 05-legal-consulting P06 | 1 | 1 tasks | 0 files |
+| Phase 05-legal-consulting P09 | 2 | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -168,6 +169,9 @@ Recent decisions affecting current work:
 - [Phase 05-legal-consulting]: LawyerDeals excludes pending engagements -- only confirmed (active + completed) deals shown since pending have no accepted channel
 - [Phase 05-legal-consulting]: Navbar lawyer links order: Lawyer Dashboard, Client Channels, Deal Review -- dashboard first as primary landing
 - [Phase 05-legal-consulting]: Plan 05-06 Task 1 was pre-completed by gap closure plans 05-07 and 05-08 — no re-implementation needed; system message exclusion from onLegalMessageCreated trigger is key correctness detail
+- [Phase 05-09]: Lawyer redirect uses router.replace (not push) to prevent back-button loop to pending screen
+- [Phase 05-09]: hire_request notification link is conditionally /lawyer/dashboard — all other legal event links remain /deals/{dealId}/legal
+- [Phase 05-09]: includeMetadataChanges: true on subscribeToRiskItems fires callback on both local optimistic write and server confirmation — solves rapid risk item gap without data model changes
 
 ### Pending Todos
 
@@ -189,6 +193,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-12T03:50:05.325Z
-Stopped at: Completed 05-06 Task 1 verification: Navbar + notification triggers confirmed. Task 2 checkpoint:human-verify awaiting deployment and E2E flow verification.
+Last session: 2026-03-18T11:48:54.497Z
+Stopped at: Completed 05-09: lawyer redirect from pending legal page + risk items includeMetadataChanges fix
 Resume file: None
