@@ -196,6 +196,7 @@ export class LegalEngagementRepository {
 
     return onSnapshot(
       q,
+      { includeMetadataChanges: true },
       (snap) => {
         const riskItems = snap.docs.map((docSnap) => ({
           id: docSnap.id,
