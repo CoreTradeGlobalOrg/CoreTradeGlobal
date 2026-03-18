@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-stopped_at: "Completed 05-10: duplicate hire guard + ReviewPromptBanner review flow"
-last_updated: "2026-03-18T11:49:40.873Z"
+stopped_at: "Checkpoint: 05-11 Task 2 — Deploy Cloud Functions and E2E verify UAT gaps"
+last_updated: "2026-03-18T11:53:30.705Z"
 last_activity: "2026-03-10 - Completed 05-05: 3-panel legal channel, useLegalMessages, useLegalChannel hooks, ChannelLeft/Center/Right/QuickActionToolbar"
 progress:
   total_phases: 7
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 30
-  completed_plans: 29
+  completed_plans: 30
   percent: 68
 ---
 
@@ -175,6 +175,7 @@ Recent decisions affecting current work:
 - [Phase 05-09]: includeMetadataChanges: true on subscribeToRiskItems fires callback on both local optimistic write and server confirmation — solves rapid risk item gap without data model changes
 - [Phase 05-10]: hireLayyer CF uses db.runTransaction for atomic existence check + set — prevents concurrent duplicate engagement docs
 - [Phase 05-10]: submitLawyerReview CF sets reviewedAt on engagement doc — client-side ReviewPromptBanner self-hides via engagement.reviewedAt
+- [Phase 05-legal-consulting]: approveLegalDraft CF reads specific draftId (not latest) to avoid race conditions; approve button hidden once approvedAt is set on draft
 
 ### Pending Todos
 
@@ -196,6 +197,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-18T11:49:40.869Z
-Stopped at: Completed 05-10: duplicate hire guard + ReviewPromptBanner review flow
+Last session: 2026-03-18T11:53:27.339Z
+Stopped at: Checkpoint: 05-11 Task 2 — Deploy Cloud Functions and E2E verify UAT gaps
 Resume file: None
