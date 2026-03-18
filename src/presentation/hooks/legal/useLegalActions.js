@@ -138,11 +138,38 @@ export function useLegalActions() {
     }
   };
 
+  /**
+   * Approve a contract draft and apply it to the deal.
+   * Only callable by the client on an active engagement.
+   *
+   * @param {string} engagementId - Engagement document ID
+   * @param {string} draftId - Draft document ID to approve
+   * @returns {Promise<Object|null>} { success } or null on error
+   */
+  const approveDraft = async (engagementId, draftId) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const fn = httpsCallable(functions, 'approveLegalDraft');
+      const result = await fn({ engagementId, draftId });
+      toast.success('Draft approved and applied to deal!');
+      return result.data;
+    } catch (err) {
+      const msg = err?.message || 'Failed to approve draft';
+      setError(msg);
+      toast.error(`Failed to approve draft: ${msg}`);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     hireLawyer,
     respondToHireRequest,
     closeLegalEngagement,
     submitReview,
+    approveDraft,
     loading,
     error,
   };

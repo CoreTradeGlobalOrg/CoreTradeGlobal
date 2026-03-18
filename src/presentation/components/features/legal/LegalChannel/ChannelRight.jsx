@@ -26,6 +26,7 @@ import {
   Clock,
   AlertTriangle,
   Plus,
+  Check,
   CheckCircle,
   Circle,
   X,
@@ -97,7 +98,7 @@ function SeverityBadge({ severity }) {
 // Contract tab
 // ─────────────────────────────────────────────────────────────────────────────
 
-function ContractTab({ drafts, onUploadDraft, isLawyer, isReadOnly }) {
+function ContractTab({ drafts, onUploadDraft, onApproveDraft, approveLoading, isLawyer, isReadOnly }) {
   const fileInputRef = useRef(null);
   const latestDraft = drafts.length > 0 ? drafts[drafts.length - 1] : null;
 
@@ -178,6 +179,26 @@ function ContractTab({ drafts, onUploadDraft, isLawyer, isReadOnly }) {
           <Download size={13} />
           Download Draft
         </a>
+
+        {/* Approve button — client only, active engagement, not yet approved */}
+        {!isLawyer && !isReadOnly && !latestDraft.approvedAt && (
+          <button
+            onClick={() => onApproveDraft?.(latestDraft.id)}
+            disabled={approveLoading}
+            className="mt-2 w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-green-600 hover:bg-green-500 text-white text-xs font-medium transition-colors disabled:opacity-50"
+          >
+            <Check size={13} />
+            {approveLoading ? 'Approving...' : 'Approve & Apply to Deal'}
+          </button>
+        )}
+
+        {/* Approved badge */}
+        {latestDraft.approvedAt && (
+          <div className="mt-2 flex items-center justify-center gap-1.5 text-xs text-green-400">
+            <CheckCircle size={13} />
+            Approved &amp; applied to deal
+          </div>
+        )}
       </div>
 
       {/* Upload new draft button (lawyer only) */}
@@ -483,6 +504,8 @@ const TABS = [
  * @param {Function} props.onUploadDraft
  * @param {Function} props.onAddRisk
  * @param {Function} props.onToggleRiskStatus
+ * @param {Function} props.onApproveDraft
+ * @param {boolean} props.approveLoading
  * @param {boolean} props.isLawyer
  * @param {boolean} props.isReadOnly
  */
@@ -492,6 +515,8 @@ export function ChannelRight({
   onUploadDraft,
   onAddRisk,
   onToggleRiskStatus,
+  onApproveDraft,
+  approveLoading,
   isLawyer,
   isReadOnly,
 }) {
@@ -543,6 +568,8 @@ export function ChannelRight({
           <ContractTab
             drafts={drafts}
             onUploadDraft={onUploadDraft}
+            onApproveDraft={onApproveDraft}
+            approveLoading={approveLoading}
             isLawyer={isLawyer}
             isReadOnly={isReadOnly}
           />

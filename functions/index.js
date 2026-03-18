@@ -3451,6 +3451,7 @@ function getLegalEventTitle(eventType) {
     new_message_from_client: 'New message from your client',
     new_draft: 'New contract draft shared',
     risk_update: 'Risk assessment updated',
+    draft_approved: 'Contract draft approved',
   };
   return map[eventType] || 'Legal consultation update';
 }
@@ -3473,6 +3474,7 @@ function getLegalEventBody(eventType, dealProductName) {
     new_message_from_client: `Your client sent a message regarding ${name}.`,
     new_draft: `A new contract draft has been shared for ${name}.`,
     risk_update: `The risk assessment for ${name} has been updated.`,
+    draft_approved: `Your client has approved a contract draft for ${name}.`,
   };
   return map[eventType] || `There is a new update for your legal consultation on ${name}.`;
 }
@@ -3912,6 +3914,85 @@ exports.submitLawyerReview = onCall(async (request) => {
   });
 
   console.log(`submitLawyerReview: client ${uid} reviewed lawyer ${engagement.lawyerId} for engagement ${engagementId} (rating: ${ratingInt})`);
+  return { success: true };
+});
+
+/**
+ * approveLegalDraft — onCall
+ *
+ * Allows a client to approve the latest contract draft in an active engagement.
+ * Copies draft metadata to the deal document as deal.legalContract so buyer/seller
+ * can access the finalized contract through the deal.
+ *
+ * @param {Object} data - { engagementId, draftId }
+ * @returns {Promise<{ success: boolean }>}
+ */
+exports.approveLegalDraft = onCall(async (request) => {
+  const { engagementId, draftId } = request.data;
+  const uid = request.auth?.uid;
+
+  if (!uid) throw new HttpsError('unauthenticated', 'Must be logged in.');
+  if (!engagementId || !draftId) {
+    throw new HttpsError('invalid-argument', 'engagementId and draftId are required.');
+  }
+
+  // Read engagement
+  const engagementDoc = await db.collection('legalEngagements').doc(engagementId).get();
+  if (!engagementDoc.exists) throw new HttpsError('not-found', 'Engagement not found.');
+  const engagement = engagementDoc.data();
+
+  // Only client can approve
+  if (engagement.clientId !== uid) {
+    throw new HttpsError('permission-denied', 'Only the client can approve a draft.');
+  }
+
+  // Engagement must be active
+  if (engagement.status !== ENGAGEMENT_STATUS.ACTIVE) {
+    throw new HttpsError('failed-precondition', 'Engagement must be active to approve a draft.');
+  }
+
+  // Read the specific draft
+  const draftDoc = await db.collection('legalEngagements').doc(engagementId)
+    .collection('contractDrafts').doc(draftId).get();
+  if (!draftDoc.exists) throw new HttpsError('not-found', 'Draft not found.');
+  const draft = draftDoc.data();
+
+  // Write draft info to deal document as legalContract
+  const dealRef = db.collection('deals').doc(engagement.dealId);
+  await dealRef.update({
+    legalContract: {
+      fileName: draft.fileName,
+      fileUrl: draft.fileUrl,
+      version: draft.version,
+      approvedBy: uid,
+      approvedAt: Timestamp.now(),
+      engagementId,
+      draftId,
+    },
+    updatedAt: Timestamp.now(),
+  });
+
+  // Mark draft as approved
+  await db.collection('legalEngagements').doc(engagementId)
+    .collection('contractDrafts').doc(draftId).update({
+      approvedAt: Timestamp.now(),
+      approvedBy: uid,
+    });
+
+  // System message in channel
+  await db.collection('legalEngagements').doc(engagementId)
+    .collection('legalMessages').add({
+      senderId: 'system',
+      senderName: 'System',
+      text: `Contract draft v${draft.version} has been approved and applied to the deal.`,
+      type: 'system',
+      createdAt: Timestamp.now(),
+    });
+
+  // Notify lawyer
+  await sendLegalNotification(engagementId, 'draft_approved', engagement.lawyerId, engagement.dealProductName, engagement.dealId);
+
+  console.log(`approveLegalDraft: client ${uid} approved draft ${draftId} for engagement ${engagementId}`);
   return { success: true };
 });
 

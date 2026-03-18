@@ -89,7 +89,7 @@ export function LegalChannel({ engagement, deal, currentUser, isLawyer, isReadOn
     engagement?.id,
     currentUser
   );
-  const { closeLegalEngagement, submitReview, loading: actionLoading } = useLegalActions();
+  const { closeLegalEngagement, submitReview, approveDraft, loading: actionLoading } = useLegalActions();
 
   const handleCloseEngagement = () => {
     if (!engagement?.id) return;
@@ -104,6 +104,11 @@ export function LegalChannel({ engagement, deal, currentUser, isLawyer, isReadOn
   const handleSubmitReview = async (rating, comment) => {
     if (!engagement?.id) return;
     await submitReview(engagement.id, rating, comment);
+  };
+
+  const handleApproveDraft = async (draftId) => {
+    if (!engagement?.id) return;
+    await approveDraft(engagement.id, draftId);
   };
 
   return (
@@ -230,6 +235,8 @@ export function LegalChannel({ engagement, deal, currentUser, isLawyer, isReadOn
             onUploadDraft={uploadDraft}
             onAddRisk={addRisk}
             onToggleRiskStatus={toggleRiskStatus}
+            onApproveDraft={handleApproveDraft}
+            approveLoading={actionLoading}
             isLawyer={isLawyer}
             isReadOnly={isReadOnly}
           />
