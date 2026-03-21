@@ -12,10 +12,11 @@
 
 'use client';
 
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2, Send, RefreshCw } from 'lucide-react';
+import { DatePicker } from '@/presentation/components/common/DatePicker/DatePicker';
 import {
   ICC_COVERAGE,
   COVERAGE_SCOPE,
@@ -134,6 +135,7 @@ export function QuoteFormInsurance({ requestId, existingQuote, actions, onSucces
     register,
     handleSubmit,
     watch,
+    control,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(insuranceQuoteSchema),
@@ -299,30 +301,36 @@ export function QuoteFormInsurance({ requestId, existingQuote, actions, onSucces
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="block text-xs text-[#8899AA] mb-1">Policy Start Date</label>
-            <style>{`
-              input[type="date"].insurance-date::-webkit-calendar-picker-indicator {
-                filter: invert(70%) sepia(30%) saturate(600%) hue-rotate(10deg);
-                cursor: pointer;
-              }
-            `}</style>
-            <input
-              type="date"
-              {...register('policyStartDate')}
-              min={new Date().toISOString().split('T')[0]}
-              className="insurance-date w-full bg-[#0F1C2E] border border-[#2A3B52] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-orange-500/50 transition-colors"
+            <Controller
+              name="policyStartDate"
+              control={control}
+              render={({ field }) => (
+                <DatePicker
+                  value={field.value}
+                  onChange={field.onChange}
+                  minDate={new Date().toISOString().split('T')[0]}
+                  placeholder="Start date..."
+                  accentColor="orange"
+                />
+              )}
             />
           </div>
           <div>
             <label className="block text-xs text-[#8899AA] mb-1">Policy End Date</label>
-            <input
-              type="date"
-              {...register('policyEndDate')}
-              min={new Date().toISOString().split('T')[0]}
-              className="insurance-date w-full bg-[#0F1C2E] border border-[#2A3B52] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-orange-500/50 transition-colors"
+            <Controller
+              name="policyEndDate"
+              control={control}
+              render={({ field }) => (
+                <DatePicker
+                  value={field.value}
+                  onChange={field.onChange}
+                  minDate={new Date().toISOString().split('T')[0]}
+                  placeholder="End date..."
+                  accentColor="orange"
+                  error={errors.policyEndDate?.message}
+                />
+              )}
             />
-            {errors.policyEndDate && (
-              <p className="text-xs text-red-400 mt-1">{errors.policyEndDate.message}</p>
-            )}
           </div>
         </div>
 

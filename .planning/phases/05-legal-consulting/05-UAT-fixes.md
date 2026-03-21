@@ -1,5 +1,5 @@
 ---
-status: complete
+status: diagnosed
 phase: 05-legal-consulting
 source: 05-09-SUMMARY.md, 05-10-SUMMARY.md, 05-11-SUMMARY.md
 started: 2026-03-21T10:00:00Z
@@ -63,10 +63,14 @@ skipped: 0
   reason: "User reported: pass but when client send it does not dissappear as if client didn't send yet"
   severity: minor
   test: 5
-  root_cause: ""
-  artifacts: []
-  missing: []
+  root_cause: "subscribeToEngagementForDeal in LegalEngagementRepository.js missing includeMetadataChanges:true — server-side reviewedAt update doesn't trigger immediate re-render"
+  artifacts:
+    - path: "src/data/repositories/LegalEngagementRepository.js"
+      issue: "Line 131: onSnapshot missing includeMetadataChanges option"
+  missing:
+    - "Add { includeMetadataChanges: true } to subscribeToEngagementForDeal onSnapshot call"
   debug_session: ""
+  fix_applied: true
 
 ## Additional Bugs (found during testing, not from fix plans)
 

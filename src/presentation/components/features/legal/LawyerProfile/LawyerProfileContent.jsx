@@ -23,7 +23,9 @@ import { useSearchParams } from 'next/navigation';
 import { Star, CheckCircle, Clock, Briefcase, Award, MessageCircle, GraduationCap, Globe2, Gavel } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { container } from '@/core/di/container';
+import { useAuth } from '@/presentation/contexts/AuthContext';
 import { useLegalActions } from '@/presentation/hooks/legal/useLegalActions';
+import { useLegalEngagement } from '@/presentation/hooks/legal/useLegalEngagement';
 
 // -----------------------------------------------------------------------
 // Helpers
@@ -169,7 +171,9 @@ export function LawyerProfileContent({ profileUser, isOwnProfile }) {
 
   const searchParams = useSearchParams();
   const dealId = searchParams.get('dealId');
+  const { user: currentUser } = useAuth();
   const { hireLawyer, loading: hireLoading } = useLegalActions();
+  const { engagement } = useLegalEngagement(dealId, currentUser?.uid);
 
   const handleHireClick = async () => {
     if (hireLoading) return;
@@ -324,10 +328,10 @@ export function LawyerProfileContent({ profileUser, isOwnProfile }) {
           ) : (
             <button
               onClick={handleHireClick}
-              disabled={hireLoading}
+              disabled={hireLoading || !!engagement}
               className="w-full sm:w-auto px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white text-sm font-bold transition-all shadow-lg hover:shadow-purple-500/25 disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              {hireLoading ? 'Hiring...' : 'Hire This Lawyer'}
+              {hireLoading ? 'Hiring...' : engagement ? 'Request Sent' : 'Hire This Lawyer'}
             </button>
           )}
         </div>

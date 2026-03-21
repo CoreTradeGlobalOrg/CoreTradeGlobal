@@ -52,7 +52,7 @@ export const functions = getFunctions(app);
 /**
  * Connect to emulators in development
  */
-if (process.env.NODE_ENV === 'development') {
+if (process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_USE_EMULATOR === 'true') {
   connectFunctionsEmulator(functions, '127.0.0.1', 5001);
   console.log('Connected to Functions Emulator');
 }

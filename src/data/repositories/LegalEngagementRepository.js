@@ -95,6 +95,7 @@ export class LegalEngagementRepository {
 
     return onSnapshot(
       q,
+      { includeMetadataChanges: true },
       (snap) => {
         const engagements = snap.docs.map((docSnap) =>
           LegalEngagement.fromFirestore({ id: docSnap.id, ...docSnap.data() })
@@ -130,6 +131,7 @@ export class LegalEngagementRepository {
 
     return onSnapshot(
       q,
+      { includeMetadataChanges: true },
       (snap) => {
         if (snap.docs.length > 0) {
           const docSnap = snap.docs[0];

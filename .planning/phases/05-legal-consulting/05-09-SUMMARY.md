@@ -104,3 +104,12 @@ None — no external service configuration required.
 ---
 *Phase: 05-legal-consulting*
 *Completed: 2026-03-18*
+
+## Self-Check: PASSED
+
+- FOUND: src/app/(main)/deals/[dealId]/legal/page.jsx
+- FOUND: src/data/repositories/LegalEngagementRepository.js
+- FOUND: functions/index.js
+- FOUND: .planning/phases/05-legal-consulting/05-09-SUMMARY.md
+- FOUND: commit 4195a25 (Task 1)
+- FOUND: commit 28ccde2 (Task 2)

@@ -3984,7 +3984,7 @@ exports.approveLegalDraft = onCall(async (request) => {
     .collection('legalMessages').add({
       senderId: 'system',
       senderName: 'System',
-      text: `Contract draft v${draft.version} has been approved and applied to the deal.`,
+      content: `Contract draft v${draft.version} has been approved and applied to the deal.`,
       type: 'system',
       createdAt: Timestamp.now(),
     });

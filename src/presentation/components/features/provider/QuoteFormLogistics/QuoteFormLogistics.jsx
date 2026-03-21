@@ -13,10 +13,11 @@
 
 'use client';
 
-import { useForm, useWatch } from 'react-hook-form';
+import { useForm, useWatch, Controller } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2, Send, RefreshCw } from 'lucide-react';
+import { DatePicker } from '@/presentation/components/common/DatePicker/DatePicker';
 import {
   TRANSPORT_MODE,
   CONTAINER_TYPE,
@@ -243,30 +244,36 @@ export function QuoteFormLogistics({ requestId, existingQuote, actions, onSucces
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="block text-xs text-[#8899AA] mb-1">Loading Date</label>
-            <style>{`
-              input[type="date"].logistics-date::-webkit-calendar-picker-indicator {
-                filter: invert(70%) sepia(30%) saturate(600%) hue-rotate(90deg);
-                cursor: pointer;
-              }
-            `}</style>
-            <input
-              type="date"
-              {...register('loadingDate')}
-              min={new Date().toISOString().split('T')[0]}
-              className="logistics-date w-full bg-[#0F1C2E] border border-[#2A3B52] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-green-500/50 transition-colors"
+            <Controller
+              name="loadingDate"
+              control={control}
+              render={({ field }) => (
+                <DatePicker
+                  value={field.value}
+                  onChange={field.onChange}
+                  minDate={new Date().toISOString().split('T')[0]}
+                  placeholder="Loading date..."
+                  accentColor="green"
+                />
+              )}
             />
           </div>
           <div>
             <label className="block text-xs text-[#8899AA] mb-1">Estimated Arrival</label>
-            <input
-              type="date"
-              {...register('estimatedArrival')}
-              min={new Date().toISOString().split('T')[0]}
-              className="logistics-date w-full bg-[#0F1C2E] border border-[#2A3B52] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-green-500/50 transition-colors"
+            <Controller
+              name="estimatedArrival"
+              control={control}
+              render={({ field }) => (
+                <DatePicker
+                  value={field.value}
+                  onChange={field.onChange}
+                  minDate={new Date().toISOString().split('T')[0]}
+                  placeholder="Arrival date..."
+                  accentColor="green"
+                  error={errors.estimatedArrival?.message}
+                />
+              )}
             />
-            {errors.estimatedArrival && (
-              <p className="text-xs text-red-400 mt-1">{errors.estimatedArrival.message}</p>
-            )}
           </div>
         </div>
 

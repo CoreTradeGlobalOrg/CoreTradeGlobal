@@ -30,6 +30,7 @@ export class LegalEngagement {
    * @param {string} status - Engagement status (ENGAGEMENT_STATUS enum)
    * @param {Date|null} createdAt - Creation timestamp
    * @param {Date|null} updatedAt - Last update timestamp
+   * @param {Date|null} reviewedAt - When the client reviewed the lawyer (null if not yet reviewed)
    */
   constructor(
     id,
@@ -42,7 +43,8 @@ export class LegalEngagement {
     lawyerDisplayName,
     status,
     createdAt,
-    updatedAt
+    updatedAt,
+    reviewedAt
   ) {
     this.id = id;
     this.clientId = clientId;
@@ -55,6 +57,7 @@ export class LegalEngagement {
     this.status = status || ENGAGEMENT_STATUS.PENDING;
     this.createdAt = createdAt || new Date();
     this.updatedAt = updatedAt || new Date();
+    this.reviewedAt = reviewedAt || null;
   }
 
   /**
@@ -76,7 +79,8 @@ export class LegalEngagement {
       data.lawyerDisplayName,
       data.status,
       data.createdAt?.toDate?.() || data.createdAt || null,
-      data.updatedAt?.toDate?.() || data.updatedAt || null
+      data.updatedAt?.toDate?.() || data.updatedAt || null,
+      data.reviewedAt?.toDate?.() || data.reviewedAt || null
     );
   }
 

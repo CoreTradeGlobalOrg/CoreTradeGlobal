@@ -78,7 +78,7 @@ function QuotesDetailPage() {
     selectedInsuranceQuote,
     selectedLogisticsQuote,
     loading: quotesLoading,
-  } = useQuotesForDeal(dealId);
+  } = useQuotesForDeal(dealId, currentUid);
 
   // Quote action handlers
   const actions = useQuoteActions();

@@ -318,9 +318,13 @@ export function DealForm({
         <div>
           <FieldLabel required>Delivery Deadline</FieldLabel>
           <style>{`
+            input[type="date"].deal-date {
+              position: relative;
+            }
             input[type="date"].deal-date::-webkit-calendar-picker-indicator {
               filter: invert(83%) sepia(40%) saturate(1000%) hue-rotate(360deg) brightness(103%) contrast(104%);
               cursor: pointer;
+              margin-left: auto;
             }
           `}</style>
           <input
@@ -328,7 +332,7 @@ export function DealForm({
             min={getTodayISODate()}
             {...register('deliveryDeadline')}
             disabled={loading}
-            className={`deal-date w-full px-3 pr-10 py-3 rounded-xl border text-white text-sm bg-[#0A1628]
+            className={`deal-date w-full px-3 py-3 rounded-xl border text-white text-sm bg-[#0A1628]
               focus:outline-none focus:ring-2 transition-all duration-200
               ${errors.deliveryDeadline
                 ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20'

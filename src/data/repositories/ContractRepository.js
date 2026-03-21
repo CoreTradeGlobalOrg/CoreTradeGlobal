@@ -37,7 +37,11 @@ export class ContractRepository {
 
     return onSnapshot(
       contractRef,
+      { includeMetadataChanges: true },
       (snap) => {
+        // Skip snapshots with pending writes to avoid overwriting optimistic UI
+        if (snap.metadata.hasPendingWrites) return;
+
         if (snap.exists()) {
           callback(Contract.fromFirestore(snap));
         } else {

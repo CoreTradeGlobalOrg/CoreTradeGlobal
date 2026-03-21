@@ -49,9 +49,16 @@ export function useContractActions(dealId, contract, currentUid, deal) {
   // ── Debounce timer ref ────────────────────────────────────────────────────
   const saveTimerRef = useRef(null);
 
+  // ── Guard: true while a debounced save is pending or in-flight ──────────
+  const isSavingRef = useRef(false);
+
   // ── Sync local state from Firestore contract on load/change ──────────────
   useEffect(() => {
     if (!contract || !currentUid || !deal) return;
+
+    // Skip server sync while a local save is pending — prevents race condition
+    // where the listener overwrites optimistic local state with stale server data
+    if (isSavingRef.current) return;
 
     const myApproval = contract.getMyApproval(currentUid, deal);
 
@@ -102,10 +109,13 @@ export function useContractActions(dealId, contract, currentUid, deal) {
     } catch (err) {
       // Draft saves are silent — log but don't toast
       console.error('[useContractActions] saveDraftApprovals error:', err);
+    } finally {
+      isSavingRef.current = false;
     }
   }, [dealId]);
 
   function debouncedSave(clauses) {
+    isSavingRef.current = true;
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(() => saveDraft(clauses), 500);
   }

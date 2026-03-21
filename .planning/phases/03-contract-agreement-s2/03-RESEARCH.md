@@ -808,19 +808,28 @@ export function ContractPage({ deal, contract, currentUserUid, actions }) {
         <div className="flex flex-col lg:flex-row gap-4">
           {/* Main column — clause accordion */}
           <div className="flex-1 min-w-0 space-y-3">
-            {/* Grouped by section */}
-            {groupedSections(contract.clauses).map((section) => (
-              <ClauseAccordion
-                key={section.id}
-                section={section}
-                myApproval={myApproval}
-                otherApproval={otherApproval}
-                otherPartyLabel={otherPartyLabel}
-                isReadOnly={hasISubmitted}
-                onClauseToggle={actions.toggleClause}
-                isBuyer={isBuyer}
-              />
-            ))}
+            {/* Grouped by section — use contract.getClausesBySection() from the Contract entity.
+                Returns an object keyed by section ID. Iterate CLAUSE_SECTIONS for ordering. */}
+            {(() => {
+              const grouped = contract.getClausesBySection();
+              return CLAUSE_SECTIONS.map(section => {
+                const sectionClauses = grouped[section.id] || [];
+                if (sectionClauses.length === 0) return null;
+                return (
+                  <ClauseAccordion
+                    key={section.id}
+                    section={section}
+                    clauses={sectionClauses}
+                    myApproval={myApproval}
+                    otherApproval={otherApproval}
+                    otherPartyLabel={otherPartyLabel}
+                    isReadOnly={hasISubmitted}
+                    onClauseToggle={actions.toggleClause}
+                    isBuyer={isBuyer}
+                  />
+                );
+              });
+            })()}
 
             {/* Submit button */}
             {!hasISubmitted && (
