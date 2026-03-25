@@ -159,7 +159,7 @@ export function NewsSection() {
     // Real-time subscription to news (fetch enough for lazy loading)
     const unsubscribe = firestoreDS.subscribeToQuery(
       'news',
-      { limit: 25 }, // Fetch enough for lazy loading
+      { orderBy: [['publishedAt', 'desc']], limit: 100 }, // Fetch enough for lazy loading, ordered by newest
       (fetchedNews) => {
         if (fetchedNews && fetchedNews.length > 0) {
           // Filter published news and sort by publishedAt client-side
