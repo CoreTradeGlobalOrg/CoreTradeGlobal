@@ -5,7 +5,7 @@ milestone_name: milestone
 status: completed
 stopped_at: "Checkpoint: 05-11 Task 2 — Deploy Cloud Functions and E2E verify UAT gaps"
 last_updated: "2026-03-18T11:53:30.705Z"
-last_activity: "2026-03-10 - Completed 05-05: 3-panel legal channel, useLegalMessages, useLegalChannel hooks, ChannelLeft/Center/Right/QuickActionToolbar"
+last_activity: "2026-03-25 - Completed quick task 4: Mark completed phases 1-5 as done in ROADMAP.md"
 progress:
   total_phases: 7
   completed_phases: 5
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-02-20)
 Phase: 5 of 7 (Legal Consulting) — COMPLETE
 Plan: 5 of 5 in current phase (05-05 complete — 3-panel legal channel UI at /deals/[dealId]/legal)
 Status: Phase 05 complete — ready for Phase 06 or 07
-Last activity: 2026-03-10 - Completed 05-05: 3-panel legal channel, useLegalMessages, useLegalChannel hooks, ChannelLeft/Center/Right/QuickActionToolbar
+Last activity: 2026-03-25 - Completed quick task 4: Mark completed phases 1-5 as done in ROADMAP.md
 
 Progress: [████████████] 68%
 
@@ -188,6 +188,7 @@ None yet.
 | 1 | Deal notification click navigates to deal page | 2026-02-23 | 7358c13 | [1-when-user-click-notification-for-deal-i-](./quick/1-when-user-click-notification-for-deal-i-/) |
 | 2 | Fix navbar for provider dashboard and admin nav override | 2026-03-06 | 33373f5 | [2-fix-navbar-for-provider-dashboard-and-si](./quick/2-fix-navbar-for-provider-dashboard-and-si/) |
 | 3 | Extract QuoteDetailView to /provider/quotes/[requestId] route | 2026-03-06 | 1d0d858 | [3-separate-provider-quote-detail-into-its-](./quick/3-separate-provider-quote-detail-into-its-/) |
+| 4 | Mark completed phases 1-5 as done in ROADMAP.md | 2026-03-25 |  | [4-mark-completed-phases-1-5-as-done-in-roa](./quick/4-mark-completed-phases-1-5-as-done-in-roa/) |
 
 ### Blockers/Concerns
 

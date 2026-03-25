@@ -38,7 +38,7 @@ Plans:
 - [x] 01-01-PLAN.md — Role constants, Cloud Functions (inviteUser, setUserRole, migrateExistingUsers), session security fix, Firestore rules rewrite
 - [x] 01-02-PLAN.md — Admin invite modal, invite tracking, onboarding wizard for invited users
 - [x] 01-03-PLAN.md — Role-based navigation, middleware route protection, forbidden page, RoleBadge, provider/lawyer placeholder pages
-- [ ] 01-04-PLAN.md — UAT gap closure: Cloud Functions emulator, admin navbar override, session error visibility
+- [x] 01-04-PLAN.md — UAT gap closure: Cloud Functions emulator, admin navbar override, session error visibility
 
 ### Phase 2: Deal Creation and Negotiation (S1)
 **Goal**: A buyer and seller can negotiate a deal through structured offers and counter-offers, with real-time updates and a complete audit trail
@@ -57,9 +57,9 @@ Plans:
 - [x] 02-02-PLAN.md -- Deal creation flow: "Initiate Deal" in chat, /deals/new page with Incoterms + UN/LOCODE, My Deals list page
 - [x] 02-03-PLAN.md -- Deal negotiation page: offer timeline, counter-offer form, sidebar, countdown timer, presence indicator
 - [x] 02-04-PLAN.md -- Notifications (in-app + FCM + Resend email), expiry checker, reminders, navbar link, end-to-end verification
-- [ ] 02-05-PLAN.md -- UAT gap closure: Fix Firestore offers subcollection rules for member access, product quantity/unit pre-fill with UNECE mapping
-- [ ] 02-06-PLAN.md -- UAT gap closure: Fix FCM deal notification handlers, remove duplicate system messages, add system message rendering in chat
-- [ ] 02-07-PLAN.md -- Verification gap closure: Fix submitCounterOffer parameter name mismatch (offerData -> offer)
+- [x] 02-05-PLAN.md -- UAT gap closure: Fix Firestore offers subcollection rules for member access, product quantity/unit pre-fill with UNECE mapping
+- [x] 02-06-PLAN.md -- UAT gap closure: Fix FCM deal notification handlers, remove duplicate system messages, add system message rendering in chat
+- [x] 02-07-PLAN.md -- Verification gap closure: Fix submitCounterOffer parameter name mismatch (offerData -> offer)
 
 ### Phase 3: Contract Agreement (S2)
 **Goal**: Both deal parties can review and individually approve contract clauses populated from the negotiation outcome, and the deal cannot advance until both approve
@@ -73,8 +73,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 03-01-PLAN.md — Data foundation: contractConstants, Contract entity, ContractRepository, deal status extension, Firestore rules, Cloud Functions (onDealAccepted, saveDraftApprovals, submitContractApproval), contract approval notifications
-- [ ] 03-02-PLAN.md — Contract page UI: route, hooks, accordion clause layout, dual-party real-time approval, financial sidebar, PDF export, DealPage integration, verification checkpoint
+- [x] 03-01-PLAN.md — Data foundation: contractConstants, Contract entity, ContractRepository, deal status extension, Firestore rules, Cloud Functions (onDealAccepted, saveDraftApprovals, submitContractApproval), contract approval notifications
+- [x] 03-02-PLAN.md — Contract page UI: route, hooks, accordion clause layout, dual-party real-time approval, financial sidebar, PDF export, DealPage integration, verification checkpoint
 
 ### Phase 4: Provider Portals and Insurance/Logistics Quotes (S3)
 **Goal**: Insurance and logistics providers can receive and respond to quote requests, and buyers can compare quotes and select providers -- with server-enforced validity and correct data visibility
@@ -89,12 +89,12 @@ Plans:
 **Plans**: 6 plans
 
 Plans:
-- [ ] 04-01-PLAN.md — Quote constants, entities, repositories, DI registration, deal status extension (PROVIDERS_SELECTED), DealCard badge
-- [ ] 04-02-PLAN.md — Cloud Functions (broadcast, submit, accept, decline, withdraw, confirm, expiry checker), Firestore rules, indexes
-- [ ] 04-03-PLAN.md — Provider portal: kanban dashboard, request cards, insurance and logistics quote forms, hooks, route
-- [ ] 04-04-PLAN.md — Buyer quotes comparison: filter/sort/ribbons, quote cards, cost breakdown sidebar, selection confirmation
-- [ ] 04-05-PLAN.md — DealPage integration (quotes banner, providers_selected terminal), ProgressTracker update, end-to-end verification checkpoint
-- [ ] 04-06-PLAN.md — UAT gap closure: providerType normalization fix, useQuoteForRequest hook, withdraw button visibility
+- [x] 04-01-PLAN.md — Quote constants, entities, repositories, DI registration, deal status extension (PROVIDERS_SELECTED), DealCard badge
+- [x] 04-02-PLAN.md — Cloud Functions (broadcast, submit, accept, decline, withdraw, confirm, expiry checker), Firestore rules, indexes
+- [x] 04-03-PLAN.md — Provider portal: kanban dashboard, request cards, insurance and logistics quote forms, hooks, route
+- [x] 04-04-PLAN.md — Buyer quotes comparison: filter/sort/ribbons, quote cards, cost breakdown sidebar, selection confirmation
+- [x] 04-05-PLAN.md — DealPage integration (quotes banner, providers_selected terminal), ProgressTracker update, end-to-end verification checkpoint
+- [x] 04-06-PLAN.md — UAT gap closure: providerType normalization fix, useQuoteForRequest hook, withdraw button visibility
 
 ### Phase 5: Legal Consulting
 **Goal**: Either deal party can independently hire a lawyer who gets a private, encrypted channel with their client and can review deals, draft contracts, and provide risk analysis -- without blocking the trade flow
@@ -114,12 +114,12 @@ Plans:
 - [x] 05-03-PLAN.md — Lawyer directory: /lawyers page with search/filter, profile adaptation for lawyer role
 - [x] 05-04-PLAN.md — Legal hiring UX: LegalBanner on DealPage, LawyerDashboard, engagement hooks
 - [x] 05-05-PLAN.md — Legal channel: 3-panel UI at /deals/[dealId]/legal with chat, drafts, risks
-- [ ] 05-06-PLAN.md — Navbar lawyer links, notification triggers, end-to-end verification
-- [ ] 05-07-PLAN.md — UAT gap closure: Fix dealId persistence through hire flow, LegalBanner text contrast
-- [ ] 05-08-PLAN.md — UAT gap closure: Build real /lawyer/channels and /lawyer/deals pages, update Navbar
-- [ ] 05-09-PLAN.md — UAT gap closure: Fix pending page role gate for lawyer, risk real-time subscription, notification link
-- [ ] 05-10-PLAN.md — UAT gap closure: Fix duplicate engagement creation, build review prompt UI
-- [ ] 05-11-PLAN.md — UAT gap closure: Approve draft flow (contract-to-deal), deploy all Cloud Functions
+- [x] 05-06-PLAN.md — Navbar lawyer links, notification triggers, end-to-end verification
+- [x] 05-07-PLAN.md — UAT gap closure: Fix dealId persistence through hire flow, LegalBanner text contrast
+- [x] 05-08-PLAN.md — UAT gap closure: Build real /lawyer/channels and /lawyer/deals pages, update Navbar
+- [x] 05-09-PLAN.md — UAT gap closure: Fix pending page role gate for lawyer, risk real-time subscription, notification link
+- [x] 05-10-PLAN.md — UAT gap closure: Fix duplicate engagement creation, build review prompt UI
+- [x] 05-11-PLAN.md — UAT gap closure: Approve draft flow (contract-to-deal), deploy all Cloud Functions
 
 ### Phase 6: Trade Summary and Shipment Tracking (S4)
 **Goal**: Both deal parties can view a complete trade summary with shipment tracking and milestone timeline, and every role sees a relevant dashboard
@@ -160,10 +160,10 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 (parallel with 3-4) -> 6 
 | 2. Deal Creation and Negotiation (S1) | 7/7 | Complete   | 2026-02-23 |
 | 3. Contract Agreement (S2) | 2/2 | Complete   | 2026-03-01 |
 | 4. Provider Portals and Insurance/Logistics Quotes (S3) | 6/6 | Complete   | 2026-03-03 |
-| 5. Legal Consulting | 10/11 | In Progress|  |
+| 5. Legal Consulting | 11/11 | Complete   | 2026-03-12 |
 | 6. Trade Summary and Shipment Tracking (S4) | 0/0 | Not started | - |
 | 7. Platform Hardening | 0/0 | Not started | - |
 
 ---
 *Roadmap created: 2026-02-20*
-*Last updated: 2026-03-18*
+*Last updated: 2026-03-25*
