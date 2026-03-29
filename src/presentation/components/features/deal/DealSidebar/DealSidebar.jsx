@@ -14,6 +14,8 @@ import { container } from '@/core/di/container';
 import { BadgeCheck, MapPin, Calendar } from 'lucide-react';
 import { DEAL_STATUS, PAYMENT_TERMS } from '@/core/constants/dealConstants';
 import { getIncotermByCode } from '@/core/constants/incoterms';
+import { OrderTimeline } from '@/presentation/components/features/deal/TradeSummary/OrderTimeline';
+import { ETACountdown } from '@/presentation/components/features/deal/TradeSummary/ETACountdown';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Party Info Card
@@ -238,10 +240,22 @@ function OfferSummary({ deal, latestOffer }) {
  * @param {import('@/domain/entities/Offer').Offer|null} props.latestOffer
  * @param {string} props.currentUserUid
  * @param {boolean} [props.otherPartyViewing] - Presence indicator
+ * @param {import('@/domain/entities/ShipmentUpdate').ShipmentUpdate[]} [props.shipmentUpdates] - Optional pre-fetched shipment updates
  */
-export function DealSidebar({ deal, latestOffer, currentUserUid, otherPartyViewing }) {
+export function DealSidebar({ deal, latestOffer, currentUserUid, otherPartyViewing, shipmentUpdates: propShipmentUpdates }) {
   const [buyerData, setBuyerData] = useState(null);
   const [sellerData, setSellerData] = useState(null);
+  const [ownShipmentUpdates, setOwnShipmentUpdates] = useState([]);
+
+  // Determine if this sidebar needs to show the timeline
+  const showTimeline = deal && [
+    DEAL_STATUS.CONTRACT_APPROVED,
+    DEAL_STATUS.PROVIDERS_SELECTED,
+    DEAL_STATUS.DELIVERED,
+  ].includes(deal.status);
+
+  // Use prop-provided updates if available; otherwise self-subscribe when timeline is visible
+  const shipmentUpdates = propShipmentUpdates ?? ownShipmentUpdates;
 
   useEffect(() => {
     if (!deal) return;
@@ -259,6 +273,17 @@ export function DealSidebar({ deal, latestOffer, currentUserUid, otherPartyViewi
       console.error('DealSidebar: failed to fetch party data', err);
     });
   }, [deal?.buyerId, deal?.sellerId]);
+
+  // Self-subscribe to shipment updates when showing timeline and no prop data provided
+  useEffect(() => {
+    if (!showTimeline || propShipmentUpdates !== undefined || !deal?.id) return;
+
+    const shipmentRepo = container.getShipmentRepository();
+    const unsub = shipmentRepo.subscribeToShipmentUpdates(deal.id, (updates) => {
+      setOwnShipmentUpdates(updates);
+    });
+    return () => unsub();
+  }, [showTimeline, propShipmentUpdates, deal?.id]);
 
   if (!deal) return null;
 
@@ -301,10 +326,24 @@ export function DealSidebar({ deal, latestOffer, currentUserUid, otherPartyViewi
         </div>
       </div>
 
-      {/* Progress Tracker */}
+      {/* Progress Tracker / Order Timeline */}
       <div className="bg-[#1A283B] border border-[#2A3B52] rounded-xl p-4">
-        <h4 className="text-xs font-semibold text-[#8899AA] uppercase tracking-wide mb-3">Progress</h4>
-        <ProgressTracker dealStatus={deal.status} />
+        {showTimeline ? (
+          <>
+            <h4 className="text-xs font-semibold text-[#8899AA] uppercase tracking-wide mb-3">Order Timeline</h4>
+            <OrderTimeline deal={deal} shipmentUpdates={shipmentUpdates} dealId={deal.id} />
+            {deal.shipmentEtaDate && (
+              <div className="mt-3">
+                <ETACountdown etaDate={deal.shipmentEtaDate} />
+              </div>
+            )}
+          </>
+        ) : (
+          <>
+            <h4 className="text-xs font-semibold text-[#8899AA] uppercase tracking-wide mb-3">Progress</h4>
+            <ProgressTracker dealStatus={deal.status} />
+          </>
+        )}
       </div>
 
       {/* Current Offer Summary */}
