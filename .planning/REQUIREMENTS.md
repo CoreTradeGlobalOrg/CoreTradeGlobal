@@ -65,8 +65,8 @@ Requirements for initial release. Each maps to roadmap phases.
 ### Tracking & Summary (S4)
 
 - [ ] **TRACK-01**: Buyer and seller can view trade summary dashboard with deal overview
-- [ ] **TRACK-02**: Shipment tracking with provider-submitted status updates
-- [ ] **TRACK-03**: Order timeline showing all completed milestones with timestamps
+- [x] **TRACK-02**: Shipment tracking with provider-submitted status updates
+- [x] **TRACK-03**: Order timeline showing all completed milestones with timestamps
 - [ ] **TRACK-04**: Role-dispatched dashboard showing relevant view per role (member, lawyer, provider)
 
 ### Live Currency and Freight Intelligence
@@ -159,8 +159,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PORTAL-04 | Phase 4 | Complete |
 | PORTAL-05 | Phase 4 | Complete |
 | TRACK-01 | Phase 6 | Pending |
-| TRACK-02 | Phase 6 | Pending |
-| TRACK-03 | Phase 6 | Pending |
+| TRACK-02 | Phase 6 | Complete |
+| TRACK-03 | Phase 6 | Complete |
 | TRACK-04 | Phase 6 | Pending |
 | HARDEN-01 | Phase 7 | Pending |
 | HARDEN-02 | Phase 7 | Pending |

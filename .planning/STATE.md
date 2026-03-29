@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: completed
-stopped_at: Phase 6 context gathered
-last_updated: "2026-03-25T13:43:53.955Z"
-last_activity: "2026-03-25 - Completed quick task 4: Mark completed phases 1-5 as done in ROADMAP.md"
+status: in_progress
+stopped_at: "Completed 06-trade-summary-shipment-tracking/06-01-PLAN.md"
+last_updated: "2026-03-29T00:00:00Z"
+last_activity: "2026-03-29 - Completed 06-01: Shipment tracking data layer and Cloud Functions"
 progress:
   total_phases: 7
   completed_phases: 5
-  total_plans: 30
-  completed_plans: 30
-  percent: 68
+  total_plans: 34
+  completed_plans: 31
+  percent: 71
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-20)
 
 **Core value:** A member can complete an entire international trade deal -- negotiate, get legal advice, insure cargo, arrange shipping, and track delivery -- without leaving the platform.
-**Current focus:** Phase 5: Legal Consulting
+**Current focus:** Phase 6: Trade Summary and Shipment Tracking
 
 ## Current Position
 
-Phase: 5 of 7 (Legal Consulting) — COMPLETE
-Plan: 5 of 5 in current phase (05-05 complete — 3-panel legal channel UI at /deals/[dealId]/legal)
-Status: Phase 05 complete — ready for Phase 06 or 07
-Last activity: 2026-03-25 - Completed quick task 4: Mark completed phases 1-5 as done in ROADMAP.md
+Phase: 6 of 7 (Trade Summary and Shipment Tracking) — IN PROGRESS
+Plan: 1 of 4 in current phase (06-01 complete — shipment tracking data layer, CFs, DELIVERED status)
+Status: Phase 06 plan 01 complete — ready for 06-02
+Last activity: 2026-03-29 - Completed 06-01: Shipment tracking data layer and Cloud Functions
 
-Progress: [████████████] 68%
+Progress: [█████████████] 71%
 
 ## Performance Metrics
 
@@ -177,6 +177,12 @@ Recent decisions affecting current work:
 - [Phase 05-10]: hireLayyer CF uses db.runTransaction for atomic existence check + set — prevents concurrent duplicate engagement docs
 - [Phase 05-10]: submitLawyerReview CF sets reviewedAt on engagement doc — client-side ReviewPromptBanner self-hides via engagement.reviewedAt
 - [Phase 05-legal-consulting]: approveLegalDraft CF reads specific draftId (not latest) to avoid race conditions; approve button hidden once approvedAt is set on draft
+- [06-01]: VALID_DEAL_TRANSITIONS_CF added as named object (not inline map) for readability and transaction guard reuse
+- [06-01]: appendStatusHistory uses FieldValue.arrayUnion — race-condition-safe; called outside transactions to prevent duplicate writes on retry
+- [06-01]: confirmInsuranceCoverage uses deterministic doc ID coverage_{dealId} — idempotent re-calls return already-exists error (client can safely retry)
+- [06-01]: submitShipmentUpdate denormalizes currentShipmentStatus and shipmentEtaDate on deal doc for DealCard display without N+1 queries
+- [06-01]: DELIVERED state transition guarded inside runTransaction — prevents race condition if multiple delivered updates are submitted
+- [06-01]: sendDealNotifications called with senderUid='system' for shipment events — both buyer and seller receive notifications
 
 ### Pending Todos
 

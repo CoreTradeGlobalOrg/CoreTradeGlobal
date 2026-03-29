@@ -133,7 +133,7 @@ Plans:
 **Plans**: 4 plans
 
 Plans:
-- [ ] 06-01-PLAN.md — Data foundation: shipment constants, ShipmentUpdate entity, ShipmentRepository, DELIVERED state machine, Cloud Functions (submitShipmentUpdate, confirmInsuranceCoverage), statusHistory, Firestore rules
+- [x] 06-01-PLAN.md — Data foundation: shipment constants, ShipmentUpdate entity, ShipmentRepository, DELIVERED state machine, Cloud Functions (submitShipmentUpdate, confirmInsuranceCoverage), statusHistory, Firestore rules
 - [ ] 06-02-PLAN.md — Trade Summary tab UI: TradeSummaryTab with hero banner, trade info bar, sections (overview, parties, costs, documents, legal), TradeRouteMap, DealPage tab integration, print/PDF export
 - [ ] 06-03-PLAN.md — Provider dashboard: Active Shipments tab for logistics (ShipmentUpdateForm), Insurance Coverage tab for insurance (Confirm Coverage), useActiveShipments hook
 - [ ] 06-04-PLAN.md — Order timeline (milestone categories), ETACountdown, DealSidebar integration, DealCard tracking badge, member deals page stats, admin dashboard trade stats
