@@ -1179,4 +1179,40 @@ a:hover {
   .pt-\[120px\] {
     padding-top: 20px !important;
   }
+
+  /* Trade Summary print styles */
+  /* Show trade summary full-width for PDF output */
+  .trade-summary-print {
+    max-width: 100% !important;
+    padding: 20px !important;
+  }
+
+  /* Force two-column summary to single-column for print clarity */
+  .trade-summary-print .lg\:flex-row {
+    flex-direction: column !important;
+  }
+
+  /* Keep card borders visible on print */
+  .trade-summary-print [class*="border"] {
+    border-color: #ccc !important;
+  }
+
+  /* Readable text on white background */
+  .trade-summary-print,
+  .trade-summary-print * {
+    color: black !important;
+    background: white !important;
+    border-color: #ccc !important;
+  }
+
+  /* Page break rules for trade summary sections */
+  .trade-summary-print .space-y-4 > * {
+    break-inside: avoid;
+  }
+
+  /* Page margins for clean PDF output */
+  @page {
+    margin: 20mm 15mm;
+    size: A4;
+  }
 }

@@ -14,7 +14,7 @@
 
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { FileText, Package } from 'lucide-react';
@@ -23,6 +23,7 @@ import { OfferTimeline } from '../OfferTimeline/OfferTimeline';
 import { CounterOfferForm } from '../CounterOfferForm/CounterOfferForm';
 import { DealSidebar } from '../DealSidebar/DealSidebar';
 import { CountdownTimer } from '../CountdownTimer/CountdownTimer';
+import { TradeSummaryTab } from '../TradeSummary/TradeSummaryTab';
 import { DEAL_STATUS } from '@/core/constants/dealConstants';
 import { LegalBanner } from '@/presentation/components/features/legal/LegalBanner/LegalBanner';
 
@@ -60,6 +61,13 @@ function TerminalBanner({ status }) {
       border: 'border-blue-500/30',
       text: 'text-blue-400',
     },
+    [DEAL_STATUS.DELIVERED]: {
+      label: 'Trade Delivered',
+      sub: 'Shipment has been delivered. This trade is complete.',
+      bg: 'bg-green-900/20',
+      border: 'border-green-700/50',
+      text: 'text-green-400',
+    },
   };
 
   const cfg = configs[status];
@@ -91,6 +99,9 @@ export function DealPage({ deal, offers, currentUserUid, actions, otherPartyView
   const router = useRouter();
   const prevStatusRef = useRef(null);
 
+  // Tab state: 'negotiation' | 'summary'
+  const [activeTab, setActiveTab] = useState('negotiation');
+
   // Auto-navigate when deal status transitions to next stage
   useEffect(() => {
     if (!deal) return;
@@ -117,6 +128,27 @@ export function DealPage({ deal, offers, currentUserUid, actions, otherPartyView
     }
   }, [deal?.status, deal?.id, router]);
 
+  // Show summary tab for deals that are past the negotiation stage
+  const showSummaryTab = deal
+    ? [
+        DEAL_STATUS.CONTRACT_APPROVED,
+        DEAL_STATUS.PROVIDERS_SELECTED,
+        DEAL_STATUS.DELIVERED,
+        DEAL_STATUS.ACCEPTED,
+      ].includes(deal.status)
+    : false;
+
+  // Auto-switch to summary tab for statuses where tracking is the primary concern
+  useEffect(() => {
+    if (!deal) return;
+    if (
+      deal.status === DEAL_STATUS.PROVIDERS_SELECTED ||
+      deal.status === DEAL_STATUS.DELIVERED
+    ) {
+      setActiveTab('summary');
+    }
+  }, [deal?.status]);
+
   if (!deal) return null;
 
   const isTerminal = deal.isTerminal?.() ?? [
@@ -125,6 +157,7 @@ export function DealPage({ deal, offers, currentUserUid, actions, otherPartyView
     DEAL_STATUS.WITHDRAWN,
     DEAL_STATUS.CONTRACT_APPROVED,
     DEAL_STATUS.PROVIDERS_SELECTED,
+    DEAL_STATUS.DELIVERED,
   ].includes(deal.status);
 
   // Latest offer for pre-fill and sidebar summary
@@ -194,49 +227,84 @@ export function DealPage({ deal, offers, currentUserUid, actions, otherPartyView
         {/* Legal banner — visible at ALL deal stages; manages its own show/hide logic */}
         <LegalBanner dealId={deal.id} currentUserUid={currentUserUid} />
 
-        {/* Main content + sidebar */}
-        <div className="flex flex-col lg:flex-row gap-4">
+        {/* Tab switcher — only shown when summary tab is available */}
+        {showSummaryTab && (
+          <div className="flex border-b border-[#2A3B52] no-print">
+            <button
+              type="button"
+              onClick={() => setActiveTab('negotiation')}
+              className={`px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px ${
+                activeTab === 'negotiation'
+                  ? 'border-[#FFD700] text-[#FFD700]'
+                  : 'border-transparent text-[#8899AA] hover:text-white'
+              }`}
+            >
+              Negotiation
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('summary')}
+              className={`px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px ${
+                activeTab === 'summary'
+                  ? 'border-[#FFD700] text-[#FFD700]'
+                  : 'border-transparent text-[#8899AA] hover:text-white'
+              }`}
+            >
+              Trade Summary
+            </button>
+          </div>
+        )}
 
-          {/* Main column */}
-          <div className="flex-1 min-w-0 space-y-4">
-            {/* Offer Timeline */}
-            <div className="bg-[#1A283B] border border-[#2A3B52] rounded-xl p-4">
-              <h2 className="text-sm font-semibold text-white mb-4">
-                Negotiation History
-                <span className="ml-2 text-xs text-[#8899AA] font-normal">
-                  {offers.length} round{offers.length !== 1 ? 's' : ''}
-                </span>
-              </h2>
-              <OfferTimeline
-                offers={offers}
-                deal={deal}
-                currentUserUid={currentUserUid}
-                actions={actions}
-              />
+        {/* Trade Summary tab content */}
+        {showSummaryTab && activeTab === 'summary' ? (
+          <div className="trade-summary-print">
+            <TradeSummaryTab dealId={deal.id} currentUserUid={currentUserUid} />
+          </div>
+        ) : (
+          /* Main content + sidebar (Negotiation tab) */
+          <div className="flex flex-col lg:flex-row gap-4">
+
+            {/* Main column */}
+            <div className="flex-1 min-w-0 space-y-4">
+              {/* Offer Timeline */}
+              <div className="bg-[#1A283B] border border-[#2A3B52] rounded-xl p-4">
+                <h2 className="text-sm font-semibold text-white mb-4">
+                  Negotiation History
+                  <span className="ml-2 text-xs text-[#8899AA] font-normal">
+                    {offers.length} round{offers.length !== 1 ? 's' : ''}
+                  </span>
+                </h2>
+                <OfferTimeline
+                  offers={offers}
+                  deal={deal}
+                  currentUserUid={currentUserUid}
+                  actions={actions}
+                />
+              </div>
+
+              {/* Counter-Offer Form — only visible during active negotiation */}
+              {deal.status === DEAL_STATUS.NEGOTIATING && (
+                <CounterOfferForm
+                  deal={deal}
+                  latestOffer={latestOffer}
+                  currentUserUid={currentUserUid}
+                  actions={actions}
+                  otherPartyData={null}
+                />
+              )}
             </div>
 
-            {/* Counter-Offer Form — only visible during active negotiation */}
-            {deal.status === DEAL_STATUS.NEGOTIATING && (
-              <CounterOfferForm
+            {/* Right sidebar */}
+            <div className="w-full lg:w-80 xl:w-96 flex-shrink-0">
+              <DealSidebar
                 deal={deal}
                 latestOffer={latestOffer}
                 currentUserUid={currentUserUid}
-                actions={actions}
-                otherPartyData={null}
+                otherPartyViewing={otherPartyViewing}
               />
-            )}
+            </div>
           </div>
-
-          {/* Right sidebar */}
-          <div className="w-full lg:w-80 xl:w-96 flex-shrink-0">
-            <DealSidebar
-              deal={deal}
-              latestOffer={latestOffer}
-              currentUserUid={currentUserUid}
-              otherPartyViewing={otherPartyViewing}
-            />
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );
