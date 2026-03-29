@@ -87,6 +87,7 @@ Recent decisions affecting current work:
 - [Roadmap]: 7-phase structure derived from 45 requirements across 8 categories
 - [Roadmap]: Phase 5 (Legal) depends on Phase 2 only -- can run parallel with Phases 3-4
 - [Roadmap]: Platform Hardening is final phase (Phase 7) -- sweeps all built features
+- [Roadmap]: Phase 8 added: Live Currency and Freight Intelligence (client-side Frankfurter + Freightos APIs, no server proxying). Phase 7 dependency updated to Phase 6 + Phase 8
 - [01-01]: Custom claims (not Firestore reads) are the source of truth for role enforcement in rules and session
 - [01-01]: isMember() includes null fallback for legacy accounts without claims -- no forced migration required for existing users
 - [01-01]: Session API security fix -- role read from verified JWT claims, not client request body

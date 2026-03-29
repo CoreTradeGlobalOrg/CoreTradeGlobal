@@ -69,6 +69,14 @@ Requirements for initial release. Each maps to roadmap phases.
 - [ ] **TRACK-03**: Order timeline showing all completed milestones with timestamps
 - [ ] **TRACK-04**: Role-dispatched dashboard showing relevant view per role (member, lawyer, provider)
 
+### Live Currency and Freight Intelligence
+
+- [ ] **INTEL-01**: Homepage displays a live currency ticker (USD, EUR, GBP, TRY, CNY minimum) with auto-refresh and last-updated timestamp -- no login required
+- [ ] **INTEL-02**: Deal negotiation page shows offer amounts in base currency plus two user-selected target currencies with live conversion
+- [ ] **INTEL-03**: Deal page sidebar freight estimator accepts origin, destination, load type, weight and returns min/max range per transport mode (sea FCL/LCL, air, road) via Freightos API with attribution link
+- [ ] **INTEL-04**: Freight estimator runs client-side (browser-to-Freightos) -- server never proxies Freightos calls, per-IP rate limits apply per user
+- [ ] **INTEL-05**: Both currency and freight widgets show graceful fallback states when external APIs are unavailable -- deal flow is never blocked
+
 ### Platform Hardening
 
 - [ ] **HARDEN-01**: Thorough quality sweep of all existing features for UI consistency

@@ -19,6 +19,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 5: Legal Consulting** - Independent lawyer hiring per deal party, private encrypted channels, versioned contract drafts, and risk analysis (completed 2026-03-12)
 - [ ] **Phase 6: Trade Summary and Shipment Tracking (S4)** - Trade summary dashboard, shipment tracking, order timeline, and role-dispatched dashboards
 - [ ] **Phase 7: Platform Hardening** - Quality sweep of all features for UI consistency, error handling, validation, and performance
+- [ ] **Phase 8: Live Currency and Freight Intelligence (INSERTED)** - Live currency ticker, multi-currency deal conversions, and freight cost estimator via Freightos API
 
 ## Phase Details
 
@@ -139,7 +140,7 @@ Plans:
 
 ### Phase 7: Platform Hardening
 **Goal**: Every feature across the platform -- existing and newly built -- meets a consistent standard of UI quality, error handling, validation, and performance
-**Depends on**: Phase 6 (all features must be built before sweeping)
+**Depends on**: Phase 6, Phase 8 (all features must be built before sweeping)
 **Requirements**: HARDEN-01, HARDEN-02, HARDEN-03, HARDEN-04
 **Success Criteria** (what must be TRUE):
   1. All pages and components follow the same visual patterns -- no inconsistent spacing, typography, colors, or component styles across existing and new features
@@ -155,7 +156,7 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 (parallel with 3-4) -> 6 -> 7
+Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 (parallel with 3-4) -> 6 -> 8 (parallel with 6, depends on 2+6) -> 7
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -166,6 +167,24 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 (parallel with 3-4) -> 6 
 | 5. Legal Consulting | 11/11 | Complete   | 2026-03-12 |
 | 6. Trade Summary and Shipment Tracking (S4) | 0/4 | Planning complete | - |
 | 7. Platform Hardening | 0/0 | Not started | - |
+| 8. Live Currency and Freight Intelligence | 0/3 | Not started | - |
+
+### Phase 8: Live Currency and Freight Intelligence (INSERTED)
+**Goal**: Any visitor can see live currency rates on the homepage, and both deal parties can see multi-currency price conversions and a real-time freight cost estimate throughout the deal flow -- without CoreTradeGlobal being party to or responsible for any transaction
+**Depends on**: Phase 2 (deal pages exist), Phase 6 (trade summary and deal sidebar are complete)
+**Requirements**: INTEL-01, INTEL-02, INTEL-03, INTEL-04, INTEL-05
+**Success Criteria** (what must be TRUE):
+  1. The homepage displays a live currency ticker showing at minimum USD, EUR, GBP, TRY, CNY rates -- rates refresh automatically and show the last-updated timestamp; no API key or login is required to see this
+  2. On the deal negotiation page, every offer amount is shown in the deal's base currency plus two user-selected target currencies -- conversion uses the same live rates as the homepage ticker and updates without a page reload
+  3. On the deal page sidebar, a freight cost estimator widget accepts origin, destination, load type, and weight -- it returns an estimated range (min/max) per transport mode (sea FCL/LCL, air, road) sourced from the Freightos public marketplace API, with a clearly visible Freightos attribution link as required by their terms of service
+  4. The freight estimator is called client-side (from the user's browser, not the server) so that per-IP rate limits (100 req/hour) apply per user, not per server -- the server never proxies Freightos calls
+  5. Both the currency widget and the freight estimator display graceful fallback states when the external API is unavailable -- no blank screens, no unhandled errors; the deal flow is never blocked by a third-party API failure
+**Plans**: 3 plans
+
+Plans:
+- [ ] 08-01-PLAN.md — Currency foundation: useLiveCurrency hook (Frankfurter API, client-side, 60s polling), CurrencyTicker component for homepage, currency constants, error/loading states
+- [ ] 08-02-PLAN.md — Deal page currency integration: CurrencyConvertPanel in deal sidebar, offer timeline amounts in target currencies, currency selector persisted to localStorage
+- [ ] 08-03-PLAN.md — Freight estimator: FreightEstimatorWidget component, client-side Freightos API call, min/max range per mode, transit time, Freightos attribution, deal sidebar integration, graceful degradation
 
 ---
 *Roadmap created: 2026-02-20*
