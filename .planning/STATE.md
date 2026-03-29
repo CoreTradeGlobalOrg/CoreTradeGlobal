@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-stopped_at: Completed 06-trade-summary-shipment-tracking/06-03-PLAN.md
-last_updated: "2026-03-29T14:08:37.479Z"
+stopped_at: Completed 06-trade-summary-shipment-tracking/06-02-PLAN.md
+last_updated: "2026-03-29T14:10:35.734Z"
 last_activity: "2026-03-29 - Completed 06-01: Shipment tracking data layer and Cloud Functions"
 progress:
   total_phases: 8
   completed_phases: 5
   total_plans: 34
-  completed_plans: 32
+  completed_plans: 33
   percent: 71
 ---
 
@@ -77,6 +77,7 @@ Progress: [█████████████] 71%
 | Phase 05-legal-consulting P09 | 2 | 2 tasks | 3 files |
 | Phase 05-legal-consulting P10 | 3 | 2 tasks | 5 files |
 | Phase 06-trade-summary-shipment-tracking P03 | 5 | 2 tasks | 6 files |
+| Phase 06-trade-summary-shipment-tracking P02 | 7 | 2 tasks | 12 files |
 
 ## Accumulated Context
 
@@ -187,6 +188,10 @@ Recent decisions affecting current work:
 - [Phase 06-03]: useActiveShipments queries both logistics and insurance types via normalizeProviderType — handles both short-form and role-form inputs
 - [Phase 06-03]: ProviderDashboard embedded prop separates inline-tab render from standalone full-page render — no duplicate main wrapper
 - [Phase 06-03]: InsuranceCoverageTab checks shipmentUpdates for COVERAGE_ACTIVE to determine idempotent button state — real-time via tracking subscription
+- [Phase 06-02]: useTradeSummary derives selectedInsuranceQuote/selectedLogisticsQuote by filtering quotes with status === ACCEPTED — no extra subscription needed
+- [Phase 06-02]: LegalConsultingSection has dual privacy guard: data layer (subscribeToEngagementForDeal) + UI layer (clientId check) — defense in depth
+- [Phase 06-02]: TradeRouteMap uses static placeholder pin positions per user decision — purely visual context
+- [Phase 06-02]: DealPage tab auto-switches to summary for PROVIDERS_SELECTED and DELIVERED — users in those statuses care more about tracking than negotiation history
 
 ### Pending Todos
 
@@ -209,6 +214,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-29T14:08:37.475Z
-Stopped at: Completed 06-trade-summary-shipment-tracking/06-03-PLAN.md
+Last session: 2026-03-29T14:10:35.730Z
+Stopped at: Completed 06-trade-summary-shipment-tracking/06-02-PLAN.md
 Resume file: None

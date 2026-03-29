@@ -165,7 +165,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 (parallel with 3-4) -> 6 
 | 3. Contract Agreement (S2) | 2/2 | Complete   | 2026-03-01 |
 | 4. Provider Portals and Insurance/Logistics Quotes (S3) | 6/6 | Complete   | 2026-03-03 |
 | 5. Legal Consulting | 11/11 | Complete   | 2026-03-12 |
-| 6. Trade Summary and Shipment Tracking (S4) | 2/4 | In Progress|  |
+| 6. Trade Summary and Shipment Tracking (S4) | 3/4 | In Progress|  |
 | 7. Platform Hardening | 0/0 | Not started | - |
 | 8. Live Currency and Freight Intelligence | 0/3 | Not started | - |
 
