@@ -129,10 +129,13 @@ Plans:
   1. Buyer and seller can view a trade summary dashboard showing the full deal overview -- negotiation outcome, approval status, selected providers, costs, and current shipment status
   2. Shipment tracking shows provider-submitted status updates, and the order timeline displays all completed milestones with timestamps (negotiated, approved, insured, in transit, delivered)
   3. Each role sees a role-appropriate dashboard: members see their deals, lawyers see their assigned channels, providers see their quote requests and active shipments
-**Plans**: TBD
+**Plans**: 4 plans
 
 Plans:
-- [ ] 06-01: TBD
+- [ ] 06-01-PLAN.md — Data foundation: shipment constants, ShipmentUpdate entity, ShipmentRepository, DELIVERED state machine, Cloud Functions (submitShipmentUpdate, confirmInsuranceCoverage), statusHistory, Firestore rules
+- [ ] 06-02-PLAN.md — Trade Summary tab UI: TradeSummaryTab with hero banner, trade info bar, sections (overview, parties, costs, documents, legal), TradeRouteMap, DealPage tab integration, print/PDF export
+- [ ] 06-03-PLAN.md — Provider dashboard: Active Shipments tab for logistics (ShipmentUpdateForm), Insurance Coverage tab for insurance (Confirm Coverage), useActiveShipments hook
+- [ ] 06-04-PLAN.md — Order timeline (milestone categories), ETACountdown, DealSidebar integration, DealCard tracking badge, member deals page stats, admin dashboard trade stats
 
 ### Phase 7: Platform Hardening
 **Goal**: Every feature across the platform -- existing and newly built -- meets a consistent standard of UI quality, error handling, validation, and performance
@@ -161,9 +164,9 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 (parallel with 3-4) -> 6 
 | 3. Contract Agreement (S2) | 2/2 | Complete   | 2026-03-01 |
 | 4. Provider Portals and Insurance/Logistics Quotes (S3) | 6/6 | Complete   | 2026-03-03 |
 | 5. Legal Consulting | 11/11 | Complete   | 2026-03-12 |
-| 6. Trade Summary and Shipment Tracking (S4) | 0/0 | Not started | - |
+| 6. Trade Summary and Shipment Tracking (S4) | 0/4 | Planning complete | - |
 | 7. Platform Hardening | 0/0 | Not started | - |
 
 ---
 *Roadmap created: 2026-02-20*
-*Last updated: 2026-03-25*
+*Last updated: 2026-03-29*
