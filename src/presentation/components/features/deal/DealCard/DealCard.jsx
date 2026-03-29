@@ -12,8 +12,10 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { Package, Clock, ArrowRight } from 'lucide-react';
+import { Package, Clock, ArrowRight, Truck } from 'lucide-react';
 import { DEAL_STATUS } from '@/core/constants/dealConstants';
+import { SHIPMENT_STATUS_LABELS } from '@/core/constants/shipmentConstants';
+import { formatDistanceToNow } from 'date-fns';
 
 // Status badge config
 const STATUS_CONFIG = {
@@ -44,6 +46,10 @@ const STATUS_CONFIG = {
   [DEAL_STATUS.PROVIDERS_SELECTED]: {
     label: 'Providers Selected',
     className: 'bg-[rgba(59,130,246,0.15)] text-[#3b82f6] border-[rgba(59,130,246,0.3)]',
+  },
+  [DEAL_STATUS.DELIVERED]: {
+    label: 'Delivered',
+    className: 'bg-[rgba(34,197,94,0.15)] text-green-400 border-[rgba(34,197,94,0.3)]',
   },
 };
 
@@ -142,6 +148,26 @@ export function DealCard({ deal, currentUserId }) {
               )}
             </span>
           </div>
+        </div>
+      )}
+
+      {/* ── Tracking Badge + ETA (when shipment data available) ── */}
+      {deal.currentShipmentStatus && (
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="inline-flex items-center gap-1.5 text-xs px-2 py-0.5 rounded-full bg-blue-900/20 text-blue-400 border border-blue-700/30">
+            <Truck className="w-3 h-3 flex-shrink-0" />
+            {SHIPMENT_STATUS_LABELS[deal.currentShipmentStatus] || deal.currentShipmentStatus}
+          </span>
+          {deal.shipmentEtaDate && (() => {
+            const etaMs = deal.shipmentEtaDate?.toDate?.()?.getTime() ?? Number(deal.shipmentEtaDate);
+            const isPast = etaMs <= Date.now();
+            const etaLabel = isPast
+              ? 'Arrived'
+              : formatDistanceToNow(new Date(etaMs), { addSuffix: true });
+            return (
+              <span className="text-xs text-[#8899AA]">ETA {etaLabel}</span>
+            );
+          })()}
         </div>
       )}
 
