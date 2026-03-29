@@ -25,6 +25,7 @@ import { PartiesProvidersSection } from './PartiesProvidersSection';
 import { CostBreakdownSection } from './CostBreakdownSection';
 import { DocumentsSection } from './DocumentsSection';
 import { LegalConsultingSection } from './LegalConsultingSection';
+import { OrderTimeline } from './OrderTimeline';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Loading skeleton
@@ -67,6 +68,7 @@ export function TradeSummaryTab({ dealId, currentUserUid }) {
     selectedInsuranceQuote,
     selectedLogisticsQuote,
     latestShipment,
+    shipmentUpdates,
     legalEngagement,
     loading,
   } = useTradeSummary(dealId, currentUserUid);
@@ -130,11 +132,16 @@ export function TradeSummaryTab({ dealId, currentUserUid }) {
           />
         </div>
 
-        {/* Right sidebar — map + future timeline placeholder */}
+        {/* Right sidebar — map + order timeline */}
         <div className="w-full lg:w-72 xl:w-80 flex-shrink-0 space-y-4">
           <TradeRouteMap
             originName={originName}
             destinationName={destinationName}
+          />
+          <OrderTimeline
+            deal={deal}
+            shipmentUpdates={shipmentUpdates}
+            dealId={dealId}
           />
         </div>
       </div>
