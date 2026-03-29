@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-stopped_at: Completed 06-trade-summary-shipment-tracking/06-02-PLAN.md
-last_updated: "2026-03-29T14:10:35.734Z"
+stopped_at: Completed 06-trade-summary-shipment-tracking/06-04-PLAN.md
+last_updated: "2026-03-29T14:19:00.800Z"
 last_activity: "2026-03-29 - Completed 06-01: Shipment tracking data layer and Cloud Functions"
 progress:
   total_phases: 8
-  completed_phases: 5
+  completed_phases: 6
   total_plans: 34
-  completed_plans: 33
+  completed_plans: 34
   percent: 71
 ---
 
@@ -78,6 +78,7 @@ Progress: [█████████████] 71%
 | Phase 05-legal-consulting P10 | 3 | 2 tasks | 5 files |
 | Phase 06-trade-summary-shipment-tracking P03 | 5 | 2 tasks | 6 files |
 | Phase 06-trade-summary-shipment-tracking P02 | 7 | 2 tasks | 12 files |
+| Phase 06-trade-summary-shipment-tracking P04 | 6 | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -192,6 +193,9 @@ Recent decisions affecting current work:
 - [Phase 06-02]: LegalConsultingSection has dual privacy guard: data layer (subscribeToEngagementForDeal) + UI layer (clientId check) — defense in depth
 - [Phase 06-02]: TradeRouteMap uses static placeholder pin positions per user decision — purely visual context
 - [Phase 06-02]: DealPage tab auto-switches to summary for PROVIDERS_SELECTED and DELIVERED — users in those statuses care more about tracking than negotiation history
+- [Phase 06-04]: DealSidebar self-subscribes to shipmentUpdates when showTimeline=true and no prop provided — avoids duplicate subscriptions with TradeSummaryTab
+- [Phase 06-04]: OrderTimeline legacy inference uses deal.updatedAt as rough timestamp for inferred milestones when statusHistory is absent
+- [Phase 06-04]: Admin TradeOverviewStats uses getDocs (one-time fetch) not onSnapshot — admin stats are approximate display data, real-time unnecessary
 
 ### Pending Todos
 
@@ -214,6 +218,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-29T14:10:35.730Z
-Stopped at: Completed 06-trade-summary-shipment-tracking/06-02-PLAN.md
+Last session: 2026-03-29T14:19:00.796Z
+Stopped at: Completed 06-trade-summary-shipment-tracking/06-04-PLAN.md
 Resume file: None

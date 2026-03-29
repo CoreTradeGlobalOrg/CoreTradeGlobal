@@ -17,7 +17,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 3: Contract Agreement (S2)** - Dual-party clause-by-clause contract approval that gates deal advancement (completed 2026-03-01)
 - [x] **Phase 4: Provider Portals and Insurance/Logistics Quotes (S3)** - Provider quote submission portals and buyer quote comparison/selection with server-enforced validity (completed 2026-03-03)
 - [x] **Phase 5: Legal Consulting** - Independent lawyer hiring per deal party, private encrypted channels, versioned contract drafts, and risk analysis (completed 2026-03-12)
-- [ ] **Phase 6: Trade Summary and Shipment Tracking (S4)** - Trade summary dashboard, shipment tracking, order timeline, and role-dispatched dashboards
+- [x] **Phase 6: Trade Summary and Shipment Tracking (S4)** - Trade summary dashboard, shipment tracking, order timeline, and role-dispatched dashboards (completed 2026-03-29)
 - [ ] **Phase 7: Platform Hardening** - Quality sweep of all features for UI consistency, error handling, validation, and performance
 - [ ] **Phase 8: Live Currency and Freight Intelligence (INSERTED)** - Live currency ticker, multi-currency deal conversions, and freight cost estimator via Freightos API
 
@@ -165,7 +165,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 (parallel with 3-4) -> 6 
 | 3. Contract Agreement (S2) | 2/2 | Complete   | 2026-03-01 |
 | 4. Provider Portals and Insurance/Logistics Quotes (S3) | 6/6 | Complete   | 2026-03-03 |
 | 5. Legal Consulting | 11/11 | Complete   | 2026-03-12 |
-| 6. Trade Summary and Shipment Tracking (S4) | 3/4 | In Progress|  |
+| 6. Trade Summary and Shipment Tracking (S4) | 4/4 | Complete   | 2026-03-29 |
 | 7. Platform Hardening | 0/0 | Not started | - |
 | 8. Live Currency and Freight Intelligence | 0/3 | Not started | - |
 
