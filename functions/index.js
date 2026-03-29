@@ -989,6 +989,30 @@ const DEAL_STATUS = {
   WITHDRAWN: 'withdrawn',
   CONTRACT_APPROVED: 'contract_approved', // Both parties approved all contract clauses
   PROVIDERS_SELECTED: 'providers_selected', // Buyer confirmed insurance/logistics provider selections
+  DELIVERED: 'delivered', // Logistics provider confirmed delivery — true terminal state
+};
+
+// Valid deal status transitions (mirrored from src/core/constants/dealConstants.js)
+const VALID_DEAL_TRANSITIONS_CF = {
+  negotiating: ['accepted', 'rejected', 'expired', 'withdrawn'],
+  accepted: ['contract_approved'],
+  contract_approved: ['providers_selected'],
+  providers_selected: ['delivered'],
+  delivered: [],
+  rejected: [],
+  expired: [],
+  withdrawn: [],
+};
+
+// Shipment status constants (mirrored from src/core/constants/shipmentConstants.js)
+const SHIPMENT_STATUS_CF = {
+  PREPARING: 'preparing',
+  PICKED_UP: 'picked_up',
+  IN_TRANSIT: 'in_transit',
+  AT_CUSTOMS: 'at_customs',
+  OUT_FOR_DELIVERY: 'out_for_delivery',
+  DELIVERED: 'delivered',
+  COVERAGE_ACTIVE: 'coverage_active',
 };
 
 const QUOTE_REQUEST_STATUS = {
@@ -1032,6 +1056,34 @@ const ENGAGEMENT_STATUS = {
   COMPLETED: 'completed',
   DECLINED: 'declined',
 };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Status History Helper
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Append a status history entry to a deal document.
+ *
+ * Uses FieldValue.arrayUnion so concurrent calls are safe and idempotent.
+ * Call this OUTSIDE transactions to prevent duplicate entries on retry.
+ *
+ * @param {string} dealId
+ * @param {string} status - DEAL_STATUS value being recorded
+ * @param {string} actorId - UID of the party who triggered the transition
+ * @param {string} actorName - Display name of the actor
+ * @param {string|null} note - Optional context note
+ */
+async function appendStatusHistory(dealId, status, actorId, actorName, note) {
+  await db.collection('deals').doc(dealId).update({
+    statusHistory: FieldValue.arrayUnion({
+      status,
+      timestamp: Timestamp.now(),
+      actorId,
+      actorName,
+      note: note || '',
+    }),
+  });
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Deal Negotiation Cloud Functions
@@ -1385,6 +1437,13 @@ exports.acceptOffer = onCall(async (request) => {
     });
   });
 
+  // Append status history (outside transaction — prevents duplicate writes on retry)
+  try {
+    await appendStatusHistory(dealId, DEAL_STATUS.ACCEPTED, uid, '', 'Offer accepted');
+  } catch (err) {
+    console.error('acceptOffer: appendStatusHistory failed (non-fatal):', err);
+  }
+
   console.log(`Offer ${offerId} accepted for deal: ${dealId} by user: ${uid}`);
   return { success: true };
 });
@@ -1611,6 +1670,16 @@ function getDealEventCopy(eventType, productName) {
       title: `Contract fully approved on ${name}`,
       body: `Contract fully approved — deal ready to proceed for ${name}.`,
       subject: `Contract fully approved on ${name}`,
+    },
+    shipment_update: {
+      title: `Shipment status updated on ${name}`,
+      body: `A shipment status update has been posted for the deal on ${name}.`,
+      subject: `Shipment update on ${name}`,
+    },
+    insurance_coverage: {
+      title: `Insurance coverage active on ${name}`,
+      body: `Insurance coverage has been confirmed for the deal on ${name}.`,
+      subject: `Insurance coverage confirmed on ${name}`,
     },
   };
   return map[eventType] || {
@@ -2397,6 +2466,12 @@ exports.submitContractApproval = onCall(async (request) => {
     if (isFullyApproved) {
       // Both parties approved — notify both (pass 'system' as senderUid to send to all participants)
       await sendDealNotifications(dealId, 'contract_both_approved', 'system', deal);
+      // Append status history for CONTRACT_APPROVED transition
+      try {
+        await appendStatusHistory(dealId, DEAL_STATUS.CONTRACT_APPROVED, uid, '', 'Contract approved by both parties');
+      } catch (err) {
+        console.error('submitContractApproval: appendStatusHistory failed (non-fatal):', err);
+      }
     } else {
       // One party submitted — notify the other party only (pass uid as senderUid to exclude submitter)
       await sendDealNotifications(dealId, 'contract_approved_by_party', uid, deal);
@@ -3052,7 +3127,237 @@ exports.confirmProviderSelection = onCall(async (request) => {
     }
   }
 
+  // Append status history for PROVIDERS_SELECTED transition (outside transaction)
+  try {
+    await appendStatusHistory(dealId, DEAL_STATUS.PROVIDERS_SELECTED, uid, '', 'Provider selections confirmed');
+  } catch (err) {
+    console.error('confirmProviderSelection: appendStatusHistory failed (non-fatal):', err);
+  }
+
   console.log(`confirmProviderSelection: buyer ${uid} confirmed provider selections for deal ${dealId}`);
+  return { success: true };
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Shipment Tracking Cloud Functions (Phase 6)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * submitShipmentUpdate — onCall
+ *
+ * Called by a logistics provider to post a shipment status update for a deal.
+ * Authorization: caller must be the selected logistics provider (verified via quoteRequest).
+ * Writes to deals/{dealId}/shipmentTracking subcollection.
+ * If status === 'delivered': transitions deal.status to DELIVERED inside a transaction.
+ * Sends notifications to deal buyer and seller.
+ *
+ * @param {Object} data - { dealId, status, note?, containerNumber?, trackingRef?, etaDate? }
+ * @returns {Promise<{ success: boolean }>}
+ */
+exports.submitShipmentUpdate = onCall(async (request) => {
+  const { dealId, status, note, containerNumber, trackingRef, etaDate } = request.data;
+  const uid = request.auth?.uid;
+
+  if (!uid) throw new HttpsError('unauthenticated', 'Must be logged in.');
+  if (!dealId || !status) {
+    throw new HttpsError('invalid-argument', 'dealId and status are required.');
+  }
+
+  // Validate status is a known logistics shipment status (not COVERAGE_ACTIVE — that's insurance-only)
+  const allowedStatuses = Object.values(SHIPMENT_STATUS_CF).filter(
+    (s) => s !== SHIPMENT_STATUS_CF.COVERAGE_ACTIVE
+  );
+  if (!allowedStatuses.includes(status)) {
+    throw new HttpsError('invalid-argument', `Invalid shipment status: ${status}. Must be one of: ${allowedStatuses.join(', ')}`);
+  }
+
+  // Fetch the deal
+  const dealRef = db.collection('deals').doc(dealId);
+  const dealSnap = await dealRef.get();
+  if (!dealSnap.exists) throw new HttpsError('not-found', 'Deal not found.');
+  const deal = dealSnap.data();
+
+  // Authorization: verify caller is the selected logistics provider
+  if (!deal.selectedLogisticsRequestId) {
+    throw new HttpsError('failed-precondition', 'No logistics provider has been selected for this deal.');
+  }
+  const qrSnap = await db.collection('quoteRequests').doc(deal.selectedLogisticsRequestId).get();
+  if (!qrSnap.exists) throw new HttpsError('not-found', 'Logistics quote request not found.');
+  if (qrSnap.data().providerUid !== uid) {
+    throw new HttpsError('permission-denied', 'You are not the selected logistics provider for this deal.');
+  }
+
+  // Look up actor display name for the tracking record
+  let actorName = '';
+  try {
+    const userDoc = await db.collection('users').doc(uid).get();
+    if (userDoc.exists) {
+      const userData = userDoc.data();
+      actorName = userData.companyName || userData.displayName || '';
+    }
+  } catch (err) {
+    console.error('submitShipmentUpdate: failed to look up actor name (non-fatal):', err);
+  }
+
+  const now = Timestamp.now();
+
+  // Convert etaDate string to Timestamp if provided
+  let etaTimestamp = null;
+  if (etaDate) {
+    try {
+      etaTimestamp = Timestamp.fromDate(new Date(etaDate));
+    } catch (err) {
+      console.error('submitShipmentUpdate: invalid etaDate format (non-fatal):', err);
+    }
+  }
+
+  // Write shipment update document to subcollection
+  const updateData = {
+    dealId,
+    status,
+    timestamp: now,
+    actorId: uid,
+    actorName,
+    providerType: 'logistics',
+    note: note || null,
+    containerNumber: containerNumber || null,
+    trackingRef: trackingRef || null,
+    etaDate: etaTimestamp,
+    dealBuyerId: deal.buyerId,
+    dealSellerId: deal.sellerId,
+  };
+  await db.collection('deals').doc(dealId).collection('shipmentTracking').add(updateData);
+
+  // Denormalize current shipment status and ETA onto the deal doc for DealCard display
+  const dealDenormUpdate = {
+    currentShipmentStatus: status,
+    updatedAt: now,
+  };
+  if (etaTimestamp) {
+    dealDenormUpdate.shipmentEtaDate = etaTimestamp;
+  }
+  await dealRef.update(dealDenormUpdate);
+
+  // If delivered: transition deal status to DELIVERED inside a transaction
+  if (status === SHIPMENT_STATUS_CF.DELIVERED) {
+    await db.runTransaction(async (t) => {
+      const freshDealSnap = await t.get(dealRef);
+      if (!freshDealSnap.exists) throw new HttpsError('not-found', 'Deal not found in transaction.');
+      const freshDeal = freshDealSnap.data();
+
+      const allowedNext = VALID_DEAL_TRANSITIONS_CF[freshDeal.status] || [];
+      if (!allowedNext.includes(DEAL_STATUS.DELIVERED)) {
+        throw new HttpsError(
+          'failed-precondition',
+          `Cannot transition deal from ${freshDeal.status} to delivered.`
+        );
+      }
+
+      t.update(dealRef, {
+        status: DEAL_STATUS.DELIVERED,
+        updatedAt: Timestamp.now(),
+      });
+    });
+
+    // Append status history for DELIVERED transition (outside transaction)
+    try {
+      await appendStatusHistory(dealId, DEAL_STATUS.DELIVERED, uid, actorName, 'Shipment delivered');
+    } catch (err) {
+      console.error('submitShipmentUpdate: appendStatusHistory (DELIVERED) failed (non-fatal):', err);
+    }
+  }
+
+  // Notify deal buyer and seller
+  try {
+    await sendDealNotifications(dealId, 'shipment_update', 'system', deal);
+  } catch (err) {
+    console.error('submitShipmentUpdate: sendDealNotifications failed (non-fatal):', err);
+  }
+
+  console.log(`submitShipmentUpdate: provider ${uid} posted status '${status}' for deal ${dealId}`);
+  return { success: true };
+});
+
+/**
+ * confirmInsuranceCoverage — onCall
+ *
+ * Called by the selected insurance provider to confirm active coverage for a deal.
+ * Uses a deterministic document ID (coverage_${dealId}) for idempotency —
+ * re-calling after a successful confirmation returns an 'already-exists' error.
+ * Authorization: caller must be the selected insurance provider (verified via quoteRequest).
+ *
+ * @param {Object} data - { dealId }
+ * @returns {Promise<{ success: boolean }>}
+ */
+exports.confirmInsuranceCoverage = onCall(async (request) => {
+  const { dealId } = request.data;
+  const uid = request.auth?.uid;
+
+  if (!uid) throw new HttpsError('unauthenticated', 'Must be logged in.');
+  if (!dealId) throw new HttpsError('invalid-argument', 'dealId is required.');
+
+  // Fetch the deal
+  const dealSnap = await db.collection('deals').doc(dealId).get();
+  if (!dealSnap.exists) throw new HttpsError('not-found', 'Deal not found.');
+  const deal = dealSnap.data();
+
+  // Authorization: verify caller is the selected insurance provider
+  if (!deal.selectedInsuranceRequestId) {
+    throw new HttpsError('failed-precondition', 'No insurance provider has been selected for this deal.');
+  }
+  const qrSnap = await db.collection('quoteRequests').doc(deal.selectedInsuranceRequestId).get();
+  if (!qrSnap.exists) throw new HttpsError('not-found', 'Insurance quote request not found.');
+  if (qrSnap.data().providerUid !== uid) {
+    throw new HttpsError('permission-denied', 'You are not the selected insurance provider for this deal.');
+  }
+
+  // Look up actor display name
+  let actorName = '';
+  try {
+    const userDoc = await db.collection('users').doc(uid).get();
+    if (userDoc.exists) {
+      const userData = userDoc.data();
+      actorName = userData.companyName || userData.displayName || '';
+    }
+  } catch (err) {
+    console.error('confirmInsuranceCoverage: failed to look up actor name (non-fatal):', err);
+  }
+
+  // Idempotency check: use deterministic document ID to prevent duplicate coverage confirmations
+  const coverageDocId = `coverage_${dealId}`;
+  const coverageRef = db.collection('deals').doc(dealId).collection('shipmentTracking').doc(coverageDocId);
+
+  await db.runTransaction(async (t) => {
+    const existingSnap = await t.get(coverageRef);
+    if (existingSnap.exists) {
+      throw new HttpsError('already-exists', 'Insurance coverage has already been confirmed for this deal.');
+    }
+
+    const now = Timestamp.now();
+    t.set(coverageRef, {
+      dealId,
+      status: SHIPMENT_STATUS_CF.COVERAGE_ACTIVE,
+      timestamp: now,
+      actorId: uid,
+      actorName,
+      providerType: 'insurance',
+      note: 'Coverage confirmed',
+      containerNumber: null,
+      trackingRef: null,
+      etaDate: null,
+      dealBuyerId: deal.buyerId,
+      dealSellerId: deal.sellerId,
+    });
+  });
+
+  // Notify deal buyer and seller
+  try {
+    await sendDealNotifications(dealId, 'insurance_coverage', 'system', deal);
+  } catch (err) {
+    console.error('confirmInsuranceCoverage: sendDealNotifications failed (non-fatal):', err);
+  }
+
+  console.log(`confirmInsuranceCoverage: provider ${uid} confirmed coverage for deal ${dealId}`);
   return { success: true };
 });
 
