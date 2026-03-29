@@ -139,13 +139,15 @@ export class Deal {
 
   /**
    * Check if deal is in a terminal state (no further actions possible in negotiation)
-   * Terminal = providers_selected, contract_approved, rejected, expired, or withdrawn.
+   * Terminal = delivered, providers_selected, contract_approved, rejected, expired, or withdrawn.
    * NOTE: ACCEPTED is now transitional (awaiting contract approval), not terminal.
    * NOTE: CONTRACT_APPROVED is also terminal for negotiation but is a gateway for Phase 4.
+   * NOTE: DELIVERED is the true terminal state — logistics provider confirmed delivery.
    * @returns {boolean}
    */
   isTerminal() {
     return [
+      DEAL_STATUS.DELIVERED,
       DEAL_STATUS.PROVIDERS_SELECTED,
       DEAL_STATUS.CONTRACT_APPROVED,
       DEAL_STATUS.REJECTED,
@@ -173,11 +175,30 @@ export class Deal {
 
   /**
    * Check if buyer has selected insurance and/or logistics providers.
-   * This is the final terminal status for deals that go through Phase 4.
+   * After this status, shipment tracking begins (Phase 6).
    * @returns {boolean}
    */
   isProvidersSelected() {
     return this.status === DEAL_STATUS.PROVIDERS_SELECTED;
+  }
+
+  /**
+   * Semantic alias: check if deal is awaiting shipment.
+   * A deal in providers_selected status is ready for the logistics provider to begin shipping.
+   * Used in Phase 6 UI code for readability.
+   * @returns {boolean}
+   */
+  isAwaitingShipment() {
+    return this.status === DEAL_STATUS.PROVIDERS_SELECTED;
+  }
+
+  /**
+   * Check if the deal has been fully delivered.
+   * This is the true terminal state — logistics provider confirmed physical delivery.
+   * @returns {boolean}
+   */
+  isDelivered() {
+    return this.status === DEAL_STATUS.DELIVERED;
   }
 
   /**

@@ -32,6 +32,7 @@ import { QuoteRequestRepository } from '@/data/repositories/QuoteRequestReposito
 import { QuoteRepository } from '@/data/repositories/QuoteRepository';
 import { LegalEngagementRepository } from '@/data/repositories/LegalEngagementRepository';
 import { LegalMessageRepository } from '@/data/repositories/LegalMessageRepository';
+import { ShipmentRepository } from '@/data/repositories/ShipmentRepository';
 
 /**
  * Singleton instances
@@ -57,6 +58,7 @@ let quoteRequestRepository = null;
 let quoteRepository = null;
 let legalEngagementRepository = null;
 let legalMessageRepository = null;
+let shipmentRepository = null;
 
 /**
  * DI Container
@@ -303,6 +305,17 @@ export const container = {
   },
 
   /**
+   * Get Shipment Repository instance
+   * @returns {ShipmentRepository}
+   */
+  getShipmentRepository() {
+    if (!shipmentRepository) {
+      shipmentRepository = new ShipmentRepository(this.getFirestoreDataSource());
+    }
+    return shipmentRepository;
+  },
+
+  /**
    * Reset all instances (useful for testing)
    * DO NOT use this in production code
    */
@@ -327,6 +340,7 @@ export const container = {
     quoteRepository = null;
     legalEngagementRepository = null;
     legalMessageRepository = null;
+    shipmentRepository = null;
   },
 };
 

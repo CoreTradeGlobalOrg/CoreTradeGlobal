@@ -23,7 +23,8 @@ export const DEAL_STATUS = {
   EXPIRED: 'expired',                       // All offers expired without acceptance
   WITHDRAWN: 'withdrawn',                   // A party withdrew from the negotiation
   CONTRACT_APPROVED: 'contract_approved',   // Both parties approved all contract clauses — Phase 4 quote requests triggered
-  PROVIDERS_SELECTED: 'providers_selected', // Buyer selected insurance and/or logistics providers — deal fully complete
+  PROVIDERS_SELECTED: 'providers_selected', // Buyer selected insurance and/or logistics providers — Phase 6 shipment tracking begins
+  DELIVERED: 'delivered',                   // Logistics provider confirmed delivery — true terminal state
 };
 
 /**
@@ -149,8 +150,10 @@ export const VALID_DEAL_TRANSITIONS = {
   [DEAL_STATUS.ACCEPTED]: [DEAL_STATUS.CONTRACT_APPROVED],
   // CONTRACT_APPROVED is a gateway for Phase 4 — transitions to PROVIDERS_SELECTED after quote selection
   [DEAL_STATUS.CONTRACT_APPROVED]: [DEAL_STATUS.PROVIDERS_SELECTED],
+  // PROVIDERS_SELECTED transitions to DELIVERED when logistics provider confirms delivery
+  [DEAL_STATUS.PROVIDERS_SELECTED]: [DEAL_STATUS.DELIVERED],
   // Terminal states — no further transitions allowed
-  [DEAL_STATUS.PROVIDERS_SELECTED]: [],
+  [DEAL_STATUS.DELIVERED]: [],
   [DEAL_STATUS.REJECTED]: [],
   [DEAL_STATUS.EXPIRED]: [],
   [DEAL_STATUS.WITHDRAWN]: [],
@@ -190,4 +193,5 @@ export default {
   VALID_DEAL_TRANSITIONS,
   VALID_OFFER_TRANSITIONS,
 };
+
 

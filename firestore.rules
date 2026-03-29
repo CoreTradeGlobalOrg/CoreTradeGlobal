@@ -282,6 +282,20 @@ service cloud.firestore {
         );
         allow write: if false; // All writes via Cloud Functions (Admin SDK)
       }
+
+      // Shipment tracking subcollection (Phase 6)
+      // Stores logistics and insurance provider updates for the physical shipment.
+      // Read: deal buyer, deal seller, or admin. Write: Cloud Functions only.
+      // dealBuyerId and dealSellerId are denormalized on each update document
+      // so that Firestore rules can check access without a parent get() call.
+      match /shipmentTracking/{updateId} {
+        allow read: if isAuthenticated() && (
+          isAdmin() ||
+          request.auth.uid == resource.data.dealBuyerId ||
+          request.auth.uid == resource.data.dealSellerId
+        );
+        allow write: if false; // All writes via Cloud Functions (submitShipmentUpdate, confirmInsuranceCoverage)
+      }
     }
 
     // ─────────────────────────────────────────────────────────────────────────
