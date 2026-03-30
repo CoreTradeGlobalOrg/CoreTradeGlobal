@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-stopped_at: Completed 06-trade-summary-shipment-tracking/06-07-PLAN.md
-last_updated: "2026-03-30T13:41:33.637Z"
+stopped_at: Completed 06-trade-summary-shipment-tracking/06-06-PLAN.md
+last_updated: "2026-03-30T13:43:11.586Z"
 last_activity: "2026-03-29 - Completed 06-01: Shipment tracking data layer and Cloud Functions"
 progress:
   total_phases: 8
-  completed_phases: 5
+  completed_phases: 6
   total_plans: 38
-  completed_plans: 37
+  completed_plans: 38
   percent: 71
 ---
 
@@ -82,6 +82,7 @@ Progress: [█████████████] 71%
 | Phase 06 P05 | 4 | 1 tasks | 1 files |
 | Phase 06 P08 | 5 | 1 tasks | 1 files |
 | Phase 06 P07 | 2 | 2 tasks | 4 files |
+| Phase 06 P06 | 3 | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -204,6 +205,9 @@ Recent decisions affecting current work:
 - [Phase 06]: buyerName/sellerName fetched via separate useEffect in useTradeSummary, keyed on deal.buyerId/sellerId — keeps subscription cleanup logic clean
 - [Phase 06]: New Deal button links to /marketplace (not /deals/new) — /deals/new requires query params unavailable from deals list; button relabeled Browse Marketplace
 - [Phase 06]: text-black on gold bg-[#FFD700] buttons for reliable contrast — same pattern as Phase 05-07 Find a Lawyer button fix
+- [Phase 06]: subscribeToQuotesForDeal signature changed to (dealId, uid, callback, onError) — uid required for Firestore participants rule compliance on collectionGroup query
+- [Phase 06]: All 5 useTradeSummary subscription errors set loaded flag + setError + checkAllLoaded() — prevents infinite loading spinner when any subscription fails
+- [Phase 06]: [06-06]: @page margin:0 clips browser URL footer; body margin inside @media print preserves content spacing without showing localhost
 
 ### Pending Todos
 
@@ -226,6 +230,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-30T13:41:33.633Z
-Stopped at: Completed 06-trade-summary-shipment-tracking/06-07-PLAN.md
+Last session: 2026-03-30T13:43:11.582Z
+Stopped at: Completed 06-trade-summary-shipment-tracking/06-06-PLAN.md
 Resume file: None
