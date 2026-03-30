@@ -17,7 +17,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 3: Contract Agreement (S2)** - Dual-party clause-by-clause contract approval that gates deal advancement (completed 2026-03-01)
 - [x] **Phase 4: Provider Portals and Insurance/Logistics Quotes (S3)** - Provider quote submission portals and buyer quote comparison/selection with server-enforced validity (completed 2026-03-03)
 - [x] **Phase 5: Legal Consulting** - Independent lawyer hiring per deal party, private encrypted channels, versioned contract drafts, and risk analysis (completed 2026-03-12)
-- [x] **Phase 6: Trade Summary and Shipment Tracking (S4)** - Trade summary dashboard, shipment tracking, order timeline, and role-dispatched dashboards (completed 2026-03-29)
+- [ ] **Phase 6: Trade Summary and Shipment Tracking (S4)** - Trade summary dashboard, shipment tracking, order timeline, and role-dispatched dashboards (UAT gap closure in progress)
 - [ ] **Phase 7: Platform Hardening** - Quality sweep of all features for UI consistency, error handling, validation, and performance
 - [ ] **Phase 8: Live Currency and Freight Intelligence (INSERTED)** - Live currency ticker, multi-currency deal conversions, and freight cost estimator via Freightos API
 
@@ -130,13 +130,17 @@ Plans:
   1. Buyer and seller can view a trade summary dashboard showing the full deal overview -- negotiation outcome, approval status, selected providers, costs, and current shipment status
   2. Shipment tracking shows provider-submitted status updates, and the order timeline displays all completed milestones with timestamps (negotiated, approved, insured, in transit, delivered)
   3. Each role sees a role-appropriate dashboard: members see their deals, lawyers see their assigned channels, providers see their quote requests and active shipments
-**Plans**: 4 plans
+**Plans**: 8 plans
 
 Plans:
 - [x] 06-01-PLAN.md — Data foundation: shipment constants, ShipmentUpdate entity, ShipmentRepository, DELIVERED state machine, Cloud Functions (submitShipmentUpdate, confirmInsuranceCoverage), statusHistory, Firestore rules
-- [ ] 06-02-PLAN.md — Trade Summary tab UI: TradeSummaryTab with hero banner, trade info bar, sections (overview, parties, costs, documents, legal), TradeRouteMap, DealPage tab integration, print/PDF export
-- [ ] 06-03-PLAN.md — Provider dashboard: Active Shipments tab for logistics (ShipmentUpdateForm), Insurance Coverage tab for insurance (Confirm Coverage), useActiveShipments hook
-- [ ] 06-04-PLAN.md — Order timeline (milestone categories), ETACountdown, DealSidebar integration, DealCard tracking badge, member deals page stats, admin dashboard trade stats
+- [x] 06-02-PLAN.md — Trade Summary tab UI: TradeSummaryTab with hero banner, trade info bar, sections (overview, parties, costs, documents, legal), TradeRouteMap, DealPage tab integration, print/PDF export
+- [x] 06-03-PLAN.md — Provider dashboard: Active Shipments tab for logistics (ShipmentUpdateForm), Insurance Coverage tab for insurance (Confirm Coverage), useActiveShipments hook
+- [x] 06-04-PLAN.md — Order timeline (milestone categories), ETACountdown, DealSidebar integration, DealCard tracking badge, member deals page stats, admin dashboard trade stats
+- [x] 06-05-PLAN.md — Gap closure: Wire OrderTimeline into TradeSummaryTab right sidebar
+- [ ] 06-06-PLAN.md — UAT gap closure: Fix Firestore permission errors (providerQuotes participants filter, shipment error handling), add composite index for Active Shipments, fix print CSS
+- [ ] 06-07-PLAN.md — UAT gap closure: Fetch buyer/seller names for Trade Summary parties section, fix New Deal button destination and text color
+- [ ] 06-08-PLAN.md — UAT gap closure: Replace crude polygon world map with realistic Natural Earth continent outlines
 
 ### Phase 7: Platform Hardening
 **Goal**: Every feature across the platform -- existing and newly built -- meets a consistent standard of UI quality, error handling, validation, and performance
@@ -165,7 +169,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 (parallel with 3-4) -> 6 
 | 3. Contract Agreement (S2) | 2/2 | Complete   | 2026-03-01 |
 | 4. Provider Portals and Insurance/Logistics Quotes (S3) | 6/6 | Complete   | 2026-03-03 |
 | 5. Legal Consulting | 11/11 | Complete   | 2026-03-12 |
-| 6. Trade Summary and Shipment Tracking (S4) | 5/5 | Complete   | 2026-03-29 |
+| 6. Trade Summary and Shipment Tracking (S4) | 5/8 | UAT fixes | - |
 | 7. Platform Hardening | 0/0 | Not started | - |
 | 8. Live Currency and Freight Intelligence | 0/3 | Not started | - |
 
@@ -188,4 +192,4 @@ Plans:
 
 ---
 *Roadmap created: 2026-02-20*
-*Last updated: 2026-03-29*
+*Last updated: 2026-03-30*
