@@ -30,9 +30,11 @@ export class ContractRepository {
    *
    * @param {string} dealId - Parent deal ID
    * @param {Function} callback - Called with Contract entity or null if not yet generated
+   * @param {Function} [onError] - Optional error callback; defaults to console.error
    * @returns {Function} Unsubscribe function — call on component unmount
    */
-  subscribeToContract(dealId, callback) {
+  subscribeToContract(dealId, callback, onError) {
+    const handleError = onError || ((err) => console.error('ContractRepository.subscribeToContract error:', err));
     const contractRef = doc(db, 'deals', dealId, 'contract', 'main');
 
     return onSnapshot(
@@ -48,9 +50,7 @@ export class ContractRepository {
           callback(null);
         }
       },
-      (error) => {
-        console.error('ContractRepository.subscribeToContract error:', error);
-      }
+      handleError
     );
   }
 }

@@ -71,18 +71,28 @@ export class QuoteRepository {
    * Subscribe to all provider quotes for a specific deal across all quote requests.
    * Used by the buyer comparison view to show all submitted quotes for a deal.
    *
-   * Uses collectionGroup('providerQuotes') with a dealId filter.
-   * NOTE: This requires a composite index on providerQuotes: dealId + createdAt.
-   *       Deploy index via firebase.indexes.json before using in production.
+   * Uses collectionGroup('providerQuotes') with a dealId filter AND a participants
+   * array-contains filter. The participants filter is required by the Firestore
+   * security rule: `request.auth.uid in resource.data.participants`.
+   * Without it, member users receive permission-denied errors on the collectionGroup query.
+   *
+   * NOTE: This requires composite indexes on providerQuotes:
+   *       - dealId + participants (array-contains) + createdAt
+   *       Deploy via firestore.indexes.json before using in production.
    *
    * @param {string} dealId - Deal ID to subscribe to
+   * @param {string} uid - Current user's UID (required for Firestore rule compliance)
    * @param {Function} callback - Called with Quote[] on each update
+   * @param {Function} [onError] - Optional error callback; defaults to console.error
    * @returns {Function} Unsubscribe function — call on component unmount
    */
-  subscribeToQuotesForDeal(dealId, callback) {
+  subscribeToQuotesForDeal(dealId, uid, callback, onError) {
+    const handleError = onError || ((err) => console.error('QuoteRepository.subscribeToQuotesForDeal error:', err));
+
     const q = query(
       collectionGroup(db, 'providerQuotes'),
       where('dealId', '==', dealId),
+      where('participants', 'array-contains', uid),
       orderBy('createdAt', 'desc')
     );
 
@@ -94,9 +104,7 @@ export class QuoteRepository {
         );
         callback(quotes);
       },
-      (error) => {
-        console.error('QuoteRepository.subscribeToQuotesForDeal error:', error);
-      }
+      handleError
     );
   }
 }

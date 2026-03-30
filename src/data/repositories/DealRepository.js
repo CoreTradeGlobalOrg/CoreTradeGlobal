@@ -102,9 +102,11 @@ export class DealRepository {
    * Subscribe to a single deal in real-time
    * @param {string} dealId
    * @param {Function} callback - Called with Deal entity (or null if deleted)
+   * @param {Function} [onError] - Optional error callback; defaults to console.error
    * @returns {Function} Unsubscribe function
    */
-  subscribeToDeal(dealId, callback) {
+  subscribeToDeal(dealId, callback, onError) {
+    const handleError = onError || ((err) => console.error('DealRepository.subscribeToDeal error:', err));
     return this.firestoreDataSource.subscribeToDocument(
       COLLECTIONS.DEALS,
       dealId,
@@ -115,9 +117,7 @@ export class DealRepository {
           callback(null);
         }
       },
-      (error) => {
-        console.error('DealRepository.subscribeToDeal error:', error);
-      }
+      handleError
     );
   }
 

@@ -42,9 +42,13 @@ export class ShipmentRepository {
    *
    * @param {string} dealId - Parent deal document ID
    * @param {Function} callback - Called with ShipmentUpdate[] on each snapshot
+   * @param {Function} [onError] - Optional error callback; defaults to console.error.
+   *   Callers should set a loaded flag inside onError to prevent infinite loading spinners.
    * @returns {Function} Unsubscribe function — call on component unmount
    */
-  subscribeToShipmentUpdates(dealId, callback) {
+  subscribeToShipmentUpdates(dealId, callback, onError) {
+    const handleError = onError || ((err) => console.error('ShipmentRepository.subscribeToShipmentUpdates error:', err));
+
     const q = query(
       collection(db, 'deals', dealId, 'shipmentTracking'),
       orderBy('timestamp', 'asc')
@@ -58,9 +62,7 @@ export class ShipmentRepository {
         );
         callback(updates);
       },
-      (error) => {
-        console.error('ShipmentRepository.subscribeToShipmentUpdates error:', error);
-      }
+      handleError
     );
   }
 

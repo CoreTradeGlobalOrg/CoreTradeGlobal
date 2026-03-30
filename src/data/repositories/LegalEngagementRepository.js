@@ -122,7 +122,8 @@ export class LegalEngagementRepository {
    * @param {Function} callback - Called with LegalEngagement or null
    * @returns {Function} Unsubscribe function — call on component unmount
    */
-  subscribeToEngagementForDeal(dealId, clientId, callback) {
+  subscribeToEngagementForDeal(dealId, clientId, callback, onError) {
+    const handleError = onError || ((err) => console.error('LegalEngagementRepository.subscribeToEngagementForDeal error:', err));
     const q = query(
       collection(db, COLLECTIONS.LEGAL_ENGAGEMENTS),
       where('dealId', '==', dealId),
@@ -140,9 +141,7 @@ export class LegalEngagementRepository {
           callback(null);
         }
       },
-      (error) => {
-        console.error('LegalEngagementRepository.subscribeToEngagementForDeal error:', error);
-      }
+      handleError
     );
   }
 
