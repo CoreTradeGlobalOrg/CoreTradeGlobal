@@ -1,5 +1,5 @@
 ---
-status: complete
+status: diagnosed
 phase: 06-trade-summary-shipment-tracking
 source: 06-01-SUMMARY.md, 06-02-SUMMARY.md, 06-03-SUMMARY.md, 06-04-SUMMARY.md, 06-05-SUMMARY.md
 started: 2026-03-30T00:00:00Z
@@ -101,57 +101,90 @@ skipped: 2
   reason: "User reported: Trade parties show placeholder 'Buyer' and 'Seller' text instead of actual user names"
   severity: major
   test: 4
-  root_cause: ""
-  artifacts: []
-  missing: []
-  debug_session: ""
+  root_cause: "PartiesProvidersSection.jsx lines 136-137 pass hardcoded label='Buyer'/'Seller' instead of actual names. Deal entity doesn't map buyerName/sellerName from Firestore. useTradeSummary doesn't fetch user profiles."
+  artifacts:
+    - path: "src/presentation/components/features/deal/TradeSummary/PartiesProvidersSection.jsx"
+      issue: "Hardcoded label='Buyer'/'Seller' on PartyCard components (lines 136-137)"
+    - path: "src/domain/entities/Deal.js"
+      issue: "Does not map buyerName/sellerName fields from Firestore"
+    - path: "src/presentation/hooks/deal/useTradeSummary.js"
+      issue: "Does not fetch user profiles for buyerId/sellerId"
+  missing:
+    - "Map buyerName/sellerName in Deal.fromFirestore() or fetch user profiles in useTradeSummary"
+    - "Pass actual names to PartyCard label prop"
 
 - truth: "Trade Route Map displays a realistic world map"
   status: failed
   reason: "User reported: pass but the world map looks like shit we need to draw a realistic world map"
   severity: cosmetic
   test: 8
-  root_cause: ""
-  artifacts: []
-  missing: []
-  debug_session: ""
+  root_cause: "TradeRouteMap.jsx uses 6 crude hardcoded SVG polygons (5-7 vertices each) as continent shapes. Pin positions are fixed at (80,80) and (320,90) regardless of actual trade route."
+  artifacts:
+    - path: "src/presentation/components/features/deal/TradeSummary/TradeRouteMap.jsx"
+      issue: "Crude polygon approximations, fixed pin positions, no geographic data"
+  missing:
+    - "Replace with Natural Earth 110m SVG paths for realistic continent outlines (~10KB gzipped)"
+    - "Add location lookup table for dynamic pin positioning"
 
 - truth: "Auto-navigation to trade summary after provider selection, logistics provider can update shipment status, member users can read trade summary without permission errors"
   status: failed
   reason: "User reported: after buyer or seller selected quotes doesn't navigate automatically to the trade summary. Also logistics provider can not update status there is no place for that. Permission error - user can not read this trade summary."
   severity: blocker
   test: 9
-  root_cause: ""
-  artifacts: []
-  missing: []
-  debug_session: ""
+  root_cause: "Two Firestore permission failures: (1) shipmentTracking rule uses resource.data.dealBuyerId but query has no matching where clause — Firestore can't validate; (2) QuoteRepository.subscribeToQuotesForDeal uses collectionGroup query without where('participants','array-contains',uid). Error callbacks in repositories only console.error, never set *Loaded flags → infinite loading. Navigation works but destination fails."
+  artifacts:
+    - path: "firestore.rules"
+      issue: "shipmentTracking rule (lines 291-298) uses resource.data fields but query has no where clause to satisfy it"
+    - path: "src/data/repositories/QuoteRepository.js"
+      issue: "subscribeToQuotesForDeal (lines 82-87) missing participants filter"
+    - path: "src/data/repositories/ShipmentRepository.js"
+      issue: "subscribeToShipmentUpdates (lines 48-51) has no where clause for rule"
+    - path: "src/presentation/hooks/deal/useTradeSummary.js"
+      issue: "onSnapshot error callbacks never set *Loaded flags → infinite loading"
+  missing:
+    - "Fix shipmentTracking rule to use get() on parent deal doc (like offers/contract rules)"
+    - "Add where('participants','array-contains',uid) to subscribeToQuotesForDeal"
+    - "Handle onSnapshot errors gracefully — set loaded flags and surface error state"
 
 - truth: "New Deal button has readable text and navigates correctly"
   status: failed
   reason: "User reported: New Deal button text is yellow needs to be black. Clicking button shows 'Missing conversation or product context' error."
   severity: major
   test: 10
-  root_cause: ""
-  artifacts: []
-  missing: []
-  debug_session: ""
+  root_cause: "Button links to /deals/new without required conversationId/productId query params. The /deals/new page guards against missing params (lines 65-71). Button text color may be CSS specificity override of text-[#0F1B2B]."
+  artifacts:
+    - path: "src/app/(main)/deals/page.jsx"
+      issue: "New Deal button (lines 330-336) links to /deals/new without required params"
+    - path: "src/app/(main)/deals/new/page.jsx"
+      issue: "Guards on missing conversationId/productId (lines 44-45, 65-71)"
+  missing:
+    - "Change button to link to /marketplace or /messages instead of /deals/new"
+    - "Fix button text color — ensure dark text on gold background"
 
 - truth: "Active Shipments tab shows deal cards for providers who have been selected"
   status: failed
   reason: "User reported: it is total empty even buyer-seller selected that logistics provider"
   severity: blocker
   test: 11
-  root_cause: ""
-  artifacts: []
-  missing: []
-  debug_session: ""
+  root_cause: "Missing composite Firestore index for providerUid+status+providerType on quoteRequests collection. Existing indexes cover providerUid+createdAt, dealId+createdAt, status+deadline but NOT the 3-field combination. Query fails with FAILED_PRECONDITION. Secondary: old quoteRequests may have providerType='logistics_provider' instead of 'logistics'."
+  artifacts:
+    - path: "firestore.indexes.json"
+      issue: "Missing composite index for providerUid+status+providerType on quoteRequests"
+    - path: "src/presentation/hooks/provider/useActiveShipments.js"
+      issue: "Query at lines 212-217 requires 3-field composite index that doesn't exist"
+  missing:
+    - "Add composite index: quoteRequests(providerUid ASC, status ASC, providerType ASC)"
+    - "Deploy index: firebase deploy --only firestore:indexes"
+    - "Check/backfill old providerType values (logistics_provider → logistics)"
 
 - truth: "Member users can view and print Trade Summary; print output has no localhost URLs"
   status: failed
   reason: "User reported: Member users get permission error on Trade Summary. Print output shows localhost link at the bottom."
   severity: major
   test: 15
-  root_cause: ""
-  artifacts: []
-  missing: []
-  debug_session: ""
+  root_cause: "Permission error is same root cause as test 9 (shipmentTracking + providerQuotes rules). Localhost link is browser default print header/footer — @page rule has margins where browser renders URL. Fix: set @page margin:0 and use body margin instead."
+  artifacts:
+    - path: "src/app/globals.css"
+      issue: "@page rule (lines 1214-1217) has margins where browser renders URL in footer"
+  missing:
+    - "Set @page { margin: 0 } and add body margin in @media print to clip browser chrome"
