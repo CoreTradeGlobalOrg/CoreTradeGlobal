@@ -5,12 +5,16 @@
  * Subscribes in parallel to: deal, contract, quotes (for provider details),
  * shipment updates, and the current user's legal engagement.
  *
+ * Also fetches buyer and seller display names from UserRepository when the deal
+ * document provides buyerId and sellerId.
+ *
  * Loading pattern: closure flags — sets loading=false only when ALL
  * parallel subscriptions have fired at least once (prevents partial-data render).
  *
  * Usage:
  * const { deal, contract, selectedInsuranceQuote, selectedLogisticsQuote,
- *         shipmentUpdates, latestShipment, legalEngagement, loading, error }
+ *         shipmentUpdates, latestShipment, legalEngagement,
+ *         buyerName, sellerName, loading, error }
  *   = useTradeSummary(dealId, currentUserUid);
  */
 
@@ -33,6 +37,8 @@ import { QUOTE_STATUS } from '@/core/constants/quoteConstants';
  *   shipmentUpdates: import('@/domain/entities/ShipmentUpdate').ShipmentUpdate[],
  *   latestShipment: import('@/domain/entities/ShipmentUpdate').ShipmentUpdate|null,
  *   legalEngagement: import('@/domain/entities/LegalEngagement').LegalEngagement|null,
+ *   buyerName: string|null,
+ *   sellerName: string|null,
  *   loading: boolean,
  *   error: string|null,
  * }}
@@ -43,6 +49,8 @@ export function useTradeSummary(dealId, currentUserUid) {
   const [quotes, setQuotes] = useState([]);
   const [shipmentUpdates, setShipmentUpdates] = useState([]);
   const [legalEngagement, setLegalEngagement] = useState(null);
+  const [buyerName, setBuyerName] = useState(null);
+  const [sellerName, setSellerName] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -119,6 +127,21 @@ export function useTradeSummary(dealId, currentUserUid) {
     };
   }, [dealId, currentUserUid]);
 
+  // Fetch buyer and seller display names from UserRepository when deal IDs are available
+  useEffect(() => {
+    if (!deal?.buyerId || !deal?.sellerId) return;
+
+    const userRepo = container.getUserRepository();
+
+    userRepo.getById(deal.buyerId).then((user) => {
+      setBuyerName(user?.companyName || user?.displayName || 'Buyer');
+    }).catch(() => setBuyerName('Buyer'));
+
+    userRepo.getById(deal.sellerId).then((user) => {
+      setSellerName(user?.companyName || user?.displayName || 'Seller');
+    }).catch(() => setSellerName('Seller'));
+  }, [deal?.buyerId, deal?.sellerId]);
+
   // Derived: find selected insurance and logistics quotes from the quotes list
   const selectedInsuranceQuote = quotes.find(
     (q) => q.providerType === 'insurance' && q.status === QUOTE_STATUS.ACCEPTED
@@ -141,6 +164,8 @@ export function useTradeSummary(dealId, currentUserUid) {
     shipmentUpdates,
     latestShipment,
     legalEngagement,
+    buyerName,
+    sellerName,
     loading,
     error,
   };

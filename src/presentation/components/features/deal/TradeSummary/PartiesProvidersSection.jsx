@@ -115,9 +115,11 @@ function ProviderCard({ icon: Icon, title, quote }) {
  *   deal: import('@/domain/entities/Deal').Deal,
  *   selectedInsuranceQuote: import('@/domain/entities/Quote').Quote|null,
  *   selectedLogisticsQuote: import('@/domain/entities/Quote').Quote|null,
+ *   buyerName: string|null,
+ *   sellerName: string|null,
  * }} props
  */
-export function PartiesProvidersSection({ deal, selectedInsuranceQuote, selectedLogisticsQuote }) {
+export function PartiesProvidersSection({ deal, selectedInsuranceQuote, selectedLogisticsQuote, buyerName, sellerName }) {
   if (!deal) return null;
 
   return (
@@ -133,8 +135,8 @@ export function PartiesProvidersSection({ deal, selectedInsuranceQuote, selected
         <p className="text-[10px] text-[#8899AA] uppercase tracking-wider font-medium mb-2">
           Trade Parties
         </p>
-        <PartyCard role="Buyer" uid={deal.buyerId} label="Buyer" />
-        <PartyCard role="Seller" uid={deal.sellerId} label="Seller" />
+        <PartyCard role="Buyer" uid={deal.buyerId} label={buyerName || 'Buyer'} />
+        <PartyCard role="Seller" uid={deal.sellerId} label={sellerName || 'Seller'} />
       </div>
 
       {/* Providers */}

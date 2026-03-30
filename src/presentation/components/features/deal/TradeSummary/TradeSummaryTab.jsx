@@ -70,6 +70,8 @@ export function TradeSummaryTab({ dealId, currentUserUid }) {
     latestShipment,
     shipmentUpdates,
     legalEngagement,
+    buyerName,
+    sellerName,
     loading,
   } = useTradeSummary(dealId, currentUserUid);
 
@@ -118,6 +120,8 @@ export function TradeSummaryTab({ dealId, currentUserUid }) {
             deal={deal}
             selectedInsuranceQuote={selectedInsuranceQuote}
             selectedLogisticsQuote={selectedLogisticsQuote}
+            buyerName={buyerName}
+            sellerName={sellerName}
           />
           <CostBreakdownSection
             deal={deal}
