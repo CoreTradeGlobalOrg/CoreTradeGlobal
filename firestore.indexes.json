@@ -205,6 +205,24 @@
       "queryScope": "COLLECTION_GROUP",
       "fields": [
         {
+          "fieldPath": "dealId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "participants",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "providerQuotes",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
           "fieldPath": "participants",
           "arrayConfig": "CONTAINS"
         },
@@ -272,6 +290,24 @@
       "fields": [
         {
           "fieldPath": "timestamp",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "quoteRequests",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "providerUid",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "providerType",
           "order": "ASCENDING"
         }
       ]

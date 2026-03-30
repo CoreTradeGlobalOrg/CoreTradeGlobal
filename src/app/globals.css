@@ -1210,9 +1210,15 @@ a:hover {
     break-inside: avoid;
   }
 
-  /* Page margins for clean PDF output */
+  /* Page margins for clean PDF output.
+   * @page margin:0 clips browser chrome (URL footer in footer area).
+   * body margin preserves content spacing while hiding the localhost URL. */
   @page {
-    margin: 20mm 15mm;
+    margin: 0;
     size: A4;
+  }
+
+  body {
+    margin: 20mm 15mm;
   }
 }

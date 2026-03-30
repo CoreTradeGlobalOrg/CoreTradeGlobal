@@ -83,40 +83,89 @@ export function useTradeSummary(dealId, currentUserUid) {
     }
 
     // 1. Subscribe to deal document
-    const unsubDeal = dealRepo.subscribeToDeal(dealId, (dealEntity) => {
-      setDeal(dealEntity);
-      dealLoaded = true;
-      checkAllLoaded();
-    });
+    const unsubDeal = dealRepo.subscribeToDeal(
+      dealId,
+      (dealEntity) => {
+        setDeal(dealEntity);
+        dealLoaded = true;
+        checkAllLoaded();
+      },
+      (err) => {
+        console.error('useTradeSummary deal error:', err);
+        dealLoaded = true;
+        setError('Unable to load some trade summary data');
+        checkAllLoaded();
+      }
+    );
 
     // 2. Subscribe to contract document
-    const unsubContract = contractRepo.subscribeToContract(dealId, (contractEntity) => {
-      setContract(contractEntity);
-      contractLoaded = true;
-      checkAllLoaded();
-    });
+    const unsubContract = contractRepo.subscribeToContract(
+      dealId,
+      (contractEntity) => {
+        setContract(contractEntity);
+        contractLoaded = true;
+        checkAllLoaded();
+      },
+      (err) => {
+        console.error('useTradeSummary contract error:', err);
+        contractLoaded = true;
+        setError('Unable to load some trade summary data');
+        checkAllLoaded();
+      }
+    );
 
     // 3. Subscribe to all provider quotes for this deal (to find selected ones)
-    const unsubQuotes = quoteRepo.subscribeToQuotesForDeal(dealId, (quoteList) => {
-      setQuotes(quoteList);
-      quotesLoaded = true;
-      checkAllLoaded();
-    });
+    //    Passes currentUserUid as the second argument — required by Firestore rule
+    //    (providerQuotes rule checks request.auth.uid in resource.data.participants)
+    const unsubQuotes = quoteRepo.subscribeToQuotesForDeal(
+      dealId,
+      currentUserUid,
+      (quoteList) => {
+        setQuotes(quoteList);
+        quotesLoaded = true;
+        checkAllLoaded();
+      },
+      (err) => {
+        console.error('useTradeSummary quotes error:', err);
+        quotesLoaded = true;
+        setError('Unable to load some trade summary data');
+        checkAllLoaded();
+      }
+    );
 
     // 4. Subscribe to shipment updates
-    const unsubShipment = shipmentRepo.subscribeToShipmentUpdates(dealId, (updates) => {
-      setShipmentUpdates(updates);
-      shipmentsLoaded = true;
-      checkAllLoaded();
-    });
+    const unsubShipment = shipmentRepo.subscribeToShipmentUpdates(
+      dealId,
+      (updates) => {
+        setShipmentUpdates(updates);
+        shipmentsLoaded = true;
+        checkAllLoaded();
+      },
+      (err) => {
+        console.error('useTradeSummary shipments error:', err);
+        shipmentsLoaded = true;
+        setError('Unable to load some trade summary data');
+        checkAllLoaded();
+      }
+    );
 
     // 5. Subscribe to current user's legal engagement for this deal only
     //    CRITICAL: Filter by clientId === currentUserUid — never show opposing party's lawyer
-    const unsubLegal = legalRepo.subscribeToEngagementForDeal(dealId, currentUserUid, (engagement) => {
-      setLegalEngagement(engagement);
-      legalLoaded = true;
-      checkAllLoaded();
-    });
+    const unsubLegal = legalRepo.subscribeToEngagementForDeal(
+      dealId,
+      currentUserUid,
+      (engagement) => {
+        setLegalEngagement(engagement);
+        legalLoaded = true;
+        checkAllLoaded();
+      },
+      (err) => {
+        console.error('useTradeSummary legal error:', err);
+        legalLoaded = true;
+        setError('Unable to load some trade summary data');
+        checkAllLoaded();
+      }
+    );
 
     return () => {
       unsubDeal();
