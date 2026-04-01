@@ -3225,6 +3225,7 @@ exports.submitShipmentUpdate = onCall(async (request) => {
     etaDate: etaTimestamp,
     dealBuyerId: deal.buyerId,
     dealSellerId: deal.sellerId,
+    readers: [deal.buyerId, deal.sellerId, uid],
   };
   await db.collection('deals').doc(dealId).collection('shipmentTracking').add(updateData);
 
@@ -3347,6 +3348,7 @@ exports.confirmInsuranceCoverage = onCall(async (request) => {
       etaDate: null,
       dealBuyerId: deal.buyerId,
       dealSellerId: deal.sellerId,
+      readers: [deal.buyerId, deal.sellerId, uid],
     });
   });
 

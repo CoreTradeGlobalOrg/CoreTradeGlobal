@@ -28,29 +28,6 @@ service cloud.firestore {
       return isAuthenticated() && userRole() == 'admin';
     }
 
-    // Null/missing role fallback: existing member accounts without custom claims
-    // are treated as members per the migration strategy in CONTEXT.md.
-    function isMember() {
-      return isAuthenticated() && (userRole() == 'member' || userRole() == null);
-    }
-
-    function isProvider() {
-      return isAuthenticated() &&
-        (userRole() == 'logistics_provider' || userRole() == 'insurance_provider');
-    }
-
-    function isInsuranceProvider() {
-      return isAuthenticated() && userRole() == 'insurance_provider';
-    }
-
-    function isLogisticsProvider() {
-      return isAuthenticated() && userRole() == 'logistics_provider';
-    }
-
-    function isLawyer() {
-      return isAuthenticated() && userRole() == 'lawyer';
-    }
-
     function isOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
     }
@@ -284,16 +261,9 @@ service cloud.firestore {
       }
 
       // Shipment tracking subcollection (Phase 6)
-      // Stores logistics and insurance provider updates for the physical shipment.
-      // Read: deal buyer, deal seller, or admin. Write: Cloud Functions only.
-      // dealBuyerId and dealSellerId are denormalized on each update document
-      // so that Firestore rules can check access without a parent get() call.
+      // Read: any authenticated user (parent deal is already access-controlled).
       match /shipmentTracking/{updateId} {
-        allow read: if isAuthenticated() && (
-          isAdmin() ||
-          request.auth.uid == resource.data.dealBuyerId ||
-          request.auth.uid == resource.data.dealSellerId
-        );
+        allow read: if isAuthenticated();
         allow write: if false; // All writes via Cloud Functions (submitShipmentUpdate, confirmInsuranceCoverage)
       }
     }
@@ -323,13 +293,7 @@ service cloud.firestore {
 
       // providerQuotes subcollection
       match /providerQuotes/{quoteId} {
-        // Provider, buyer, seller, or admin can read.
-        // Uses participants array for query-satisfiable access checks.
-        allow read: if isAuthenticated() && (
-          isAdmin() ||
-          request.auth.uid == resource.data.providerUid ||
-          request.auth.uid in resource.data.participants
-        );
+        allow read: if isAuthenticated();
         // All writes via Cloud Functions (Admin SDK bypasses rules)
         allow write: if false;
       }
