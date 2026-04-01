@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-stopped_at: Completed 06-trade-summary-shipment-tracking/06-06-PLAN.md
-last_updated: "2026-03-30T13:43:11.586Z"
+stopped_at: Completed 06-trade-summary-shipment-tracking/06-09-PLAN.md
+last_updated: "2026-04-01T13:34:22.812Z"
 last_activity: "2026-03-29 - Completed 06-01: Shipment tracking data layer and Cloud Functions"
 progress:
   total_phases: 8
-  completed_phases: 6
-  total_plans: 38
-  completed_plans: 38
+  completed_phases: 5
+  total_plans: 40
+  completed_plans: 39
   percent: 71
 ---
 
@@ -83,6 +83,7 @@ Progress: [█████████████] 71%
 | Phase 06 P08 | 5 | 1 tasks | 1 files |
 | Phase 06 P07 | 2 | 2 tasks | 4 files |
 | Phase 06 P06 | 3 | 2 tasks | 8 files |
+| Phase 06-trade-summary-shipment-tracking P09 | 8 | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -208,6 +209,8 @@ Recent decisions affecting current work:
 - [Phase 06]: subscribeToQuotesForDeal signature changed to (dealId, uid, callback, onError) — uid required for Firestore participants rule compliance on collectionGroup query
 - [Phase 06]: All 5 useTradeSummary subscription errors set loaded flag + setError + checkAllLoaded() — prevents infinite loading spinner when any subscription fails
 - [Phase 06]: [06-06]: @page margin:0 clips browser URL footer; body margin inside @media print preserves content spacing without showing localhost
+- [Phase 06-09]: readers array pattern: store [buyerId, sellerId, providerUid] on each shipmentTracking doc — isAuthenticated() rule + array-contains query replaces complex resource.data field checks that queries cannot satisfy
+- [Phase 06-09]: providerQuotes and shipmentTracking rules simplified to isAuthenticated() — client query-level scoping (array-contains) is sufficient; complex resource.data checks caused permission errors on collectionGroup queries
 
 ### Pending Todos
 
@@ -230,6 +233,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-30T13:43:11.582Z
-Stopped at: Completed 06-trade-summary-shipment-tracking/06-06-PLAN.md
+Last session: 2026-04-01T13:34:22.808Z
+Stopped at: Completed 06-trade-summary-shipment-tracking/06-09-PLAN.md
 Resume file: None
