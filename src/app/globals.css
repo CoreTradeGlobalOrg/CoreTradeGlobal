@@ -17,10 +17,13 @@ input[type="number"] {
   appearance: textfield;
 }
 
-/* Style native date picker icon and calendar popup with golden accent */
+/* Style native date picker icon with golden accent */
 input[type="date"]::-webkit-calendar-picker-indicator {
-  filter: invert(82%) sepia(60%) saturate(1000%) hue-rotate(358deg) brightness(103%) contrast(106%);
+  filter: brightness(0) saturate(100%) invert(83%) sepia(44%) saturate(1000%) hue-rotate(3deg) brightness(104%) contrast(104%);
   cursor: pointer;
+}
+input[type="date"]::-webkit-datetime-edit-fields-wrapper {
+  color: inherit;
 }
 input[type="date"] {
   color-scheme: dark;

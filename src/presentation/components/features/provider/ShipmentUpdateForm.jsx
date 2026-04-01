@@ -224,7 +224,7 @@ export function ShipmentUpdateForm({ dealId, currentStatus, onSubmit, loading })
           value={etaDate}
           onChange={(e) => setEtaDate(e.target.value)}
           disabled={isSubmitting}
-          className="w-full bg-[#0D1822] border border-[#2A3B52] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-[#FFD700] disabled:opacity-50 [color-scheme:dark] accent-[#FFD700]"
+          className="w-full bg-[#0D1822] border border-[#2A3B52] text-[#FFD700] text-sm rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-[#FFD700] disabled:opacity-50 [color-scheme:dark] accent-[#FFD700]"
         />
       </div>
 
