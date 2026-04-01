@@ -139,6 +139,7 @@ export function useActiveShipments(uid, providerType) {
       if (normalizedType === 'logistics') {
         const trackingQ = query(
           collection(db, 'deals', dealId, 'shipmentTracking'),
+          where('readers', 'array-contains', uid),
           orderBy('timestamp', 'asc')
         );
         const unsubTracking = onSnapshot(
@@ -166,6 +167,7 @@ export function useActiveShipments(uid, providerType) {
         // Insurance: populate with empty shipment data (coverage confirmed via shipmentUpdates)
         const trackingQ = query(
           collection(db, 'deals', dealId, 'shipmentTracking'),
+          where('readers', 'array-contains', uid),
           orderBy('timestamp', 'asc')
         );
         const unsubTracking = onSnapshot(

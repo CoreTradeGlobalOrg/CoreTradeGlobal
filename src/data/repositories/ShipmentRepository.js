@@ -41,12 +41,13 @@ export class ShipmentRepository {
    * from oldest (top) to newest (bottom).
    *
    * @param {string} dealId - Parent deal document ID
+   * @param {string} uid - Current user's UID (required for Firestore security rule)
    * @param {Function} callback - Called with ShipmentUpdate[] on each snapshot
    * @param {Function} [onError] - Optional error callback; defaults to console.error.
    *   Callers should set a loaded flag inside onError to prevent infinite loading spinners.
    * @returns {Function} Unsubscribe function — call on component unmount
    */
-  subscribeToShipmentUpdates(dealId, callback, onError) {
+  subscribeToShipmentUpdates(dealId, uid, callback, onError) {
     const handleError = onError || ((err) => console.error('ShipmentRepository.subscribeToShipmentUpdates error:', err));
 
     const q = query(
@@ -71,6 +72,7 @@ export class ShipmentRepository {
    * Useful for displaying current status without a real-time subscription.
    *
    * @param {string} dealId - Parent deal document ID
+   * @param {string} uid - Current user's UID (required for Firestore security rule)
    * @returns {Promise<ShipmentUpdate|null>}
    */
   async getLatestShipmentUpdate(dealId) {

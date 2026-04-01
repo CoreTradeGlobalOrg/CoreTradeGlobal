@@ -279,11 +279,11 @@ export function DealSidebar({ deal, latestOffer, currentUserUid, otherPartyViewi
     if (!showTimeline || propShipmentUpdates !== undefined || !deal?.id) return;
 
     const shipmentRepo = container.getShipmentRepository();
-    const unsub = shipmentRepo.subscribeToShipmentUpdates(deal.id, (updates) => {
+    const unsub = shipmentRepo.subscribeToShipmentUpdates(deal.id, currentUserUid, (updates) => {
       setOwnShipmentUpdates(updates);
     });
     return () => unsub();
-  }, [showTimeline, propShipmentUpdates, deal?.id]);
+  }, [showTimeline, propShipmentUpdates, deal?.id, currentUserUid]);
 
   if (!deal) return null;
 

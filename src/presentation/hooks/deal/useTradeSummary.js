@@ -136,6 +136,7 @@ export function useTradeSummary(dealId, currentUserUid) {
     // 4. Subscribe to shipment updates
     const unsubShipment = shipmentRepo.subscribeToShipmentUpdates(
       dealId,
+      currentUserUid,
       (updates) => {
         setShipmentUpdates(updates);
         shipmentsLoaded = true;
