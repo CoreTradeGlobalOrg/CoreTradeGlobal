@@ -17,11 +17,11 @@
 
 import {
   collection,
-  collectionGroup,
   query,
   where,
   orderBy,
   onSnapshot,
+  getDocs,
 } from 'firebase/firestore';
 import { db } from '@/core/config/firebase.config';
 import { Quote } from '@/domain/entities/Quote';
@@ -69,36 +69,71 @@ export class QuoteRepository {
 
   /**
    * Subscribe to all provider quotes for a specific deal across all quote requests.
-   * Used by the buyer comparison view to show all submitted quotes for a deal.
+   * Used by the Trade Summary to show selected insurance/logistics quotes.
    *
-   * Uses collectionGroup('providerQuotes') with a dealId filter AND a participants
-   * array-contains filter. The providerQuotes rule is `allow read: if isAuthenticated()`
-   * so no participants filter is needed in the query.
+   * Two-step approach: first finds quoteRequests for this deal that the user
+   * can access, then subscribes to each one's providerQuotes subcollection.
+   * Avoids collectionGroup queries which have permission issues.
    *
    * @param {string} dealId - Deal ID to subscribe to
+   * @param {string} uid - Current user's UID (for quoteRequests participants filter)
    * @param {Function} callback - Called with Quote[] on each update
    * @param {Function} [onError] - Optional error callback; defaults to console.error
    * @returns {Function} Unsubscribe function — call on component unmount
    */
-  subscribeToQuotesForDeal(dealId, callback, onError) {
+  subscribeToQuotesForDeal(dealId, uid, callback, onError) {
     const handleError = onError || ((err) => console.error('QuoteRepository.subscribeToQuotesForDeal error:', err));
+    const unsubs = [];
+    let cancelled = false;
 
-    const q = query(
-      collectionGroup(db, 'providerQuotes'),
+    // Step 1: Find all quoteRequests for this deal
+    const qrQuery = query(
+      collection(db, 'quoteRequests'),
       where('dealId', '==', dealId),
-      orderBy('createdAt', 'desc')
+      where('participants', 'array-contains', uid)
     );
 
-    return onSnapshot(
-      q,
-      (snap) => {
-        const quotes = snap.docs.map((doc) =>
-          Quote.fromFirestore({ id: doc.id, ...doc.data() })
-        );
-        callback(quotes);
-      },
-      handleError
-    );
+    getDocs(qrQuery)
+      .then((qrSnap) => {
+        if (cancelled) return;
+
+        if (qrSnap.empty) {
+          callback([]);
+          return;
+        }
+
+        // Step 2: Subscribe to providerQuotes under each quoteRequest
+        const allQuotes = new Map(); // requestId -> Quote[]
+
+        qrSnap.docs.forEach((qrDoc) => {
+          const subQ = query(
+            collection(db, 'quoteRequests', qrDoc.id, 'providerQuotes'),
+            orderBy('createdAt', 'desc')
+          );
+
+          const unsub = onSnapshot(
+            subQ,
+            (snap) => {
+              allQuotes.set(
+                qrDoc.id,
+                snap.docs.map((d) => Quote.fromFirestore({ id: d.id, ...d.data() }))
+              );
+              // Merge all quotes and emit
+              const merged = Array.from(allQuotes.values()).flat();
+              merged.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+              callback(merged);
+            },
+            handleError
+          );
+          unsubs.push(unsub);
+        });
+      })
+      .catch(handleError);
+
+    return () => {
+      cancelled = true;
+      unsubs.forEach((fn) => fn());
+    };
   }
 }
 

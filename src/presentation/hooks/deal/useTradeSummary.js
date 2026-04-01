@@ -117,6 +117,7 @@ export function useTradeSummary(dealId, currentUserUid) {
     // 3. Subscribe to all provider quotes for this deal (to find selected ones)
     const unsubQuotes = quoteRepo.subscribeToQuotesForDeal(
       dealId,
+      currentUserUid,
       (quoteList) => {
         setQuotes(quoteList);
         quotesLoaded = true;
