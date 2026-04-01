@@ -329,7 +329,7 @@ export default function DealsPage() {
           </div>
           <Link
             href="/products"
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[var(--color-primary)] text-black text-sm font-semibold hover:bg-[var(--color-primary-dark)] transition-colors"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[var(--color-primary)] !text-black text-sm font-semibold hover:bg-[var(--color-primary-dark)] transition-colors"
           >
             <Plus className="w-4 h-4" />
             Browse Marketplace

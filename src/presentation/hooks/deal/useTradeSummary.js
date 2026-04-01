@@ -115,11 +115,8 @@ export function useTradeSummary(dealId, currentUserUid) {
     );
 
     // 3. Subscribe to all provider quotes for this deal (to find selected ones)
-    //    Passes currentUserUid as the second argument — required by Firestore rule
-    //    (providerQuotes rule checks request.auth.uid in resource.data.participants)
     const unsubQuotes = quoteRepo.subscribeToQuotesForDeal(
       dealId,
-      currentUserUid,
       (quoteList) => {
         setQuotes(quoteList);
         quotesLoaded = true;

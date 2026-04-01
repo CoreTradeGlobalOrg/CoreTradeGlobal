@@ -72,27 +72,20 @@ export class QuoteRepository {
    * Used by the buyer comparison view to show all submitted quotes for a deal.
    *
    * Uses collectionGroup('providerQuotes') with a dealId filter AND a participants
-   * array-contains filter. The participants filter is required by the Firestore
-   * security rule: `request.auth.uid in resource.data.participants`.
-   * Without it, member users receive permission-denied errors on the collectionGroup query.
-   *
-   * NOTE: This requires composite indexes on providerQuotes:
-   *       - dealId + participants (array-contains) + createdAt
-   *       Deploy via firestore.indexes.json before using in production.
+   * array-contains filter. The providerQuotes rule is `allow read: if isAuthenticated()`
+   * so no participants filter is needed in the query.
    *
    * @param {string} dealId - Deal ID to subscribe to
-   * @param {string} uid - Current user's UID (required for Firestore rule compliance)
    * @param {Function} callback - Called with Quote[] on each update
    * @param {Function} [onError] - Optional error callback; defaults to console.error
    * @returns {Function} Unsubscribe function — call on component unmount
    */
-  subscribeToQuotesForDeal(dealId, uid, callback, onError) {
+  subscribeToQuotesForDeal(dealId, callback, onError) {
     const handleError = onError || ((err) => console.error('QuoteRepository.subscribeToQuotesForDeal error:', err));
 
     const q = query(
       collectionGroup(db, 'providerQuotes'),
       where('dealId', '==', dealId),
-      where('participants', 'array-contains', uid),
       orderBy('createdAt', 'desc')
     );
 
