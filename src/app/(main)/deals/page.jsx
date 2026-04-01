@@ -328,8 +328,8 @@ export default function DealsPage() {
             </p>
           </div>
           <Link
-            href="/marketplace"
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#FFD700] text-black text-sm font-semibold hover:bg-[#e6c200] transition-colors"
+            href="/products"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#FFD700] !text-black text-sm font-semibold hover:bg-[#e6c200] transition-colors"
           >
             <Plus className="w-4 h-4" />
             Browse Marketplace

@@ -14,6 +14,7 @@
 
 'use client';
 
+import { useState } from 'react';
 import { Shield, CheckCircle, Loader2 } from 'lucide-react';
 import { useActiveShipments } from '@/presentation/hooks/provider/useActiveShipments';
 import { SHIPMENT_STATUS } from '@/core/constants/shipmentConstants';
@@ -63,12 +64,17 @@ function CoverageCard({ shipment, onConfirm, actionLoading }) {
     (u) => u.status === SHIPMENT_STATUS.COVERAGE_ACTIVE
   );
 
+  const [confirming, setConfirming] = useState(false);
+
   async function handleConfirm() {
-    if (isCoverageActive || actionLoading) return;
+    if (isCoverageActive || actionLoading || confirming) return;
+    setConfirming(true);
     try {
       await onConfirm(quoteRequest.dealId);
     } catch {
       // toast shown by hook
+    } finally {
+      setConfirming(false);
     }
   }
 

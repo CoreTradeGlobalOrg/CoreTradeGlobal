@@ -111,6 +111,10 @@ export function useDeal(dealId, currentUserUid = null) {
       setDeal(dealEntity);
       dealLoaded = true;
       checkLoaded();
+    }, (err) => {
+      console.error('[DEBUG] useDeal: DEAL DOC subscription failed:', err);
+      dealLoaded = true;
+      checkLoaded();
     });
 
     // Subscribe to offers subcollection (ordered by round ascending)
