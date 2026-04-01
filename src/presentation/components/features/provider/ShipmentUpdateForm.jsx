@@ -141,7 +141,7 @@ export function ShipmentUpdateForm({ dealId, currentStatus, onSubmit, loading })
           value={selectedStatus}
           onChange={(e) => setSelectedStatus(e.target.value)}
           disabled={isSubmitting}
-          className="w-full bg-[#0D1822] border border-[#2A3B52] text-white text-sm rounded-lg px-3 py-2 pr-8 focus:outline-none focus:ring-1 focus:ring-[#FFD700] disabled:opacity-50 appearance-none bg-[url('data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2012%2012%22%3E%3Cpath%20fill%3D%22%23FFD700%22%20d%3D%22M2%204l4%204%204-4%22%2F%3E%3C%2Fsvg%3E')] bg-[length:12px] bg-[right_12px_center] bg-no-repeat"
+          className="w-full bg-[#0D1822] border border-[#2A3B52] text-white text-sm rounded-lg px-3 py-2 pr-8 focus:outline-none focus:ring-1 focus:ring-[#FFD700] disabled:opacity-50 appearance-none bg-[url('data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2012%2012%22%3E%3Cpath%20fill%3D%22white%22%20d%3D%22M2%204l4%204%204-4%22%2F%3E%3C%2Fsvg%3E')] bg-[length:12px] bg-[right_12px_center] bg-no-repeat"
         >
           {LOGISTICS_STATUS_ORDER.map((s) => {
             const sIdx = statusIndex(s);
@@ -224,7 +224,7 @@ export function ShipmentUpdateForm({ dealId, currentStatus, onSubmit, loading })
           value={etaDate}
           onChange={(e) => setEtaDate(e.target.value)}
           disabled={isSubmitting}
-          className="w-full bg-[#0D1822] border border-[#2A3B52] text-[#FFD700] text-sm rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-[#FFD700] disabled:opacity-50 [color-scheme:dark] accent-[#FFD700]"
+          className="w-full bg-[#0D1822] border border-[#2A3B52] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-[#FFD700] disabled:opacity-50 [color-scheme:dark]"
         />
       </div>
 

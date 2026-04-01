@@ -17,17 +17,12 @@ input[type="number"] {
   appearance: textfield;
 }
 
-/* Style native date picker icon with golden accent */
+/* Date picker: white icon, dark scheme */
 input[type="date"]::-webkit-calendar-picker-indicator {
-  filter: brightness(0) saturate(100%) invert(83%) sepia(44%) saturate(1000%) hue-rotate(3deg) brightness(104%) contrast(104%);
   cursor: pointer;
-}
-input[type="date"]::-webkit-datetime-edit-fields-wrapper {
-  color: inherit;
 }
 input[type="date"] {
   color-scheme: dark;
-  accent-color: #FFD700;
 }
 
 :root {
