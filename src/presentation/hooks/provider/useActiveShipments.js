@@ -129,8 +129,9 @@ export function useActiveShipments(uid, providerType) {
           shipmentsMapRef.current[qr.id] = { ...existing, quoteRequest: qr, deal: dealData };
           flushShipments();
         },
-        (err) => {
-          console.error('useActiveShipments deal snapshot error:', err);
+        () => {
+          // Permission denied is expected — providers aren't deal participants.
+          // UI falls back to quoteRequest.dealSnapshot data (productName, buyerName, sellerName).
         }
       );
       dealUnsubs.push(unsubDeal);

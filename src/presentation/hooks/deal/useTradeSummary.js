@@ -128,7 +128,6 @@ export function useTradeSummary(dealId, currentUserUid) {
       (err) => {
         console.error('useTradeSummary quotes error:', err);
         quotesLoaded = true;
-        setError('Unable to load some trade summary data');
         checkAllLoaded();
       }
     );
@@ -145,7 +144,6 @@ export function useTradeSummary(dealId, currentUserUid) {
       (err) => {
         console.error('useTradeSummary shipments error:', err);
         shipmentsLoaded = true;
-        setError('Unable to load some trade summary data');
         checkAllLoaded();
       }
     );
@@ -163,7 +161,6 @@ export function useTradeSummary(dealId, currentUserUid) {
       (err) => {
         console.error('useTradeSummary legal error:', err);
         legalLoaded = true;
-        setError('Unable to load some trade summary data');
         checkAllLoaded();
       }
     );

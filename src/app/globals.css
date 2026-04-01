@@ -17,6 +17,16 @@ input[type="number"] {
   appearance: textfield;
 }
 
+/* Style native date picker icon and calendar popup with golden accent */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(82%) sepia(60%) saturate(1000%) hue-rotate(358deg) brightness(103%) contrast(106%);
+  cursor: pointer;
+}
+input[type="date"] {
+  color-scheme: dark;
+  accent-color: #FFD700;
+}
+
 :root {
   /* Primary Colors - Gold/Yellow from Homepage */
   --color-primary: #FFD700;
@@ -1210,15 +1220,27 @@ a:hover {
     break-inside: avoid;
   }
 
-  /* Page margins for clean PDF output.
-   * @page margin:0 clips browser chrome (URL footer in footer area).
-   * body margin preserves content spacing while hiding the localhost URL. */
+  /* @page margin:0 removes the margin area where browsers render URL footers.
+   * body padding preserves content spacing. */
   @page {
     margin: 0;
     size: A4;
   }
 
   body {
-    margin: 20mm 15mm;
+    padding: 20mm 15mm 25mm !important;
+    margin: 0 !important;
+  }
+
+  /* Branded print footer replacing browser URL */
+  body::after {
+    content: "coretradeglobal.com";
+    position: fixed;
+    bottom: 5mm;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-size: 9px;
+    color: #999;
   }
 }
