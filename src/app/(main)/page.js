@@ -8,7 +8,6 @@
 
 'use client';
 
-import { CurrencyTicker } from '@/presentation/components/homepage/CurrencyTicker/CurrencyTicker';
 import { HeroSection } from '@/presentation/components/homepage/Hero/HeroSection';
 import { FeaturedProducts } from '@/presentation/components/homepage/Products/FeaturedProducts';
 import { FeaturedRFQs } from '@/presentation/components/homepage/RFQs/FeaturedRFQs';
@@ -27,9 +26,6 @@ export default function Home() {
 
   return (
     <div className="homepage">
-      {/* Live Currency Ticker — visible to all visitors, no login required (INTEL-01) */}
-      <CurrencyTicker />
-
       {/* Hero Section with 3D Globe */}
       <HeroSection fetchData={HERO_FETCH_DATA} />
 

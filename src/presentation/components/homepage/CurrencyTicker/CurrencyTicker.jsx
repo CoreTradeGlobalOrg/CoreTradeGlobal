@@ -3,45 +3,14 @@
 /**
  * CurrencyTicker
  *
- * Auto-scrolling marquee bar displaying live exchange rates for 8 currencies.
- * Fixed below the navbar on the homepage — visible to all visitors
- * without login (INTEL-01).
- *
- * - Rates auto-refresh every 60s via useLiveCurrency singleton hook
- * - Tracks navbar height on scroll (100px default → 80px scrolled, 70→60 mobile)
- * - Pauses on hover for readability
- * - "Updated X ago" timestamp appended at the end of each content block
- * - Graceful fallback: shows cached rates with warning badge, or "unavailable" message
- * - Responsive: text-[10px] on mobile, sm:text-xs on desktop
+ * Auto-scrolling marquee bar displaying live exchange rates.
+ * Rendered inside the Navbar at the bottom — no fixed positioning needed.
+ * Visible to all visitors without login (INTEL-01).
  */
 
-import { useState, useEffect } from 'react';
 import { useLiveCurrency } from '@/presentation/hooks/intelligence/useLiveCurrency';
 import { TICKER_PAIRS } from '@/core/constants/currencyConstants';
 import { formatDistanceToNow } from 'date-fns';
-
-// ── Navbar height tracker ────────────────────────────────────────────────────
-
-function useNavbarHeight() {
-  const [top, setTop] = useState(null); // null = not mounted yet (SSR)
-
-  useEffect(() => {
-    const nav = document.querySelector('.navbar');
-    if (!nav) return;
-
-    setTop(nav.offsetHeight);
-
-    // ResizeObserver fires when the navbar actually changes size (scroll class toggle)
-    const ro = new ResizeObserver(([entry]) => {
-      setTop(entry.contentRect.height || nav.offsetHeight);
-    });
-    ro.observe(nav);
-
-    return () => ro.disconnect();
-  }, []);
-
-  return top;
-}
 
 // ── Rate calculation helpers ──────────────────────────────────────────────────
 
@@ -49,9 +18,7 @@ function getPairRate(pair, rates) {
   if (!rates) return null;
   const { base, quote } = pair;
 
-  if (base === 'EUR') {
-    return rates[quote] ?? null;
-  }
+  if (base === 'EUR') return rates[quote] ?? null;
   if (quote === 'EUR') {
     const baseRate = rates[base];
     return baseRate ? 1 / baseRate : null;
@@ -71,9 +38,7 @@ function getDecimalPlaces(pair) {
 // ── Ticker items ──────────────────────────────────────────────────────────────
 
 function TickerItems({ rates, fetchedAt, isStale, ariaHidden = false }) {
-  const availablePairs = TICKER_PAIRS.filter((pair) => {
-    return getPairRate(pair, rates) !== null;
-  });
+  const availablePairs = TICKER_PAIRS.filter((pair) => getPairRate(pair, rates) !== null);
 
   return (
     <span className="inline-flex items-center" aria-hidden={ariaHidden || undefined}>
@@ -84,9 +49,7 @@ function TickerItems({ rates, fetchedAt, isStale, ariaHidden = false }) {
 
         return (
           <span key={pair.label} className="inline-flex items-center">
-            {i > 0 && (
-              <span className="text-[#4A5568] mx-2" aria-hidden="true">·</span>
-            )}
+            {i > 0 && <span className="text-[#4A5568] mx-2" aria-hidden="true">·</span>}
             <span className="text-[#FFD700] font-semibold mr-1">{pair.label}</span>
             <span className="text-white">{displayRate}</span>
           </span>
@@ -109,12 +72,9 @@ function TickerItems({ rates, fetchedAt, isStale, ariaHidden = false }) {
 
 // ── Loading skeleton ──────────────────────────────────────────────────────────
 
-function TickerSkeleton({ top }) {
+function TickerSkeleton() {
   return (
-    <div
-      style={{ top }}
-      className="fixed left-0 right-0 z-[999] overflow-hidden bg-[#0A1628] border-b border-[#2A3B52] py-1.5 px-4 transition-[top] duration-200"
-    >
+    <div className="w-full overflow-hidden bg-[#0A1628] border-t border-[#2A3B52] py-1.5 px-4">
       <div className="flex gap-6 animate-pulse">
         {[...Array(6)].map((_, i) => (
           <div key={i} className="flex gap-2 items-center">
@@ -130,23 +90,13 @@ function TickerSkeleton({ top }) {
 // ── Main component ────────────────────────────────────────────────────────────
 
 export function CurrencyTicker() {
-  const navbarHeight = useNavbarHeight();
-  const { rates, fetchedAt, isStale, cacheExpired, error, loading } =
-    useLiveCurrency();
+  const { rates, fetchedAt, isStale, cacheExpired, error, loading } = useLiveCurrency();
 
-  // Don't render on server — avoids hydration mismatch from dynamic navbar height
-  if (navbarHeight === null) return null;
-
-  if (loading) {
-    return <TickerSkeleton top={navbarHeight} />;
-  }
+  if (loading) return <TickerSkeleton />;
 
   if (cacheExpired || (error && !rates)) {
     return (
-      <div
-        style={{ top: navbarHeight }}
-        className="fixed left-0 right-0 z-[999] overflow-hidden bg-[#0A1628] border-b border-[#2A3B52] py-1.5 px-4 transition-[top] duration-200"
-      >
+      <div className="w-full overflow-hidden bg-[#0A1628] border-t border-[#2A3B52] py-1.5 px-4">
         <p className="text-[10px] sm:text-xs text-[#8899AA] text-center">
           Currency rates temporarily unavailable
         </p>
@@ -155,13 +105,8 @@ export function CurrencyTicker() {
   }
 
   return (
-    <div
-      style={{ top: navbarHeight }}
-      className="fixed left-0 right-0 z-[999] overflow-hidden bg-[#0A1628] border-b border-[#2A3B52] py-1.5 transition-[top] duration-200"
-    >
-      <div
-        className="flex animate-marquee whitespace-nowrap text-[10px] sm:text-xs [animation-play-state:running] hover:[animation-play-state:paused]"
-      >
+    <div className="w-full overflow-hidden bg-[#0A1628] border-t border-[#2A3B52] py-1.5">
+      <div className="flex animate-marquee whitespace-nowrap text-[10px] sm:text-xs [animation-play-state:running] hover:[animation-play-state:paused]">
         <TickerItems rates={rates} fetchedAt={fetchedAt} isStale={isStale} />
         <TickerItems rates={rates} fetchedAt={fetchedAt} isStale={isStale} ariaHidden />
       </div>

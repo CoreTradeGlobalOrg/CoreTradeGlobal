@@ -16,6 +16,7 @@ import { useLogout } from '@/presentation/hooks/auth/useLogout';
 import { Menu, X, User, LogOut } from 'lucide-react';
 import { NotificationBell } from '@/presentation/components/common/NotificationBell/NotificationBell';
 import { ROLES } from '@/core/constants/roles';
+import { CurrencyTicker } from '@/presentation/components/homepage/CurrencyTicker/CurrencyTicker';
 
 /**
  * NAV_LINKS
@@ -140,6 +141,8 @@ export function Navbar() {
 
   return (
     <nav className={`navbar ${isScrolled ? 'scrolled' : ''}`}>
+      {/* Main nav row — logo, links, auth */}
+      <div className="navbar-content">
       {/* Logo Container */}
       <div className="nav-logo-container">
         <Link
@@ -280,6 +283,8 @@ export function Navbar() {
         </button>
       </div>
 
+      </div>{/* end navbar-content */}
+
       {/* Mobile Menu */}
       {isMobileMenuOpen && (
         <div className="md:hidden absolute top-full left-0 right-0 bg-[#0F1B2B] border-t border-[rgba(255,255,255,0.1)] shadow-lg">
@@ -368,6 +373,9 @@ export function Navbar() {
           </div>
         </div>
       )}
+
+      {/* Currency ticker at bottom of navbar */}
+      <CurrencyTicker />
     </nav>
   );
 }
