@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-stopped_at: Completed 08-02-PLAN.md
-last_updated: "2026-04-02T12:51:46.980Z"
+stopped_at: Completed 08-03-PLAN.md
+last_updated: "2026-04-02T12:57:25.653Z"
 last_activity: "2026-04-02 - Completed quick task 5: Fix hero not fetching last verified user"
 progress:
   total_phases: 8
-  completed_phases: 6
+  completed_phases: 7
   total_plans: 43
-  completed_plans: 42
+  completed_plans: 43
   percent: 71
 ---
 
@@ -87,6 +87,7 @@ Progress: [█████████████] 71%
 | Phase 06-trade-summary-shipment-tracking P10 | 2 | 1 tasks | 3 files |
 | Phase 08 P01 | 4 | 2 tasks | 5 files |
 | Phase 08 P02 | 2 | 2 tasks | 3 files |
+| Phase 08 P03 | 4 | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -221,6 +222,8 @@ Recent decisions affecting current work:
 - [Phase 08-01]: 16 TICKER_PAIRS covering all 8 currencies in conventional forex quoting directions; isStale derived from error === 'Using cached rates'
 - [Phase 08-02]: CurrencyConvertPanel uses useState(null) + hydrated flag for localStorage init — avoids SSR hydration mismatch on target currency state
 - [Phase 08-02]: pickDefault() auto-swaps default target away from base currency — handles EUR-base or USD-base deals gracefully
+- [Phase 08-03]: Client-side direct fetch first; CORS proxy fallback only on TypeError — preserves per-user IP rate budget vs shared server IP
+- [Phase 08-03]: FreightEstimatorWidget available on all deal stages; load type auto-detected via suggestLoadType() heuristic, shown as read-only badge
 
 ### Pending Todos
 
@@ -244,6 +247,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-02T12:51:46.975Z
-Stopped at: Completed 08-02-PLAN.md
+Last session: 2026-04-02T12:57:25.648Z
+Stopped at: Completed 08-03-PLAN.md
 Resume file: None

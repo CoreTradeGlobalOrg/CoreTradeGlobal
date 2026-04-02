@@ -19,7 +19,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 5: Legal Consulting** - Independent lawyer hiring per deal party, private encrypted channels, versioned contract drafts, and risk analysis (completed 2026-03-12)
 - [x] **Phase 6: Trade Summary and Shipment Tracking (S4)** - Trade summary dashboard, shipment tracking, order timeline, and role-dispatched dashboards (UAT gap closure in progress) (completed 2026-03-30)
 - [ ] **Phase 7: Platform Hardening** - Quality sweep of all features for UI consistency, error handling, validation, and performance
-- [ ] **Phase 8: Live Currency and Freight Intelligence (INSERTED)** - Live currency ticker, multi-currency deal conversions, and freight cost estimator via Freightos API
+- [x] **Phase 8: Live Currency and Freight Intelligence (INSERTED)** - Live currency ticker, multi-currency deal conversions, and freight cost estimator via Freightos API (completed 2026-04-02)
 
 ## Phase Details
 
@@ -173,7 +173,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 (parallel with 3-4) -> 6 
 | 5. Legal Consulting | 11/11 | Complete   | 2026-03-12 |
 | 6. Trade Summary and Shipment Tracking (S4) | 10/10 | Complete   | 2026-04-01 |
 | 7. Platform Hardening | 0/0 | Not started | - |
-| 8. Live Currency and Freight Intelligence | 2/3 | In Progress|  |
+| 8. Live Currency and Freight Intelligence | 3/3 | Complete   | 2026-04-02 |
 
 ### Phase 8: Live Currency and Freight Intelligence (INSERTED)
 **Goal**: Any visitor can see live currency rates on the homepage, and both deal parties can see multi-currency price conversions and a real-time freight cost estimate throughout the deal flow -- without CoreTradeGlobal being party to or responsible for any transaction
