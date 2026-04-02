@@ -160,12 +160,16 @@ export function HeroSection({ fetchData = false }) {
             ['emailVerified', '==', true],
             ['adminApproved', '==', true],
           ],
-          orderBy: [['approvedAt', 'desc']],
-          limit: 5,
+          limit: 20,
         });
         if (users?.length > 0) {
           const withCompany = users.filter(u => u.companyName && !u.isSuspended);
-          if (withCompany.length > 0) setLatestSupplier(withCompany[0]);
+          const sorted = withCompany.sort((a, b) => {
+            const dateA = a.approvedAt?.toDate ? a.approvedAt.toDate() : a.createdAt?.toDate ? a.createdAt.toDate() : new Date(0);
+            const dateB = b.approvedAt?.toDate ? b.approvedAt.toDate() : b.createdAt?.toDate ? b.createdAt.toDate() : new Date(0);
+            return dateB - dateA;
+          });
+          if (sorted.length > 0) setLatestSupplier(sorted[0]);
         }
       } catch (error) {
         console.error('Error fetching users:', error);
