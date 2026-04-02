@@ -155,16 +155,15 @@ export function HeroSection({ fetchData = false }) {
       }
 
       try {
-        const users = await firestoreDS.query('users', {
-          where: [
-            ['emailVerified', '==', true],
-            ['adminApproved', '==', true],
-          ],
-          limit: 20,
-        });
+        const users = await firestoreDS.query('users', { limit: 50 });
         if (users?.length > 0) {
-          const withCompany = users.filter(u => u.companyName && !u.isSuspended);
-          const sorted = withCompany.sort((a, b) => {
+          const verified = users.filter(u =>
+            u.emailVerified === true &&
+            u.adminApproved === true &&
+            u.companyName &&
+            !u.isSuspended
+          );
+          const sorted = verified.sort((a, b) => {
             const dateA = a.approvedAt?.toDate ? a.approvedAt.toDate() : a.createdAt?.toDate ? a.createdAt.toDate() : new Date(0);
             const dateB = b.approvedAt?.toDate ? b.approvedAt.toDate() : b.createdAt?.toDate ? b.createdAt.toDate() : new Date(0);
             return dateB - dateA;
