@@ -26,6 +26,7 @@ import { CostBreakdownSection } from './CostBreakdownSection';
 import { DocumentsSection } from './DocumentsSection';
 import { LegalConsultingSection } from './LegalConsultingSection';
 import { OrderTimeline } from './OrderTimeline';
+import { CurrencyConvertPanel } from '@/presentation/components/features/deal/DealSidebar/CurrencyConvertPanel';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Loading skeleton
@@ -128,6 +129,18 @@ export function TradeSummaryTab({ dealId, currentUserUid }) {
             selectedInsuranceQuote={selectedInsuranceQuote}
             selectedLogisticsQuote={selectedLogisticsQuote}
           />
+          {/* Currency Conversion — renders below cost breakdown, shares useLiveCurrency singleton */}
+          {(() => {
+            const snapshot = deal.latestOfferSnapshot;
+            return (
+              <CurrencyConvertPanel
+                price={snapshot?.price}
+                currency={snapshot?.currency}
+                quantity={snapshot?.quantity}
+                estimatedTotal={snapshot?.estimatedTotal ?? (snapshot?.price != null && snapshot?.quantity != null ? snapshot.price * snapshot.quantity : null)}
+              />
+            );
+          })()}
           <DocumentsSection deal={deal} contract={contract} />
           <LegalConsultingSection
             legalEngagement={legalEngagement}
