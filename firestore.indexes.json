@@ -351,6 +351,15 @@
           "order": "ASCENDING"
         }
       ]
+    },
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "emailVerified", "order": "ASCENDING" },
+        { "fieldPath": "adminApproved", "order": "ASCENDING" },
+        { "fieldPath": "approvedAt", "order": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []
