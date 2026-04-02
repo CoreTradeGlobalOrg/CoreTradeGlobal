@@ -59,8 +59,8 @@ export const CURRENCY_CACHE_KEY = 'ctg_live_rates_v1';
 /** 24-hour cache TTL in milliseconds */
 export const CURRENCY_CACHE_TTL = 24 * 60 * 60 * 1000;
 
-/** Polling interval: 60 seconds (rates update once per trading day — no need for faster polling) */
-export const POLL_INTERVAL = 60_000;
+/** Polling interval: 1 hour */
+export const POLL_INTERVAL = 60 * 60 * 1000;
 
 /**
  * localStorage keys for persisting user-selected target currencies in the deal sidebar

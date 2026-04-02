@@ -26,20 +26,18 @@ function useNavbarHeight() {
   const [top, setTop] = useState(100);
 
   useEffect(() => {
-    function update() {
-      const nav = document.querySelector('.navbar');
-      if (nav) {
-        setTop(nav.offsetHeight);
-      }
-    }
+    const nav = document.querySelector('.navbar');
+    if (!nav) return;
 
-    update();
-    window.addEventListener('scroll', update, { passive: true });
-    window.addEventListener('resize', update, { passive: true });
-    return () => {
-      window.removeEventListener('scroll', update);
-      window.removeEventListener('resize', update);
-    };
+    setTop(nav.offsetHeight);
+
+    // ResizeObserver fires when the navbar actually changes size (scroll class toggle)
+    const ro = new ResizeObserver(([entry]) => {
+      setTop(entry.contentRect.height || nav.offsetHeight);
+    });
+    ro.observe(nav);
+
+    return () => ro.disconnect();
   }, []);
 
   return top;
