@@ -1039,6 +1039,17 @@ a:hover {
   transform: scale(0.95);
 }
 
+/* --- CURRENCY TICKER MARQUEE ANIMATION --- */
+/* Used by CurrencyTicker component on the homepage */
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+  animation: marquee 40s linear infinite;
+}
+
 /* --- EDIT MODE GLOW ANIMATION --- */
 @keyframes pulse-glow {
   0%, 100% {
