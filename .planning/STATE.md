@@ -227,6 +227,7 @@ None yet.
 | 2 | Fix navbar for provider dashboard and admin nav override | 2026-03-06 | 33373f5 | [2-fix-navbar-for-provider-dashboard-and-si](./quick/2-fix-navbar-for-provider-dashboard-and-si/) |
 | 3 | Extract QuoteDetailView to /provider/quotes/[requestId] route | 2026-03-06 | 1d0d858 | [3-separate-provider-quote-detail-into-its-](./quick/3-separate-provider-quote-detail-into-its-/) |
 | 4 | Mark completed phases 1-5 as done in ROADMAP.md | 2026-03-25 |  | [4-mark-completed-phases-1-5-as-done-in-roa](./quick/4-mark-completed-phases-1-5-as-done-in-roa/) |
+| 5 | Fix hero supplier card to show last verified+approved user | 2026-04-02 | e91c531 | [5-fix-hero-not-fetching-last-verified-user](./quick/5-fix-hero-not-fetching-last-verified-user/) |
 
 ### Blockers/Concerns
 
