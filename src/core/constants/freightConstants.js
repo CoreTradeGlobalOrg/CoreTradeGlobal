@@ -38,11 +38,12 @@ export const FREIGHTOS_LOADTYPES = {
  * Keys match the mode identifiers used in Freightos API responses.
  */
 export const TRANSPORT_MODES = [
-  { key: 'FCL',  label: 'Sea (FCL)',     icon: 'Ship'  },
-  { key: 'LCL',  label: 'Sea (LCL)',     icon: 'Ship'  },
-  { key: 'air',  label: 'Air Freight',   icon: 'Plane' },
-  { key: 'LTL',  label: 'Road (LTL)',    icon: 'Truck' },
-  { key: 'FTL',  label: 'Road (FTL)',    icon: 'Truck' },
+  { key: 'FCL',     label: 'Sea (FCL)',     icon: 'Ship'  },
+  { key: 'LCL',     label: 'Sea (LCL)',     icon: 'Ship'  },
+  { key: 'air',     label: 'Air Freight',   icon: 'Plane' },
+  { key: 'express', label: 'Express',       icon: 'Plane' },
+  { key: 'LTL',     label: 'Road (LTL)',    icon: 'Truck' },
+  { key: 'FTL',     label: 'Road (FTL)',    icon: 'Truck' },
 ];
 
 /**

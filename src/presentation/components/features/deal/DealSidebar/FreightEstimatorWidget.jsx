@@ -83,9 +83,11 @@ function ModeCard({ quote, dealCurrency, rates }) {
           <TransportIcon iconName={modeMeta.icon} className="text-[#FFD700] flex-shrink-0" />
           <span className="text-xs font-bold text-white">{modeMeta.label}</span>
         </div>
-        {quote.transitDays != null && (
+        {(quote.transitMin != null || quote.transitMax != null) && (
           <span className="text-[10px] text-[#8899AA] flex-shrink-0">
-            ~{quote.transitDays} days
+            {quote.transitMin != null && quote.transitMax != null && quote.transitMin !== quote.transitMax
+              ? `${quote.transitMin}–${quote.transitMax} days`
+              : `~${quote.transitMax ?? quote.transitMin} days`}
           </span>
         )}
       </div>
@@ -210,7 +212,7 @@ export function FreightEstimatorWidget({ deal, latestOffer }) {
               type="text"
               value={origin}
               onChange={handleFieldChange(setOrigin)}
-              placeholder="City or UN/LOCODE (e.g. Istanbul)"
+              placeholder="City, Country (e.g. Istanbul, Turkey)"
               className={inputCls}
             />
           </div>
@@ -224,7 +226,7 @@ export function FreightEstimatorWidget({ deal, latestOffer }) {
               type="text"
               value={destination}
               onChange={handleFieldChange(setDestination)}
-              placeholder="City or UN/LOCODE (e.g. Rotterdam)"
+              placeholder="City, Country (e.g. Rotterdam, Netherlands)"
               className={inputCls}
             />
           </div>

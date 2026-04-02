@@ -96,9 +96,19 @@ async function fetchAndNotify() {
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
     const data = await response.json();
-    // data.rates: { USD: 1.08, GBP: 0.85, ... } — all vs EUR base
-    // Also include EUR itself as 1 (base) for convenience in convertAmount
-    const newRates = { EUR: 1, ...data.rates };
+    // v2 returns array: [{date, base, quote, rate}, ...]
+    // Convert to flat object keyed by currency code, all vs EUR base
+    const newRates = { EUR: 1 };
+    if (Array.isArray(data)) {
+      data.forEach((entry) => {
+        if (entry.quote && entry.rate != null) {
+          newRates[entry.quote] = entry.rate;
+        }
+      });
+    } else if (data.rates) {
+      // v1 fallback: { rates: { USD: 1.08, ... } }
+      Object.assign(newRates, data.rates);
+    }
 
     _previousRates = _rates; // Save previous for arrow direction comparison
     _rates = newRates;

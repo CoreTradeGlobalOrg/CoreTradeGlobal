@@ -34,30 +34,33 @@ import {
  * @returns {{ quotes: Array<{ mode, minPrice, maxPrice, currency, transitDays }> }}
  */
 function parseFreightosResponse(data) {
-  // Freightos response shape: { response: { Quotes: [...] } }
-  // Each Quote: { serviceType, totalPrice: { amount }, estimatedTotalPrice: { amount }, transitTime: { days } }
-  const rawQuotes = data?.response?.Quotes ?? data?.Quotes ?? [];
+  // Freightos response shape: { response: { estimatedFreightRates: { mode: [...] or {}, numQuotes } } }
+  // Each mode: { mode, price: { min: { moneyAmount: { amount, currency } }, max: {...} }, transitTimes: { min, max, unit } }
+  const freightRates = data?.response?.estimatedFreightRates;
+  if (!freightRates) return { quotes: [] };
 
-  if (!Array.isArray(rawQuotes) || rawQuotes.length === 0) {
-    return { quotes: [] };
-  }
+  // mode can be a single object or an array
+  const rawModes = freightRates.mode
+    ? (Array.isArray(freightRates.mode) ? freightRates.mode : [freightRates.mode])
+    : [];
 
-  const quotes = rawQuotes.map((quote) => {
-    const minPrice =
-      quote?.totalPrice?.amount ??
-      quote?.estimatedTotalPrice?.amount ??
-      null;
-    const maxPrice =
-      quote?.estimatedTotalPrice?.amount ??
-      quote?.totalPrice?.amount ??
-      null;
+  if (rawModes.length === 0) return { quotes: [] };
+
+  const quotes = rawModes.map((entry) => {
+    const minPrice = entry?.price?.min?.moneyAmount?.amount ?? null;
+    const maxPrice = entry?.price?.max?.moneyAmount?.amount ?? minPrice;
+    const currency = entry?.price?.min?.moneyAmount?.currency ?? 'USD';
+    const transitMin = entry?.transitTimes?.min ?? null;
+    const transitMax = entry?.transitTimes?.max ?? null;
 
     return {
-      mode: quote?.serviceType ?? quote?.mode ?? 'unknown',
+      mode: entry?.mode ?? 'unknown',
       minPrice,
       maxPrice,
-      currency: quote?.totalPrice?.currency ?? quote?.currency ?? 'USD',
-      transitDays: quote?.transitTime?.days ?? quote?.transitDays ?? null,
+      currency,
+      transitDays: transitMax ?? transitMin,
+      transitMin,
+      transitMax,
     };
   }).filter((q) => q.minPrice !== null);
 
@@ -110,20 +113,22 @@ export function useFreightEstimate() {
     setEstimate(null);
 
     // Build query parameters — same set for both direct and proxy calls
+    // Freightos requires width/length/height/quantity even for pallets/boxes
+    const dimWidth = width != null && width > 0 ? width : 50;
+    const dimHeight = height != null && height > 0 ? height : 50;
+    const dimLength = length != null && length > 0 ? length : 50;
+
     const params = new URLSearchParams({
       origin,
       destination,
       weight: String(weight),
       loadtype,
+      width: String(dimWidth),
+      height: String(dimHeight),
+      length: String(dimLength),
+      quantity: '1',
       format: 'json',
-      resultSet: 'cheapestEachMode',
     });
-
-    if (width != null && height != null && length != null) {
-      params.append('width', String(width));
-      params.append('height', String(height));
-      params.append('length', String(length));
-    }
 
     let data = null;
     let usedProxy = false;
