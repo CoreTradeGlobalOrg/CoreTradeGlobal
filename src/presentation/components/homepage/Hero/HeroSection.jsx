@@ -109,69 +109,56 @@ export function HeroSection({ fetchData = false }) {
     const fetchLatestData = async () => {
       const firestoreDS = container.getFirestoreDataSource();
 
-      try {
-        const products = await firestoreDS.query('products', { limit: 20 });
-        if (products?.length > 0) {
-          const active = products.filter(p => p.status === 'active');
-          const sorted = active.sort((a, b) => {
-            const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
-            const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
-            return dateB - dateA;
-          });
-          if (sorted.length > 0) setLatestProduct(sorted[0]);
-        }
-      } catch (error) {
-        console.error('Error fetching products:', error);
+      const [productsRes, requestsRes, fairsRes, usersRes] = await Promise.allSettled([
+        firestoreDS.query('products', { limit: 20 }),
+        firestoreDS.query('requests', { limit: 20 }),
+        firestoreDS.query('fairs', { limit: 20 }),
+        firestoreDS.query('users', { limit: 50 }),
+      ]);
+
+      if (productsRes.status === 'fulfilled' && productsRes.value?.length > 0) {
+        const active = productsRes.value.filter(p => p.status === 'active');
+        const sorted = active.sort((a, b) => {
+          const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
+          const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
+          return dateB - dateA;
+        });
+        if (sorted.length > 0) setLatestProduct(sorted[0]);
       }
 
-      try {
-        const requests = await firestoreDS.query('requests', { limit: 20 });
-        if (requests?.length > 0) {
-          const active = requests.filter(r => r.status === 'active');
-          const sorted = active.sort((a, b) => {
-            const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
-            const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
-            return dateB - dateA;
-          });
-          if (sorted.length > 0) setLatestRequest(sorted[0]);
-        }
-      } catch (error) {
-        console.error('Error fetching requests:', error);
+      if (requestsRes.status === 'fulfilled' && requestsRes.value?.length > 0) {
+        const active = requestsRes.value.filter(r => r.status === 'active');
+        const sorted = active.sort((a, b) => {
+          const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
+          const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
+          return dateB - dateA;
+        });
+        if (sorted.length > 0) setLatestRequest(sorted[0]);
       }
 
-      try {
-        const fairs = await firestoreDS.query('fairs', { limit: 20 });
-        if (fairs?.length > 0) {
-          const upcoming = fairs.filter(f => f.status === 'upcoming');
-          const sorted = upcoming.sort((a, b) => {
-            const dateA = a.startDate?.toDate ? a.startDate.toDate() : new Date(a.startDate || 0);
-            const dateB = b.startDate?.toDate ? b.startDate.toDate() : new Date(b.startDate || 0);
-            return dateA - dateB;
-          });
-          if (sorted.length > 0) setLatestFair(sorted[0]);
-        }
-      } catch (error) {
-        console.error('Error fetching fairs:', error);
+      if (fairsRes.status === 'fulfilled' && fairsRes.value?.length > 0) {
+        const upcoming = fairsRes.value.filter(f => f.status === 'upcoming');
+        const sorted = upcoming.sort((a, b) => {
+          const dateA = a.startDate?.toDate ? a.startDate.toDate() : new Date(a.startDate || 0);
+          const dateB = b.startDate?.toDate ? b.startDate.toDate() : new Date(b.startDate || 0);
+          return dateA - dateB;
+        });
+        if (sorted.length > 0) setLatestFair(sorted[0]);
       }
 
-      try {
-        const users = await firestoreDS.query('users', { limit: 50 });
-        if (users?.length > 0) {
-          const verified = users.filter(u =>
-            u.emailVerified === true &&
-            u.adminApproved === true &&
-            u.companyName &&
-            !u.isSuspended
-          );
-          const sorted = verified.sort((a, b) => {
-            const dateA = a.approvedAt?.toDate ? a.approvedAt.toDate() : a.createdAt?.toDate ? a.createdAt.toDate() : new Date(0);
-            const dateB = b.approvedAt?.toDate ? b.approvedAt.toDate() : b.createdAt?.toDate ? b.createdAt.toDate() : new Date(0);
-            return dateB - dateA;
-          });
-          if (sorted.length > 0) setLatestSupplier(sorted[0]);
-        }
-      } catch (error) {
-        console.error('Error fetching users:', error);
+      if (usersRes.status === 'fulfilled' && usersRes.value?.length > 0) {
+        const verified = usersRes.value.filter(u =>
+          u.emailVerified === true &&
+          u.adminApproved === true &&
+          u.companyName &&
+          !u.isSuspended
+        );
+        const sorted = verified.sort((a, b) => {
+          const dateA = a.approvedAt?.toDate ? a.approvedAt.toDate() : a.createdAt?.toDate ? a.createdAt.toDate() : new Date(0);
+          const dateB = b.approvedAt?.toDate ? b.approvedAt.toDate() : b.createdAt?.toDate ? b.createdAt.toDate() : new Date(0);
+          return dateB - dateA;
+        });
+        if (sorted.length > 0) setLatestSupplier(sorted[0]);
       }
     };
 
