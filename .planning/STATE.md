@@ -5,7 +5,7 @@ milestone_name: milestone
 status: completed
 stopped_at: Phase 8 context gathered
 last_updated: "2026-04-02T11:58:15.646Z"
-last_activity: "2026-03-29 - Completed 06-01: Shipment tracking data layer and Cloud Functions"
+last_activity: "2026-04-02 - Completed quick task 5: Fix hero not fetching last verified user"
 progress:
   total_phases: 8
   completed_phases: 6
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-02-20)
 Phase: 6 of 7 (Trade Summary and Shipment Tracking) — IN PROGRESS
 Plan: 1 of 4 in current phase (06-01 complete — shipment tracking data layer, CFs, DELIVERED status)
 Status: Phase 06 plan 01 complete — ready for 06-02
-Last activity: 2026-03-29 - Completed 06-01: Shipment tracking data layer and Cloud Functions
+Last activity: 2026-04-02 - Completed quick task 5: Fix hero not fetching last verified user
 
 Progress: [█████████████] 71%
 
