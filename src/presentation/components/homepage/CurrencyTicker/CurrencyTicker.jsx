@@ -23,7 +23,7 @@ import { formatDistanceToNow } from 'date-fns';
 // ── Navbar height tracker ────────────────────────────────────────────────────
 
 function useNavbarHeight() {
-  const [top, setTop] = useState(100);
+  const [top, setTop] = useState(null); // null = not mounted yet (SSR)
 
   useEffect(() => {
     const nav = document.querySelector('.navbar');
@@ -133,6 +133,9 @@ export function CurrencyTicker() {
   const navbarHeight = useNavbarHeight();
   const { rates, fetchedAt, isStale, cacheExpired, error, loading } =
     useLiveCurrency();
+
+  // Don't render on server — avoids hydration mismatch from dynamic navbar height
+  if (navbarHeight === null) return null;
 
   if (loading) {
     return <TickerSkeleton top={navbarHeight} />;
