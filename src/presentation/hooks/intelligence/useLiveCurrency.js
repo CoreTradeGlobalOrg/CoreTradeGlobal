@@ -90,9 +90,9 @@ async function fetchAndNotify() {
   if (typeof document !== 'undefined' && document.hidden) return;
 
   try {
-    const response = await fetch(
-      `${FRANKFURTER_BASE_URL}/rates?base=EUR&quotes=USD,GBP,TRY,CNY,JPY,AED,SAR`
-    );
+    // Fetch via our own API proxy to avoid CORS — Frankfurter doesn't set
+    // Access-Control-Allow-Origin headers, so direct browser fetches are blocked.
+    const response = await fetch('/api/currency/rates');
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
     const data = await response.json();

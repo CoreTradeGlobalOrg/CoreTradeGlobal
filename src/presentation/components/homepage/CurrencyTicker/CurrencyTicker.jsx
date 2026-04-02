@@ -128,7 +128,7 @@ function TickerItems({ rates, previousRates, fetchedAt, isStale, ariaHidden = fa
 
 function TickerSkeleton() {
   return (
-    <div className="overflow-hidden bg-[#0A1628] border-b border-[#2A3B52] py-1.5 px-4">
+    <div className="fixed top-[100px] left-0 right-0 z-[999] overflow-hidden bg-[#0A1628] border-b border-[#2A3B52] py-1.5 px-4 max-md:top-[70px]">
       <div className="flex gap-6 animate-pulse">
         {[...Array(6)].map((_, i) => (
           <div key={i} className="flex gap-2 items-center">
@@ -155,7 +155,7 @@ export function CurrencyTicker() {
   // Cache expired and no data: show unavailable message
   if (cacheExpired || (error && !rates)) {
     return (
-      <div className="overflow-hidden bg-[#0A1628] border-b border-[#2A3B52] py-1.5 px-4">
+      <div className="fixed top-[100px] left-0 right-0 z-[999] overflow-hidden bg-[#0A1628] border-b border-[#2A3B52] py-1.5 px-4 max-md:top-[70px]">
         <p className="text-[10px] sm:text-xs text-[#8899AA] text-center">
           Currency rates temporarily unavailable
         </p>
@@ -164,7 +164,7 @@ export function CurrencyTicker() {
   }
 
   return (
-    <div className="overflow-hidden bg-[#0A1628] border-b border-[#2A3B52] py-1.5">
+    <div className="fixed top-[100px] sm:top-[100px] left-0 right-0 z-[999] overflow-hidden bg-[#0A1628] border-b border-[#2A3B52] py-1.5 max-md:top-[70px]">
       {/* Marquee container: duplicated content for seamless infinite loop */}
       <div
         className="flex animate-marquee whitespace-nowrap text-[10px] sm:text-xs [animation-play-state:running] hover:[animation-play-state:paused]"
