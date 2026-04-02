@@ -173,7 +173,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 (parallel with 3-4) -> 6 
 | 5. Legal Consulting | 11/11 | Complete   | 2026-03-12 |
 | 6. Trade Summary and Shipment Tracking (S4) | 10/10 | Complete   | 2026-04-01 |
 | 7. Platform Hardening | 0/0 | Not started | - |
-| 8. Live Currency and Freight Intelligence | 1/3 | In Progress|  |
+| 8. Live Currency and Freight Intelligence | 2/3 | In Progress|  |
 
 ### Phase 8: Live Currency and Freight Intelligence (INSERTED)
 **Goal**: Any visitor can see live currency rates on the homepage, and both deal parties can see multi-currency price conversions and a real-time freight cost estimate throughout the deal flow -- without CoreTradeGlobal being party to or responsible for any transaction
