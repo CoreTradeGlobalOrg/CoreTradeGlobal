@@ -17,6 +17,7 @@ import { getIncotermByCode } from '@/core/constants/incoterms';
 import { OrderTimeline } from '@/presentation/components/features/deal/TradeSummary/OrderTimeline';
 import { ETACountdown } from '@/presentation/components/features/deal/TradeSummary/ETACountdown';
 import { CurrencyConvertPanel } from './CurrencyConvertPanel';
+import { FreightEstimatorWidget } from './FreightEstimatorWidget';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Party Info Card
@@ -365,6 +366,9 @@ export function DealSidebar({ deal, latestOffer, currentUserUid, otherPartyViewi
           />
         );
       })()}
+
+      {/* Freight Estimator */}
+      <FreightEstimatorWidget deal={deal} latestOffer={latestOffer} />
     </div>
   );
 }
