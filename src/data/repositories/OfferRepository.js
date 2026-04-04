@@ -59,7 +59,7 @@ export class OfferRepository {
         callback(data.map((d) => Offer.fromFirestore(d)));
       },
       (error) => {
-        console.error('OfferRepository.subscribeToOffers error:', error);
+        console.error('[DEBUG] OFFERS subscription failed:', error);
       }
     );
   }
