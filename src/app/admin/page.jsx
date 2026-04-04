@@ -175,7 +175,7 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0F1B2B] px-4 py-6 pt-[100px] md:px-8 md:py-8 md:pt-[120px]">
+    <div className="min-h-screen bg-[#0F1B2B] px-4 py-6 pt-[var(--navbar-height)] md:px-8 md:py-8 md:pt-[var(--navbar-height)]">
       {/* Page Header */}
       <div className="mb-6 md:mb-8">
         <h2 className="text-2xl md:text-3xl font-bold text-white mb-2">Admin Dashboard</h2>

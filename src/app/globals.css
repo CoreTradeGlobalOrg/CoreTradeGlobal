@@ -6,6 +6,10 @@ html, body {
   color: #F5F5F5;
 }
 
+:root {
+  --navbar-height: 128px; /* fallback until ResizeObserver sets actual value */
+}
+
 /* Hide number input spinners/arrows */
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button {
@@ -300,7 +304,7 @@ a:hover {
 /* Sticky Search Bar */
 .sticky-search {
   position: fixed;
-  top: 85px;
+  top: var(--navbar-height);
   left: 50%;
   transform: translateX(-50%) scale(0);
   width: 400px;
@@ -320,7 +324,7 @@ a:hover {
 /* Sticky Search Toggle Button */
 .sticky-search-toggle {
   position: fixed;
-  top: 85px;
+  top: var(--navbar-height);
   right: 40px;
   width: 50px;
   height: 50px;
@@ -1203,7 +1207,7 @@ a:hover {
   }
 
   /* Remove padding-top from main layout (navbar is hidden on print) */
-  .pt-\[120px\] {
+  .pt-\[var\(--navbar-height\)\] {
     padding-top: 20px !important;
   }
 

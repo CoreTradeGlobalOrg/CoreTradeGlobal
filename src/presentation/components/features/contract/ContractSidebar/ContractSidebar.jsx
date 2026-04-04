@@ -61,7 +61,7 @@ export function ContractSidebar({ deal, contract, isBuyer }) {
   }
 
   return (
-    <div className="lg:sticky lg:top-[120px] space-y-3">
+    <div className="lg:sticky lg:top-[var(--navbar-height)] space-y-3">
 
       {/* Financial Summary card */}
       <div className="rounded-xl border border-white/5 bg-white/[0.02] p-4">

@@ -141,7 +141,7 @@ export function LawyerDeals() {
   });
 
   return (
-    <div className="min-h-screen bg-[#0F1C2E] pt-[100px] pb-16">
+    <div className="min-h-screen bg-[#0F1C2E] pt-[var(--navbar-height)] pb-16">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
 
         {/* Page Header */}

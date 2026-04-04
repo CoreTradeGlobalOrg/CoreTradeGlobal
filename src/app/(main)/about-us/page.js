@@ -7,7 +7,7 @@ export const metadata = {
 
 export default function AboutUsPage() {
     return (
-        <main className="pt-[120px] pb-20 bg-radial-navy">
+        <main className="pt-[var(--navbar-height)] pb-20 bg-radial-navy">
             {/* Hero Section */}
             <section className="relative w-full flex flex-col justify-center items-center text-center px-5 py-20 overflow-hidden">
                 <h1

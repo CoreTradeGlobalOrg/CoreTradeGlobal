@@ -14,7 +14,7 @@ export const metadata = {
 
 export default function FAQPage() {
   return (
-    <main className="min-h-screen pt-[100px] bg-radial-navy">
+    <main className="min-h-screen pt-[var(--navbar-height)] bg-radial-navy">
       <FAQSection />
     </main>
   );

@@ -314,7 +314,7 @@
 @media (max-width: 768px) {
   .notification-dropdown {
     position: fixed;
-    top: 70px;
+    top: var(--navbar-height);
     bottom: auto;
     left: 8px;
     right: 8px;

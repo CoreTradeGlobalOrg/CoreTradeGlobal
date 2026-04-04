@@ -8,7 +8,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useAuth } from '@/presentation/contexts/AuthContext';
@@ -56,6 +56,25 @@ export function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const pathname = usePathname();
+  const navRef = useRef(null);
+
+  // Track navbar height (including ticker) and expose as CSS variable
+  useEffect(() => {
+    const nav = navRef.current;
+    if (!nav) return;
+
+    const updateHeight = () => {
+      document.documentElement.style.setProperty(
+        '--navbar-height',
+        `${nav.offsetHeight}px`
+      );
+    };
+
+    updateHeight();
+    const ro = new ResizeObserver(updateHeight);
+    ro.observe(nav);
+    return () => ro.disconnect();
+  }, []);
 
   useEffect(() => {
     let rafId = null;
@@ -140,7 +159,7 @@ export function Navbar() {
   );
 
   return (
-    <nav className={`navbar ${isScrolled ? 'scrolled' : ''}`}>
+    <nav ref={navRef} className={`navbar ${isScrolled ? 'scrolled' : ''}`}>
       {/* Main nav row — logo, links, auth */}
       <div className="navbar-content">
       {/* Logo Container */}

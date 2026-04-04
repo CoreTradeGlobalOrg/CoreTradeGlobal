@@ -64,7 +64,7 @@ export default function CategoriesPage() {
     );
 
     return (
-        <main className="min-h-screen pt-[120px] pb-20 px-6 bg-radial-navy">
+        <main className="min-h-screen pt-[var(--navbar-height)] pb-20 px-6 bg-radial-navy">
             <div className="max-w-[1400px] mx-auto">
                 <section className="mb-12 text-center">
                     <h1 className="text-4xl font-bold mb-4" style={{ background: 'linear-gradient(180deg, #ffffff 20%, #909090 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Browse by Industry</h1>

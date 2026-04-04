@@ -219,7 +219,7 @@ export function CurrencyConvertPanel({ price, currency, quantity, estimatedTotal
                 <select
                   value={target1}
                   onChange={(e) => handleTarget1Change(e.target.value)}
-                  className="w-full bg-[#0F1C2E] border border-[#2A3B52] text-white text-xs rounded px-2 py-1 focus:outline-none focus:border-[#FFD700]/50"
+                  className="w-full bg-[#0F1C2E] border border-[#2A3B52] text-white text-xs rounded pl-2 pr-6 py-1 focus:outline-none focus:border-[#FFD700]/50"
                 >
                   {TICKER_CURRENCIES.map(({ code, flag }) => (
                     <option key={code} value={code}>
@@ -235,7 +235,7 @@ export function CurrencyConvertPanel({ price, currency, quantity, estimatedTotal
                 <select
                   value={target2}
                   onChange={(e) => handleTarget2Change(e.target.value)}
-                  className="w-full bg-[#0F1C2E] border border-[#2A3B52] text-white text-xs rounded px-2 py-1 focus:outline-none focus:border-[#FFD700]/50"
+                  className="w-full bg-[#0F1C2E] border border-[#2A3B52] text-white text-xs rounded pl-2 pr-6 py-1 focus:outline-none focus:border-[#FFD700]/50"
                 >
                   {TICKER_CURRENCIES.map(({ code, flag }) => (
                     <option key={code} value={code}>

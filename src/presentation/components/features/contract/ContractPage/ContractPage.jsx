@@ -167,7 +167,7 @@ export function ContractPage({ deal, contract, currentUserUid, actions }) {
   const grouped = contract.getClausesBySection();
 
   return (
-    <div className="min-h-screen bg-[#0F1C2E] pt-[120px] pb-6 px-4 sm:px-6">
+    <div className="min-h-screen bg-[#0F1C2E] pt-[var(--navbar-height)] pb-6 px-4 sm:px-6">
       <div className="max-w-6xl mx-auto space-y-4">
 
         {/* Context header */}

@@ -94,7 +94,7 @@ function ProductsContent() {
 
 export default function ProductsPage() {
     return (
-        <main className="min-h-screen pt-[120px] pb-20 px-6 bg-radial-navy">
+        <main className="min-h-screen pt-[var(--navbar-height)] pb-20 px-6 bg-radial-navy">
             <div className="max-w-[1400px] mx-auto">
                 <Suspense fallback={<div className="text-white text-center">Loading...</div>}>
                     <ProductsContent />

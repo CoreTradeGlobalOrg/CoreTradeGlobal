@@ -15,7 +15,7 @@ import { FileText } from 'lucide-react';
 
 export function GeneratingContractOverlay() {
   return (
-    <div className="min-h-screen bg-[#0F1C2E] pt-[120px] pb-6 px-4 sm:px-6 animate-pulse">
+    <div className="min-h-screen bg-[#0F1C2E] pt-[var(--navbar-height)] pb-6 px-4 sm:px-6 animate-pulse">
       <div className="max-w-6xl mx-auto space-y-4">
 
         {/* Header skeleton */}

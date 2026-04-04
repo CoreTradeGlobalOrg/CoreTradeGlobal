@@ -513,7 +513,7 @@ function ProfileContent() {
   return (
     <div className="min-h-screen bg-radial-navy pb-20">
       {/* Sticky Header - appears on scroll */}
-      <header className={`border-b border-[rgba(255,255,255,0.1)] bg-[rgba(15,27,43,0.95)] backdrop-blur-md fixed top-[60px] md:top-[80px] left-0 right-0 z-40 py-4 transition-all duration-300 ${showStickyHeader ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0 pointer-events-none'}`}>
+      <header className={`border-b border-[rgba(255,255,255,0.1)] bg-[rgba(15,27,43,0.95)] backdrop-blur-md fixed top-[var(--navbar-height)] left-0 right-0 z-40 py-4 transition-all duration-300 ${showStickyHeader ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0 pointer-events-none'}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             {/* User Info with Logo */}
@@ -566,7 +566,7 @@ function ProfileContent() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto pt-[140px] pb-8 px-4 sm:px-6 lg:px-8 space-y-6">
+      <main className="max-w-7xl mx-auto pt-[var(--navbar-height)] pb-8 px-4 sm:px-6 lg:px-8 space-y-6">
         {/* Profile Card - Combined */}
         <div className="glass-card p-6">
           <form onSubmit={handleProfileUpdate}>
