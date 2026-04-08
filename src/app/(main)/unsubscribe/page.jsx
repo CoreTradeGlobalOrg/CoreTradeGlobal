@@ -3,6 +3,8 @@
 import { Suspense, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 
+const UTM_KEYS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'];
+
 function UnsubscribeForm() {
   const searchParams = useSearchParams();
   const emailParam = (searchParams.get('email') || '').trim();
@@ -21,11 +23,18 @@ function UnsubscribeForm() {
     setStatus('submitting');
     setErrorMessage('');
 
+    // Capture any UTM params present in the URL (server will re-validate).
+    const payload = { email: emailParam };
+    for (const key of UTM_KEYS) {
+      const value = (searchParams.get(key) || '').trim();
+      if (value) payload[key] = value;
+    }
+
     try {
       const res = await fetch('/api/unsubscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: emailParam }),
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json().catch(() => ({}));

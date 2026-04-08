@@ -102,7 +102,19 @@ async function main() {
   const snapshot = await db.collection('unsubscribes').orderBy('unsubscribedAt', 'desc').get();
   console.log(`  Found ${snapshot.size} unsubscribes.`);
 
-  const header = ['email', 'unsubscribedAt', 'lastClickAt', 'source'];
+  const header = [
+    'email',
+    'unsubscribedAt',
+    'lastClickAt',
+    'source',
+    'firstUtmSource',
+    'firstUtmMedium',
+    'firstUtmCampaign',
+    'firstUtmContent',
+    'firstUtmTerm',
+    'allCampaigns',
+    'allUtmSources',
+  ];
   const rows = snapshot.docs.map((doc) => {
     const d = doc.data();
     return [
@@ -110,22 +122,44 @@ async function main() {
       tsToIso(d.unsubscribedAt),
       tsToIso(d.lastClickAt),
       d.source || '',
+      d.firstUtmSource || '',
+      d.firstUtmMedium || '',
+      d.firstUtmCampaign || '',
+      d.firstUtmContent || '',
+      d.firstUtmTerm || '',
+      Array.isArray(d.campaigns) ? d.campaigns.join('; ') : '',
+      Array.isArray(d.utmSources) ? d.utmSources.join('; ') : '',
     ];
   });
 
   console.log('→ Connecting to Google Sheets…');
   const sheets = await getSheetsClient();
 
-  console.log(`→ Clearing Sheet1 in spreadsheet ${SHEET_ID}…`);
+  // Resolve the first tab's actual title (handles non-English locales like "Sayfa1")
+  const meta = await sheets.spreadsheets.get({
+    spreadsheetId: SHEET_ID,
+    fields: 'sheets.properties(title,index)',
+  });
+  const firstSheet = (meta.data.sheets || [])
+    .slice()
+    .sort((a, b) => (a.properties.index || 0) - (b.properties.index || 0))[0];
+  if (!firstSheet) {
+    throw new Error('Spreadsheet has no tabs.');
+  }
+  const tabTitle = firstSheet.properties.title;
+  // Quote the title for A1 notation (escape any single quotes)
+  const quotedTab = `'${tabTitle.replace(/'/g, "''")}'`;
+
+  console.log(`→ Clearing tab "${tabTitle}" in spreadsheet ${SHEET_ID}…`);
   await sheets.spreadsheets.values.clear({
     spreadsheetId: SHEET_ID,
-    range: 'Sheet1',
+    range: quotedTab,
   });
 
   console.log(`→ Writing ${rows.length + 1} rows (header + data)…`);
   await sheets.spreadsheets.values.update({
     spreadsheetId: SHEET_ID,
-    range: 'Sheet1!A1',
+    range: `${quotedTab}!A1`,
     valueInputOption: 'RAW',
     requestBody: { values: [header, ...rows] },
   });
