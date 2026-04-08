@@ -7,6 +7,7 @@
 
 import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
+import { getFirestore } from 'firebase-admin/firestore';
 
 let adminApp;
 
@@ -45,6 +46,11 @@ function getFirebaseAdmin() {
 export function getAdminAuth() {
   getFirebaseAdmin();
   return getAuth();
+}
+
+export function getAdminFirestore() {
+  getFirebaseAdmin();
+  return getFirestore();
 }
 
 export async function verifyIdToken(idToken) {
