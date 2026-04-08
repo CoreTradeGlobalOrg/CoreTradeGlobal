@@ -150,5 +150,12 @@ service cloud.firestore {
       allow update: if isAdmin();
       allow delete: if isAdmin();
     }
+
+    // Cold email unsubscribes — written only by server (Admin SDK bypasses rules).
+    // Clients cannot read or write directly.
+    match /unsubscribes/{docId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
   }
 }

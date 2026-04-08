@@ -1,0 +1,52 @@
+name: Sync unsubscribes to Google Sheet
+
+on:
+  schedule:
+    # 06:00 UTC daily (09:00 Istanbul, TRT = UTC+3)
+    - cron: '0 6 * * *'
+  workflow_dispatch: {} # allow manual runs from the Actions tab
+
+concurrency:
+  group: sync-unsubscribes
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Write service account key
+        env:
+          GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
+        run: |
+          mkdir -p scripts
+          printf '%s' "$GCP_SA_KEY" > scripts/serviceAccountKey.json
+          # Fail fast if the secret is empty or not valid JSON
+          node -e "JSON.parse(require('fs').readFileSync('scripts/serviceAccountKey.json','utf8'))"
+
+      - name: Write .env
+        env:
+          UNSUBSCRIBE_SHEET_ID: ${{ secrets.UNSUBSCRIBE_SHEET_ID }}
+        run: |
+          printf 'UNSUBSCRIBE_SHEET_ID=%s\n' "$UNSUBSCRIBE_SHEET_ID" > .env
+
+      - name: Run sync
+        run: npm run sync-unsubscribes
+
+      - name: Cleanup secrets
+        if: always()
+        run: |
+          rm -f scripts/serviceAccountKey.json .env
