@@ -35,6 +35,8 @@ export function RequestForm({ request, onSubmit, onCancel, userId }) {
     watch,
   } = useForm({
     resolver: zodResolver(requestSchema),
+    mode: 'onSubmit',
+    reValidateMode: 'onBlur',
     defaultValues: {
       productName: request?.productName || '',
       categoryId: request?.categoryId || '',
@@ -100,7 +102,7 @@ export function RequestForm({ request, onSubmit, onCancel, userId }) {
           className="bg-[#0F1B2B] border-[rgba(255,255,255,0.1)] text-white placeholder:text-gray-500 focus:border-[#3b82f6] focus:ring-[#3b82f6]/20"
         />
         {errors.productName && (
-          <p className="mt-1 text-sm text-red-400">{errors.productName.message}</p>
+          <p className="text-xs text-red-400 mt-1">{errors.productName.message}</p>
         )}
       </div>
 
@@ -119,7 +121,7 @@ export function RequestForm({ request, onSubmit, onCancel, userId }) {
           className="dark-select dark-select-blue"
         />
         {errors.categoryId && (
-          <p className="mt-1 text-sm text-red-400">{errors.categoryId.message}</p>
+          <p className="text-xs text-red-400 mt-1">{errors.categoryId.message}</p>
         )}
       </div>
 
@@ -139,7 +141,7 @@ export function RequestForm({ request, onSubmit, onCancel, userId }) {
             className="dark-select dark-select-blue"
           />
           {errors.targetCountry && (
-            <p className="mt-1 text-sm text-red-400">{errors.targetCountry.message}</p>
+            <p className="text-xs text-red-400 mt-1">{errors.targetCountry.message}</p>
           )}
         </div>
 
@@ -158,7 +160,7 @@ export function RequestForm({ request, onSubmit, onCancel, userId }) {
             className="bg-[#0F1B2B] border-[rgba(255,255,255,0.1)] text-white placeholder:text-gray-500 focus:border-[#3b82f6] focus:ring-[#3b82f6]/20"
           />
           {errors.budget && (
-            <p className="mt-1 text-sm text-red-400">{errors.budget.message}</p>
+            <p className="text-xs text-red-400 mt-1">{errors.budget.message}</p>
           )}
         </div>
       </div>
@@ -186,7 +188,7 @@ export function RequestForm({ request, onSubmit, onCancel, userId }) {
             className="dark-select dark-select-blue"
           />
           {errors.unitCategory && (
-            <p className="mt-1 text-sm text-red-400">{errors.unitCategory.message}</p>
+            <p className="text-xs text-red-400 mt-1">{errors.unitCategory.message}</p>
           )}
         </div>
 
@@ -204,7 +206,7 @@ export function RequestForm({ request, onSubmit, onCancel, userId }) {
             className="dark-select dark-select-blue"
           />
           {errors.unit && (
-            <p className="mt-1 text-sm text-red-400">{errors.unit.message}</p>
+            <p className="text-xs text-red-400 mt-1">{errors.unit.message}</p>
           )}
         </div>
       </div>
@@ -224,7 +226,7 @@ export function RequestForm({ request, onSubmit, onCancel, userId }) {
           className="bg-[#0F1B2B] border-[rgba(255,255,255,0.1)] text-white placeholder:text-gray-500 focus:border-[#3b82f6] focus:ring-[#3b82f6]/20"
         />
         {errors.quantity && (
-          <p className="mt-1 text-sm text-red-400">{errors.quantity.message}</p>
+          <p className="text-xs text-red-400 mt-1">{errors.quantity.message}</p>
         )}
       </div>
 
@@ -244,7 +246,7 @@ export function RequestForm({ request, onSubmit, onCancel, userId }) {
           placeholder="Describe your request in detail..."
         />
         {errors.description && (
-          <p className="mt-1 text-sm text-red-400">{errors.description.message}</p>
+          <p className="text-xs text-red-400 mt-1">{errors.description.message}</p>
         )}
       </div>
 

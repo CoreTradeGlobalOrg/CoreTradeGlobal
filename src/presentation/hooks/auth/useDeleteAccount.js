@@ -29,7 +29,6 @@ export function useDeleteAccount() {
       const softDeleteUser = httpsCallable(functions, 'softDeleteUser');
       const result = await softDeleteUser({ userId });
 
-      console.log('✅ Account scheduled for deletion:', result.data);
       return result.data;
     } catch (err) {
       console.error('❌ Failed to delete account:', err);

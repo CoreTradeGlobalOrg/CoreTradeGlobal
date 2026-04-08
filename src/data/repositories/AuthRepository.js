@@ -205,19 +205,10 @@ export class AuthRepository {
    * @returns {Promise<string>} Download URL of uploaded logo
    */
   async uploadCompanyLogo(userId, file) {
-    console.log('📸 [AuthRepository] uploadCompanyLogo called with:', {
-      userId,
-      fileName: file?.name,
-      fileType: file?.type,
-      fileSize: file?.size,
-    });
-
     // Create storage path: {userId}/company-logo/logo.{ext}
     const fileExtension = file.name.split('.').pop();
     const fileName = `logo.${fileExtension}`;
     const storagePath = `${userId}/company-logo/${fileName}`;
-
-    console.log('📸 [AuthRepository] Storage path:', storagePath);
 
     try {
       // Upload file and get download URL
@@ -230,7 +221,6 @@ export class AuthRepository {
         }
       );
 
-      console.log('📸 [AuthRepository] Upload successful, download URL:', downloadURL);
       return downloadURL;
     } catch (error) {
       console.error('❌ [AuthRepository] Upload failed:', error);

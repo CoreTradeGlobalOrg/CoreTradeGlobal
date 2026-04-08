@@ -7,10 +7,11 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 import { useMessages } from '@/presentation/contexts/MessagesContext';
 import { useAuth } from '@/presentation/contexts/AuthContext';
 import { useMarkAsRead } from '@/presentation/hooks/messaging/useMarkAsRead';
-import { FileText, Download, X } from 'lucide-react';
+import { FileText, Download, X, Handshake } from 'lucide-react';
 import './MessageThread.css';
 
 // Lightbox for viewing images
@@ -172,6 +173,25 @@ export function MessageThread({ conversationId, participantDetails = {} }) {
           </div>
 
           {messages.map((message, index) => {
+            // ── System Message (deal initiated, counter-offer, etc.) ──
+            if (message.type === 'system') {
+              return (
+                <div key={message.id} className="system-message-wrapper">
+                  <div className="system-message-bubble">
+                    <p className="system-message-text">{message.content}</p>
+                    {message.dealLink && (
+                      <Link href={message.dealLink} className="system-message-deal-btn">
+                        <Handshake className="w-4 h-4" />
+                        View Deal
+                      </Link>
+                    )}
+                    <span className="system-message-time">{formatTime(message.createdAt)}</span>
+                  </div>
+                </div>
+              );
+            }
+
+            // ── Regular messages ──
             const isOwn = message.senderId === user?.uid;
             const showAvatar =
               !isOwn &&

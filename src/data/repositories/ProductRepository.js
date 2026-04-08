@@ -269,7 +269,7 @@ export class ProductRepository {
       await this.storageDataSource.deleteFile(storagePath);
     } catch (error) {
       // Ignore if file doesn't exist
-      console.warn(`Failed to delete image at ${storagePath}:`, error.message);
+      console.error(`Failed to delete image at ${storagePath}:`, error.message);
     }
   }
 
@@ -300,7 +300,7 @@ export class ProductRepository {
     try {
       await this.storageDataSource.deleteFileByUrl(imageUrl);
     } catch (error) {
-      console.warn(`Failed to delete image by URL:`, error.message);
+      console.error(`Failed to delete image by URL:`, error.message);
     }
   }
 

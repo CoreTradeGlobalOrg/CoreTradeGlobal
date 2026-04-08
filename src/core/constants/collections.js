@@ -27,6 +27,15 @@ export const COLLECTIONS = {
   CONVERSATIONS: 'conversations', // Message conversations
   MESSAGES: 'messages',          // Messages
 
+  // Deals & Negotiation
+  DEALS: 'deals',                // Deal negotiations
+
+  // Phase 4: Provider Portals & Quotes
+  QUOTE_REQUESTS: 'quoteRequests', // Quote requests sent to providers on contract_approved
+
+  // Phase 5: Legal Consulting
+  LEGAL_ENGAGEMENTS: 'legalEngagements', // Legal consulting engagements
+
   // Newsletter (existing)
   NEWSLETTER: 'newsletter',      // Newsletter subscribers
 };
@@ -40,6 +49,13 @@ export const COLLECTIONS = {
 export const SUBCOLLECTIONS = {
   NOTIFICATIONS: 'notifications',
   REVIEWS: 'reviews',
+  OFFERS: 'offers',              // Offers subcollection under deals
+  // Phase 4: named `providerQuotes` (not `quotes`) to avoid collision with requests/{id}/quotes
+  PROVIDER_QUOTES: 'providerQuotes', // Provider quote submissions under quoteRequests
+  // Phase 5: Legal Consulting subcollections
+  LEGAL_MESSAGES: 'legalMessages',   // Messages under legalEngagements/{engagementId}
+  CONTRACT_DRAFTS: 'contractDrafts', // Contract draft versions under legalEngagements/{engagementId}
+  RISK_ITEMS: 'riskItems',           // Risk flags under legalEngagements/{engagementId}
 };
 
 export default COLLECTIONS;

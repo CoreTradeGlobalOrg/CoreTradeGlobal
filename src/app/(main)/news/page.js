@@ -1,15 +1,19 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { container } from '@/core/di/container';
 import { SearchBar } from '@/presentation/components/common/SearchBar/SearchBar';
 import { Calendar, ArrowRight } from 'lucide-react';
 
+const NEWS_PAGE_SIZE = 9;
+
 export default function NewsPage() {
     const [news, setNews] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
+    const [displayCount, setDisplayCount] = useState(NEWS_PAGE_SIZE);
+    const sentinelRef = useRef(null);
 
     useEffect(() => {
         const firestoreDS = container.getFirestoreDataSource();
@@ -40,11 +44,38 @@ export default function NewsPage() {
         return () => unsubscribe();
     }, []);
 
+    // Reset display count when search changes
+    useEffect(() => {
+        setDisplayCount(NEWS_PAGE_SIZE);
+    }, [searchQuery]);
+
     const filteredNews = news.filter(item =>
         item.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         item.category?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         item.excerpt?.toLowerCase().includes(searchQuery.toLowerCase())
     );
+
+    // Infinite scroll: load more when sentinel enters viewport
+    const loadMore = useCallback(() => {
+        setDisplayCount(prev => prev + NEWS_PAGE_SIZE);
+    }, []);
+
+    useEffect(() => {
+        const sentinel = sentinelRef.current;
+        if (!sentinel) return;
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting) {
+                    loadMore();
+                }
+            },
+            { threshold: 0.1 }
+        );
+
+        observer.observe(sentinel);
+        return () => observer.disconnect();
+    }, [loadMore, filteredNews]);
 
     const getCategoryBadge = (category) => {
         const colors = {
@@ -69,7 +100,7 @@ export default function NewsPage() {
     };
 
     return (
-        <main className="min-h-screen pt-[120px] pb-20 px-6 bg-radial-navy">
+        <main className="min-h-screen pt-[var(--navbar-height)] pb-20 px-6 bg-radial-navy">
             <div className="max-w-[1400px] mx-auto">
                 {/* Header */}
                 <section className="mb-12 text-center">
@@ -101,46 +132,52 @@ export default function NewsPage() {
                         </p>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {filteredNews.map((item, index) => (
-                            <Link
-                                key={item.id}
-                                href={`/news/${item.id}`}
-                                className="group bg-gradient-to-br from-[rgba(255,255,255,0.05)] to-[rgba(255,255,255,0.02)] rounded-[20px] border border-[rgba(255,255,255,0.08)] overflow-hidden hover:border-[rgba(255,215,0,0.3)] transition-all duration-300 hover:-translate-y-1"
-                            >
-                                {/* Image Area */}
-                                <div className={`h-48 bg-news-${(index % 5) + 1} relative`}>
-                                    <div className="absolute top-4 left-4">
-                                        {getCategoryBadge(item.category)}
-                                    </div>
-                                </div>
-
-                                {/* Content */}
-                                <div className="p-6">
-                                    {/* Date */}
-                                    <div className="flex items-center gap-2 text-sm text-[#A0A0A0] mb-3">
-                                        <Calendar className="w-4 h-4" />
-                                        <span>{formatDate(item.publishedAt)}</span>
+                    <>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                            {filteredNews.slice(0, displayCount).map((item, index) => (
+                                <Link
+                                    key={item.id}
+                                    href={`/news/${item.id}`}
+                                    className="group bg-gradient-to-br from-[rgba(255,255,255,0.05)] to-[rgba(255,255,255,0.02)] rounded-[20px] border border-[rgba(255,255,255,0.08)] overflow-hidden hover:border-[rgba(255,215,0,0.3)] transition-all duration-300 hover:-translate-y-1"
+                                >
+                                    {/* Image Area */}
+                                    <div className={`h-48 bg-news-${(index % 5) + 1} relative`}>
+                                        <div className="absolute top-4 left-4">
+                                            {getCategoryBadge(item.category)}
+                                        </div>
                                     </div>
 
-                                    {/* Title */}
-                                    <h3 className="text-lg font-bold text-white mb-3 line-clamp-2 group-hover:text-[#FFD700] transition-colors">
-                                        {item.title}
-                                    </h3>
+                                    {/* Content */}
+                                    <div className="p-6">
+                                        {/* Date */}
+                                        <div className="flex items-center gap-2 text-sm text-[#A0A0A0] mb-3">
+                                            <Calendar className="w-4 h-4" />
+                                            <span>{formatDate(item.publishedAt)}</span>
+                                        </div>
 
-                                    {/* Excerpt */}
-                                    <p className="text-sm text-[#A0A0A0] line-clamp-3 mb-4">
-                                        {item.excerpt}
-                                    </p>
+                                        {/* Title */}
+                                        <h3 className="text-lg font-bold text-white mb-3 line-clamp-2 group-hover:text-[#FFD700] transition-colors">
+                                            {item.title}
+                                        </h3>
 
-                                    {/* Read More */}
-                                    <div className="flex items-center gap-2 text-[#FFD700] font-semibold text-sm group-hover:gap-3 transition-all">
-                                        Read More <ArrowRight className="w-4 h-4" />
+                                        {/* Excerpt */}
+                                        <p className="text-sm text-[#A0A0A0] line-clamp-3 mb-4">
+                                            {item.excerpt}
+                                        </p>
+
+                                        {/* Read More */}
+                                        <div className="flex items-center gap-2 text-[#FFD700] font-semibold text-sm group-hover:gap-3 transition-all">
+                                            Read More <ArrowRight className="w-4 h-4" />
+                                        </div>
                                     </div>
-                                </div>
-                            </Link>
-                        ))}
-                    </div>
+                                </Link>
+                            ))}
+                        </div>
+                        {/* Infinite scroll sentinel */}
+                        {displayCount < filteredNews.length && (
+                            <div ref={sentinelRef} className="h-4 mt-8" aria-hidden="true" />
+                        )}
+                    </>
                 )}
             </div>
         </main>

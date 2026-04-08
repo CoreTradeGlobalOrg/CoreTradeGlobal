@@ -79,7 +79,7 @@ function ContactForm() {
     };
 
     return (
-        <main className="pt-[120px] pb-20 bg-radial-navy">
+        <main className="pt-[var(--navbar-height)] pb-20 bg-radial-navy">
             {/* Hero Section */}
             <section className="relative w-full flex flex-col justify-center items-center text-center px-5 py-12 overflow-hidden">
                 <h1
@@ -210,7 +210,7 @@ function ContactForm() {
 export default function ContactPage() {
     return (
         <Suspense fallback={
-            <main className="pt-[120px] pb-20 bg-radial-navy flex items-center justify-center min-h-screen">
+            <main className="pt-[var(--navbar-height)] pb-20 bg-radial-navy flex items-center justify-center min-h-screen">
                 <div className="text-white">Loading...</div>
             </main>
         }>

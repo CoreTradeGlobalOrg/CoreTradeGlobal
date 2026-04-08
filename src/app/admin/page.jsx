@@ -13,16 +13,137 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
+import { collection, getDocs, where, query } from 'firebase/firestore';
+import { Handshake, Truck, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '@/presentation/contexts/AuthContext';
-import { StatsCards } from '@/presentation/components/features/admin/StatsCards/StatsCards';
-import { UsersTable } from '@/presentation/components/features/admin/UsersTable/UsersTable';
-import { CategoriesManager } from '@/presentation/components/features/admin/CategoriesManager/CategoriesManager';
-import { FairsManager } from '@/presentation/components/features/admin/FairsManager/FairsManager';
-import { NewsManager } from '@/presentation/components/features/admin/NewsManager/NewsManager';
-import { ConversationsManager } from '@/presentation/components/features/admin/ConversationsManager/ConversationsManager';
-import { ProductsRequestsManager } from '@/presentation/components/features/admin/ProductsRequestsManager/ProductsRequestsManager';
 import { useGetAllUsers } from '@/presentation/hooks/admin/useGetAllUsers';
+import { db } from '@/core/config/firebase.config';
+import { DEAL_STATUS } from '@/core/constants/dealConstants';
+
+// Admin tab content loaded lazily — these are heavy components not needed until tab opens
+function AdminTabSkeleton() {
+  return (
+    <div className="space-y-4">
+      <div className="h-8 w-48 bg-[rgba(255,255,255,0.07)] rounded-lg animate-pulse" />
+      <div className="h-64 rounded-2xl bg-[rgba(255,255,255,0.04)] animate-pulse border border-[rgba(255,255,255,0.06)]" />
+      <div className="h-48 rounded-2xl bg-[rgba(255,255,255,0.04)] animate-pulse border border-[rgba(255,255,255,0.06)]" />
+    </div>
+  );
+}
+
+const StatsCards = dynamic(
+  () => import('@/presentation/components/features/admin/StatsCards/StatsCards').then(m => ({ default: m.StatsCards })),
+  { loading: () => <AdminTabSkeleton />, ssr: false }
+);
+const UsersTable = dynamic(
+  () => import('@/presentation/components/features/admin/UsersTable/UsersTable').then(m => ({ default: m.UsersTable })),
+  { loading: () => <AdminTabSkeleton />, ssr: false }
+);
+const CategoriesManager = dynamic(
+  () => import('@/presentation/components/features/admin/CategoriesManager/CategoriesManager').then(m => ({ default: m.CategoriesManager })),
+  { loading: () => <AdminTabSkeleton />, ssr: false }
+);
+const FairsManager = dynamic(
+  () => import('@/presentation/components/features/admin/FairsManager/FairsManager').then(m => ({ default: m.FairsManager })),
+  { loading: () => <AdminTabSkeleton />, ssr: false }
+);
+const NewsManager = dynamic(
+  () => import('@/presentation/components/features/admin/NewsManager/NewsManager').then(m => ({ default: m.NewsManager })),
+  { loading: () => <AdminTabSkeleton />, ssr: false }
+);
+const ConversationsManager = dynamic(
+  () => import('@/presentation/components/features/admin/ConversationsManager/ConversationsManager').then(m => ({ default: m.ConversationsManager })),
+  { loading: () => <AdminTabSkeleton />, ssr: false }
+);
+const ProductsRequestsManager = dynamic(
+  () => import('@/presentation/components/features/admin/ProductsRequestsManager/ProductsRequestsManager').then(m => ({ default: m.ProductsRequestsManager })),
+  { loading: () => <AdminTabSkeleton />, ssr: false }
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Trade Overview Stats
+// ─────────────────────────────────────────────────────────────────────────────
+
+function TradeOverviewStats() {
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchStats() {
+      try {
+        const dealsRef = collection(db, 'deals');
+        const [totalSnap, activeSnap, deliveredSnap] = await Promise.all([
+          getDocs(dealsRef),
+          getDocs(query(dealsRef, where('status', '==', DEAL_STATUS.PROVIDERS_SELECTED))),
+          getDocs(query(dealsRef, where('status', '==', DEAL_STATUS.DELIVERED))),
+        ]);
+        setStats({
+          total: totalSnap.size,
+          active: activeSnap.size,
+          delivered: deliveredSnap.size,
+        });
+      } catch (err) {
+        console.error('TradeOverviewStats: failed to fetch', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchStats();
+  }, []);
+
+  const cards = [
+    {
+      icon: <Handshake className="w-5 h-5 text-[#FFD700]" />,
+      label: 'Total Deals',
+      value: stats?.total ?? '—',
+      bg: 'bg-[#FFD700]/5 border-[#FFD700]/20',
+    },
+    {
+      icon: <Truck className="w-5 h-5 text-blue-400" />,
+      label: 'Active Shipments',
+      value: stats?.active ?? '—',
+      bg: 'bg-blue-900/10 border-blue-700/20',
+    },
+    {
+      icon: <CheckCircle2 className="w-5 h-5 text-green-400" />,
+      label: 'Completed Deliveries',
+      value: stats?.delivered ?? '—',
+      bg: 'bg-green-900/10 border-green-700/20',
+    },
+  ];
+
+  return (
+    <div className="mb-6">
+      <h3 className="text-sm font-semibold text-[#A0A0A0] uppercase tracking-wide mb-3">
+        Trade Overview
+      </h3>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        {cards.map((c) => (
+          <div
+            key={c.label}
+            className={`rounded-xl p-4 border flex items-center gap-3 ${c.bg}`}
+          >
+            {c.icon}
+            <div>
+              {loading ? (
+                <div className="h-5 w-8 bg-[rgba(255,255,255,0.1)] rounded animate-pulse mb-1" />
+              ) : (
+                <p className="text-xl font-bold text-white">{c.value}</p>
+              )}
+              <p className="text-xs text-[#A0A0A0]">{c.label}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AdminPage
+// ─────────────────────────────────────────────────────────────────────────────
 
 export default function AdminPage() {
   const router = useRouter();
@@ -88,7 +209,7 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0F1B2B] px-4 py-6 pt-[100px] md:px-8 md:py-8 md:pt-[120px]">
+    <div className="min-h-screen bg-[#0F1B2B] px-4 py-6 pt-[var(--navbar-height)] md:px-8 md:py-8 md:pt-[var(--navbar-height)]">
       {/* Page Header */}
       <div className="mb-6 md:mb-8">
         <h2 className="text-2xl md:text-3xl font-bold text-white mb-2">Admin Dashboard</h2>
@@ -118,7 +239,10 @@ export default function AdminPage() {
       {/* Users Tab */}
       {activeTab === 'users' && (
         <div>
-          {/* Stats Cards */}
+          {/* Trade Overview Stats */}
+          <TradeOverviewStats />
+
+          {/* User Stats Cards */}
           <StatsCards users={users} />
 
           {/* Add Product / Request on behalf of user */}

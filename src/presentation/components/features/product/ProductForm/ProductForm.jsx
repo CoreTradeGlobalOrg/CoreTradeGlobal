@@ -37,6 +37,8 @@ export function ProductForm({ product, onSubmit, onCancel, userId }) {
     watch,
   } = useForm({
     resolver: zodResolver(productSchema),
+    mode: 'onSubmit',
+    reValidateMode: 'onBlur',
     defaultValues: {
       name: product?.name || '',
       categoryId: product?.categoryId || '',
@@ -189,7 +191,7 @@ export function ProductForm({ product, onSubmit, onCancel, userId }) {
           className="bg-[#0F1B2B] border-[rgba(255,255,255,0.1)] text-white placeholder:text-gray-500 focus:border-[#FFD700] focus:ring-[#FFD700]/20"
         />
         {errors.name && (
-          <p className="mt-1 text-sm text-red-400">{errors.name.message}</p>
+          <p className="text-xs text-red-400 mt-1">{errors.name.message}</p>
         )}
       </div>
 
@@ -208,7 +210,7 @@ export function ProductForm({ product, onSubmit, onCancel, userId }) {
           className="dark-select"
         />
         {errors.categoryId && (
-          <p className="mt-1 text-sm text-red-400">{errors.categoryId.message}</p>
+          <p className="text-xs text-red-400 mt-1">{errors.categoryId.message}</p>
         )}
       </div>
 
@@ -227,7 +229,7 @@ export function ProductForm({ product, onSubmit, onCancel, userId }) {
             className="bg-[#0F1B2B] border-[rgba(255,255,255,0.1)] text-white placeholder:text-gray-500 focus:border-[#FFD700] focus:ring-[#FFD700]/20"
           />
           {errors.stockQuantity && (
-            <p className="mt-1 text-sm text-red-400">{errors.stockQuantity.message}</p>
+            <p className="text-xs text-red-400 mt-1">{errors.stockQuantity.message}</p>
           )}
         </div>
 
@@ -252,7 +254,7 @@ export function ProductForm({ product, onSubmit, onCancel, userId }) {
             className="dark-select"
           />
           {errors.unitCategory && (
-            <p className="mt-1 text-sm text-red-400">{errors.unitCategory.message}</p>
+            <p className="text-xs text-red-400 mt-1">{errors.unitCategory.message}</p>
           )}
         </div>
       </div>
@@ -273,7 +275,7 @@ export function ProductForm({ product, onSubmit, onCancel, userId }) {
             className="dark-select"
           />
           {errors.unit && (
-            <p className="mt-1 text-sm text-red-400">{errors.unit.message}</p>
+            <p className="text-xs text-red-400 mt-1">{errors.unit.message}</p>
           )}
         </div>
 
@@ -293,7 +295,7 @@ export function ProductForm({ product, onSubmit, onCancel, userId }) {
           />
           <p className="mt-1 text-xs text-[#A0A0A0]">Set to 0 for negotiable pricing</p>
           {errors.price && (
-            <p className="mt-1 text-sm text-red-400">{errors.price.message}</p>
+            <p className="text-xs text-red-400 mt-1">{errors.price.message}</p>
           )}
         </div>
       </div>
@@ -314,7 +316,7 @@ export function ProductForm({ product, onSubmit, onCancel, userId }) {
           className="dark-select"
         />
         {errors.currency && (
-          <p className="mt-1 text-sm text-red-400">{errors.currency.message}</p>
+          <p className="text-xs text-red-400 mt-1">{errors.currency.message}</p>
         )}
       </div>
 
@@ -334,7 +336,7 @@ export function ProductForm({ product, onSubmit, onCancel, userId }) {
           placeholder="Describe your product..."
         />
         {errors.description && (
-          <p className="mt-1 text-sm text-red-400">{errors.description.message}</p>
+          <p className="text-xs text-red-400 mt-1">{errors.description.message}</p>
         )}
       </div>
 

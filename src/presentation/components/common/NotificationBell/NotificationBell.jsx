@@ -9,7 +9,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Bell, MessageSquare, FileText, X, Check, Trash2, CheckCircle, XCircle, UserPlus } from 'lucide-react';
+import { Bell, MessageSquare, FileText, X, Check, Trash2, CheckCircle, XCircle, UserPlus, Handshake, Scale } from 'lucide-react';
 import { useMessages } from '@/presentation/contexts/MessagesContext';
 import { useMarkAsRead } from '@/presentation/hooks/messaging/useMarkAsRead';
 import './NotificationBell.css';
@@ -49,6 +49,12 @@ export function NotificationBell() {
     } else if ((notification.type === 'quote_accepted' || notification.type === 'quote_rejected') && notification.data?.requestId) {
       // Navigate to RFQ detail page (for quote submitter to see status)
       router.push(`/request/${notification.data.requestId}`);
+    } else if (notification.type === 'legal' && (notification.link || notification.dealId)) {
+      // Navigate to legal channel
+      router.push(notification.link || `/deals/${notification.dealId}/legal`);
+    } else if (notification.type === 'deal' && (notification.dealId || notification.link)) {
+      // Navigate to deal detail page
+      router.push(notification.link || `/deals/${notification.dealId}`);
     } else if (notification.data?.conversationId) {
       // Open FAB with the conversation (don't navigate to messages page)
       openConversation(notification.data.conversationId);
@@ -68,6 +74,10 @@ export function NotificationBell() {
         return <XCircle className="w-4 h-4" />;
       case 'new_user_approval':
         return <UserPlus className="w-4 h-4" />;
+      case 'deal':
+        return <Handshake className="w-4 h-4" />;
+      case 'legal':
+        return <Scale className="w-4 h-4" />;
       default:
         return <MessageSquare className="w-4 h-4" />;
     }
@@ -84,6 +94,10 @@ export function NotificationBell() {
         return 'rejected-icon';
       case 'new_user_approval':
         return 'approval-icon';
+      case 'deal':
+        return 'deal-icon';
+      case 'legal':
+        return 'deal-icon';
       default:
         return '';
     }
@@ -178,7 +192,7 @@ export function NotificationBell() {
                       </span>
                     </div>
                     {!notification.isRead && (
-                      <span className={`notification-unread-dot ${notification.type === 'quote_accepted' ? 'accepted' : notification.type === 'quote_rejected' ? 'rejected' : notification.type === 'new_user_approval' ? 'approval' : ''}`} />
+                      <span className={`notification-unread-dot ${notification.type === 'quote_accepted' ? 'accepted' : notification.type === 'quote_rejected' ? 'rejected' : notification.type === 'new_user_approval' ? 'approval' : notification.type === 'deal' ? 'deal' : ''}`} />
                     )}
                   </div>
                 ))}

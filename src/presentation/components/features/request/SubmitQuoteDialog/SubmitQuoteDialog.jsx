@@ -9,11 +9,14 @@
 
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { submitQuoteSchema } from '@/core/validation/submitQuoteSchema';
 import { Modal } from '@/components/ui/Modal';
 import { useAuth } from '@/presentation/contexts/AuthContext';
 import { useSubmitQuote } from '@/presentation/hooks/request/useSubmitQuote';
 import { getUnitLabel } from '@/core/constants/units';
 import { Upload, Send, Loader2 } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 // Constants for select options
 const CURRENCIES = [
@@ -94,6 +97,9 @@ export function SubmitQuoteDialog({ isOpen, onClose, request }) {
     formState: { errors },
     reset,
   } = useForm({
+    resolver: zodResolver(submitQuoteSchema),
+    mode: 'onSubmit',
+    reValidateMode: 'onBlur',
     defaultValues: {
       unitPrice: '',
       currency: 'USD',
@@ -145,6 +151,7 @@ export function SubmitQuoteDialog({ isOpen, onClose, request }) {
       onClose();
     } catch (error) {
       console.error('Quote submission error:', error);
+      toast.error(error.message || 'Failed to submit quote. Please try again.');
     }
   };
 
@@ -205,16 +212,16 @@ export function SubmitQuoteDialog({ isOpen, onClose, request }) {
               {/* Unit Price */}
               <div>
                 <label className={labelClass}>
-                  Unit Price <span className="text-red-500">*</span>
+                  Unit Price <span className="text-red-400">*</span>
                 </label>
                 <input
                   type="number"
                   step="0.01"
                   placeholder="0.00"
-                  {...register('unitPrice', { required: 'Unit price is required', min: { value: 0.01, message: 'Price must be greater than 0' } })}
-                  className={inputClass}
+                  {...register('unitPrice')}
+                  className={`${inputClass} ${errors.unitPrice ? 'border-red-500' : 'border-[rgba(255,255,255,0.1)]'}`}
                 />
-                {errors.unitPrice && <p className="mt-1 text-xs text-red-500">{errors.unitPrice.message}</p>}
+                {errors.unitPrice && <p className="text-xs text-red-400 mt-1">{errors.unitPrice.message}</p>}
               </div>
 
               {/* Currency */}

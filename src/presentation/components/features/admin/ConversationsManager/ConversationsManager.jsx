@@ -11,6 +11,7 @@ import { useState, useEffect } from 'react';
 import { MessageCircle, User, Clock, ChevronRight, RefreshCw, Search, Filter } from 'lucide-react';
 import { container } from '@/core/di/container';
 import { Conversation } from '@/domain/entities/Conversation';
+import toast from 'react-hot-toast';
 import './ConversationsManager.css';
 
 export function ConversationsManager() {
@@ -75,6 +76,7 @@ export function ConversationsManager() {
       setConversations(convos);
     } catch (err) {
       setError(err.message);
+      toast.error(err.message || 'Failed to refresh conversations.');
     } finally {
       setLoading(false);
     }

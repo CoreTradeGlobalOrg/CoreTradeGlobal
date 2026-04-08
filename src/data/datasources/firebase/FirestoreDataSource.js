@@ -233,7 +233,7 @@ export class FirestoreDataSource {
    * const unsubscribe = firestoreDS.subscribeToQuery('conversations', {
    *   where: [['participants', 'array-contains', 'user123']],
    *   orderBy: [['updatedAt', 'desc']]
-   * }, (docs) => console.log(docs), (err) => console.error(err))
+   * }, (docs) => handleDocs(docs), (err) => console.error(err))
    */
   subscribeToQuery(collectionName, options = {}, onData, onError) {
     let q = collection(this.db, collectionName);

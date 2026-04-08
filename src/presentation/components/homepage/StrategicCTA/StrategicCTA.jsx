@@ -19,6 +19,7 @@ import { ProductForm } from '@/presentation/components/features/product/ProductF
 import { RequestForm } from '@/presentation/components/features/request/RequestForm/RequestForm';
 import { useCreateProduct } from '@/presentation/hooks/product/useCreateProduct';
 import { useCreateRequest } from '@/presentation/hooks/request/useCreateRequest';
+import toast from 'react-hot-toast';
 
 export function StrategicCTA() {
   const { user, isAuthenticated, loading } = useAuth();
@@ -51,6 +52,7 @@ export function StrategicCTA() {
       setProductModalOpen(false);
     } catch (error) {
       console.error('Error creating product:', error);
+      toast.error(error.message || 'Failed to create product. Please try again.');
     }
   };
 
@@ -60,6 +62,7 @@ export function StrategicCTA() {
       setRequestModalOpen(false);
     } catch (error) {
       console.error('Error creating request:', error);
+      toast.error(error.message || 'Failed to submit request. Please try again.');
     }
   };
 

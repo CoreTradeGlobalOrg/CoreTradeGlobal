@@ -85,7 +85,7 @@ export class FirebaseAuthDataSource {
    *
    * Usage:
    * const unsubscribe = authDataSource.onAuthStateChanged((user) => {
-   *   console.log('User:', user)
+   *   // handle user state change
    * })
    * // Later: unsubscribe()
    */

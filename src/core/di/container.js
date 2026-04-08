@@ -25,6 +25,14 @@ import { NewsRepository } from '@/data/repositories/NewsRepository';
 import { ConversationRepository } from '@/data/repositories/ConversationRepository';
 import { MessageRepository } from '@/data/repositories/MessageRepository';
 import { NotificationRepository } from '@/data/repositories/NotificationRepository';
+import { DealRepository } from '@/data/repositories/DealRepository';
+import { OfferRepository } from '@/data/repositories/OfferRepository';
+import { ContractRepository } from '@/data/repositories/ContractRepository';
+import { QuoteRequestRepository } from '@/data/repositories/QuoteRequestRepository';
+import { QuoteRepository } from '@/data/repositories/QuoteRepository';
+import { LegalEngagementRepository } from '@/data/repositories/LegalEngagementRepository';
+import { LegalMessageRepository } from '@/data/repositories/LegalMessageRepository';
+import { ShipmentRepository } from '@/data/repositories/ShipmentRepository';
 
 /**
  * Singleton instances
@@ -43,6 +51,14 @@ let newsRepository = null;
 let conversationRepository = null;
 let messageRepository = null;
 let notificationRepository = null;
+let dealRepository = null;
+let offerRepository = null;
+let contractRepository = null;
+let quoteRequestRepository = null;
+let quoteRepository = null;
+let legalEngagementRepository = null;
+let legalMessageRepository = null;
+let shipmentRepository = null;
 
 /**
  * DI Container
@@ -212,6 +228,94 @@ export const container = {
   },
 
   /**
+   * Get Deal Repository instance
+   * @returns {DealRepository}
+   */
+  getDealRepository() {
+    if (!dealRepository) {
+      dealRepository = new DealRepository(this.getFirestoreDataSource());
+    }
+    return dealRepository;
+  },
+
+  /**
+   * Get Offer Repository instance
+   * @returns {OfferRepository}
+   */
+  getOfferRepository() {
+    if (!offerRepository) {
+      offerRepository = new OfferRepository(this.getFirestoreDataSource());
+    }
+    return offerRepository;
+  },
+
+  /**
+   * Get Contract Repository instance
+   * @returns {ContractRepository}
+   */
+  getContractRepository() {
+    if (!contractRepository) {
+      contractRepository = new ContractRepository(this.getFirestoreDataSource());
+    }
+    return contractRepository;
+  },
+
+  /**
+   * Get QuoteRequest Repository instance
+   * @returns {QuoteRequestRepository}
+   */
+  getQuoteRequestRepository() {
+    if (!quoteRequestRepository) {
+      quoteRequestRepository = new QuoteRequestRepository(this.getFirestoreDataSource());
+    }
+    return quoteRequestRepository;
+  },
+
+  /**
+   * Get Quote Repository instance
+   * @returns {QuoteRepository}
+   */
+  getQuoteRepository() {
+    if (!quoteRepository) {
+      quoteRepository = new QuoteRepository(this.getFirestoreDataSource());
+    }
+    return quoteRepository;
+  },
+
+  /**
+   * Get LegalEngagement Repository instance
+   * @returns {LegalEngagementRepository}
+   */
+  getLegalEngagementRepository() {
+    if (!legalEngagementRepository) {
+      legalEngagementRepository = new LegalEngagementRepository(this.getFirestoreDataSource());
+    }
+    return legalEngagementRepository;
+  },
+
+  /**
+   * Get LegalMessage Repository instance
+   * @returns {LegalMessageRepository}
+   */
+  getLegalMessageRepository() {
+    if (!legalMessageRepository) {
+      legalMessageRepository = new LegalMessageRepository(this.getFirestoreDataSource());
+    }
+    return legalMessageRepository;
+  },
+
+  /**
+   * Get Shipment Repository instance
+   * @returns {ShipmentRepository}
+   */
+  getShipmentRepository() {
+    if (!shipmentRepository) {
+      shipmentRepository = new ShipmentRepository(this.getFirestoreDataSource());
+    }
+    return shipmentRepository;
+  },
+
+  /**
    * Reset all instances (useful for testing)
    * DO NOT use this in production code
    */
@@ -229,6 +333,14 @@ export const container = {
     conversationRepository = null;
     messageRepository = null;
     notificationRepository = null;
+    dealRepository = null;
+    offerRepository = null;
+    contractRepository = null;
+    quoteRequestRepository = null;
+    quoteRepository = null;
+    legalEngagementRepository = null;
+    legalMessageRepository = null;
+    shipmentRepository = null;
   },
 };
 

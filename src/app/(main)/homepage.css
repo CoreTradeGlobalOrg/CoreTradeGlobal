@@ -95,7 +95,7 @@ html {
     #hero-section {
         height: auto;
         min-height: auto;
-        margin-top: 70px;
+        margin-top: var(--navbar-height);
         padding-top: 20px;
         padding-bottom: 20px;
         display: flex;
@@ -262,7 +262,7 @@ html {
 
 .hero-overlay {
     position: absolute;
-    top: calc(40% - 190px - 20px);
+    top: calc(44% - 190px - 20px);
     left: 50%;
     transform: translate(-50%, -50%);
     text-align: center;

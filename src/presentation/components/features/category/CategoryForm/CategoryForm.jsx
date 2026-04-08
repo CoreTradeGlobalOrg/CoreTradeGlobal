@@ -39,6 +39,8 @@ export function CategoryForm({ category, categories = [], onSubmit, onCancel }) 
     watch,
   } = useForm({
     resolver: zodResolver(categorySchema),
+    mode: 'onSubmit',
+    reValidateMode: 'onBlur',
     defaultValues: {
       name: category?.name || '',
       iconUrl: category?.iconUrl || '',
@@ -76,7 +78,7 @@ export function CategoryForm({ category, categories = [], onSubmit, onCancel }) 
           placeholder="e.g., Electronics"
         />
         {errors.name && (
-          <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
+          <p className="text-xs text-red-400 mt-1">{errors.name.message}</p>
         )}
       </div>
 
@@ -94,7 +96,7 @@ export function CategoryForm({ category, categories = [], onSubmit, onCancel }) 
           maxLength={10}
         />
         {errors.iconUrl && (
-          <p className="mt-1 text-sm text-red-600">{errors.iconUrl.message}</p>
+          <p className="text-xs text-red-400 mt-1">{errors.iconUrl.message}</p>
         )}
         <p className="mt-1 text-xs text-gray-500">
           Use a single emoji character (e.g., 🔌 ⚙️ 🏗️)
@@ -115,7 +117,7 @@ export function CategoryForm({ category, categories = [], onSubmit, onCancel }) 
           error={!!errors.parentId}
         />
         {errors.parentId && (
-          <p className="mt-1 text-sm text-red-600">{errors.parentId.message}</p>
+          <p className="text-xs text-red-400 mt-1">{errors.parentId.message}</p>
         )}
         <p className="mt-1 text-xs text-gray-500">
           Leave as "None" to create a top-level category

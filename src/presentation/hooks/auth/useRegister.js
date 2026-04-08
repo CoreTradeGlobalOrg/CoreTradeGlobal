@@ -35,15 +35,6 @@ export function useRegister() {
    * @returns {Promise<Object>} Created user
    */
   const register = async (registerData) => {
-    console.log('📸 [useRegister] register called with data:', {
-      ...registerData,
-      companyLogoFile: registerData.companyLogoFile ? {
-        name: registerData.companyLogoFile.name,
-        type: registerData.companyLogoFile.type,
-        size: registerData.companyLogoFile.size,
-      } : 'NO_FILE',
-    });
-
     setLoading(true);
     setError(null);
 
@@ -78,7 +69,6 @@ export function useRegister() {
           );
 
           await notificationRepository.createForMultipleUsers(adminIds, notificationData);
-          console.log(`📧 Sent approval notification to ${adminIds.length} admins`);
         }
       } catch (notifError) {
         // Don't fail registration if notification fails

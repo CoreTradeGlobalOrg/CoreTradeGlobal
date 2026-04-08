@@ -80,7 +80,7 @@ export default function NewsDetailClient() {
                     url: window.location.href,
                 });
             } catch (err) {
-                console.log('Share cancelled');
+                // Share was cancelled by user
             }
         } else {
             navigator.clipboard.writeText(window.location.href);
@@ -104,7 +104,7 @@ export default function NewsDetailClient() {
                     url: shareUrl,
                 });
             } catch (err) {
-                console.log('Share cancelled');
+                // Share was cancelled by user
             }
         } else {
             // Desktop: Open LinkedIn with pre-filled text
@@ -123,7 +123,7 @@ export default function NewsDetailClient() {
 
     if (error || !news) {
         return (
-            <div className="min-h-screen pt-[120px] pb-20 bg-radial-navy flex items-center justify-center px-4">
+            <div className="min-h-screen pt-[var(--navbar-height)] pb-20 bg-radial-navy flex items-center justify-center px-4">
                 <div className="glass-card max-w-lg w-full p-8 text-center">
                     <div className="text-6xl mb-4">📰</div>
                     <h2 className="text-2xl font-bold text-white mb-2">News Not Found</h2>
@@ -137,7 +137,7 @@ export default function NewsDetailClient() {
     }
 
     return (
-        <div className="min-h-screen pt-[120px] pb-20 bg-radial-navy">
+        <div className="min-h-screen pt-[var(--navbar-height)] pb-20 bg-radial-navy">
             <div className="max-w-[1200px] mx-auto px-4">
                 {/* Back Button */}
                 <button

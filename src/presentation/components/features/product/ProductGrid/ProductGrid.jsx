@@ -8,7 +8,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { container } from '@/core/di/container';
 import { COUNTRIES } from '@/core/constants/countries';
@@ -123,10 +123,14 @@ const DEFAULT_PRODUCTS = [
     }
 ];
 
+const PAGE_SIZE = 12;
+
 export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter }) {
     const [products, setProducts] = useState(DEFAULT_PRODUCTS);
     const [filteredProducts, setFilteredProducts] = useState(DEFAULT_PRODUCTS);
     const [loading, setLoading] = useState(true);
+    const [displayCount, setDisplayCount] = useState(PAGE_SIZE);
+    const sentinelRef = useRef(null);
     const { categories } = useCategories();
 
     // Fetch Products
@@ -159,6 +163,11 @@ export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter }) {
         fetchProducts();
     }, []);
 
+    // Reset display count when filters change
+    useEffect(() => {
+        setDisplayCount(PAGE_SIZE);
+    }, [searchQuery, categoryFilter, categoryIdFilter]);
+
     // Filter Logic
     useEffect(() => {
         let result = products;
@@ -187,6 +196,27 @@ export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter }) {
 
     }, [products, searchQuery, categoryFilter, categoryIdFilter]);
 
+    // Infinite scroll: load more when sentinel enters viewport
+    const loadMore = useCallback(() => {
+        setDisplayCount(prev => prev + PAGE_SIZE);
+    }, []);
+
+    useEffect(() => {
+        const sentinel = sentinelRef.current;
+        if (!sentinel) return;
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting) {
+                    loadMore();
+                }
+            },
+            { threshold: 0.1 }
+        );
+
+        observer.observe(sentinel);
+        return () => observer.disconnect();
+    }, [loadMore, filteredProducts]);
 
     if (loading) {
         return (
@@ -208,12 +238,21 @@ export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter }) {
         );
     }
 
+    const visibleProducts = filteredProducts.slice(0, displayCount);
+    const hasMore = displayCount < filteredProducts.length;
+
     return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {filteredProducts.map((product) => (
-                <ProductCard key={product.id} product={product} categories={categories} />
-            ))}
-        </div>
+        <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {visibleProducts.map((product) => (
+                    <ProductCard key={product.id} product={product} categories={categories} />
+                ))}
+            </div>
+            {/* Infinite scroll sentinel */}
+            {hasMore && (
+                <div ref={sentinelRef} className="h-4 mt-6" aria-hidden="true" />
+            )}
+        </>
     );
 }
 
