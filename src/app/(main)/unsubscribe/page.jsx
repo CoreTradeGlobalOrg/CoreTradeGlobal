@@ -67,10 +67,7 @@ function UnsubscribeForm() {
         <h1 className="text-2xl font-bold text-white mb-2">You&apos;re unsubscribed</h1>
         <p className="text-[#A0A0A0] mb-1">
           We&apos;ve removed <span className="text-white font-medium">{confirmedEmail}</span> from our
-          cold email list.
-        </p>
-        <p className="text-xs text-[#A0A0A0] mt-4">
-          You may still receive transactional emails related to your account.
+          email list.
         </p>
       </div>
     );
