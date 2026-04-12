@@ -1,8 +1,11 @@
 /**
  * Settings Page Orchestrator
  *
- * Shell layout for user account settings.
- * Plans 02 and 03 will replace the placeholder sections with real sub-components.
+ * Full settings page with all sections:
+ *   1. SecuritySection   — password change + 2FA (Plan 02)
+ *   2. NotificationsSection — 5-category email/push toggles (Plan 03)
+ *   3. EmailSubscriptionsSection — marketing email opt-in/out (Plan 03)
+ *   4. DangerSection     — logout + account deletion (Plan 03)
  */
 
 'use client';
@@ -11,8 +14,11 @@ import { useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/presentation/contexts/AuthContext';
-import { ArrowLeft, Bell, AlertTriangle, User } from 'lucide-react';
+import { ArrowLeft, User } from 'lucide-react';
 import { SecuritySection } from './SecuritySection';
+import { NotificationsSection } from './NotificationsSection';
+import { EmailSubscriptionsSection } from './EmailSubscriptionsSection';
+import { DangerSection } from './DangerSection';
 
 export function SettingsPage() {
   const { user, isAuthenticated, loading } = useAuth();
@@ -70,30 +76,17 @@ export function SettingsPage() {
           </div>
         </div>
 
-        {/* Security Section — password change + 2FA */}
+        {/* 1. Security Section — password change + 2FA */}
         <SecuritySection />
 
-        {/* Notifications Section placeholder — Plan 02 will replace */}
-        <div className="glass-card p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <span className="w-1 h-5 bg-yellow-500 rounded-full"></span>
-            <Bell className="w-5 h-5 text-[#A0A0A0]" />
-            <h3 className="text-lg font-bold text-white">Notifications</h3>
-          </div>
-          <p className="text-[#A0A0A0] text-sm">
-            Email and push notification preferences.
-          </p>
-        </div>
+        {/* 2. Notifications Section — 5-category email/push toggles */}
+        <NotificationsSection />
 
-        {/* Danger Zone placeholder — Plan 03 will replace */}
-        <div className="glass-card p-6 border border-red-900/30">
-          <div className="flex items-center gap-3 mb-4">
-            <span className="w-1 h-5 bg-red-500 rounded-full"></span>
-            <AlertTriangle className="w-5 h-5 text-red-400" />
-            <h3 className="text-lg font-bold text-red-400">Danger Zone</h3>
-          </div>
-          <p className="text-[#A0A0A0] text-sm">Account deletion and logout.</p>
-        </div>
+        {/* 3. Email Subscriptions Section — marketing email opt-in/out */}
+        <EmailSubscriptionsSection />
+
+        {/* 4. Danger Zone — logout + account deletion */}
+        <DangerSection />
       </div>
     </div>
   );

@@ -12,6 +12,8 @@ import { useAuth } from '@/presentation/contexts/AuthContext';
 import { useLogout } from '@/presentation/hooks/auth/useLogout';
 import { useDeleteAccount } from '@/presentation/hooks/auth/useDeleteAccount';
 import { useRouter, useParams } from 'next/navigation';
+import Link from 'next/link';
+import { Settings } from 'lucide-react';
 import { ProfileStickyHeader } from './ProfileStickyHeader';
 import { ProfileCard } from './ProfileCard';
 import { useProfilePage } from './useProfilePage';
@@ -82,6 +84,17 @@ function ProfileContent() {
           onProfileUpdate={page.handleProfileUpdate}
           onCancelEdit={page.handleCancelEdit}
         />
+
+        {page.isOwnProfile && (
+          <div className="flex justify-end">
+            <Link
+              href="/settings"
+              className="text-sm text-[#A0A0A0] hover:text-white flex items-center gap-1 transition-colors"
+            >
+              <Settings className="w-4 h-4" /> Settings
+            </Link>
+          </div>
+        )}
 
         {page.profileUser?.role === 'lawyer' && (
           <LawyerProfileContent profileUser={page.profileUser} isOwnProfile={page.isOwnProfile} currentUser={currentUser} />
