@@ -7,12 +7,12 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useAuth } from '@/presentation/contexts/AuthContext';
 import { useLogout } from '@/presentation/hooks/auth/useLogout';
-import { Menu, X, User, LogOut } from 'lucide-react';
+import { Menu, X, User, LogOut, Settings as SettingsIcon } from 'lucide-react';
 import { NotificationBell } from '@/presentation/components/common/NotificationBell/NotificationBell';
 
 const NAV_LINKS = [
@@ -33,6 +33,7 @@ export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const dropdownRef = useRef(null);
   const pathname = usePathname();
 
   useEffect(() => {
@@ -67,6 +68,18 @@ export function Navbar() {
 
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowUserMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   // Lock body scroll when mobile menu is open
@@ -156,43 +169,61 @@ export function Navbar() {
               Messages
             </Link>
             <NotificationBell />
-            <div className="relative group">
+            <div className="relative" ref={dropdownRef}>
               <button
-                className="btn-signup flex items-center gap-2"
+                className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-[rgba(255,255,255,0.08)] transition-colors"
                 onClick={() => setShowUserMenu(!showUserMenu)}
-                onMouseEnter={() => setShowUserMenu(true)}
               >
-                <User className="w-4 h-4" />
-                <span>Profile</span>
+                {user.companyLogo || user.photoURL ? (
+                  <img
+                    src={user.companyLogo || user.photoURL}
+                    alt="Avatar"
+                    className="w-8 h-8 rounded-full object-cover object-center border border-[#FFD700]"
+                  />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-[#FFD700] flex items-center justify-center flex-shrink-0">
+                    <User className="w-4 h-4 text-[#0F1B2B]" />
+                  </div>
+                )}
+                <span className="text-white text-sm font-medium">{user.companyName || user.displayName || 'Account'}</span>
               </button>
 
-            <div
-              className={`absolute right-0 top-full mt-2 w-48 bg-[#0F1B2B] border border-[rgba(255,255,255,0.1)] rounded-xl shadow-xl overflow-hidden transition-all duration-200 ${showUserMenu ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible -translate-y-2 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0'}`}
-              onMouseLeave={() => setShowUserMenu(false)}
-            >
-              <Link
-                href={`/profile/${user.uid}`}
-                className="block px-4 py-3 text-sm text-white hover:bg-[rgba(255,255,255,0.1)]"
+              <div
+                className={`absolute right-0 top-full mt-2 w-48 bg-[#0F1B2B] border border-[rgba(255,255,255,0.1)] rounded-xl shadow-xl overflow-hidden transition-all duration-200 ${showUserMenu ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible -translate-y-2'}`}
               >
-                My Profile
-              </Link>
-              {user.role === 'admin' && (
                 <Link
-                  href="/admin"
-                  className="block px-4 py-3 text-sm text-[var(--accent-gold)] hover:bg-[rgba(255,215,0,0.1)] font-semibold"
+                  href={`/profile/${user.uid}`}
+                  className="block px-4 py-3 text-sm text-white hover:bg-[rgba(255,255,255,0.1)]"
+                  onClick={() => setShowUserMenu(false)}
                 >
-                  Admin Dashboard
+                  My Profile
                 </Link>
-              )}
-              <div className="h-px bg-[rgba(255,255,255,0.1)] my-1"></div>
-              <button
-                onClick={handleLogout}
-                className="w-full text-left px-4 py-3 text-sm text-red-400 hover:bg-[rgba(255,50,50,0.1)] flex items-center gap-2"
-              >
-                <LogOut className="w-4 h-4" />
-                Log Out
-              </button>
-            </div>
+                <Link
+                  href="/settings"
+                  className="block px-4 py-3 text-sm text-white hover:bg-[rgba(255,255,255,0.1)] flex items-center gap-2"
+                  onClick={() => setShowUserMenu(false)}
+                >
+                  <SettingsIcon className="w-4 h-4" />
+                  Settings
+                </Link>
+                {user.role === 'admin' && (
+                  <Link
+                    href="/admin"
+                    className="block px-4 py-3 text-sm text-[var(--accent-gold)] hover:bg-[rgba(255,215,0,0.1)] font-semibold"
+                    onClick={() => setShowUserMenu(false)}
+                  >
+                    Admin Dashboard
+                  </Link>
+                )}
+                <div className="h-px bg-[rgba(255,255,255,0.1)] my-1"></div>
+                <button
+                  onClick={handleLogout}
+                  className="w-full text-left px-4 py-3 text-sm text-red-400 hover:bg-[rgba(255,50,50,0.1)] flex items-center gap-2"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Log Out
+                </button>
+              </div>
             </div>
           </div>
         ) : (
@@ -275,6 +306,14 @@ export function Navbar() {
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     My Profile
+                  </Link>
+                  <Link
+                    href="/settings"
+                    className="block py-3 transition-colors hover:text-[#FFD700]"
+                    style={{ color: isActive('/settings') ? '#FFD700' : '#FFFFFF', fontWeight: isActive('/settings') ? 600 : 400 }}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Settings
                   </Link>
                   {user.role === 'admin' && (
                     <Link
