@@ -11,7 +11,8 @@ import { useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/presentation/contexts/AuthContext';
-import { ArrowLeft, Lock, Bell, AlertTriangle, User } from 'lucide-react';
+import { ArrowLeft, Bell, AlertTriangle, User } from 'lucide-react';
+import { SecuritySection } from './SecuritySection';
 
 export function SettingsPage() {
   const { user, isAuthenticated, loading } = useAuth();
@@ -69,17 +70,8 @@ export function SettingsPage() {
           </div>
         </div>
 
-        {/* Security Section placeholder — Plan 02 will replace */}
-        <div className="glass-card p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <span className="w-1 h-5 bg-blue-500 rounded-full"></span>
-            <Lock className="w-5 h-5 text-[#A0A0A0]" />
-            <h3 className="text-lg font-bold text-white">Security</h3>
-          </div>
-          <p className="text-[#A0A0A0] text-sm">
-            Password and two-factor authentication settings.
-          </p>
-        </div>
+        {/* Security Section — password change + 2FA */}
+        <SecuritySection />
 
         {/* Notifications Section placeholder — Plan 02 will replace */}
         <div className="glass-card p-6">
