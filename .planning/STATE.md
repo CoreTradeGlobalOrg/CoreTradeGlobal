@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-stopped_at: Completed 10-02-PLAN.md
-last_updated: "2026-04-12T18:08:34.032Z"
+stopped_at: Completed 10-03-PLAN.md
+last_updated: "2026-04-12T18:15:25.932Z"
 last_activity: "2026-04-02 - Completed quick task 5: Fix hero not fetching last verified user"
 progress:
   total_phases: 17
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 3
-  completed_plans: 2
+  completed_plans: 3
   percent: 71
 ---
 
@@ -97,6 +97,7 @@ Progress: [█████████████] 71%
 | Phase 09 P01 | 30 | 2 tasks | 4 files |
 | Phase 10-settings-page P01 | 8 | 2 tasks | 4 files |
 | Phase 10-settings-page P02 | 12 | 2 tasks | 7 files |
+| Phase 10-settings-page P03 | 5 | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -268,6 +269,9 @@ Recent decisions affecting current work:
 - [Phase 10-02]: TwoFactorSetup loaded via next/dynamic ssr:false — qrcode.react and SubtleCrypto require browser APIs
 - [Phase 10-02]: Backup codes generated client-side with SubtleCrypto SHA-256, hashed before Firestore storage in users/{uid}/security/backupCodes
 - [Phase 10-02]: auth/invalid-credential added alongside auth/wrong-password in error maps — Firebase SDK v9+ changed error code for wrong password
+- [Phase 10-03]: subscription-status GET endpoint uses SHA-256 hash matching Phase 9 CF pattern for consistent email identity
+- [Phase 10-03]: useNotificationPreferences deep-merges Firestore prefs with defaults to prevent undefined toggle states
+- [Phase 10-03]: EmailSubscriptionsSection is single global toggle (not 3 categories) — Phase 9 model stores one doc per email
 
 ### Pending Todos
 
@@ -291,6 +295,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-12T18:08:34.027Z
-Stopped at: Completed 10-02-PLAN.md
+Last session: 2026-04-12T18:15:25.928Z
+Stopped at: Completed 10-03-PLAN.md
 Resume file: None
