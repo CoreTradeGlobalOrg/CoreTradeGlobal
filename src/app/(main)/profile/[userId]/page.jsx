@@ -9,12 +9,11 @@
 'use client';
 
 import { useAuth } from '@/presentation/contexts/AuthContext';
-import { useLogout } from '@/presentation/hooks/auth/useLogout';
-import { useDeleteAccount } from '@/presentation/hooks/auth/useDeleteAccount';
 import { useRouter, useParams } from 'next/navigation';
+import Link from 'next/link';
 import { useEffect, useState, Suspense, useLayoutEffect } from 'react';
+import { Settings } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
 import { Modal } from '@/components/ui/Modal';
 import toast from 'react-hot-toast';
 import { container } from '@/core/di/container';
@@ -32,13 +31,10 @@ import { useCreateRequest } from '@/presentation/hooks/request/useCreateRequest'
 import { useUpdateRequest } from '@/presentation/hooks/request/useUpdateRequest';
 import { useDeleteRequest } from '@/presentation/hooks/request/useDeleteRequest';
 import { useCategories } from '@/presentation/hooks/category/useCategories';
-import { ConfirmDialog } from '@/presentation/components/common/ConfirmDialog/ConfirmDialog';
 import { CompanyDocuments } from '@/presentation/components/features/profile/CompanyDocuments/CompanyDocuments';
 
 function ProfileContent() {
   const { user: currentUser, loading: authLoading, isAuthenticated } = useAuth();
-  const { logout } = useLogout();
-  const { deleteAccount, loading: deleteLoading } = useDeleteAccount();
   const router = useRouter();
   const params = useParams();
   const userId = params.userId;
@@ -51,10 +47,6 @@ function ProfileContent() {
   const [profileUser, setProfileUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
-
-  // Delete account modal state
-  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [deleteConfirmText, setDeleteConfirmText] = useState('');
 
   // Product modal state
   const [productModalOpen, setProductModalOpen] = useState(false);
@@ -112,11 +104,6 @@ function ProfileContent() {
   const [logoLoading, setLogoLoading] = useState(false);
   const [logoRemoved, setLogoRemoved] = useState(false);
   const [profileUpdating, setProfileUpdating] = useState(false);
-
-  // Password form state
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
 
   // Fetch profile user data
   useEffect(() => {
@@ -314,72 +301,6 @@ function ProfileContent() {
       toast.error('Failed to update profile');
     } finally {
       setProfileUpdating(false);
-    }
-  };
-
-  const handlePasswordChange = async (e) => {
-    e.preventDefault();
-
-    if (newPassword !== confirmPassword) {
-      toast.error('Passwords do not match');
-      return;
-    }
-
-    try {
-      const authDataSource = container.getFirebaseAuthDataSource();
-      await authDataSource.updatePassword(newPassword);
-
-      toast.success('Password changed successfully!');
-      setCurrentPassword('');
-      setNewPassword('');
-      setConfirmPassword('');
-    } catch (error) {
-      console.error('Failed to change password:', error);
-      toast.error('Failed to change password. Please re-login and try again.');
-    }
-  };
-
-  const handleOpenDeleteModal = () => {
-    setDeleteModalOpen(true);
-    setDeleteConfirmText('');
-  };
-
-  const handleCloseDeleteModal = () => {
-    setDeleteModalOpen(false);
-    setDeleteConfirmText('');
-  };
-
-  const handleDeleteAccount = async () => {
-    // Check if user typed DELETE
-    if (deleteConfirmText !== 'DELETE') {
-      toast.error('Please type DELETE to confirm');
-      return;
-    }
-
-    try {
-      // Call cloud function to soft delete user (15-day recovery)
-      const result = await deleteAccount(userId);
-
-      // Close modal
-      setDeleteModalOpen(false);
-      setDeleteConfirmText('');
-
-      // Logout and redirect
-      await logout();
-      toast.success('Your account has been scheduled for deletion. You can recover it within 15 days by logging in.');
-      router.push('/');
-    } catch (error) {
-      console.error('Failed to delete account:', error);
-      toast.error(error.message || 'Failed to delete account');
-    }
-  };
-
-  const handleLogout = async () => {
-    try {
-      await logout();
-      router.push('/');
-    } catch (error) {
-      toast.error('Failed to logout');
     }
   };
 
@@ -641,15 +562,25 @@ function ProfileContent() {
                       {profileUser?.position && <span className="text-[#A0A0A0]"> • {profileUser.position}</span>}
                     </p>
                   </div>
-                  {canEdit && !isEditing && (
-                    <button
-                      type="button"
-                      onClick={() => setIsEditing(true)}
-                      className="flex-shrink-0 px-5 py-2 text-sm font-bold bg-[#FFD700] text-[#0F1B2B] rounded-lg hover:bg-white transition-all"
-                    >
-                      Edit Profile
-                    </button>
-                  )}
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    {isOwnProfile && !isEditing && (
+                      <Link
+                        href="/settings"
+                        className="text-sm text-[#A0A0A0] hover:text-white flex items-center gap-1 transition-colors"
+                      >
+                        <Settings className="w-4 h-4" /> Settings
+                      </Link>
+                    )}
+                    {canEdit && !isEditing && (
+                      <button
+                        type="button"
+                        onClick={() => setIsEditing(true)}
+                        className="px-5 py-2 text-sm font-bold bg-[#FFD700] text-[#0F1B2B] rounded-lg hover:bg-white transition-all"
+                      >
+                        Edit Profile
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 {/* Bio */}
@@ -938,67 +869,6 @@ function ProfileContent() {
           )}
         </div>
 
-        {/* Security Section - Only for own profile */}
-        {isOwnProfile && (
-          <div className="glass-card p-6">
-            <div className="flex items-center gap-3 mb-6">
-              <span className="w-1 h-5 bg-red-500 rounded-full"></span>
-              <h3 className="text-lg font-bold text-white">Account Settings</h3>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Change Password */}
-              <div className="bg-[rgba(255,255,255,0.03)] rounded-xl p-5">
-                <h4 className="text-white font-semibold mb-4">Change Password</h4>
-                <form onSubmit={handlePasswordChange} className="space-y-3">
-                  <input
-                    type="password"
-                    value={currentPassword}
-                    onChange={(e) => setCurrentPassword(e.target.value)}
-                    placeholder="Current Password"
-                    required
-                    className="w-full bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-lg px-4 py-2.5 text-white text-sm placeholder-[#A0A0A0] focus:outline-none focus:border-[#FFD700]/50"
-                  />
-                  <input
-                    type="password"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="New Password"
-                    required
-                    className="w-full bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-lg px-4 py-2.5 text-white text-sm placeholder-[#A0A0A0] focus:outline-none focus:border-[#FFD700]/50"
-                  />
-                  <input
-                    type="password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="Confirm New Password"
-                    required
-                    className="w-full bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-lg px-4 py-2.5 text-white text-sm placeholder-[#A0A0A0] focus:outline-none focus:border-[#FFD700]/50"
-                  />
-                  <Button type="submit" className="w-full bg-[#FFD700] text-[#0F1B2B] hover:bg-white font-bold border-none text-sm py-2.5">
-                    Update Password
-                  </Button>
-                </form>
-              </div>
-
-              {/* Danger Zone */}
-              <div className="bg-[rgba(239,68,68,0.05)] border border-red-900/30 rounded-xl p-5">
-                <h4 className="text-red-400 font-semibold mb-3">Danger Zone</h4>
-                <p className="text-[#A0A0A0] text-sm mb-4">
-                  Your account will be scheduled for deletion with a 15-day recovery period.
-                </p>
-                <Button
-                  variant="destructive"
-                  onClick={handleOpenDeleteModal}
-                  className="w-full bg-red-600 hover:bg-red-700 text-white border-none text-sm py-2.5"
-                >
-                  Delete Account
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Product Modal */}
         <Modal
           isOpen={productModalOpen}
@@ -1029,31 +899,6 @@ function ProfileContent() {
           />
         </Modal>
 
-        {/* Delete Account Confirmation Modal */}
-        <ConfirmDialog
-          isOpen={deleteModalOpen}
-          onClose={handleCloseDeleteModal}
-          onConfirm={handleDeleteAccount}
-          title="Delete Your Account?"
-          message="Your account will be scheduled for deletion. You have 15 days to recover it by logging in again. After 15 days, all your data will be permanently deleted."
-          confirmText="Delete Account"
-          cancelText="Cancel"
-          variant="danger"
-          loading={deleteLoading}
-        >
-          <div className="space-y-3">
-            <p className="text-sm text-gray-400">
-              Type <span className="font-bold text-white">DELETE</span> to confirm:
-            </p>
-            <input
-              type="text"
-              value={deleteConfirmText}
-              onChange={(e) => setDeleteConfirmText(e.target.value)}
-              placeholder="Type DELETE"
-              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-red-500/50"
-            />
-          </div>
-        </ConfirmDialog>
       </main>
     </div>
   );
