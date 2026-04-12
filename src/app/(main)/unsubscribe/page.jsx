@@ -1,76 +1,86 @@
 'use client';
 
-import { Suspense, useState } from 'react';
+import { Suspense, useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 
 const UTM_KEYS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'];
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function UnsubscribeForm() {
   const searchParams = useSearchParams();
   const emailParam = (searchParams.get('email') || '').trim();
-
-  const [status, setStatus] = useState('idle'); // idle | submitting | success | error
-  const [errorMessage, setErrorMessage] = useState('');
-  const [confirmedEmail, setConfirmedEmail] = useState('');
-
-  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const emailValid = emailParam && EMAIL_RE.test(emailParam);
 
-  async function handleConfirm(e) {
-    e.preventDefault();
-    if (!emailValid || status === 'submitting') return;
+  // idle | unsubscribing | unsubscribed | resubscribing | resubscribed | error
+  const [status, setStatus] = useState('idle');
+  const [errorMessage, setErrorMessage] = useState('');
+  const hasTriggered = useRef(false);
 
-    setStatus('submitting');
-    setErrorMessage('');
+  useEffect(() => {
+    if (!emailValid || hasTriggered.current) return;
+    hasTriggered.current = true;
 
-    // Capture any UTM params present in the URL (server will re-validate).
-    const payload = { email: emailParam };
-    for (const key of UTM_KEYS) {
-      const value = (searchParams.get(key) || '').trim();
-      if (value) payload[key] = value;
+    async function autoUnsubscribe() {
+      setStatus('unsubscribing');
+
+      const payload = { email: emailParam };
+      for (const key of UTM_KEYS) {
+        const value = (searchParams.get(key) || '').trim();
+        if (value) payload[key] = value;
+      }
+
+      try {
+        const res = await fetch('/api/unsubscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          setStatus('error');
+          setErrorMessage(
+            data?.error ||
+              (res.status === 429
+                ? 'Too many requests. Please try again in a minute.'
+                : 'Something went wrong. Please try again.')
+          );
+          return;
+        }
+
+        setStatus('unsubscribed');
+      } catch {
+        setStatus('error');
+        setErrorMessage('Network error. Please check your connection and try again.');
+      }
     }
 
+    autoUnsubscribe();
+  }, [emailValid, emailParam, searchParams]);
+
+  async function handleResubscribe() {
+    setStatus('resubscribing');
+    setErrorMessage('');
+
     try {
-      const res = await fetch('/api/unsubscribe', {
+      const res = await fetch('/api/resubscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ email: emailParam }),
       });
 
-      const data = await res.json().catch(() => ({}));
-
       if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
         setStatus('error');
-        setErrorMessage(
-          data?.error ||
-            (res.status === 429
-              ? 'Too many requests. Please try again in a minute.'
-              : 'Something went wrong. Please try again.')
-        );
+        setErrorMessage(data?.error || 'Failed to resubscribe. Please try again.');
         return;
       }
 
-      setConfirmedEmail(data?.email || emailParam);
-      setStatus('success');
-    } catch (err) {
+      setStatus('resubscribed');
+    } catch {
       setStatus('error');
       setErrorMessage('Network error. Please check your connection and try again.');
     }
-  }
-
-  if (status === 'success') {
-    return (
-      <div className="w-full max-w-md rounded-2xl bg-[#152238] border border-[rgba(255,255,255,0.08)] p-8 text-center">
-        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-green-500/15 text-3xl">
-          ✓
-        </div>
-        <h1 className="text-2xl font-bold text-white mb-2">You&apos;re unsubscribed</h1>
-        <p className="text-[#A0A0A0] mb-1">
-          We&apos;ve removed <span className="text-white font-medium">{confirmedEmail}</span> from our
-          email list.
-        </p>
-      </div>
-    );
   }
 
   if (!emailValid) {
@@ -85,37 +95,80 @@ function UnsubscribeForm() {
     );
   }
 
-  return (
-    <div className="w-full max-w-md rounded-2xl bg-[#152238] border border-[rgba(255,255,255,0.08)] p-8">
-      <h1 className="text-2xl font-bold text-white mb-2 text-center">Unsubscribe</h1>
-      <p className="text-[#A0A0A0] text-center mb-6">
-        Confirm that you want to stop receiving cold emails from Core Trade Global.
-      </p>
+  if (status === 'idle' || status === 'unsubscribing') {
+    return (
+      <div className="w-full max-w-md rounded-2xl bg-[#152238] border border-[rgba(255,255,255,0.08)] p-8 text-center">
+        <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-2 border-[#FFD700] border-t-transparent" />
+        <h1 className="text-2xl font-bold text-white mb-2">Unsubscribing...</h1>
+        <p className="text-[#A0A0A0]">
+          Removing <span className="text-white font-medium">{emailParam}</span> from our email list.
+        </p>
+      </div>
+    );
+  }
 
-      <form onSubmit={handleConfirm} className="space-y-5">
-        <div>
-          <label className="block text-xs uppercase tracking-wider text-[#A0A0A0] mb-2">
-            Email address
-          </label>
-          <div className="w-full rounded-lg bg-[#0F1B2B] border border-[rgba(255,255,255,0.1)] px-4 py-3 text-white break-all">
-            {emailParam}
-          </div>
+  if (status === 'unsubscribed') {
+    return (
+      <div className="w-full max-w-md rounded-2xl bg-[#152238] border border-[rgba(255,255,255,0.08)] p-8 text-center">
+        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-green-500/15 text-3xl">
+          ✓
         </div>
-
-        {status === 'error' && errorMessage && (
-          <div className="rounded-lg bg-red-500/10 border border-red-500/30 px-4 py-3 text-sm text-red-300">
-            {errorMessage}
-          </div>
-        )}
-
+        <h1 className="text-2xl font-bold text-white mb-2">You&apos;re unsubscribed</h1>
+        <p className="text-[#A0A0A0] mb-6">
+          We&apos;ve removed <span className="text-white font-medium">{emailParam}</span> from our
+          email list.
+        </p>
         <button
-          type="submit"
-          disabled={status === 'submitting'}
-          className="w-full rounded-lg bg-[#FFD700] hover:bg-[#B59325] disabled:opacity-60 disabled:cursor-not-allowed text-[#0F1B2B] font-semibold py-3 transition-colors"
+          onClick={handleResubscribe}
+          className="w-full rounded-lg border border-[rgba(255,255,255,0.15)] hover:border-[rgba(255,255,255,0.3)] text-[#A0A0A0] hover:text-white font-medium py-3 transition-colors"
         >
-          {status === 'submitting' ? 'Unsubscribing…' : 'Confirm unsubscribe'}
+          Changed your mind? Resubscribe
         </button>
-      </form>
+      </div>
+    );
+  }
+
+  if (status === 'resubscribing') {
+    return (
+      <div className="w-full max-w-md rounded-2xl bg-[#152238] border border-[rgba(255,255,255,0.08)] p-8 text-center">
+        <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-2 border-[#FFD700] border-t-transparent" />
+        <h1 className="text-2xl font-bold text-white mb-2">Resubscribing...</h1>
+      </div>
+    );
+  }
+
+  if (status === 'resubscribed') {
+    return (
+      <div className="w-full max-w-md rounded-2xl bg-[#152238] border border-[rgba(255,255,255,0.08)] p-8 text-center">
+        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-green-500/15 text-3xl">
+          ✓
+        </div>
+        <h1 className="text-2xl font-bold text-white mb-2">You&apos;re resubscribed</h1>
+        <p className="text-[#A0A0A0]">
+          <span className="text-white font-medium">{emailParam}</span> has been added back to our
+          email list.
+        </p>
+      </div>
+    );
+  }
+
+  // error state
+  return (
+    <div className="w-full max-w-md rounded-2xl bg-[#152238] border border-[rgba(255,255,255,0.08)] p-8 text-center">
+      <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-red-500/15 text-3xl">
+        ✕
+      </div>
+      <h1 className="text-2xl font-bold text-white mb-2">Something went wrong</h1>
+      <p className="text-[#A0A0A0] mb-6">{errorMessage}</p>
+      <button
+        onClick={() => {
+          hasTriggered.current = false;
+          setStatus('idle');
+        }}
+        className="w-full rounded-lg bg-[#FFD700] hover:bg-[#B59325] text-[#0F1B2B] font-semibold py-3 transition-colors"
+      >
+        Try again
+      </button>
     </div>
   );
 }
