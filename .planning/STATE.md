@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-stopped_at: Completed 10-01-PLAN.md
-last_updated: "2026-04-12T18:03:28.598Z"
+stopped_at: Completed 10-02-PLAN.md
+last_updated: "2026-04-12T18:08:34.032Z"
 last_activity: "2026-04-02 - Completed quick task 5: Fix hero not fetching last verified user"
 progress:
   total_phases: 17
   completed_phases: 0
   total_plans: 3
-  completed_plans: 1
+  completed_plans: 2
   percent: 71
 ---
 
@@ -96,6 +96,7 @@ Progress: [█████████████] 71%
 | Phase 09 P02 | 8 | 1 tasks | 2 files |
 | Phase 09 P01 | 30 | 2 tasks | 4 files |
 | Phase 10-settings-page P01 | 8 | 2 tasks | 4 files |
+| Phase 10-settings-page P02 | 12 | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -264,6 +265,9 @@ Recent decisions affecting current work:
 - [Phase 09-01]: HMAC token format: base64url(JSON).hexSig — no new npm dependency, Node crypto built-in only; cors:false on onRequest CF (direct browser navigation, not XHR)
 - [Phase 10-01]: Navbar dropdown switched to click-only control — removed onMouseEnter/onMouseLeave and group-hover classes to eliminate hover/click transparent-bg flicker
 - [Phase 10-01]: SettingsPage auth guard uses useEffect + router.replace('/login') in addition to middleware — defense in depth
+- [Phase 10-02]: TwoFactorSetup loaded via next/dynamic ssr:false — qrcode.react and SubtleCrypto require browser APIs
+- [Phase 10-02]: Backup codes generated client-side with SubtleCrypto SHA-256, hashed before Firestore storage in users/{uid}/security/backupCodes
+- [Phase 10-02]: auth/invalid-credential added alongside auth/wrong-password in error maps — Firebase SDK v9+ changed error code for wrong password
 
 ### Pending Todos
 
@@ -287,6 +291,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-12T18:03:28.594Z
-Stopped at: Completed 10-01-PLAN.md
+Last session: 2026-04-12T18:08:34.027Z
+Stopped at: Completed 10-02-PLAN.md
 Resume file: None
