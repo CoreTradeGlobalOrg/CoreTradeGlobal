@@ -213,6 +213,96 @@ Plans:
 - [ ] 09-03-PLAN.md — Admin UnsubscribeLinksManager component + /admin tab integration with correct label
 - [ ] 09-04-PLAN.md — Scheduled exportUnsubscribesToSheet Cloud Function (googleapis + lazy-init singleton, daily cron in UTC)
 
+### Phase 10: Settings Page
+
+**Goal:** Users can manage account security (password, 2FA), notification preferences, email subscriptions, and account deletion from a dedicated settings page accessible via a fixed navbar dropdown -- profile page is cleaned of migrated functionality
+**Depends on:** Phase 9
+**Requirements**: SET-01, SET-02, SET-03, SET-04, SET-05, SET-06, SET-07
+**Success Criteria** (what must be TRUE):
+  1. Navbar user dropdown has solid dark background, shows avatar+name trigger, includes Profile/Settings/Logout items, and closes reliably on click-outside
+  2. User can change their password with current password verification and Zod validation on the settings page
+  3. User can enable TOTP 2FA by scanning a QR code and entering a 6-digit code, and receives 10 backup codes
+  4. User can toggle email and push notification preferences per category (Deals, Messages, Legal, Providers, System), persisted in Firestore
+  5. User can toggle email marketing subscription status, integrated with Phase 9 unsubscribes collection
+  6. Settings page /settings route is protected and accessible to all authenticated roles
+  7. Profile page no longer contains account settings, password change, or logout functionality
+**Plans**: 3 plans
+
+Plans:
+- [ ] 10-01-PLAN.md — Navbar dropdown fix (solid bg, click-outside, Settings link) + settings page route shell with middleware protection
+- [ ] 10-02-PLAN.md — Security section: password change with zodResolver + TOTP 2FA enrollment/unenrollment with QR code and backup codes
+- [ ] 10-03-PLAN.md — Notification preferences, email subscriptions, danger zone (logout + delete), profile page cleanup
+
+### Phase 11: UI/UX Polish and Visual Fixes
+
+**Goal:** [To be planned]
+**Requirements**: TBD
+**Depends on:** Phase 10
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 11 to break down)
+
+### Phase 12: Notifications and Email System
+
+**Goal:** [To be planned]
+**Requirements**: TBD
+**Depends on:** Phase 11
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 12 to break down)
+
+### Phase 13: Messaging and Communication Improvements
+
+**Goal:** [To be planned]
+**Requirements**: TBD
+**Depends on:** Phase 12
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 13 to break down)
+
+### Phase 14: Insurance Quote System Overhaul
+
+**Goal:** [To be planned]
+**Requirements**: TBD
+**Depends on:** Phase 13
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 14 to break down)
+
+### Phase 15: Deal and Trade Flow Enhancements
+
+**Goal:** [To be planned]
+**Requirements**: TBD
+**Depends on:** Phase 14
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 15 to break down)
+
+### Phase 16: Product and RFQ Features
+
+**Goal:** [To be planned]
+**Requirements**: TBD
+**Depends on:** Phase 15
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 16 to break down)
+
+### Phase 17: Registration Onboarding and Misc
+
+**Goal:** [To be planned]
+**Requirements**: TBD
+**Depends on:** Phase 16
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 17 to break down)
+
 ---
 *Roadmap created: 2026-02-20*
-*Last updated: 2026-04-04*
+*Last updated: 2026-04-12*
