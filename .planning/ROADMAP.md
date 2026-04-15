@@ -235,13 +235,15 @@ Plans:
 
 ### Phase 11: UI/UX Polish and Visual Fixes
 
-**Goal:** [To be planned]
-**Requirements**: TBD
+**Goal:** All homepage cards, navigation, hero section, fairs page, date pickers, and delete buttons meet a consistent premium visual standard with gold accent theme, ticker-above-navbar layout, and polished interactions
+**Requirements**: UI-01, UI-02, UI-03, UI-04, UI-05, UI-06, UI-07, UI-08, UI-09, UI-10
 **Depends on:** Phase 10
-**Plans:** 3/3 plans complete
+**Plans:** 3 plans
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 11 to break down)
+- [ ] 11-01-PLAN.md — Navbar/ticker restructuring (ticker above navbar, reduced height, scroll-padding-top) + hero silver gradient + globe speed + shared card CSS utilities
+- [ ] 11-02-PLAN.md — Card visual refresh: gold borders, lighter backgrounds, hover glow on all card types + country flag on fair cards + product placeholder SVG + shimmer loading
+- [ ] 11-03-PLAN.md — Fairs page sorting with collapsible past section + DatePicker replacement across 5 forms + delete button wording clarity
 
 ### Phase 12: Notifications and Email System
 
@@ -305,4 +307,4 @@ Plans:
 
 ---
 *Roadmap created: 2026-02-20*
-*Last updated: 2026-04-12*
+*Last updated: 2026-04-15*
