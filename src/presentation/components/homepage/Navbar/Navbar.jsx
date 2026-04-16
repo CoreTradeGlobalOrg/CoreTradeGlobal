@@ -16,7 +16,6 @@ import { useLogout } from '@/presentation/hooks/auth/useLogout';
 import { Menu, X, User, LogOut, Settings as SettingsIcon } from 'lucide-react';
 import { NotificationBell } from '@/presentation/components/common/NotificationBell/NotificationBell';
 import { ROLES } from '@/core/constants/roles';
-import { CurrencyTicker } from '@/presentation/components/homepage/CurrencyTicker/CurrencyTicker';
 import toast from 'react-hot-toast';
 
 /**
@@ -60,7 +59,7 @@ export function Navbar() {
   const pathname = usePathname();
   const navRef = useRef(null);
 
-  // Track navbar height (including ticker) and expose as CSS variable
+  // Track navbar height and expose as CSS variable (ticker is now in layout, not here)
   useEffect(() => {
     const nav = navRef.current;
     if (!nav) return;
@@ -254,7 +253,8 @@ export function Navbar() {
               </button>
 
               <div
-                className={`absolute right-0 top-full mt-2 w-48 bg-[#0F1B2B] border border-[rgba(255,255,255,0.1)] rounded-xl shadow-xl overflow-hidden transition-all duration-200 ${showUserMenu ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible -translate-y-2'}`}
+                style={{ backgroundColor: '#0F1B2B' }}
+                className={`absolute right-0 top-full mt-2 w-48 border border-[rgba(255,255,255,0.1)] rounded-xl shadow-xl overflow-hidden transition-all duration-200 z-50 ${showUserMenu ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible -translate-y-2'}`}
               >
                 <Link
                   href={`/profile/${user.uid}`}
@@ -434,8 +434,6 @@ export function Navbar() {
         </div>
       )}
 
-      {/* Currency ticker at bottom of navbar */}
-      <CurrencyTicker />
     </nav>
   );
 }

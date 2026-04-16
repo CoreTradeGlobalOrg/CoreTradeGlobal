@@ -7,7 +7,11 @@ html, body {
 }
 
 :root {
-  --navbar-height: 128px; /* fallback until ResizeObserver sets actual value */
+  --navbar-height: 100px; /* fallback until ResizeObserver sets actual value (navbar only, ticker excluded) */
+}
+
+html {
+  scroll-padding-top: calc(var(--navbar-height) + 16px);
 }
 
 /* Hide number input spinners/arrows */
@@ -287,7 +291,7 @@ a:hover {
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  height: 100px;
+  height: 72px;
   padding: 0 40px;
   transition: height 0.25s ease-out, padding 0.25s ease-out;
 }
@@ -298,7 +302,7 @@ a:hover {
 }
 
 .navbar.scrolled .navbar-content {
-  height: 80px;
+  height: 56px;
 }
 
 /* Sticky Search Bar */
@@ -370,7 +374,7 @@ a:hover {
 }
 
 .nav-logo-img {
-  height: 120px;
+  height: 64px;
   width: auto;
   object-fit: contain;
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
@@ -378,7 +382,7 @@ a:hover {
 }
 
 .navbar.scrolled .nav-logo-img {
-  height: 80px;
+  height: 48px;
 }
 
 .nav-brand-text {
@@ -602,7 +606,7 @@ a:hover {
 
   /* Navbar Adjustments */
   .navbar-content {
-    height: 70px;
+    height: 56px;
     padding: 0 16px;
   }
 
@@ -612,7 +616,7 @@ a:hover {
   }
 
   .nav-logo-img {
-    height: 70px;
+    height: 48px;
   }
 
   .nav-brand-text {
@@ -621,12 +625,12 @@ a:hover {
   }
 
   .navbar.scrolled .navbar-content {
-    height: 60px;
+    height: 48px;
     padding: 0 16px;
   }
 
   .navbar.scrolled .nav-logo-img {
-    height: 50px;
+    height: 40px;
   }
 
   .navbar.scrolled .nav-brand-text {
