@@ -1055,6 +1055,54 @@ a:hover {
   transform: scale(0.95);
 }
 
+/* --- HERO SLOGAN SILVER GRADIENT --- */
+.hero-slogan {
+  background: linear-gradient(180deg, #E8E8E8 0%, #C0C0C0 50%, #A0A0A0 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* --- SHIMMER ANIMATION (shared utility) --- */
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.03) 25%,
+    rgba(255, 255, 255, 0.08) 50%,
+    rgba(255, 255, 255, 0.03) 75%
+  );
+  background-size: 800px 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* --- SHARED CARD UTILITY CLASSES --- */
+.card-surface {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.card-border-gold {
+  border: 1px solid rgba(255, 215, 0, 0.2);
+}
+
+.card-hover-gold {
+  transition: border-color 300ms ease, box-shadow 300ms ease;
+}
+.card-hover-gold:hover {
+  border-color: rgba(255, 215, 0, 0.5);
+  box-shadow: 0 0 12px rgba(255, 215, 0, 0.1);
+}
+
+/* Note: border-image + border-radius are CSS-incompatible.
+   Use solid gold bottom border instead. */
+.card-bottom-gold {
+  border-bottom: 2px solid rgba(255, 215, 0, 0.4);
+}
+
 /* --- CURRENCY TICKER MARQUEE ANIMATION --- */
 /* Used by CurrencyTicker component on the homepage */
 @keyframes marquee {
