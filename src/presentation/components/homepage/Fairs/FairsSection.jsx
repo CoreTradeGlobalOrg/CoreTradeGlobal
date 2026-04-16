@@ -12,6 +12,7 @@ import Link from 'next/link';
 import { container } from '@/core/di/container';
 import { ChevronLeft, ChevronRight, MapPin } from 'lucide-react';
 import { useResponsiveLimit, useScrollLoadMore } from '@/presentation/hooks/useResponsiveLimit';
+import { CountryFlag } from '@/presentation/components/common/CountryFlag/CountryFlag';
 
 // Default fairs for initial display
 const DEFAULT_FAIRS = [
@@ -87,7 +88,8 @@ function FairCard({ fair }) {
 
         {/* Visual Area with Date */}
         <div className="fair-visual-area">
-          <div className="fair-date-box">
+          <div className="fair-date-box flex flex-col items-center gap-1">
+            {fair.country && <CountryFlag countryCode={fair.country} size={20} />}
             <span className="fair-date-day">{startDateInfo.day}</span>
             <span className="fair-date-month">{startDateInfo.month}</span>
           </div>

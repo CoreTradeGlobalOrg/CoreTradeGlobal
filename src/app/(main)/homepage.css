@@ -2488,10 +2488,11 @@ html {
     max-width: 400px;
     height: 400px;
     background: linear-gradient(160deg, rgba(26, 28, 32, 0.6) 0%, rgba(15, 27, 43, 0.8) 100%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 215, 0, 0.2);
+    border-bottom: 2px solid rgba(255, 215, 0, 0.4);
     border-radius: 20px;
     overflow: hidden;
-    transition: all 0.3s ease;
+    transition: border-color 300ms ease, box-shadow 300ms ease, transform 0.3s ease;
     cursor: pointer;
     display: flex;
     flex-direction: column;
@@ -2499,8 +2500,8 @@ html {
 
 .news-card:hover {
     transform: translateY(-8px);
-    border-color: rgba(255, 215, 0, 0.4);
-    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+    border-color: rgba(255, 215, 0, 0.5);
+    box-shadow: 0 0 12px rgba(255, 215, 0, 0.1);
 }
 
 .news-img-wrapper {

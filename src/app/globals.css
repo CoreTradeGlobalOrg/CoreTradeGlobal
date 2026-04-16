@@ -222,12 +222,13 @@ a:hover {
 /* RFQ Card Exact Match */
 .rfq-card {
   background: linear-gradient(160deg, rgba(26, 28, 32, 0.6) 0%, rgba(15, 27, 43, 0.8) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  border-bottom: 2px solid rgba(255, 215, 0, 0.4);
   border-radius: 20px;
   padding: 24px;
   display: flex;
   flex-direction: column;
-  transition: all 0.3s ease;
+  transition: border-color 300ms ease, box-shadow 300ms ease, transform 0.3s ease;
   position: relative;
   overflow: hidden;
   cursor: pointer;
@@ -242,8 +243,8 @@ a:hover {
 
 .rfq-card:hover {
   transform: translateY(-8px);
-  border-color: rgba(255, 215, 0, 0.4);
-  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+  border-color: rgba(255, 215, 0, 0.5);
+  box-shadow: 0 0 12px rgba(255, 215, 0, 0.1);
 }
 
 /* Form Inputs */
@@ -480,17 +481,19 @@ a:hover {
 /* --- HOMEPAGE RFQ CARD --- */
 .hp-rfq-card {
   background: linear-gradient(160deg, rgba(26, 40, 59, 0.6) 0%, rgba(15, 27, 43, 0.9) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  border-bottom: 2px solid rgba(255, 215, 0, 0.4);
   border-radius: 16px;
   padding: 20px;
-  transition: all 0.3s ease;
+  transition: border-color 300ms ease, box-shadow 300ms ease, transform 0.3s ease;
 }
 
 .hp-rfq-card:hover {
-  border-color: rgba(255, 215, 0, 0.3);
+  border-color: rgba(255, 215, 0, 0.5);
   transform: translateY(-4px);
-  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 0 12px rgba(255, 215, 0, 0.1);
 }
+
 
 /* --- FOOTER STYLES (Moved from homepage.css) --- */
 .footer-section {
@@ -853,13 +856,14 @@ a:hover {
   min-width: 280px;
   height: 380px;
   background: linear-gradient(160deg, rgba(26,28,32,0.6) 0%, rgba(15,27,43,0.8) 100%);
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  border-bottom: 2px solid rgba(255, 215, 0, 0.4);
   border-radius: 20px;
   padding: 20px;
   position: relative;
   display: flex;
   flex-direction: column;
-  transition: 0.3s;
+  transition: border-color 300ms ease, box-shadow 300ms ease, transform 0.3s;
   cursor: pointer;
   flex-shrink: 0;
   text-decoration: none;
@@ -867,7 +871,8 @@ a:hover {
 
 .fair-card:hover {
   transform: translateY(-8px);
-  border-color: #FFD700;
+  border-color: rgba(255, 215, 0, 0.5);
+  box-shadow: 0 0 12px rgba(255, 215, 0, 0.1);
 }
 
 .fair-content {
