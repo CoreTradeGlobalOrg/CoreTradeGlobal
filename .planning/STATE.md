@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-stopped_at: Phase 11 context gathered
-last_updated: "2026-04-15T20:19:05.377Z"
+stopped_at: Completed 11-01-PLAN.md
+last_updated: "2026-04-16T15:32:49.549Z"
 last_activity: "2026-04-02 - Completed quick task 5: Fix hero not fetching last verified user"
 progress:
   total_phases: 17
   completed_phases: 1
-  total_plans: 3
-  completed_plans: 3
+  total_plans: 6
+  completed_plans: 4
   percent: 71
 ---
 
@@ -98,6 +98,7 @@ Progress: [█████████████] 71%
 | Phase 10-settings-page P01 | 8 | 2 tasks | 4 files |
 | Phase 10-settings-page P02 | 12 | 2 tasks | 7 files |
 | Phase 10-settings-page P03 | 5 | 2 tasks | 8 files |
+| Phase 11-ui-ux-polish-and-visual-fixes P01 | 1 | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -272,6 +273,9 @@ Recent decisions affecting current work:
 - [Phase 10-03]: subscription-status GET endpoint uses SHA-256 hash matching Phase 9 CF pattern for consistent email identity
 - [Phase 10-03]: useNotificationPreferences deep-merges Firestore prefs with defaults to prevent undefined toggle states
 - [Phase 10-03]: EmailSubscriptionsSection is single global toggle (not 3 categories) — Phase 9 model stores one doc per email
+- [Phase 11-01]: CurrencyTicker moved to layout.jsx above Navbar — scrolls away with page; navbar ResizeObserver now measures navbar-only height
+- [Phase 11-01]: scroll-padding-top on html = var(--navbar-height) + 16px prevents anchor links hiding behind fixed navbar
+- [Phase 11-01]: card-bottom-gold uses solid border-bottom (not border-image) — border-image and border-radius are CSS-incompatible
 
 ### Pending Todos
 
@@ -295,6 +299,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-15T20:19:05.368Z
-Stopped at: Phase 11 context gathered
-Resume file: .planning/phases/11-ui-ux-polish-and-visual-fixes/11-CONTEXT.md
+Last session: 2026-04-16T15:32:49.545Z
+Stopped at: Completed 11-01-PLAN.md
+Resume file: None
