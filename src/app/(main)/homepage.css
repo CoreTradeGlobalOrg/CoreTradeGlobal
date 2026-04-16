@@ -1877,19 +1877,21 @@ html {
     max-width: 400px;
     height: 380px;
     background: linear-gradient(160deg, rgba(26, 28, 32, 0.6) 0%, rgba(15, 27, 43, 0.8) 100%);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 215, 0, 0.2);
+    border-bottom: 2px solid rgba(255, 215, 0, 0.4);
     border-radius: var(--card-radius);
     padding: 20px;
     position: relative;
     display: flex;
     flex-direction: column;
-    transition: 0.3s;
+    transition: border-color 300ms ease, box-shadow 300ms ease, transform 0.3s;
     cursor: pointer;
 }
 
 .fair-card:hover {
     transform: translateY(-8px);
     border-color: var(--accent-gold);
+    box-shadow: 0 0 12px rgba(255, 215, 0, 0.1);
 }
 
 .fair-content {
