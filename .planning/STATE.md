@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-stopped_at: Completed 11-01-PLAN.md
-last_updated: "2026-04-16T15:32:49.549Z"
+stopped_at: Completed 11-03-PLAN.md
+last_updated: "2026-04-16T15:37:48.470Z"
 last_activity: "2026-04-02 - Completed quick task 5: Fix hero not fetching last verified user"
 progress:
   total_phases: 17
   completed_phases: 1
   total_plans: 6
-  completed_plans: 4
+  completed_plans: 5
   percent: 71
 ---
 
@@ -99,6 +99,7 @@ Progress: [█████████████] 71%
 | Phase 10-settings-page P02 | 12 | 2 tasks | 7 files |
 | Phase 10-settings-page P03 | 5 | 2 tasks | 8 files |
 | Phase 11-ui-ux-polish-and-visual-fixes P01 | 1 | 2 tasks | 4 files |
+| Phase 11-ui-ux-polish-and-visual-fixes P03 | 2 | 2 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -276,6 +277,8 @@ Recent decisions affecting current work:
 - [Phase 11-01]: CurrencyTicker moved to layout.jsx above Navbar — scrolls away with page; navbar ResizeObserver now measures navbar-only height
 - [Phase 11-01]: scroll-padding-top on html = var(--navbar-height) + 16px prevents anchor links hiding behind fixed navbar
 - [Phase 11-01]: card-bottom-gold uses solid border-bottom (not border-image) — border-image and border-radius are CSS-incompatible
+- [Phase 11-03]: DatePicker accepts YYYY-MM-DD strings directly — pass null for empty; react-hook-form uses Controller wrapper; useState-controlled forms wire directly
+- [Phase 11-03]: Fairs partition pattern: search filter applied before status partitioning; past bucket sorted newest-first (descending startDate)
 
 ### Pending Todos
 
@@ -299,6 +302,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-16T15:32:49.545Z
-Stopped at: Completed 11-01-PLAN.md
+Last session: 2026-04-16T15:37:48.466Z
+Stopped at: Completed 11-03-PLAN.md
 Resume file: None
