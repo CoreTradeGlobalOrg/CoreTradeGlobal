@@ -1433,10 +1433,11 @@ html {
 
 .product-card {
     background: rgba(26, 40, 59, 0.4);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 215, 0, 0.2);
+    border-bottom: 2px solid rgba(255, 215, 0, 0.4);
     border-radius: 16px;
     overflow: hidden;
-    transition: all 0.18s ease;
+    transition: border-color 300ms ease, box-shadow 300ms ease, transform 0.18s ease;
     cursor: pointer;
     display: flex;
     flex-direction: column;
@@ -1563,7 +1564,7 @@ html {
 .product-card:hover {
     border-color: rgba(255, 215, 0, 0.5);
     transform: translateY(-6px);
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45), 0 0 28px rgba(255, 215, 0, 0.03) inset;
+    box-shadow: 0 0 12px rgba(255, 215, 0, 0.1);
 }
 
 .product-card-image {
@@ -1787,17 +1788,17 @@ html {
     padding: 20px;
     display: flex;
     flex-direction: column;
-    background: linear-gradient(145deg, rgba(18, 28, 40, 0.55) 0%, rgba(11, 20, 32, 0.6) 100%);
-    border: 1px solid rgba(255, 215, 0, 0.16);
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 215, 0, 0.2);
+    border-bottom: 2px solid rgba(255, 215, 0, 0.4);
     border-radius: 16px;
-    box-shadow: 0 8px 30px rgba(8, 12, 20, 0.45);
-    transition: all 0.3s ease;
+    transition: border-color 300ms ease, box-shadow 300ms ease, transform 0.3s ease;
 }
 
 #companies .company-card-link:hover .company-card-inner {
     border-color: rgba(255, 215, 0, 0.5);
     transform: translateY(-6px);
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+    box-shadow: 0 0 12px rgba(255, 215, 0, 0.1);
 }
 
 /* Responsive breakpoints for companies */

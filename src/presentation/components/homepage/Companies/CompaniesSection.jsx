@@ -341,7 +341,7 @@ export function CompaniesSection() {
 
         {/* Companies Grid with Scroll */}
         <div className="featured-products-grid">
-          <div className="dynamic-container">
+          <div className="dynamic-container select-none">
             {/* Scroll Arrows */}
             <button
               className={`scroll-arrow-btn scroll-left ${showLeftArrow ? 'visible' : ''}`}

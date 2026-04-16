@@ -225,7 +225,7 @@ export function FairsSection() {
         {/* Fairs Scroll Container */}
         <div
           id="fair-scroll-row"
-          className="fair-scroll-row"
+          className="fair-scroll-row select-none"
           ref={scrollRef}
           onScroll={handleScroll}
         >
