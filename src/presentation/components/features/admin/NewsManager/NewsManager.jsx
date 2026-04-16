@@ -238,9 +238,11 @@ export function NewsManager() {
                       </button>
                       <button
                         onClick={() => handleDelete(item.id, item.title)}
-                        className="flex items-center justify-center p-2 rounded-lg bg-red-900/20 hover:bg-red-900/40 text-red-500 transition-colors border border-red-900/30"
+                        title="Delete Article"
+                        className="flex items-center gap-1.5 px-2 py-2 rounded-lg bg-red-900/20 hover:bg-red-900/40 text-red-500 transition-colors border border-red-900/30 text-xs font-medium"
                       >
                         <Trash2 className="w-4 h-4" />
+                        Delete
                       </button>
                     </div>
                   </td>
@@ -314,9 +316,11 @@ export function NewsManager() {
                   </button>
                   <button
                     onClick={() => handleDelete(item.id, item.title)}
-                    className="flex items-center justify-center p-2 rounded-lg bg-red-900/20 hover:bg-red-900/40 text-red-500 transition-colors border border-red-900/30"
+                    title="Delete Article"
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-red-900/20 hover:bg-red-900/40 text-red-500 transition-colors border border-red-900/30 text-sm font-medium"
                   >
                     <Trash2 className="w-4 h-4" />
+                    Delete Article
                   </button>
                 </div>
               </div>

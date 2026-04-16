@@ -19,6 +19,7 @@ import {
   SHIPMENT_STATUS,
   SHIPMENT_STATUS_LABELS,
 } from '@/core/constants/shipmentConstants';
+import { DatePicker } from '@/presentation/components/common/DatePicker/DatePicker';
 
 // Ordered status progression for logistics (COVERAGE_ACTIVE is insurance-only)
 const LOGISTICS_STATUS_ORDER = [
@@ -219,12 +220,11 @@ export function ShipmentUpdateForm({ dealId, currentStatus, onSubmit, loading })
         <label className="block text-xs font-medium text-[#A0A0A0] mb-1">
           Estimated Delivery Date <span className="text-[#4A5B6E]">(optional)</span>
         </label>
-        <input
-          type="date"
-          value={etaDate}
-          onChange={(e) => setEtaDate(e.target.value)}
+        <DatePicker
+          value={etaDate || null}
+          onChange={(dateStr) => setEtaDate(dateStr || '')}
+          placeholder="Select estimated delivery date..."
           disabled={isSubmitting}
-          className="w-full bg-[#0D1822] border border-[#2A3B52] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-[#FFD700] disabled:opacity-50 [color-scheme:dark]"
         />
       </div>
 

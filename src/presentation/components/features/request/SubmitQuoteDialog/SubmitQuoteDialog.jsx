@@ -8,13 +8,14 @@
 'use client';
 
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { submitQuoteSchema } from '@/core/validation/submitQuoteSchema';
 import { Modal } from '@/components/ui/Modal';
 import { useAuth } from '@/presentation/contexts/AuthContext';
 import { useSubmitQuote } from '@/presentation/hooks/request/useSubmitQuote';
 import { getUnitLabel } from '@/core/constants/units';
+import { DatePicker } from '@/presentation/components/common/DatePicker/DatePicker';
 import { Upload, Send, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -94,6 +95,7 @@ export function SubmitQuoteDialog({ isOpen, onClose, request }) {
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors },
     reset,
   } = useForm({
@@ -352,10 +354,17 @@ export function SubmitQuoteDialog({ isOpen, onClose, request }) {
                 <label className={labelClass}>
                   Price Validity Until
                 </label>
-                <input
-                  type="date"
-                  {...register('priceValidUntil')}
-                  className={dateInputClass}
+                <Controller
+                  name="priceValidUntil"
+                  control={control}
+                  render={({ field }) => (
+                    <DatePicker
+                      value={field.value || null}
+                      onChange={(dateStr) => field.onChange(dateStr || '')}
+                      placeholder="Select validity date..."
+                      accentColor="blue"
+                    />
+                  )}
                 />
               </div>
 

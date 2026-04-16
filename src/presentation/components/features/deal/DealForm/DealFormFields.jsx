@@ -17,6 +17,7 @@ import { DEAL_UNITS, PAYMENT_TERMS } from '@/core/constants/dealConstants';
 import { CURRENCIES } from '@/core/constants/currencies';
 import { IncotermsSelector } from '@/presentation/components/features/deal/IncotermsSelector/IncotermsSelector';
 import { NamedPlaceInput } from '@/presentation/components/features/deal/NamedPlaceInput/NamedPlaceInput';
+import { DatePicker } from '@/presentation/components/common/DatePicker/DatePicker';
 
 function FieldError({ message }) {
   if (!message) return null;
@@ -218,24 +219,21 @@ export function DealFormFields({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <FieldLabel required>Delivery Deadline</FieldLabel>
-          <style>{`
-            input[type="date"].deal-date {
-              position: relative;
-            }
-            input[type="date"].deal-date::-webkit-calendar-picker-indicator {
-              filter: invert(83%) sepia(40%) saturate(1000%) hue-rotate(360deg) brightness(103%) contrast(104%);
-              cursor: pointer;
-              margin-left: auto;
-            }
-          `}</style>
-          <input
-            type="date"
-            min={getTodayISODate()}
-            {...register('deliveryDeadline')}
-            disabled={loading}
-            className={`deal-date ${inputCls(errors.deliveryDeadline, loading)}`}
+          <Controller
+            name="deliveryDeadline"
+            control={control}
+            render={({ field }) => (
+              <DatePicker
+                value={field.value || null}
+                onChange={(dateStr) => field.onChange(dateStr || '')}
+                minDate={getTodayISODate()}
+                placeholder="Select delivery deadline..."
+                disabled={loading}
+                error={errors.deliveryDeadline?.message}
+              />
+            )}
           />
-          <FieldError message={errors.deliveryDeadline?.message} />
+          {!errors.deliveryDeadline && <div />}
         </div>
 
         <div>

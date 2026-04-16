@@ -22,6 +22,7 @@ import { CURRENCIES } from '@/core/constants/currencies';
 import { getIncotermByCode } from '@/core/constants/incoterms';
 import { IncotermsSelector } from '../IncotermsSelector/IncotermsSelector';
 import { NamedPlaceInput } from '../NamedPlaceInput/NamedPlaceInput';
+import { DatePicker } from '@/presentation/components/common/DatePicker/DatePicker';
 import { Loader2, Clock, Send } from 'lucide-react';
 
 // Custom chevron for select elements — matches DealForm styling
@@ -243,26 +244,19 @@ export function CounterOfferForm({
         {/* Delivery deadline */}
         <div>
           <label className="block text-xs text-[#8899AA] mb-1">Delivery Deadline *</label>
-          <style>{`
-            input[type="date"].counter-offer-date::-webkit-calendar-picker-indicator {
-              filter: invert(83%) sepia(40%) saturate(1000%) hue-rotate(360deg) brightness(103%) contrast(104%);
-              cursor: pointer;
-            }
-          `}</style>
           <Controller
             name="deliveryDeadline"
             control={control}
             render={({ field }) => (
-              <input
-                type="date"
-                value={field.value || ''}
-                onChange={(e) => field.onChange(e.target.value || '')}
-                min={new Date().toISOString().split('T')[0]}
-                className="counter-offer-date w-full bg-[#0F1C2E] border border-[#2A3B52] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#FFD700]/50 transition-colors"
+              <DatePicker
+                value={field.value || null}
+                onChange={(dateStr) => field.onChange(dateStr || '')}
+                minDate={new Date().toISOString().split('T')[0]}
+                placeholder="Select delivery deadline..."
+                error={errors.deliveryDeadline?.message}
               />
             )}
           />
-          {errors.deliveryDeadline && <p className="text-xs text-red-400 mt-1">{errors.deliveryDeadline.message}</p>}
         </div>
 
         {/* Payment Terms */}

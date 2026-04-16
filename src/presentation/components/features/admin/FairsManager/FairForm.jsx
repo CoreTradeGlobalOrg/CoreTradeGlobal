@@ -7,6 +7,8 @@
 
 'use client';
 
+import { DatePicker } from '@/presentation/components/common/DatePicker/DatePicker';
+
 /**
  * @param {Object} props
  * @param {boolean} props.isOpen
@@ -61,22 +63,18 @@ export function FairForm({ isOpen, editingFair, formData, setFormData, onSubmit,
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-white mb-1">Start Date *</label>
-              <input
-                type="date"
-                required
-                value={formData.startDate}
-                onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                className="w-full px-3 py-2 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-lg text-white focus:outline-none focus:border-[#FFD700] transition-colors [color-scheme:dark]"
+              <DatePicker
+                value={formData.startDate || null}
+                onChange={(dateStr) => setFormData({ ...formData, startDate: dateStr || '' })}
+                placeholder="Select start date..."
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-white mb-1">End Date *</label>
-              <input
-                type="date"
-                required
-                value={formData.endDate}
-                onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                className="w-full px-3 py-2 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-lg text-white focus:outline-none focus:border-[#FFD700] transition-colors [color-scheme:dark]"
+              <DatePicker
+                value={formData.endDate || null}
+                onChange={(dateStr) => setFormData({ ...formData, endDate: dateStr || '' })}
+                placeholder="Select end date..."
               />
             </div>
           </div>
