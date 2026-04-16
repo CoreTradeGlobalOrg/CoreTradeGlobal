@@ -4,12 +4,14 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { container } from '@/core/di/container';
 import { SearchBar } from '@/presentation/components/common/SearchBar/SearchBar';
-import { MapPin } from 'lucide-react';
+import { CountryFlag } from '@/presentation/components/common/CountryFlag/CountryFlag';
+import { MapPin, ChevronDown, ChevronUp } from 'lucide-react';
 
 export default function FairsPage() {
     const [fairs, setFairs] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
+    const [pastExpanded, setPastExpanded] = useState(false);
 
     useEffect(() => {
         const fetchFairs = async () => {
@@ -26,12 +28,6 @@ export default function FairsPage() {
 
         fetchFairs();
     }, []);
-
-    const filteredFairs = fairs.filter(fair =>
-        fair.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        fair.category?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        fair.location?.toLowerCase().includes(searchQuery.toLowerCase())
-    );
 
     const getFairStatus = (fair) => {
         const now = new Date();
@@ -61,6 +57,98 @@ export default function FairsPage() {
         }
     };
 
+    // Apply search filter first, then partition by status
+    const filteredFairs = fairs.filter(fair =>
+        fair.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        fair.category?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        fair.location?.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
+    // Partition filtered fairs into ongoing, upcoming, past
+    const ongoing = filteredFairs
+        .filter(f => getFairStatus(f) === 'ongoing')
+        .sort((a, b) => {
+            const aDate = a.startDate?.toDate ? a.startDate.toDate() : new Date(a.startDate);
+            const bDate = b.startDate?.toDate ? b.startDate.toDate() : new Date(b.startDate);
+            return aDate - bDate;
+        });
+
+    const upcoming = filteredFairs
+        .filter(f => getFairStatus(f) === 'upcoming')
+        .sort((a, b) => {
+            const aDate = a.startDate?.toDate ? a.startDate.toDate() : new Date(a.startDate);
+            const bDate = b.startDate?.toDate ? b.startDate.toDate() : new Date(b.startDate);
+            return aDate - bDate;
+        });
+
+    const past = filteredFairs
+        .filter(f => getFairStatus(f) === 'past')
+        .sort((a, b) => {
+            const aDate = a.startDate?.toDate ? a.startDate.toDate() : new Date(a.startDate);
+            const bDate = b.startDate?.toDate ? b.startDate.toDate() : new Date(b.startDate);
+            return bDate - aDate; // newest first for past
+        });
+
+    const activeFairs = [...ongoing, ...upcoming];
+    const totalVisible = activeFairs.length + (pastExpanded ? past.length : 0);
+
+    const getDateInfo = (date) => {
+        if (!date) return { day: '--', month: '---' };
+        const d = date?.toDate ? date.toDate() : new Date(date);
+        return {
+            day: d.getDate(),
+            month: d.toLocaleDateString('en-US', { month: 'short' }).toUpperCase(),
+        };
+    };
+
+    const renderFairCard = (fair) => {
+        const startDateInfo = getDateInfo(fair.startDate);
+        return (
+            <Link
+                key={fair.id}
+                href={`/fair/${fair.id}`}
+                className="fair-card fair-card-large"
+            >
+                <div className="fair-content">
+                    {/* Status Badge + Category */}
+                    <div className="mb-3 flex flex-wrap items-center gap-2">
+                        {getStatusBadge(fair)}
+                        {fair.category && (
+                            <span className="px-3 py-1 text-xs font-bold rounded-full bg-[rgba(255,215,0,0.1)] text-[#FFD700] border border-[#FFD700]/20">
+                                {fair.category}
+                            </span>
+                        )}
+                    </div>
+
+                    {/* Fair Title */}
+                    <h3 className="fair-card-title">{fair.name}</h3>
+
+                    {/* Location */}
+                    <div className="fair-card-location">
+                        <MapPin className="w-4 h-4" />
+                        <span>{fair.location || 'Location TBA'}</span>
+                    </div>
+
+                    {/* Description */}
+                    <p className="fair-card-desc">{fair.description || 'More details coming soon.'}</p>
+
+                    {/* Visual Area with Date + Country Flag */}
+                    <div className="fair-visual-area">
+                        <div className="fair-date-box">
+                            {fair.country && (
+                                <div className="flex justify-center mb-2">
+                                    <CountryFlag countryCode={fair.country} size={20} />
+                                </div>
+                            )}
+                            <span className="fair-date-day">{startDateInfo.day}</span>
+                            <span className="fair-date-month">{startDateInfo.month}</span>
+                        </div>
+                    </div>
+                </div>
+            </Link>
+        );
+    };
+
     return (
         <main className="min-h-screen pt-[var(--navbar-height)] pb-20 px-6 bg-radial-navy">
             <div className="max-w-[1400px] mx-auto">
@@ -85,7 +173,7 @@ export default function FairsPage() {
                             <div key={i} className="h-[420px] bg-[rgba(255,255,255,0.05)] rounded-[20px] animate-pulse"></div>
                         ))}
                     </div>
-                ) : filteredFairs.length === 0 ? (
+                ) : totalVisible === 0 && past.length === 0 ? (
                     <div className="text-center py-20">
                         <div className="text-6xl mb-4">📅</div>
                         <h3 className="text-xl font-bold text-white mb-2">No Fairs Found</h3>
@@ -94,59 +182,36 @@ export default function FairsPage() {
                         </p>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {filteredFairs.map((fair) => {
-                            const getDateInfo = (date) => {
-                                if (!date) return { day: '--', month: '---' };
-                                const d = date?.toDate ? date.toDate() : new Date(date);
-                                return {
-                                    day: d.getDate(),
-                                    month: d.toLocaleDateString('en-US', { month: 'short' }).toUpperCase(),
-                                };
-                            };
-                            const startDateInfo = getDateInfo(fair.startDate);
+                    <>
+                        {/* Active fairs: ongoing + upcoming */}
+                        {activeFairs.length > 0 && (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                                {activeFairs.map(renderFairCard)}
+                            </div>
+                        )}
 
-                            return (
-                                <Link
-                                    key={fair.id}
-                                    href={`/fair/${fair.id}`}
-                                    className="fair-card fair-card-large"
-                                >
-                                    <div className="fair-content">
-                                        {/* Status Badge + Category */}
-                                        <div className="mb-3 flex flex-wrap items-center gap-2">
-                                            {getStatusBadge(fair)}
-                                            {fair.category && (
-                                                <span className="px-3 py-1 text-xs font-bold rounded-full bg-[rgba(255,215,0,0.1)] text-[#FFD700] border border-[#FFD700]/20">
-                                                    {fair.category}
-                                                </span>
-                                            )}
-                                        </div>
-
-                                        {/* Fair Title */}
-                                        <h3 className="fair-card-title">{fair.name}</h3>
-
-                                        {/* Location */}
-                                        <div className="fair-card-location">
-                                            <MapPin className="w-4 h-4" />
-                                            <span>{fair.location || 'Location TBA'}</span>
-                                        </div>
-
-                                        {/* Description */}
-                                        <p className="fair-card-desc">{fair.description || 'More details coming soon.'}</p>
-
-                                        {/* Visual Area with Date */}
-                                        <div className="fair-visual-area">
-                                            <div className="fair-date-box">
-                                                <span className="fair-date-day">{startDateInfo.day}</span>
-                                                <span className="fair-date-month">{startDateInfo.month}</span>
-                                            </div>
-                                        </div>
+                        {/* Past fairs collapsible section */}
+                        {past.length > 0 && (
+                            <div className="mt-12">
+                                <div className="flex items-center gap-4 mb-6">
+                                    <hr className="flex-1 border-[rgba(255,255,255,0.1)]" />
+                                    <button
+                                        onClick={() => setPastExpanded(v => !v)}
+                                        className="flex items-center gap-2 text-[#A0A0A0] text-sm hover:text-white transition-colors"
+                                    >
+                                        Past Fairs ({past.length})
+                                        {pastExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                                    </button>
+                                    <hr className="flex-1 border-[rgba(255,255,255,0.1)]" />
+                                </div>
+                                {pastExpanded && (
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                                        {past.map(renderFairCard)}
                                     </div>
-                                </Link>
-                            );
-                        })}
-                    </div>
+                                )}
+                            </div>
+                        )}
+                    </>
                 )}
             </div>
         </main>
