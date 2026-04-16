@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-stopped_at: Completed 11-03-PLAN.md
-last_updated: "2026-04-16T15:37:48.470Z"
+stopped_at: Completed 11-02-PLAN.md
+last_updated: "2026-04-16T15:38:21.604Z"
 last_activity: "2026-04-02 - Completed quick task 5: Fix hero not fetching last verified user"
 progress:
   total_phases: 17
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 6
-  completed_plans: 5
+  completed_plans: 6
   percent: 71
 ---
 
@@ -100,6 +100,7 @@ Progress: [█████████████] 71%
 | Phase 10-settings-page P03 | 5 | 2 tasks | 8 files |
 | Phase 11-ui-ux-polish-and-visual-fixes P01 | 1 | 2 tasks | 4 files |
 | Phase 11-ui-ux-polish-and-visual-fixes P03 | 2 | 2 tasks | 9 files |
+| Phase 11 P02 | 4 | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -279,6 +280,8 @@ Recent decisions affecting current work:
 - [Phase 11-01]: card-bottom-gold uses solid border-bottom (not border-image) — border-image and border-radius are CSS-incompatible
 - [Phase 11-03]: DatePicker accepts YYYY-MM-DD strings directly — pass null for empty; react-hook-form uses Controller wrapper; useState-controlled forms wire directly
 - [Phase 11-03]: Fairs partition pattern: search filter applied before status partitioning; past bucket sorted newest-first (descending startDate)
+- [Phase 11]: news-card gold styles updated in homepage.css (not globals.css) because homepage.css loads later via (main)/layout.jsx import
+- [Phase 11]: select-none applied only to outer scroll container divs, not card content, preserving user ability to copy card text
 
 ### Pending Todos
 
@@ -302,6 +305,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-16T15:37:48.466Z
-Stopped at: Completed 11-03-PLAN.md
+Last session: 2026-04-16T15:38:21.599Z
+Stopped at: Completed 11-02-PLAN.md
 Resume file: None
