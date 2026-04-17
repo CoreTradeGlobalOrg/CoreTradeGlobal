@@ -5,7 +5,24 @@ import Link from 'next/link';
 import { container } from '@/core/di/container';
 import { SearchBar } from '@/presentation/components/common/SearchBar/SearchBar';
 import { CountryFlag } from '@/presentation/components/common/CountryFlag/CountryFlag';
+import { COUNTRIES } from '@/core/constants/countries';
 import { MapPin, ChevronDown, ChevronUp } from 'lucide-react';
+
+// Build a lookup map: lowercase country name → 2-letter code
+const COUNTRY_NAME_TO_CODE = Object.fromEntries(
+  COUNTRIES.map(c => [c.label.toLowerCase(), c.value])
+);
+
+/** Extract country code from location string like "Tashkent – Uzbekistan" */
+function getCountryCodeFromLocation(location) {
+  if (!location) return null;
+  const parts = location.split(/[,–—-]/).map(s => s.trim());
+  for (let i = parts.length - 1; i >= 0; i--) {
+    const code = COUNTRY_NAME_TO_CODE[parts[i].toLowerCase()];
+    if (code) return code;
+  }
+  return null;
+}
 
 export default function FairsPage() {
     const [fairs, setFairs] = useState([]);
@@ -135,9 +152,9 @@ export default function FairsPage() {
                     {/* Visual Area with Date + Country Flag */}
                     <div className="fair-visual-area">
                         <div className="fair-date-box">
-                            {fair.country && (
+                            {(fair.country || getCountryCodeFromLocation(fair.location)) && (
                                 <div className="flex justify-center mb-2">
-                                    <CountryFlag countryCode={fair.country} size={20} />
+                                    <CountryFlag countryCode={fair.country || getCountryCodeFromLocation(fair.location)} size={20} />
                                 </div>
                             )}
                             <span className="fair-date-day">{startDateInfo.day}</span>
