@@ -15,7 +15,6 @@ import { useAuth } from '@/presentation/contexts/AuthContext';
 import { useLogout } from '@/presentation/hooks/auth/useLogout';
 import { Menu, X, User, LogOut, Settings as SettingsIcon } from 'lucide-react';
 import { NotificationBell } from '@/presentation/components/common/NotificationBell/NotificationBell';
-import { CurrencyTicker } from '@/presentation/components/homepage/CurrencyTicker/CurrencyTicker';
 import { ROLES } from '@/core/constants/roles';
 import toast from 'react-hot-toast';
 
@@ -60,7 +59,7 @@ export function Navbar() {
   const pathname = usePathname();
   const navRef = useRef(null);
 
-  // Track navbar height and expose as CSS variable (includes ticker when visible)
+  // Track navbar height and expose as CSS variable
   useEffect(() => {
     const nav = navRef.current;
     if (!nav) return;
@@ -175,8 +174,6 @@ export function Navbar() {
 
   return (
     <nav ref={navRef} className={`navbar ${isScrolled ? 'scrolled' : ''}`}>
-      {/* Currency ticker — thin bar at top of navbar, collapses when no data */}
-      <CurrencyTicker />
       {/* Main nav row — logo, links, auth */}
       <div className="navbar-content">
       {/* Logo Container */}

@@ -306,6 +306,16 @@ a:hover {
   height: 56px;
 }
 
+/* Currency ticker bar — fixed below navbar */
+.currency-ticker-bar {
+  position: fixed;
+  top: var(--navbar-height, 72px);
+  left: 0;
+  width: 100%;
+  z-index: 999;
+  transition: top 0.25s ease-out;
+}
+
 /* Sticky Search Bar */
 .sticky-search {
   position: fixed;

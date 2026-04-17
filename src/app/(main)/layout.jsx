@@ -9,6 +9,7 @@ import { InstallPrompt } from '@/presentation/components/common/InstallPrompt/In
 import { CookieConsent } from '@/presentation/components/common/CookieConsent/CookieConsent';
 import { ScrollToTop } from '@/presentation/components/common/ScrollToTop/ScrollToTop';
 import { ErrorBoundary } from '@/presentation/components/common/ErrorBoundary/ErrorBoundary';
+import { CurrencyTicker } from '@/presentation/components/homepage/CurrencyTicker/CurrencyTicker';
 import './homepage.css';
 
 export default function MainLayout({ children }) {
@@ -16,6 +17,9 @@ export default function MainLayout({ children }) {
     <>
       <ScrollToTop />
       <Navbar />
+      <div className="currency-ticker-bar">
+        <CurrencyTicker />
+      </div>
       <ErrorBoundary>
         {children}
       </ErrorBoundary>
