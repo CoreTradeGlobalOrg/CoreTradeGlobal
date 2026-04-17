@@ -15,16 +15,26 @@ import { useResponsiveLimit, useScrollLoadMore } from '@/presentation/hooks/useR
 import { CountryFlag } from '@/presentation/components/common/CountryFlag/CountryFlag';
 import { COUNTRIES } from '@/core/constants/countries';
 
-// Build a lookup map: lowercase country name → 2-letter code
-const COUNTRY_NAME_TO_CODE = Object.fromEntries(
-  COUNTRIES.map(c => [c.label.toLowerCase(), c.value])
-);
+// Build a lookup map: lowercase country name → 2-letter code (with common aliases)
+const COUNTRY_NAME_TO_CODE = {};
+COUNTRIES.forEach(c => { COUNTRY_NAME_TO_CODE[c.label.toLowerCase()] = c.value; });
+// Common aliases for fuzzy matching
+const ALIASES = {
+  'uae': 'AE', 'u.a.e': 'AE', 'u.a.e.': 'AE', 'emirates': 'AE',
+  'uk': 'GB', 'u.k.': 'GB', 'england': 'GB', 'britain': 'GB',
+  'usa': 'US', 'u.s.a': 'US', 'u.s.a.': 'US', 'u.s.': 'US', 'america': 'US',
+  'holland': 'NL', 'the netherlands': 'NL', 'netherland': 'NL',
+  'south korea': 'KR', 'korea': 'KR',
+  'czech republic': 'CZ', 'czechia': 'CZ',
+  'ivory coast': 'CI', "cote d'ivoire": 'CI',
+  'türkiye': 'TR', 'turkiye': 'TR',
+};
+Object.entries(ALIASES).forEach(([k, v]) => { COUNTRY_NAME_TO_CODE[k] = v; });
 
 /** Extract country code from location string like "Tashkent – Uzbekistan" */
 function getCountryCodeFromLocation(location) {
   if (!location) return null;
-  // Try last segment after comma, dash, or en-dash
-  const parts = location.split(/[,–—-]/).map(s => s.trim());
+  const parts = location.split(/[,–—\-]/).map(s => s.trim()).filter(Boolean);
   for (let i = parts.length - 1; i >= 0; i--) {
     const code = COUNTRY_NAME_TO_CODE[parts[i].toLowerCase()];
     if (code) return code;
@@ -104,15 +114,18 @@ function FairCard({ fair }) {
         {/* Description */}
         <p className="fair-card-desc">{fair.description}</p>
 
-        {/* Visual Area with Date */}
+        {/* Visual Area with Flag or Date fallback */}
         <div className="fair-visual-area">
-          <div className="fair-date-box flex flex-col items-center gap-1">
-            {(fair.country || getCountryCodeFromLocation(fair.location)) && (
-              <CountryFlag countryCode={fair.country || getCountryCodeFromLocation(fair.location)} size={20} />
-            )}
-            <span className="fair-date-day">{startDateInfo.day}</span>
-            <span className="fair-date-month">{startDateInfo.month}</span>
-          </div>
+          {(fair.country || getCountryCodeFromLocation(fair.location)) ? (
+            <div className="fair-date-box flex items-center justify-center">
+              <CountryFlag countryCode={fair.country || getCountryCodeFromLocation(fair.location)} size={64} />
+            </div>
+          ) : (
+            <div className="fair-date-box flex flex-col items-center gap-1">
+              <span className="fair-date-day">{startDateInfo.day}</span>
+              <span className="fair-date-month">{startDateInfo.month}</span>
+            </div>
+          )}
         </div>
       </div>
     </Link>
