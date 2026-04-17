@@ -242,7 +242,7 @@ a:hover {
 }
 
 .rfq-card:hover {
-  transform: translateY(-8px);
+  transform: translateY(-6px);
   border-color: rgba(255, 215, 0, 0.5);
   box-shadow: 0 0 12px rgba(255, 215, 0, 0.1);
 }
