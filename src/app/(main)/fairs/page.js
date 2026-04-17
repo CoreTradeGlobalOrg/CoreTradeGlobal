@@ -6,7 +6,7 @@ import { container } from '@/core/di/container';
 import { SearchBar } from '@/presentation/components/common/SearchBar/SearchBar';
 import { CountryFlag } from '@/presentation/components/common/CountryFlag/CountryFlag';
 import { COUNTRIES } from '@/core/constants/countries';
-import { MapPin, ChevronDown, ChevronUp } from 'lucide-react';
+import { MapPin, Calendar, ChevronDown, ChevronUp } from 'lucide-react';
 
 // Build a lookup map: lowercase country name → 2-letter code (with common aliases)
 const COUNTRY_NAME_TO_CODE = {};
@@ -32,6 +32,20 @@ function getCountryCodeFromLocation(location) {
     if (code) return code;
   }
   return null;
+}
+
+/** Format a date range like "28 Apr – 30 Apr 2026" */
+function formatDateRange(startDate, endDate) {
+  const toDate = (d) => d?.toDate ? d.toDate() : new Date(d);
+  if (!startDate) return null;
+  const start = toDate(startDate);
+  const opts = { day: 'numeric', month: 'short' };
+  const startStr = start.toLocaleDateString('en-US', opts);
+  if (!endDate) return `${startStr} ${start.getFullYear()}`;
+  const end = toDate(endDate);
+  const endStr = end.toLocaleDateString('en-US', opts);
+  const year = end.getFullYear();
+  return `${startStr} – ${endStr} ${year}`;
 }
 
 export default function FairsPage() {
@@ -155,6 +169,14 @@ export default function FairsPage() {
                         <MapPin className="w-4 h-4" />
                         <span>{fair.location || 'Location TBA'}</span>
                     </div>
+
+                    {/* Date Range */}
+                    {formatDateRange(fair.startDate, fair.endDate) && (
+                        <div className="fair-card-location" style={{ marginTop: '4px' }}>
+                            <Calendar className="w-4 h-4" />
+                            <span>{formatDateRange(fair.startDate, fair.endDate)}</span>
+                        </div>
+                    )}
 
                     {/* Description */}
                     <p className="fair-card-desc">{fair.description || 'More details coming soon.'}</p>

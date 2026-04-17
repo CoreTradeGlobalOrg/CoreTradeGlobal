@@ -10,7 +10,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { container } from '@/core/di/container';
-import { ChevronLeft, ChevronRight, MapPin } from 'lucide-react';
+import { ChevronLeft, ChevronRight, MapPin, Calendar } from 'lucide-react';
 import { useResponsiveLimit, useScrollLoadMore } from '@/presentation/hooks/useResponsiveLimit';
 import { CountryFlag } from '@/presentation/components/common/CountryFlag/CountryFlag';
 import { COUNTRIES } from '@/core/constants/countries';
@@ -78,17 +78,22 @@ const DEFAULT_FAIRS = [
   },
 ];
 
-function FairCard({ fair }) {
-  const formatDate = (date) => {
-    if (!date) return { day: '--', month: '---' };
-    const d = date?.toDate ? date.toDate() : new Date(date);
-    return {
-      day: d.getDate(),
-      month: d.toLocaleDateString('en-US', { month: 'short' }).toUpperCase(),
-    };
-  };
+/** Format a date range like "28 Apr – 30 Apr 2026" */
+function formatDateRange(startDate, endDate) {
+  const toDate = (d) => d?.toDate ? d.toDate() : new Date(d);
+  if (!startDate) return null;
+  const start = toDate(startDate);
+  const opts = { day: 'numeric', month: 'short' };
+  const startStr = start.toLocaleDateString('en-US', opts);
+  if (!endDate) return `${startStr} ${start.getFullYear()}`;
+  const end = toDate(endDate);
+  const endStr = end.toLocaleDateString('en-US', opts);
+  const year = end.getFullYear();
+  return `${startStr} – ${endStr} ${year}`;
+}
 
-  const startDateInfo = formatDate(fair.startDate);
+function FairCard({ fair }) {
+  const dateRange = formatDateRange(fair.startDate, fair.endDate);
 
   return (
     <Link href={`/fair/${fair.id}`} className="fair-card">
@@ -111,6 +116,14 @@ function FairCard({ fair }) {
           <span>{fair.location}</span>
         </div>
 
+        {/* Date Range */}
+        {dateRange && (
+          <div className="fair-card-location" style={{ marginTop: '4px' }}>
+            <Calendar className="w-4 h-4" />
+            <span>{dateRange}</span>
+          </div>
+        )}
+
         {/* Description */}
         <p className="fair-card-desc">{fair.description}</p>
 
@@ -122,8 +135,8 @@ function FairCard({ fair }) {
             </div>
           ) : (
             <div className="fair-date-box flex flex-col items-center gap-1">
-              <span className="fair-date-day">{startDateInfo.day}</span>
-              <span className="fair-date-month">{startDateInfo.month}</span>
+              <span className="fair-date-day">{new Date(fair.startDate?.toDate ? fair.startDate.toDate() : fair.startDate).getDate()}</span>
+              <span className="fair-date-month">{new Date(fair.startDate?.toDate ? fair.startDate.toDate() : fair.startDate).toLocaleDateString('en-US', { month: 'short' }).toUpperCase()}</span>
             </div>
           )}
         </div>
