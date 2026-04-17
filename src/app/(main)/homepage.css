@@ -1434,7 +1434,7 @@ html {
 .product-card {
     background: rgba(26, 40, 59, 0.4);
     border: 1px solid rgba(255, 215, 0, 0.2);
-    border-bottom: 2px solid rgba(255, 215, 0, 0.4);
+    /* border-bottom unified with border */
     border-radius: 16px;
     overflow: hidden;
     transition: border-color 300ms ease, box-shadow 300ms ease, transform 0.18s ease;
@@ -1790,7 +1790,7 @@ html {
     flex-direction: column;
     background: rgba(255, 255, 255, 0.06);
     border: 1px solid rgba(255, 215, 0, 0.2);
-    border-bottom: 2px solid rgba(255, 215, 0, 0.4);
+    /* border-bottom unified with border */
     border-radius: 16px;
     transition: border-color 300ms ease, box-shadow 300ms ease, transform 0.3s ease;
 }
@@ -1878,7 +1878,7 @@ html {
     height: 380px;
     background: linear-gradient(160deg, rgba(26, 28, 32, 0.6) 0%, rgba(15, 27, 43, 0.8) 100%);
     border: 1px solid rgba(255, 215, 0, 0.2);
-    border-bottom: 2px solid rgba(255, 215, 0, 0.4);
+    /* border-bottom unified with border */
     border-radius: var(--card-radius);
     padding: 20px;
     position: relative;
@@ -2492,7 +2492,7 @@ html {
     height: 400px;
     background: linear-gradient(160deg, rgba(26, 28, 32, 0.6) 0%, rgba(15, 27, 43, 0.8) 100%);
     border: 1px solid rgba(255, 215, 0, 0.2);
-    border-bottom: 2px solid rgba(255, 215, 0, 0.4);
+    /* border-bottom unified with border */
     border-radius: 20px;
     overflow: hidden;
     transition: border-color 300ms ease, box-shadow 300ms ease, transform 0.3s ease;

@@ -223,7 +223,7 @@ a:hover {
 .rfq-card {
   background: linear-gradient(160deg, rgba(26, 28, 32, 0.6) 0%, rgba(15, 27, 43, 0.8) 100%);
   border: 1px solid rgba(255, 215, 0, 0.2);
-  border-bottom: 2px solid rgba(255, 215, 0, 0.4);
+  /* border-bottom unified with border */
   border-radius: 20px;
   padding: 24px;
   display: flex;
@@ -482,7 +482,7 @@ a:hover {
 .hp-rfq-card {
   background: linear-gradient(160deg, rgba(26, 40, 59, 0.6) 0%, rgba(15, 27, 43, 0.9) 100%);
   border: 1px solid rgba(255, 215, 0, 0.2);
-  border-bottom: 2px solid rgba(255, 215, 0, 0.4);
+  /* border-bottom unified with border */
   border-radius: 16px;
   padding: 20px;
   transition: border-color 300ms ease, box-shadow 300ms ease, transform 0.3s ease;
@@ -857,7 +857,7 @@ a:hover {
   height: 380px;
   background: linear-gradient(160deg, rgba(26,28,32,0.6) 0%, rgba(15,27,43,0.8) 100%);
   border: 1px solid rgba(255, 215, 0, 0.2);
-  border-bottom: 2px solid rgba(255, 215, 0, 0.4);
+  /* border-bottom unified with border */
   border-radius: 20px;
   padding: 20px;
   position: relative;
@@ -1105,7 +1105,7 @@ a:hover {
 /* Note: border-image + border-radius are CSS-incompatible.
    Use solid gold bottom border instead. */
 .card-bottom-gold {
-  border-bottom: 2px solid rgba(255, 215, 0, 0.4);
+  /* border-bottom unified with border */
 }
 
 /* --- CURRENCY TICKER MARQUEE ANIMATION --- */
