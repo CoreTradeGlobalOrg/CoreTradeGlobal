@@ -1506,8 +1506,7 @@ html {
     display: flex;
     flex-direction: column;
     background: linear-gradient(145deg, rgba(18, 28, 40, 0.55) 0%, rgba(11, 20, 32, 0.6) 100%);
-    border: 1px solid rgba(255, 215, 0, 0.16);
-    box-shadow: 0 8px 30px rgba(8, 12, 20, 0.45);
+    border: 1px solid rgba(255, 215, 0, 0.2);
 }
 
 #products .product-card .product-card-image {
@@ -1561,6 +1560,7 @@ html {
     padding: 0;
 }
 
+#products .product-card:hover,
 .product-card:hover {
     border-color: rgba(255, 215, 0, 0.5);
     transform: translateY(-6px);
