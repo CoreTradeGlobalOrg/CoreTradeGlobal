@@ -92,20 +92,13 @@ function TickerSkeleton() {
 export function CurrencyTicker() {
   const { rates, fetchedAt, isStale, cacheExpired, error, loading } = useLiveCurrency();
 
-  if (loading) return <TickerSkeleton />;
-
-  if (cacheExpired || (error && !rates)) {
-    return (
-      <div className="w-full overflow-hidden bg-[#0A1628] border-t border-[#2A3B52] py-1.5 px-4">
-        <p className="text-[10px] sm:text-xs text-[#8899AA] text-center">
-          Currency rates temporarily unavailable
-        </p>
-      </div>
-    );
+  // Don't render anything while loading or when no rates available
+  if (loading || cacheExpired || (error && !rates) || !rates) {
+    return null;
   }
 
   return (
-    <div className="w-full overflow-hidden bg-[#0A1628] border-t border-[#2A3B52] py-1.5">
+    <div className="w-full overflow-hidden bg-[#0A1628] border-b border-[#2A3B52] py-1">
       <div className="flex animate-marquee whitespace-nowrap text-[10px] sm:text-xs [animation-play-state:running] hover:[animation-play-state:paused]">
         <TickerItems rates={rates} fetchedAt={fetchedAt} isStale={isStale} />
         <TickerItems rates={rates} fetchedAt={fetchedAt} isStale={isStale} ariaHidden />
