@@ -15,6 +15,7 @@ import { useAuth } from '@/presentation/contexts/AuthContext';
 import { useLogout } from '@/presentation/hooks/auth/useLogout';
 import { Menu, X, User, LogOut, Settings as SettingsIcon } from 'lucide-react';
 import { NotificationBell } from '@/presentation/components/common/NotificationBell/NotificationBell';
+import { CurrencyTicker } from '@/presentation/components/homepage/CurrencyTicker/CurrencyTicker';
 import { ROLES } from '@/core/constants/roles';
 import toast from 'react-hot-toast';
 
@@ -434,6 +435,8 @@ export function Navbar() {
         </div>
       )}
 
+      {/* Currency ticker — renders at bottom of nav so ResizeObserver includes it in --navbar-height */}
+      <CurrencyTicker />
     </nav>
   );
 }
