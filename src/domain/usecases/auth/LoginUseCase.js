@@ -45,6 +45,10 @@ export class LoginUseCase {
 
       return user;
     } catch (error) {
+      // Pass through MFA and deleted account errors unchanged
+      if (error.message === 'MFA_REQUIRED' || error.message === 'ACCOUNT_DELETED') {
+        throw error;
+      }
       // Handle and transform Firebase errors
       throw this.handleError(error);
     }

@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { container } from '@/core/di/container';
 import { SearchBar } from '@/presentation/components/common/SearchBar/SearchBar';
-import { CountryFlag } from '@/presentation/components/common/CountryFlag/CountryFlag';
 import { COUNTRIES } from '@/core/constants/countries';
 import { MapPin, Calendar, ChevronDown, ChevronUp } from 'lucide-react';
 
@@ -184,9 +183,23 @@ export default function FairsPage() {
                     {/* Visual Area with Flag or Date fallback */}
                     <div className="fair-visual-area">
                         {(fair.country || getCountryCodeFromLocation(fair.location)) ? (
-                            <div className="fair-date-box flex items-center justify-center">
-                                <CountryFlag countryCode={fair.country || getCountryCodeFromLocation(fair.location)} size={64} />
-                            </div>
+                            <>
+                                {/* Blurred background flag */}
+                                <img
+                                    src={`https://flagcdn.com/w320/${(fair.country || getCountryCodeFromLocation(fair.location)).toLowerCase()}.png`}
+                                    alt=""
+                                    className="absolute inset-0 w-full h-full object-cover blur-xl scale-125 opacity-60"
+                                    loading="lazy"
+                                />
+                                {/* Crisp centered flag */}
+                                <img
+                                    src={`https://flagcdn.com/w320/${(fair.country || getCountryCodeFromLocation(fair.location)).toLowerCase()}.png`}
+                                    srcSet={`https://flagcdn.com/w640/${(fair.country || getCountryCodeFromLocation(fair.location)).toLowerCase()}.png 2x`}
+                                    alt={`${fair.country || getCountryCodeFromLocation(fair.location)} flag`}
+                                    className="relative z-10 max-w-[65%] max-h-[75%] object-contain rounded-md"
+                                    loading="lazy"
+                                />
+                            </>
                         ) : (
                             <div className="fair-date-box flex flex-col items-center gap-1">
                                 <span className="fair-date-day">{startDateInfo.day}</span>

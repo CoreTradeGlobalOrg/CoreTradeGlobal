@@ -49,6 +49,11 @@ export function NotificationListener() {
         if (!registration) {
           registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
         }
+        // Wait for the service worker to be ready
+        if (!registration.active) {
+          await navigator.serviceWorker.ready;
+          registration = await navigator.serviceWorker.getRegistration('/firebase-messaging-sw.js');
+        }
 
         // Get messaging instance
         const messaging = getMessaging(app);

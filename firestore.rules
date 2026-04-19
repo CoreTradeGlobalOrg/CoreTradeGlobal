@@ -68,6 +68,11 @@ service cloud.firestore {
         allow write: if false; // All writes via Cloud Functions (submitLawyerReview)
       }
 
+      // Security subcollection (backup codes for 2FA)
+      match /security/{docId} {
+        allow read, write: if isOwner(userId);
+      }
+
       // User notifications subcollection (private)
       match /notifications/{notificationId} {
         allow read: if isOwner(userId);

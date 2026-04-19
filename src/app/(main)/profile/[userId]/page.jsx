@@ -2,7 +2,7 @@
  * Profile Page - Dynamic
  * URL: /profile/[userId]
  * Orchestrates: ProfileStickyHeader, ProfileCard, ProfileProducts,
- *               ProfileRequests, ProfileSecurity, CompanyDocuments, LawyerProfileContent
+ *               ProfileRequests, CompanyDocuments, LawyerProfileContent
  */
 'use client';
 
@@ -10,7 +10,6 @@ import { Suspense } from 'react';
 import dynamic from 'next/dynamic';
 import { useAuth } from '@/presentation/contexts/AuthContext';
 import { useLogout } from '@/presentation/hooks/auth/useLogout';
-import { useDeleteAccount } from '@/presentation/hooks/auth/useDeleteAccount';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { Settings } from 'lucide-react';
@@ -35,10 +34,6 @@ const ProfileRequests = dynamic(
   () => import('./ProfileRequests').then(m => ({ default: m.ProfileRequests })),
   { loading: () => <div className="h-48 rounded-2xl bg-[rgba(255,255,255,0.04)] animate-pulse border border-[rgba(255,255,255,0.06)]" />, ssr: false }
 );
-const ProfileSecurity = dynamic(
-  () => import('./ProfileSecurity').then(m => ({ default: m.ProfileSecurity })),
-  { loading: () => <div className="h-32 rounded-2xl bg-[rgba(255,255,255,0.04)] animate-pulse border border-[rgba(255,255,255,0.06)]" />, ssr: false }
-);
 
 const SPINNER = (
   <div className="min-h-screen flex items-center justify-center bg-radial-navy">
@@ -52,11 +47,10 @@ const SPINNER = (
 function ProfileContent() {
   const { user: currentUser, loading: authLoading, isAuthenticated } = useAuth();
   const { logout } = useLogout();
-  const { deleteAccount, loading: deleteLoading } = useDeleteAccount();
   const router = useRouter();
   const { userId } = useParams();
 
-  const page = useProfilePage({ userId, currentUser, authLoading, isAuthenticated, logout, deleteAccount, deleteLoading });
+  const page = useProfilePage({ userId, currentUser, authLoading, isAuthenticated, logout });
 
   if (authLoading || page.loading) return SPINNER;
   if (!isAuthenticated || !page.profileUser) return null;
@@ -132,19 +126,6 @@ function ProfileContent() {
               onRequestSubmit={page.handleRequestSubmit} onCloseModal={() => page.setRequestModalOpen(false)}
             />
 
-            {page.isOwnProfile && (
-              <ProfileSecurity
-                currentPassword={page.currentPassword} setCurrentPassword={page.setCurrentPassword}
-                newPassword={page.newPassword} setNewPassword={page.setNewPassword}
-                confirmPassword={page.confirmPassword} setConfirmPassword={page.setConfirmPassword}
-                onPasswordChange={page.handlePasswordChange}
-                deleteModalOpen={page.deleteModalOpen} deleteConfirmText={page.deleteConfirmText}
-                setDeleteConfirmText={page.setDeleteConfirmText} deleteLoading={deleteLoading}
-                onOpenDeleteModal={() => { page.setDeleteModalOpen(true); page.setDeleteConfirmText(''); }}
-                onCloseDeleteModal={() => { page.setDeleteModalOpen(false); page.setDeleteConfirmText(''); }}
-                onDeleteAccount={page.handleDeleteAccount}
-              />
-            )}
           </>
         )}
       </main>

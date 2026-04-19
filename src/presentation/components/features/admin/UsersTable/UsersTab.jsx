@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Star, Check, Ban, Trash2, Eye, Shield, ShieldX, ChevronDown } from 'lucide-react';
+import { Star, Check, Ban, Trash2, Eye, Shield, ShieldX, ShieldOff, ChevronDown } from 'lucide-react';
 import { COUNTRIES } from '@/core/constants/countries';
 import { ROLES, ROLE_DISPLAY_NAMES, ROLE_BADGE_COLORS } from '@/core/constants/roles';
 
@@ -231,6 +231,7 @@ export function UsersTab({ users = [], onAction, onOpenDialog, actionLoading }) 
                           {!user.isSuspended && user.adminApproved && <option value="admin">{user.role === 'admin' ? 'Remove Admin' : 'Make Admin'}</option>}
                           {!user.adminApproved && !user.isSuspended && <option value="approve">Approve User</option>}
                           <option value="suspend">{user.isSuspended ? 'Unsuspend User' : 'Suspend User'}</option>
+                          <option value="reset2fa">Reset 2FA</option>
                           {user.role !== 'admin' && <option value="ban">Ban User</option>}
                           <option value="profile">View Profile</option>
                           <option value="delete">Permanently Delete</option>
@@ -324,6 +325,7 @@ export function UsersTab({ users = [], onAction, onOpenDialog, actionLoading }) 
                             {!user.isSuspended && user.adminApproved && <button type="button" onClick={() => { closeMobileDropdown(); onOpenDialog('admin', user); }} className="w-full px-4 py-3 text-left text-base text-purple-400 hover:bg-[#243444] flex items-center gap-3"><Shield className="w-5 h-5" /> {user.role === 'admin' ? 'Remove Admin' : 'Make Admin'}</button>}
                             {!user.adminApproved && !user.isSuspended && <button type="button" onClick={() => { closeMobileDropdown(); onOpenDialog('approve', user); }} className="w-full px-4 py-3 text-left text-base text-green-400 hover:bg-[#243444] flex items-center gap-3"><Check className="w-5 h-5" /> Approve User</button>}
                             <button type="button" onClick={() => { closeMobileDropdown(); onOpenDialog('suspend', user); }} className="w-full px-4 py-3 text-left text-base text-yellow-400 hover:bg-[#243444] flex items-center gap-3"><Ban className="w-5 h-5" /> {user.isSuspended ? 'Unsuspend User' : 'Suspend User'}</button>
+                            <button type="button" onClick={() => { closeMobileDropdown(); onOpenDialog('reset2fa', user); }} className="w-full px-4 py-3 text-left text-base text-blue-400 hover:bg-[#243444] flex items-center gap-3"><ShieldOff className="w-5 h-5" /> Reset 2FA</button>
                             {user.role !== 'admin' && <button type="button" onClick={() => { closeMobileDropdown(); onOpenDialog('ban', user); }} className="w-full px-4 py-3 text-left text-base text-orange-400 hover:bg-[#243444] flex items-center gap-3"><ShieldX className="w-5 h-5" /> Ban User</button>}
                             <button type="button" onClick={() => { closeMobileDropdown(); router.push(`/profile/${user.id}`); }} className="w-full px-4 py-3 text-left text-base text-white hover:bg-[#243444] flex items-center gap-3"><Eye className="w-5 h-5" /> View Profile</button>
                             <button type="button" onClick={() => { closeMobileDropdown(); onOpenDialog('delete', user); }} className="w-full px-4 py-3 text-left text-base text-red-400 hover:bg-red-900/30 flex items-center gap-3"><Trash2 className="w-5 h-5" /> Permanently Delete</button>

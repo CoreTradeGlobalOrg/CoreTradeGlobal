@@ -363,6 +363,7 @@ export function SubmitQuoteDialog({ isOpen, onClose, request }) {
                       onChange={(dateStr) => field.onChange(dateStr || '')}
                       placeholder="Select validity date..."
                       accentColor="blue"
+                      className={`${inputClass} flex items-center gap-2 cursor-pointer text-left`}
                     />
                   )}
                 />

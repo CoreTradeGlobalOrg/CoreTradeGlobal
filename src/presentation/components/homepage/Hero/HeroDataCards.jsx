@@ -43,6 +43,30 @@ const formatDate = (date) => {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 };
 
+// Build country name → code lookup for fair location parsing
+const COUNTRY_NAME_TO_CODE = {};
+COUNTRIES.forEach(c => { COUNTRY_NAME_TO_CODE[c.label.toLowerCase()] = c.value; });
+const ALIASES = {
+  'uae': 'AE', 'u.a.e': 'AE', 'emirates': 'AE',
+  'uk': 'GB', 'england': 'GB', 'britain': 'GB',
+  'usa': 'US', 'america': 'US',
+  'holland': 'NL', 'the netherlands': 'NL', 'netherland': 'NL',
+  'south korea': 'KR', 'korea': 'KR',
+  'czech republic': 'CZ', 'czechia': 'CZ',
+  'türkiye': 'TR', 'turkiye': 'TR',
+};
+Object.entries(ALIASES).forEach(([k, v]) => { COUNTRY_NAME_TO_CODE[k] = v; });
+
+function getCountryCodeFromLocation(location) {
+  if (!location) return null;
+  const parts = location.split(/[,–—\-]/).map(s => s.trim()).filter(Boolean);
+  for (let i = parts.length - 1; i >= 0; i--) {
+    const code = COUNTRY_NAME_TO_CODE[parts[i].toLowerCase()];
+    if (code) return code;
+  }
+  return null;
+}
+
 /**
  * @param {Object} props
  * @param {boolean} props.fetchData - Whether live data is being displayed
@@ -115,7 +139,22 @@ export function HeroDataCards({ fetchData, latestProduct, latestRequest, latestF
       <div className="hero-right-cards">
         {/* Fair Card */}
         <Link href={fetchData && latestFair ? `/fair/${latestFair.id}` : '/fairs'} className="hero-info-card hero-fair-card">
-          <div className="card-icon">🎪</div>
+          <div className={`card-icon overflow-hidden relative ${fetchData && latestFair && (latestFair.country || getCountryCodeFromLocation(latestFair.location)) ? 'has-flag' : ''}`}>
+            {fetchData && latestFair && (latestFair.country || getCountryCodeFromLocation(latestFair.location)) ? (
+              <>
+                <img
+                  src={`https://flagcdn.com/w160/${(latestFair.country || getCountryCodeFromLocation(latestFair.location)).toLowerCase()}.png`}
+                  alt=""
+                  className="absolute inset-0 w-full h-full object-cover blur-md scale-150 opacity-60"
+                />
+                <img
+                  src={`https://flagcdn.com/w160/${(latestFair.country || getCountryCodeFromLocation(latestFair.location)).toLowerCase()}.png`}
+                  alt={`${latestFair.country || getCountryCodeFromLocation(latestFair.location)} flag`}
+                  className="relative z-10 w-10 h-[30px] object-contain rounded-sm"
+                />
+              </>
+            ) : '🎪'}
+          </div>
           <div className="card-content">
             <h3>{fetchData ? 'Latest Fair' : 'Trade Fairs'}</h3>
             <p className="card-product-name">

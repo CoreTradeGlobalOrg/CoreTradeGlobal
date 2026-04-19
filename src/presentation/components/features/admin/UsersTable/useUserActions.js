@@ -74,10 +74,17 @@ export function useUserActions({ onRefresh }) {
   const handleUnban = (user) =>
     run(user.id, () => unbanUser(user.id), `${user.displayName} has been unbanned`, 'Failed to unban user');
 
+  const handleReset2FA = (user) =>
+    run(user.id,
+      async () => { const fn = httpsCallable(functions, 'resetUser2FA'); await fn({ userId: user.id }); },
+      `2FA has been reset for ${user.displayName}`,
+      'Failed to reset 2FA'
+    );
+
   const handleConfirmAction = async () => {
     const { type, user } = confirmDialog;
     if (!user) return;
-    const map = { delete: handleDelete, ban: handleBan, unban: handleUnban, suspend: handleSuspend, approve: handleApprove, admin: handleToggleAdmin };
+    const map = { delete: handleDelete, ban: handleBan, unban: handleUnban, suspend: handleSuspend, approve: handleApprove, admin: handleToggleAdmin, reset2fa: handleReset2FA };
     await map[type]?.(user);
   };
 
@@ -95,6 +102,7 @@ export function useUserActions({ onRefresh }) {
       suspend: { title: user.isSuspended ? 'Unsuspend User' : 'Suspend User', message: user.isSuspended ? `Are you sure you want to unsuspend ${user.displayName}?` : `Are you sure you want to suspend ${user.displayName}?`, confirmText: user.isSuspended ? 'Unsuspend' : 'Suspend', variant: user.isSuspended ? 'success' : 'warning' },
       approve: { title: 'Approve User', message: `Are you sure you want to approve ${user.displayName}?`, confirmText: 'Approve', variant: 'success' },
       admin: { title: user.role === 'admin' ? 'Remove Admin Rights' : 'Grant Admin Rights', message: user.role === 'admin' ? `Are you sure you want to remove admin rights from ${user.displayName}?` : `Are you sure you want to grant admin rights to ${user.displayName}?`, confirmText: user.role === 'admin' ? 'Remove Admin' : 'Make Admin', variant: user.role === 'admin' ? 'warning' : 'success' },
+      reset2fa: { title: 'Reset Two-Factor Authentication', message: `Are you sure you want to reset 2FA for ${user.displayName}? They will be able to log in without an authenticator code and can re-enroll from Settings.`, confirmText: 'Reset 2FA', variant: 'warning' },
     }[type] || {};
   };
 

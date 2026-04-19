@@ -64,6 +64,7 @@ export function DatePicker({
   accentColor = 'blue',
   disabled = false,
   error,
+  className,
 }) {
   const [open, setOpen] = useState(false);
   const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0 });
@@ -140,7 +141,7 @@ export function DatePicker({
         type="button"
         disabled={disabled}
         onClick={() => setOpen((prev) => !prev)}
-        className={`w-full flex items-center gap-2 bg-[#0F1C2E] border border-[#2A3B52] rounded-lg px-3 py-2 text-sm text-left transition-colors ${accent.focus} ${
+        className={className || `w-full flex items-center gap-2 bg-[#0F1C2E] border border-[#2A3B52] rounded-lg px-3 py-2 text-sm text-left transition-colors ${accent.focus} ${
           disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-[#3A4B62]'
         } ${open ? 'border-[#3A4B62]' : ''}`}
       >

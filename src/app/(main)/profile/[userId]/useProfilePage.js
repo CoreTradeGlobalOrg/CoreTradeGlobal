@@ -18,7 +18,7 @@ import { useCategories } from '@/presentation/hooks/category/useCategories';
  * useProfilePage - All state, effects, and action handlers for the profile page.
  * Returns everything the orchestrator needs to pass to sub-components.
  */
-export function useProfilePage({ userId, currentUser, authLoading, isAuthenticated, logout, deleteAccount, deleteLoading }) {
+export function useProfilePage({ userId, currentUser, authLoading, isAuthenticated, logout }) {
   const router = useRouter();
   const isOwnProfile = currentUser?.uid === userId;
   const canEdit = isOwnProfile || currentUser?.role === 'admin';
@@ -34,8 +34,6 @@ export function useProfilePage({ userId, currentUser, authLoading, isAuthenticat
   const [categoryName, setCategoryName] = useState(null);
 
   // Modal state
-  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [productModalOpen, setProductModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [requestModalOpen, setRequestModalOpen] = useState(false);
@@ -56,11 +54,6 @@ export function useProfilePage({ userId, currentUser, authLoading, isAuthenticat
   const [logoLoading, setLogoLoading] = useState(false);
   const [logoRemoved, setLogoRemoved] = useState(false);
   const [profileUpdating, setProfileUpdating] = useState(false);
-
-  // Password fields
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
 
   // Data hooks
   const { products, loading: productsLoading, refetch: refetchProducts } = useProducts(userId);
@@ -160,27 +153,6 @@ export function useProfilePage({ userId, currentUser, authLoading, isAuthenticat
     setLogoPreview(profileUser?.companyLogo || null); setLogoFile(null); setLogoRemoved(false);
   };
 
-  const handlePasswordChange = async (e) => {
-    e.preventDefault();
-    if (newPassword !== confirmPassword) { toast.error('Passwords do not match'); return; }
-    try {
-      await container.getFirebaseAuthDataSource().updatePassword(newPassword);
-      toast.success('Password changed successfully!');
-      setCurrentPassword(''); setNewPassword(''); setConfirmPassword('');
-    } catch { toast.error('Failed to change password. Please re-login and try again.'); }
-  };
-
-  const handleDeleteAccount = async () => {
-    if (deleteConfirmText !== 'DELETE') { toast.error('Please type DELETE to confirm'); return; }
-    try {
-      await deleteAccount(userId);
-      setDeleteModalOpen(false); setDeleteConfirmText('');
-      await logout();
-      toast.success('Your account has been scheduled for deletion. You can recover it within 15 days by logging in.');
-      router.push('/');
-    } catch (error) { toast.error(error.message || 'Failed to delete account'); }
-  };
-
   const handleProductSubmit = async (data, imageFiles) => {
     try {
       if (editingProduct) await updateProduct(editingProduct.id, userId, data, imageFiles, { isAdmin });
@@ -235,20 +207,18 @@ export function useProfilePage({ userId, currentUser, authLoading, isAuthenticat
   return {
     // State
     profileUser, setProfileUser, loading, isEditing, setIsEditing, showStickyHeader, categoryName,
-    deleteModalOpen, setDeleteModalOpen, deleteConfirmText, setDeleteConfirmText,
     productModalOpen, setProductModalOpen, editingProduct, setEditingProduct,
     requestModalOpen, setRequestModalOpen, editingRequest, setEditingRequest,
     productPage, setProductPage, requestPage, setRequestPage, itemsPerPage,
     phone, setPhone, about, setAbout, linkedinProfile, setLinkedinProfile,
     companyWebsite, setCompanyWebsite, logoLoading, logoPreview, profileUpdating,
-    currentPassword, setCurrentPassword, newPassword, setNewPassword, confirmPassword, setConfirmPassword,
     // Data
     products, productsLoading, requests, requestsLoading, categories,
     // Computed
     isOwnProfile, canEdit, isAdmin,
     // Handlers
-    handleLogoChange, handleRemoveLogo, handleProfileUpdate, handleCancelEdit, handlePasswordChange,
-    handleDeleteAccount, handleProductSubmit, handleDeleteProduct, handleToggleProductStatus,
+    handleLogoChange, handleRemoveLogo, handleProfileUpdate, handleCancelEdit,
+    handleProductSubmit, handleDeleteProduct, handleToggleProductStatus,
     handleRequestSubmit, handleDeleteRequest, handleCloseRequest, handleReopenRequest,
   };
 }

@@ -754,6 +754,73 @@ exports.unbanUser = onCall(
 );
 
 /**
+ * Reset User 2FA (Admin only)
+ *
+ * Removes all TOTP MFA enrollments and backup codes for a user.
+ * Used when a user loses their authenticator device and has no backup codes.
+ *
+ * @param {Object} data - { userId: string }
+ * @returns {Promise<Object>} - Success message
+ */
+exports.resetUser2FA = onCall(
+  async (request) => {
+    const { userId } = request.data;
+    const auth = request.auth;
+
+    if (!auth) {
+      throw new HttpsError('unauthenticated', 'You must be logged in.');
+    }
+
+    const adminCheck = await isUserAdmin(auth.uid);
+    if (!adminCheck) {
+      throw new HttpsError('permission-denied', 'Only administrators can reset 2FA.');
+    }
+
+    if (!userId) {
+      throw new HttpsError('invalid-argument', 'userId is required.');
+    }
+
+    try {
+      // Get user record to find enrolled MFA factors
+      const userRecord = await admin.auth().getUser(userId);
+      const enrolledFactors = userRecord.multiFactor?.enrolledFactors || [];
+
+      if (enrolledFactors.length === 0) {
+        throw new HttpsError('failed-precondition', 'This user does not have 2FA enabled.');
+      }
+
+      // Unenroll all MFA factors
+      await admin.auth().getUser(userId).then(async () => {
+        // Firebase Admin SDK: update user to remove all enrolled factors
+        await admin.auth().updateUser(userId, {
+          multiFactor: {
+            enrolledFactors: [],
+          },
+        });
+      });
+
+      // Delete backup codes from Firestore
+      try {
+        await db.collection('users').doc(userId).collection('security').doc('backupCodes').delete();
+      } catch {
+        // Non-critical — may not exist
+      }
+
+      console.log(`Admin ${auth.uid} reset 2FA for user ${userId}`);
+
+      return {
+        success: true,
+        message: `2FA has been reset. ${enrolledFactors.length} factor(s) removed.`,
+      };
+    } catch (error) {
+      if (error instanceof HttpsError) throw error;
+      console.error(`Error resetting 2FA for user ${userId}:`, error);
+      throw new HttpsError('internal', `Failed to reset 2FA: ${error.message}`);
+    }
+  }
+);
+
+/**
  * Hard Delete User Account (Permanent)
  *
  * Completely removes user from both Firebase Auth and Firestore
@@ -899,7 +966,7 @@ exports.sendMessageNotification = onDocumentCreated(
         return null;
       }
 
-      // Collect FCM tokens from all recipients
+      // Collect FCM tokens from recipients who have push enabled for messages
       const tokens = [];
 
       for (const recipientId of recipients) {
@@ -907,14 +974,19 @@ exports.sendMessageNotification = onDocumentCreated(
 
         if (userDoc.exists) {
           const userData = userDoc.data();
-          if (userData.fcmToken) {
+          // Check notification preferences — default to true if not set
+          const pushEnabled = userData.preferences?.messages?.push !== false;
+
+          if (userData.fcmToken && pushEnabled) {
             tokens.push(userData.fcmToken);
+          } else if (userData.fcmToken && !pushEnabled) {
+            console.log(`📵 Push disabled for messages by user ${recipientId} — skipping`);
           }
         }
       }
 
       if (tokens.length === 0) {
-        console.log('No FCM tokens found for recipients');
+        console.log('No eligible FCM tokens found for recipients');
         return null;
       }
 
@@ -1760,12 +1832,16 @@ async function sendDealNotifications(dealId, eventType, senderUid, deal) {
       console.error(`sendDealNotifications: failed to create in-app notification for ${recipientId}:`, err);
     }
 
-    // --- b) FCM push notification (smart suppression) ---
+    // --- b) FCM push notification (smart suppression + preference check) ---
     try {
       const userDoc = await db.collection('users').doc(recipientId).get();
       if (userDoc.exists) {
         const userData = userDoc.data();
         const fcmToken = userData.fcmToken;
+
+        // Check notification preferences — default to true if not set
+        const pushEnabled = userData.preferences?.deals?.push !== false;
+        const emailEnabled = userData.preferences?.deals?.email !== false;
 
         // Smart suppression: skip FCM if user is actively viewing this deal
         const viewingDealId = userData.viewingDealId;
@@ -1773,7 +1849,7 @@ async function sendDealNotifications(dealId, eventType, senderUid, deal) {
         const now60sAgo = Date.now() - 60000;
         const isActivelyViewing = viewingDealId === dealId && viewingDealSince > now60sAgo;
 
-        if (fcmToken && !isActivelyViewing) {
+        if (fcmToken && pushEnabled && !isActivelyViewing) {
           try {
             await messaging.send({
               token: fcmToken,
@@ -1799,16 +1875,20 @@ async function sendDealNotifications(dealId, eventType, senderUid, deal) {
               });
             }
           }
+        } else if (!pushEnabled) {
+          console.log(`sendDealNotifications: push disabled for deals by ${recipientId} — skipping FCM`);
         } else if (isActivelyViewing) {
           console.log(`sendDealNotifications: suppressed FCM for ${recipientId} — actively viewing deal ${dealId}`);
         }
 
-        // --- c) Resend email notification ---
+        // --- c) Resend email notification (respects email preference) ---
         const recipientEmail = userData.email;
-        if (recipientEmail) {
+        if (recipientEmail && emailEnabled) {
           const { subject } = getDealEventCopy(eventType, deal.productName);
           const htmlBody = buildDealEmailHtml(eventType, deal.productName, dealId);
           await sendDealEmail(recipientEmail, subject, htmlBody);
+        } else if (recipientEmail && !emailEnabled) {
+          console.log(`sendDealNotifications: email disabled for deals by ${recipientId} — skipping email`);
         }
       }
     } catch (err) {

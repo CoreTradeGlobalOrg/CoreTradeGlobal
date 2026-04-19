@@ -11,6 +11,7 @@
 
 import {
   signInWithEmailAndPassword,
+  signInWithCustomToken,
   createUserWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
@@ -21,6 +22,8 @@ import {
   updateEmail,
   updatePassword,
   reload,
+  getMultiFactorResolver,
+  TotpMultiFactorGenerator,
 } from 'firebase/auth';
 
 export class FirebaseAuthDataSource {
@@ -39,11 +42,45 @@ export class FirebaseAuthDataSource {
    * @returns {Promise<User>} Firebase User object
    */
   async login(email, password) {
-    const userCredential = await signInWithEmailAndPassword(
-      this.auth,
-      email,
-      password
-    );
+    try {
+      const userCredential = await signInWithEmailAndPassword(
+        this.auth,
+        email,
+        password
+      );
+      return userCredential.user;
+    } catch (error) {
+      if (error.code === 'auth/multi-factor-auth-required') {
+        const mfaError = new Error('MFA_REQUIRED');
+        mfaError.code = 'auth/multi-factor-auth-required';
+        mfaError.resolver = getMultiFactorResolver(this.auth, error);
+        throw mfaError;
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Complete MFA sign-in with TOTP code
+   * @param {MultiFactorResolver} resolver - MFA resolver from login attempt
+   * @param {string} totpCode - 6-digit TOTP code from authenticator app
+   * @returns {Promise<User>} Firebase User object
+   */
+  async completeMfaSignIn(resolver, totpCode) {
+    const totpHint = resolver.hints.find((h) => h.factorId === 'totp');
+    if (!totpHint) throw new Error('No TOTP factor found');
+    const assertion = TotpMultiFactorGenerator.assertionForSignIn(totpHint.uid, totpCode);
+    const userCredential = await resolver.resolveSignIn(assertion);
+    return userCredential.user;
+  }
+
+  /**
+   * Sign in with a custom token (used for backup code login)
+   * @param {string} customToken - Custom token from server
+   * @returns {Promise<User>} Firebase User object
+   */
+  async loginWithCustomToken(customToken) {
+    const userCredential = await signInWithCustomToken(this.auth, customToken);
     return userCredential.user;
   }
 

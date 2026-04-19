@@ -33,8 +33,17 @@ export class AuthRepository {
    * @throws {Object} Error with deletionInfo if account is deleted
    */
   async login(email, password) {
-    // 1. Authenticate with Firebase Auth
-    const authUser = await this.authDataSource.login(email, password);
+    // 1. Authenticate with Firebase Auth (may throw MFA_REQUIRED with resolver)
+    let authUser;
+    try {
+      authUser = await this.authDataSource.login(email, password);
+    } catch (error) {
+      if (error.message === 'MFA_REQUIRED') {
+        // Bubble up MFA error with resolver for the UI to handle
+        throw error;
+      }
+      throw error;
+    }
 
     // 2. Get user profile from Firestore
     const userProfile = await this.firestoreDataSource.getById(
@@ -69,6 +78,99 @@ export class AuthRepository {
     return {
       uid: authUser.uid,
       email: authUser.email,
+      ...userProfile,
+    };
+  }
+
+  /**
+   * Complete MFA login with TOTP code
+   * @param {MultiFactorResolver} resolver
+   * @param {string} totpCode
+   * @returns {Promise<Object>} User data with profile
+   */
+  async completeMfaLogin(resolver, totpCode) {
+    const authUser = await this.authDataSource.completeMfaSignIn(resolver, totpCode);
+
+    const userProfile = await this.firestoreDataSource.getById(
+      COLLECTIONS.USERS,
+      authUser.uid
+    );
+
+    if (!userProfile) {
+      await this.authDataSource.logout();
+      throw new Error('Account not found. Please contact support.');
+    }
+
+    if (userProfile.isDeleted === true) {
+      await this.authDataSource.logout();
+      const error = new Error('ACCOUNT_DELETED');
+      error.deletionInfo = {
+        userId: authUser.uid,
+        deletionType: userProfile.deletionType || 'unknown',
+        deletedAt: userProfile.deletedAt,
+        canRecoverUntil: userProfile.canRecoverUntil,
+        banReason: userProfile.banReason,
+      };
+      throw error;
+    }
+
+    return {
+      uid: authUser.uid,
+      email: authUser.email,
+      ...userProfile,
+    };
+  }
+
+  /**
+   * Login with backup code (bypasses MFA)
+   * @param {string} email
+   * @param {string} backupCode
+   * @returns {Promise<Object>} User data with profile
+   */
+  async loginWithBackupCode(email, backupCode) {
+    // 1. Verify backup code server-side and get custom token
+    const response = await fetch('/api/auth/backup-code', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, backupCode }),
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error || 'Backup code verification failed');
+    }
+
+    // 2. Sign in with the custom token
+    const authUser = await this.authDataSource.loginWithCustomToken(data.customToken);
+
+    // 3. Get user profile from Firestore
+    const userProfile = await this.firestoreDataSource.getById(
+      COLLECTIONS.USERS,
+      authUser.uid
+    );
+
+    if (!userProfile) {
+      await this.authDataSource.logout();
+      throw new Error('Account not found. Please contact support.');
+    }
+
+    if (userProfile.isDeleted === true) {
+      await this.authDataSource.logout();
+      const error = new Error('ACCOUNT_DELETED');
+      error.deletionInfo = {
+        userId: authUser.uid,
+        deletionType: userProfile.deletionType || 'unknown',
+        deletedAt: userProfile.deletedAt,
+        canRecoverUntil: userProfile.canRecoverUntil,
+        banReason: userProfile.banReason,
+      };
+      throw error;
+    }
+
+    return {
+      uid: authUser.uid,
+      email: authUser.email,
+      remainingBackupCodes: data.remainingCodes,
       ...userProfile,
     };
   }
