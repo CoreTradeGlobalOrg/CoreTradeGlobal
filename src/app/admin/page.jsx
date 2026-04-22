@@ -61,6 +61,10 @@ const ProductsRequestsManager = dynamic(
   () => import('@/presentation/components/features/admin/ProductsRequestsManager/ProductsRequestsManager').then(m => ({ default: m.ProductsRequestsManager })),
   { loading: () => <AdminTabSkeleton />, ssr: false }
 );
+const AnnouncementManager = dynamic(
+  () => import('@/presentation/components/features/admin/AnnouncementManager/AnnouncementManager').then(m => ({ default: m.default })),
+  { loading: () => <AdminTabSkeleton />, ssr: false }
+);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Trade Overview Stats
@@ -221,7 +225,7 @@ export default function AdminPage() {
       {/* Tabs - Scrollable on mobile */}
       <div className="mb-6 md:mb-8 border-b border-[rgba(255,255,255,0.1)] -mx-4 px-4 md:mx-0 md:px-0">
         <nav className="-mb-px flex space-x-4 md:space-x-8 overflow-x-auto scrollbar-hide pb-px">
-          {['users', 'messages', 'categories', 'fairs', 'news'].map((tab) => (
+          {['users', 'messages', 'categories', 'fairs', 'news', 'announcements'].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -289,6 +293,13 @@ export default function AdminPage() {
       {activeTab === 'news' && (
         <div className="text-white">
           <NewsManager />
+        </div>
+      )}
+
+      {/* Announcements Tab */}
+      {activeTab === 'announcements' && (
+        <div className="text-white">
+          <AnnouncementManager />
         </div>
       )}
     </div>
