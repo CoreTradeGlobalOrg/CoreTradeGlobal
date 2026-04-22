@@ -81,7 +81,8 @@ service cloud.firestore {
           (
             request.resource.data.type in ['message', 'quote', 'system', 'admin',
               'new_message', 'conversation_created', 'quote_received',
-              'quote_accepted', 'quote_rejected', 'new_user_approval'] &&
+              'quote_accepted', 'quote_rejected', 'new_user_approval',
+              'deal', 'legal', 'announcement', 'rfq_created'] &&
             request.resource.data.keys().hasAll(['type', 'title', 'isRead']) &&
             request.resource.data.isRead == false &&
             request.auth.uid != userId

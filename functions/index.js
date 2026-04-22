@@ -2712,6 +2712,9 @@ async function broadcastQuoteRequests(dealId, dealData) {
   };
 
   let count = 0;
+  // Track provider info for post-commit FCM push notifications
+  const providerPushQueue = [];
+
   for (const providerDoc of providersSnap.docs) {
     const providerData = providerDoc.data();
     // Normalize role to short-form providerType: 'insurance' or 'logistics'
@@ -2737,10 +2740,56 @@ async function broadcastQuoteRequests(dealId, dealData) {
       updatedAt: now,
     });
     count++;
+
+    // Queue provider for post-commit notification (outside batch — non-blocking)
+    providerPushQueue.push({ providerId: providerDoc.id, providerData, requestId: requestRef.id, providerType });
   }
 
   await batch.commit();
   console.log(`broadcastQuoteRequests: created ${count} quote request(s) for deal ${dealId}`);
+
+  // --- Post-commit: send in-app + FCM push to each provider ---
+  // Called OUTSIDE batch.commit() to follow the sendDealNotifications non-blocking pattern.
+  const productName = dealData.productName || 'a product';
+  for (const { providerId, providerData, requestId, providerType } of providerPushQueue) {
+    const providerTypeName = providerType === 'insurance' ? 'Insurance' : 'Logistics';
+    const notifTitle = 'New Quote Request';
+    const notifBody = `You have a new ${providerTypeName} quote request for ${productName}.`;
+
+    // --- a) Firestore in-app notification ---
+    try {
+      await db.collection('users').doc(providerId).collection('notifications').add({
+        type: 'quote_received',
+        title: notifTitle,
+        body: notifBody,
+        dealId,
+        requestId,
+        providerType,
+        isRead: false,
+        createdAt: now,
+        link: `/provider/quotes/${requestId}`,
+      });
+    } catch (err) {
+      console.error(`broadcastQuoteRequests: failed in-app notification for provider ${providerId}:`, err);
+    }
+
+    // --- b) FCM push notification (preference check) ---
+    try {
+      const pushEnabled = providerData.preferences?.providers?.push !== false;
+      if (pushEnabled) {
+        await sendFCMPushToUser(providerId, providerData, {
+          type: 'quote_received',
+          title: notifTitle,
+          body: notifBody,
+          dealId,
+          requestId,
+          link: `/provider/quotes/${requestId}`,
+        });
+      }
+    } catch (err) {
+      console.error(`broadcastQuoteRequests: FCM error for provider ${providerId}:`, err);
+    }
+  }
 }
 
 /**
@@ -4539,6 +4588,212 @@ exports.onRiskItemCreated = onDocumentCreated(
       await sendLegalNotification(engagementId, 'risk_update', clientId, dealProductName, dealId);
     } catch (err) {
       console.error('onRiskItemCreated: unexpected error (non-fatal):', err);
+    }
+  }
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Platform Event Triggers (Phase 12 Plan 04)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Helper: send FCM push to a single user, with invalid token cleanup.
+ * Non-blocking — caller must wrap in try/catch if needed.
+ *
+ * @param {string} uid - Recipient user ID
+ * @param {Object} userData - Firestore user doc data (must contain fcmToken)
+ * @param {Object} fcmData - Data payload for the FCM message (type, title, body, etc.)
+ */
+async function sendFCMPushToUser(uid, userData, fcmData) {
+  const token = userData.fcmToken;
+  if (!token) return;
+  try {
+    await messaging.send({
+      token,
+      data: fcmData,
+    });
+  } catch (err) {
+    console.error(`sendFCMPushToUser: FCM error for ${uid}:`, err.code);
+    if (
+      err.code === 'messaging/invalid-registration-token' ||
+      err.code === 'messaging/registration-token-not-registered'
+    ) {
+      // Clean up invalid token so future sends are skipped
+      await db.collection('users').doc(uid).update({ fcmToken: FieldValue.delete() });
+    }
+  }
+}
+
+/**
+ * onNewMemberRegistered
+ *
+ * Fires when a new document is created in the users collection.
+ * Only notifies admins when the new user has role='member'
+ * (provider/lawyer accounts are invited and tracked via inviteUser CF).
+ *
+ * Channels: in-app notification + FCM push to all admins.
+ * Preference check: preferences?.system?.push !== false (default true).
+ */
+exports.onNewMemberRegistered = onDocumentCreated(
+  'users/{userId}',
+  async (event) => {
+    try {
+      const newUser = event.data?.data();
+      if (!newUser) return;
+
+      // Only notify for member self-registrations
+      if (newUser.role !== ROLES.MEMBER) return;
+
+      const newUserId = event.params.userId;
+      const now = Timestamp.now();
+      const displayName = newUser.displayName || newUser.email || 'A new member';
+      const notifTitle = 'New Member Registered';
+      const notifBody = `${displayName} has just registered as a member.`;
+
+      // Query all admin users
+      const adminsSnap = await db.collection('users').where('role', '==', ROLES.ADMIN).get();
+      if (adminsSnap.empty) {
+        console.log('onNewMemberRegistered: no admin users found');
+        return;
+      }
+
+      for (const adminDoc of adminsSnap.docs) {
+        const adminId = adminDoc.id;
+        const adminData = adminDoc.data();
+
+        // --- a) Firestore in-app notification ---
+        try {
+          await db.collection('users').doc(adminId).collection('notifications').add({
+            type: 'new_user_approval',
+            title: notifTitle,
+            body: notifBody,
+            newUserId,
+            newUserName: displayName,
+            isRead: false,
+            createdAt: now,
+            link: `/admin`,
+          });
+        } catch (err) {
+          console.error(`onNewMemberRegistered: failed in-app notification for admin ${adminId}:`, err);
+        }
+
+        // --- b) FCM push notification (preference check) ---
+        try {
+          const pushEnabled = adminData.preferences?.system?.push !== false;
+          if (pushEnabled) {
+            await sendFCMPushToUser(adminId, adminData, {
+              type: 'new_user_approval',
+              title: notifTitle,
+              body: notifBody,
+              newUserId,
+              link: '/admin',
+            });
+          }
+        } catch (err) {
+          console.error(`onNewMemberRegistered: FCM error for admin ${adminId}:`, err);
+        }
+      }
+
+      console.log(`onNewMemberRegistered: notified ${adminsSnap.size} admin(s) of new member ${newUserId}`);
+    } catch (err) {
+      console.error('onNewMemberRegistered: unexpected error (non-fatal):', err);
+    }
+  }
+);
+
+/**
+ * onRFQCreated
+ *
+ * Fires when a new document is created in the requests collection (RFQs).
+ * Notifies all members with in-app + FCM push when a new RFQ is posted.
+ * Does NOT notify the creator of the RFQ.
+ *
+ * Channels: in-app notification + FCM push to all members.
+ * Preference check: preferences?.providers?.push !== false (default true).
+ * Email: preferences?.providers?.email !== false (default true).
+ */
+exports.onRFQCreated = onDocumentCreated(
+  'requests/{requestId}',
+  async (event) => {
+    try {
+      const rfq = event.data?.data();
+      if (!rfq) return;
+
+      const requestId = event.params.requestId;
+      const now = Timestamp.now();
+      const productName = rfq.productName || rfq.title || 'a product';
+      const creatorId = rfq.userId;
+
+      const notifTitle = 'New RFQ Available';
+      const notifBody = `A new request for quotation has been posted for ${productName}.`;
+
+      // Query all members
+      const membersSnap = await db.collection('users').where('role', '==', ROLES.MEMBER).get();
+      if (membersSnap.empty) {
+        console.log(`onRFQCreated: no members found for RFQ ${requestId}`);
+        return;
+      }
+
+      for (const memberDoc of membersSnap.docs) {
+        const memberId = memberDoc.id;
+        // Skip the creator of the RFQ
+        if (memberId === creatorId) continue;
+
+        const memberData = memberDoc.data();
+
+        // --- a) Firestore in-app notification ---
+        try {
+          await db.collection('users').doc(memberId).collection('notifications').add({
+            type: 'rfq_created',
+            title: notifTitle,
+            body: notifBody,
+            requestId,
+            productName,
+            isRead: false,
+            createdAt: now,
+            link: `/request/${requestId}`,
+          });
+        } catch (err) {
+          console.error(`onRFQCreated: failed in-app notification for member ${memberId}:`, err);
+        }
+
+        // --- b) FCM push notification (preference check) ---
+        try {
+          const pushEnabled = memberData.preferences?.providers?.push !== false;
+          if (pushEnabled) {
+            await sendFCMPushToUser(memberId, memberData, {
+              type: 'rfq_created',
+              title: notifTitle,
+              body: notifBody,
+              requestId,
+              link: `/request/${requestId}`,
+            });
+          }
+        } catch (err) {
+          console.error(`onRFQCreated: FCM error for member ${memberId}:`, err);
+        }
+
+        // --- c) Email notification (preference check) ---
+        try {
+          const emailEnabled = memberData.preferences?.providers?.email !== false;
+          const memberEmail = memberData.email;
+          if (memberEmail && emailEnabled) {
+            const rfqUrl = `${APP_URL}/request/${requestId}`;
+            const htmlBody = buildBrandedEmailHtml(
+              `<p style="margin:0 0 16px 0;">${notifBody}</p>`,
+              'View RFQ',
+              rfqUrl
+            );
+            await sendDealEmail(memberEmail, notifTitle, htmlBody);
+          }
+        } catch (err) {
+          console.error(`onRFQCreated: email error for member ${memberId}:`, err);
+        }
+      }
+
+      console.log(`onRFQCreated: notified ${membersSnap.size - 1} member(s) of new RFQ ${requestId}`);
+    } catch (err) {
+      console.error('onRFQCreated: unexpected error (non-fatal):', err);
     }
   }
 );
