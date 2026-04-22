@@ -250,7 +250,7 @@ Plans:
 **Goal:** Full notification center page with filter tabs and bulk actions, branded email templates with throttled message digests, extended push notification coverage (member registration, RFQ, quote broadcast, announcements), FCM pipeline fix, admin announcement system with scheduling, and LinkedIn share on news articles
 **Requirements**: NOTIF-01, NOTIF-02, NOTIF-03, NOTIF-04, NOTIF-05, NOTIF-06, NOTIF-07, NOTIF-08
 **Depends on:** Phase 11
-**Plans:** 1/5 plans executed
+**Plans:** 2/5 plans executed
 
 Plans:
 - [ ] 12-01-PLAN.md — Notification center page (/notifications) with filter tabs, infinite scroll, bulk actions + NotificationBell extension (10 items, "View all" link)

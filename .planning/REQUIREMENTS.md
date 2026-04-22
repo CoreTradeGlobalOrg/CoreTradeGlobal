@@ -88,8 +88,8 @@ Requirements for initial release. Each maps to roadmap phases.
 
 - [x] **NOTIF-01**: Full-page notification center at /notifications with filter tabs (All, Deals, Messages, Legal, Providers, System), infinite scroll, and bulk actions (mark read, delete, batch selection)
 - [x] **NOTIF-02**: NotificationBell dropdown shows 10 items with "View all" link navigating to notification center
-- [ ] **NOTIF-03**: All automated emails use noreply@coretradeglobal.com sender and shared branded HTML template with CTG logo, gold accents, and unsubscribe footer
-- [ ] **NOTIF-04**: Message notification emails throttled to max 1 per user per day across all conversations
+- [x] **NOTIF-03**: All automated emails use noreply@coretradeglobal.com sender and shared branded HTML template with CTG logo, gold accents, and unsubscribe footer
+- [x] **NOTIF-04**: Message notification emails throttled to max 1 per user per day across all conversations
 - [ ] **NOTIF-05**: Push notifications for new member registration (admin), new RFQ (all members), and quote request broadcast (providers), respecting Phase 10 notification preferences
 - [ ] **NOTIF-06**: FCM push notification pipeline debugged and functional (token lifecycle, service worker, foreground/background handlers)
 - [ ] **NOTIF-07**: Admin announcement system with title, body, audience selector, channel toggles (in-app/push/email), optional scheduling, and announcement history
