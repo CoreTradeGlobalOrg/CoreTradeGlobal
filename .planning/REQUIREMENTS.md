@@ -93,7 +93,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [ ] **NOTIF-05**: Push notifications for new member registration (admin), new RFQ (all members), and quote request broadcast (providers), respecting Phase 10 notification preferences
 - [ ] **NOTIF-06**: FCM push notification pipeline debugged and functional (token lifecycle, service worker, foreground/background handlers)
 - [ ] **NOTIF-07**: Admin announcement system with title, body, audience selector, channel toggles (in-app/push/email), optional scheduling, and announcement history
-- [ ] **NOTIF-08**: LinkedIn share button and copy-to-clipboard on news detail page (LinkedIn share-offsite URL scheme, no API key)
+- [x] **NOTIF-08**: LinkedIn share button and copy-to-clipboard on news detail page (LinkedIn share-offsite URL scheme, no API key)
 
 ## v2 Requirements
 
