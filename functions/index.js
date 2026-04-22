@@ -953,7 +953,7 @@ exports.sendMessageNotification = onDocumentCreated(
         return null;
       }
 
-      // Collect FCM tokens from recipients who have push enabled for messages
+      // Collect FCM tokens and handle per-recipient email throttle
       const tokens = [];
 
       for (const recipientId of recipients) {
@@ -968,6 +968,36 @@ exports.sendMessageNotification = onDocumentCreated(
             tokens.push(userData.fcmToken);
           } else if (userData.fcmToken && !pushEnabled) {
             console.log(`📵 Push disabled for messages by user ${recipientId} — skipping`);
+          }
+
+          // --- Email throttle: max 1 "new messages" email per user per day across all conversations.
+          // Race-safe enough for a daily throttle — rare double-send is acceptable. ---
+          try {
+            const emailEnabled = userData.preferences?.messages?.email !== false;
+            if (emailEnabled && userData.email) {
+              const lastSent = userData.lastMessageEmailSentAt;
+              const throttled = lastSent && (Date.now() - lastSent.toMillis() < 86400000);
+              if (throttled) {
+                console.log(`📧 Message email throttled for ${recipientId} — last sent within 24h`);
+              } else {
+                const messagesUrl = `${APP_URL}/messages/${conversationId}`;
+                const emailHtml = buildBrandedEmailHtml(
+                  '<p style="margin:0 0 16px 0;">You have unread messages. Visit CoreTradeGlobal to read and reply.</p>',
+                  'View Messages',
+                  messagesUrl
+                );
+                await sendDealEmail(userData.email, 'You have new messages on CoreTradeGlobal', emailHtml);
+                await db.collection('users').doc(recipientId).update({
+                  lastMessageEmailSentAt: Timestamp.now(),
+                });
+                console.log(`📧 Message email sent to ${recipientId}`);
+              }
+            } else if (!emailEnabled) {
+              console.log(`📧 Email disabled for messages by ${recipientId} — skipping email`);
+            }
+          } catch (emailErr) {
+            // Non-blocking — email failure must not fail the CF
+            console.error(`sendMessageNotification: email error for ${recipientId}:`, emailErr);
           }
         }
       }
