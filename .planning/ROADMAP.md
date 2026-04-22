@@ -247,13 +247,17 @@ Plans:
 
 ### Phase 12: Notifications and Email System
 
-**Goal:** [To be planned]
-**Requirements**: TBD
+**Goal:** Full notification center page with filter tabs and bulk actions, branded email templates with throttled message digests, extended push notification coverage (member registration, RFQ, quote broadcast, announcements), FCM pipeline fix, admin announcement system with scheduling, and LinkedIn share on news articles
+**Requirements**: NOTIF-01, NOTIF-02, NOTIF-03, NOTIF-04, NOTIF-05, NOTIF-06, NOTIF-07, NOTIF-08
 **Depends on:** Phase 11
-**Plans:** 0 plans
+**Plans:** 5 plans
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 12 to break down)
+- [ ] 12-01-PLAN.md — Notification center page (/notifications) with filter tabs, infinite scroll, bulk actions + NotificationBell extension (10 items, "View all" link)
+- [ ] 12-02-PLAN.md — Branded email template (buildBrandedEmailHtml), sender address change to noreply@, message email throttling (1/day)
+- [ ] 12-03-PLAN.md — LinkedIn share and copy-to-clipboard buttons on news detail page
+- [ ] 12-04-PLAN.md — FCM debug/fix, new push triggers (member registered, RFQ created, quote broadcast), Firestore rules notification type update
+- [ ] 12-05-PLAN.md — Admin announcement system: form (title, body, audience, channels, schedule), Cloud Functions (sendAnnouncement, processScheduledAnnouncements), history view
 
 ### Phase 13: Messaging and Communication Improvements
 
@@ -307,4 +311,4 @@ Plans:
 
 ---
 *Roadmap created: 2026-02-20*
-*Last updated: 2026-04-15*
+*Last updated: 2026-04-22*

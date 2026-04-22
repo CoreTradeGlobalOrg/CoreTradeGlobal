@@ -84,6 +84,17 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **HARDEN-03**: All forms have proper validation with clear error messages
 - [x] **HARDEN-04**: Performance audit and optimization where needed
 
+### Notifications and Email System
+
+- [ ] **NOTIF-01**: Full-page notification center at /notifications with filter tabs (All, Deals, Messages, Legal, Providers, System), infinite scroll, and bulk actions (mark read, delete, batch selection)
+- [ ] **NOTIF-02**: NotificationBell dropdown shows 10 items with "View all" link navigating to notification center
+- [ ] **NOTIF-03**: All automated emails use noreply@coretradeglobal.com sender and shared branded HTML template with CTG logo, gold accents, and unsubscribe footer
+- [ ] **NOTIF-04**: Message notification emails throttled to max 1 per user per day across all conversations
+- [ ] **NOTIF-05**: Push notifications for new member registration (admin), new RFQ (all members), and quote request broadcast (providers), respecting Phase 10 notification preferences
+- [ ] **NOTIF-06**: FCM push notification pipeline debugged and functional (token lifecycle, service worker, foreground/background handlers)
+- [ ] **NOTIF-07**: Admin announcement system with title, body, audience selector, channel toggles (in-app/push/email), optional scheduling, and announcement history
+- [ ] **NOTIF-08**: LinkedIn share button and copy-to-clipboard on news detail page (LinkedIn share-offsite URL scheme, no API key)
+
 ## v2 Requirements
 
 Deferred to future release. Tracked but not in current roadmap.
@@ -166,12 +177,20 @@ Which phases cover which requirements. Updated during roadmap creation.
 | HARDEN-02 | Phase 7 | Complete |
 | HARDEN-03 | Phase 7 | Complete |
 | HARDEN-04 | Phase 7 | Complete |
+| NOTIF-01 | Phase 12 | Planned |
+| NOTIF-02 | Phase 12 | Planned |
+| NOTIF-03 | Phase 12 | Planned |
+| NOTIF-04 | Phase 12 | Planned |
+| NOTIF-05 | Phase 12 | Planned |
+| NOTIF-06 | Phase 12 | Planned |
+| NOTIF-07 | Phase 12 | Planned |
+| NOTIF-08 | Phase 12 | Planned |
 
 **Coverage:**
-- v1 requirements: 45 total
-- Mapped to phases: 45
+- v1 requirements: 53 total
+- Mapped to phases: 53
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-20*
-*Last updated: 2026-02-20 after roadmap creation*
+*Last updated: 2026-04-22 after Phase 12 planning*
