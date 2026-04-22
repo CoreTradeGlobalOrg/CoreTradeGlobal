@@ -88,32 +88,19 @@ async function isUserAdmin(userId) {
  */
 function buildInviteEmailHtml(name, role, signInLink) {
   const roleName = role.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-  return `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; background: #f9f9f9;">
-      <div style="background: #0F1B2B; padding: 24px; border-radius: 8px 8px 0 0;">
-        <h1 style="color: #FFD700; margin: 0; font-size: 20px;">CoreTradeGlobal</h1>
-      </div>
-      <div style="background: #ffffff; padding: 32px; border-radius: 0 0 8px 8px; border: 1px solid #e0e0e0;">
-        <p style="color: #333333; font-size: 16px; line-height: 1.6;">
-          Hi ${name},
-        </p>
-        <p style="color: #333333; font-size: 16px; line-height: 1.6;">
-          You have been invited to join CoreTradeGlobal as a <strong>${roleName}</strong>.
-          Click the button below to set up your account.
-        </p>
-        <div style="margin-top: 32px; text-align: center;">
-          <a href="${signInLink}"
-             style="display: inline-block; background: #0F1B2B; color: #FFD700; text-decoration: none;
-                    padding: 14px 32px; border-radius: 6px; font-weight: bold; font-size: 15px;">
-            Accept Invite &amp; Set Up Account
-          </a>
-        </div>
-        <p style="margin-top: 24px; font-size: 13px; color: #888888;">
-          This link expires in 7 days. If you did not expect this invitation, you can ignore this email.
-        </p>
-      </div>
-    </div>
+  const body = `
+    <p style="margin:0 0 12px 0;">Hi ${name},</p>
+    <p style="margin:0 0 16px 0;">
+      You have been invited to join CoreTradeGlobal as a <strong style="color:#FFD700;">${roleName}</strong>.
+      Click the button below to set up your account.
+    </p>
   `;
+  return buildBrandedEmailHtml(
+    body,
+    'Accept Invite &amp; Set Up Account',
+    signInLink,
+    'This link expires in 7 days. If you did not expect this invitation, you can ignore this email.'
+  );
 }
 
 /**
@@ -128,7 +115,7 @@ async function sendInviteEmail(to, name, role, signInLink) {
   const roleName = role.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
   try {
     await resend.emails.send({
-      from: 'CoreTradeGlobal <info@coretradeglobal.com>',
+      from: 'CoreTradeGlobal <noreply@coretradeglobal.com>',
       to,
       subject: `You're invited to CoreTradeGlobal as ${roleName}`,
       html: buildInviteEmailHtml(name, role, signInLink),
@@ -1680,7 +1667,7 @@ async function sendDealEmail(to, subject, htmlBody) {
   }
   try {
     await resend.emails.send({
-      from: 'CoreTradeGlobal <info@coretradeglobal.com>',
+      from: 'CoreTradeGlobal <noreply@coretradeglobal.com>',
       to,
       subject,
       html: htmlBody,
@@ -1762,31 +1749,94 @@ function getDealEventCopy(eventType, productName) {
 }
 
 /**
- * Build the HTML email body for a deal event.
+ * buildBrandedEmailHtml — shared branded HTML email template for all system emails.
+ *
+ * Produces a responsive, table-based HTML email with CTG dark-theme branding.
+ * Uses inline CSS only — email clients strip <style> tags.
+ *
+ * @param {string} body - HTML string for the email body content
+ * @param {string|null} ctaLabel - Label for the CTA button (optional)
+ * @param {string|null} ctaUrl - URL for the CTA button (optional, skip button if not provided)
+ * @param {string|null} footerNote - Optional additional text above the standard footer line
+ * @returns {string} Full HTML email string
  */
-function buildDealEmailHtml(eventType, productName, dealId) {
-  const { body } = getDealEventCopy(eventType, productName);
-  const dealUrl = `${APP_URL}/deals/${dealId}`;
-  return `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; background: #f9f9f9;">
-      <div style="background: #0F1B2B; padding: 24px; border-radius: 8px 8px 0 0;">
-        <h1 style="color: #FFD700; margin: 0; font-size: 20px;">CoreTradeGlobal</h1>
-      </div>
-      <div style="background: #ffffff; padding: 32px; border-radius: 0 0 8px 8px; border: 1px solid #e0e0e0;">
-        <p style="color: #333333; font-size: 16px; line-height: 1.6;">${body}</p>
-        <div style="margin-top: 32px;">
-          <a href="${dealUrl}"
-             style="display: inline-block; background: #0F1B2B; color: #FFD700; text-decoration: none;
-                    padding: 12px 24px; border-radius: 6px; font-weight: bold; font-size: 15px;">
-            View Deal
-          </a>
-        </div>
-        <p style="margin-top: 24px; font-size: 13px; color: #888888;">
-          You are receiving this email because you are a participant in a deal on CoreTradeGlobal.
-        </p>
-      </div>
-    </div>
-  `;
+function buildBrandedEmailHtml(body, ctaLabel, ctaUrl, footerNote) {
+  const ctaBlock = ctaLabel && ctaUrl
+    ? `<table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:32px;">
+        <tr>
+          <td>
+            <a href="${ctaUrl}"
+               style="display:inline-block;background:#FFD700;color:#000000;text-decoration:none;
+                      padding:14px 28px;border-radius:6px;font-weight:bold;font-size:15px;
+                      font-family:Arial,sans-serif;">
+              ${ctaLabel}
+            </a>
+          </td>
+        </tr>
+      </table>`
+    : '';
+
+  const footerNoteBlock = footerNote
+    ? `<p style="margin:24px 0 8px 0;font-size:13px;color:#8899AA;font-family:Arial,sans-serif;">${footerNote}</p>`
+    : '';
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>CoreTradeGlobal</title></head>
+<body style="margin:0;padding:0;background-color:#0D1724;">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#0D1724;padding:24px 16px;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;">
+
+          <!-- Header -->
+          <tr>
+            <td style="background-color:#0F1C2E;padding:28px 32px;border-radius:8px 8px 0 0;">
+              <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td>
+                    <span style="font-family:Arial,sans-serif;font-size:22px;font-weight:bold;color:#FFFFFF;letter-spacing:0.5px;">
+                      Core<span style="color:#FFD700;">Trade</span>Global
+                    </span>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding-top:12px;">
+                    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                      <tr><td height="3" style="background-color:#FFD700;font-size:0;line-height:0;">&nbsp;</td></tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td style="background-color:#1A2332;padding:36px 32px;color:#E8EDF2;font-family:Arial,sans-serif;font-size:15px;line-height:1.7;border-left:1px solid #243044;border-right:1px solid #243044;">
+              ${body}
+              ${ctaBlock}
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background-color:#0F1C2E;padding:20px 32px;border-radius:0 0 8px 8px;border:1px solid #243044;border-top:1px solid #243044;">
+              ${footerNoteBlock}
+              <p style="margin:0;font-size:12px;color:#556677;font-family:Arial,sans-serif;line-height:1.5;">
+                You received this email because you have an account on CoreTradeGlobal.
+                If you no longer wish to receive these emails, you can manage your preferences in
+                <a href="${APP_URL}/settings" style="color:#8899AA;text-decoration:underline;">Notification Settings</a>.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
 }
 
 /**
@@ -1884,8 +1934,9 @@ async function sendDealNotifications(dealId, eventType, senderUid, deal) {
         // --- c) Resend email notification (respects email preference) ---
         const recipientEmail = userData.email;
         if (recipientEmail && emailEnabled) {
-          const { subject } = getDealEventCopy(eventType, deal.productName);
-          const htmlBody = buildDealEmailHtml(eventType, deal.productName, dealId);
+          const { subject, body: eventBody } = getDealEventCopy(eventType, deal.productName);
+          const dealUrl = `${APP_URL}/deals/${dealId}`;
+          const htmlBody = buildBrandedEmailHtml(`<p style="margin:0 0 16px 0;">${eventBody}</p>`, 'View Deal', dealUrl);
           await sendDealEmail(recipientEmail, subject, htmlBody);
         } else if (recipientEmail && !emailEnabled) {
           console.log(`sendDealNotifications: email disabled for deals by ${recipientId} — skipping email`);
@@ -3867,41 +3918,6 @@ function getLegalEventBody(eventType, dealProductName) {
 }
 
 /**
- * buildLegalEmailHtml — builds a branded HTML email for legal events.
- *
- * Follows the same pattern as buildDealEmailHtml.
- *
- * @param {string} eventType
- * @param {string} dealProductName
- * @param {string} dealId
- * @returns {string}
- */
-function buildLegalEmailHtml(eventType, dealProductName, dealId) {
-  const body = getLegalEventBody(eventType, dealProductName);
-  const legalUrl = `${APP_URL}/deals/${dealId}/legal`;
-  return `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; background: #f9f9f9;">
-      <div style="background: #0F1B2B; padding: 24px; border-radius: 8px 8px 0 0;">
-        <h1 style="color: #FFD700; margin: 0; font-size: 20px;">CoreTradeGlobal</h1>
-      </div>
-      <div style="background: #ffffff; padding: 32px; border-radius: 0 0 8px 8px; border: 1px solid #e0e0e0;">
-        <p style="color: #333333; font-size: 16px; line-height: 1.6;">${body}</p>
-        <div style="margin-top: 32px;">
-          <a href="${legalUrl}"
-             style="display: inline-block; background: #0F1B2B; color: #FFD700; text-decoration: none;
-                    padding: 12px 24px; border-radius: 6px; font-weight: bold; font-size: 15px;">
-            View Legal Channel
-          </a>
-        </div>
-        <p style="margin-top: 24px; font-size: 13px; color: #888888;">
-          You are receiving this email because you are a participant in a legal consultation on CoreTradeGlobal.
-        </p>
-      </div>
-    </div>
-  `;
-}
-
-/**
  * sendLegalNotification — orchestrates in-app + email notification for legal events.
  *
  * Follows sendDealNotifications pattern: sends to a single recipient, non-blocking email.
@@ -3945,7 +3961,9 @@ async function sendLegalNotification(engagementId, eventType, recipientId, dealP
         const userData = userDoc.data();
         if (userData?.email) {
           const subject = getLegalEventTitle(eventType);
-          const htmlBody = buildLegalEmailHtml(eventType, dealProductName, dealId);
+          const legalUrl = `${APP_URL}/deals/${dealId}/legal`;
+          const legalBody = getLegalEventBody(eventType, dealProductName);
+          const htmlBody = buildBrandedEmailHtml(`<p style="margin:0 0 16px 0;">${legalBody}</p>`, 'View Legal Channel', legalUrl);
           await sendDealEmail(userData.email, subject, htmlBody).catch((err) =>
             console.error(`sendLegalNotification: email failed for ${recipientId}:`, err)
           );
