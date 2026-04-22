@@ -374,5 +374,19 @@ service cloud.firestore {
       allow read: if isAdmin();
       allow write: if false;
     }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Announcements collection (Plan 12-05)
+    //
+    // Admin-only read/write. Announcements are historical records — delete is denied.
+    // All delivery (in-app, push, email) is performed server-side via Cloud Functions.
+    // ─────────────────────────────────────────────────────────────────────────
+
+    match /announcements/{announcementId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if false;
+    }
   }
 }

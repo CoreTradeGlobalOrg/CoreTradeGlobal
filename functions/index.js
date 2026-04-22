@@ -4797,3 +4797,247 @@ exports.onRFQCreated = onDocumentCreated(
     }
   }
 );
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Admin Announcement System (Plan 12-05)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Valid audience values for announcements.
+ */
+const ANNOUNCEMENT_AUDIENCES = ['all', 'member', 'logistics_provider', 'insurance_provider', 'lawyer'];
+
+/**
+ * deliverAnnouncement
+ *
+ * Shared helper that delivers an announcement to all targeted users.
+ * Called by sendAnnouncement (immediate) and processScheduledAnnouncements (scheduled).
+ *
+ * @param {Object} announcementData - Announcement fields: title, body, audience, channels
+ * @param {string} announcementId - Firestore document ID
+ * @returns {Promise<number>} recipientCount
+ */
+async function deliverAnnouncement(announcementData, announcementId) {
+  const { title, body, audience, channels } = announcementData;
+  const now = Timestamp.now();
+
+  // Query target users
+  let usersQuery = db.collection('users');
+  if (audience !== 'all') {
+    usersQuery = usersQuery.where('role', '==', audience);
+  }
+  const usersSnap = await usersQuery.get();
+
+  if (usersSnap.empty) {
+    console.log(`deliverAnnouncement(${announcementId}): no users found for audience=${audience}`);
+    return 0;
+  }
+
+  let recipientCount = 0;
+
+  for (const userDoc of usersSnap.docs) {
+    const uid = userDoc.id;
+    const userData = userDoc.data();
+
+    // Skip admin users from targeted announcements (admins get system notifications elsewhere)
+    if (userData.role === ROLES.ADMIN) continue;
+
+    // --- a) In-app notification ---
+    if (channels?.inApp) {
+      try {
+        await db.collection('users').doc(uid).collection('notifications').add({
+          type: 'announcement',
+          title,
+          body,
+          announcementId,
+          isRead: false,
+          createdAt: now,
+          link: '/notifications',
+        });
+      } catch (err) {
+        console.error(`deliverAnnouncement: in-app error for ${uid}:`, err);
+      }
+    }
+
+    // --- b) FCM push notification (preference check) ---
+    if (channels?.push) {
+      try {
+        const pushEnabled = userData.preferences?.system?.push !== false;
+        if (pushEnabled) {
+          await sendFCMPushToUser(uid, userData, {
+            type: 'announcement',
+            title,
+            body,
+            announcementId,
+            link: '/notifications',
+          });
+        }
+      } catch (err) {
+        console.error(`deliverAnnouncement: FCM error for ${uid}:`, err);
+      }
+    }
+
+    // --- c) Email notification (preference check) ---
+    if (channels?.email) {
+      try {
+        const emailEnabled = userData.preferences?.system?.email !== false;
+        const userEmail = userData.email;
+        if (userEmail && emailEnabled) {
+          const htmlBody = buildBrandedEmailHtml(
+            `<p style="margin:0 0 16px 0;">${body}</p>`,
+            'View Notifications',
+            `${APP_URL}/notifications`
+          );
+          await sendDealEmail(userEmail, title, htmlBody);
+        }
+      } catch (err) {
+        console.error(`deliverAnnouncement: email error for ${uid}:`, err);
+      }
+    }
+
+    recipientCount++;
+  }
+
+  return recipientCount;
+}
+
+/**
+ * sendAnnouncement (onCall)
+ *
+ * Admin-only callable function to send or schedule announcements.
+ *
+ * Accepts: { title, body, audience, channels: { inApp, push, email }, scheduledFor }
+ * - If scheduledFor is a future ISO timestamp: store as pending announcement.
+ * - Otherwise: deliver immediately across selected channels.
+ *
+ * Returns: { status: 'sent' | 'scheduled', recipientCount? }
+ */
+exports.sendAnnouncement = onCall(async (request) => {
+  const auth = request.auth;
+  if (!auth) {
+    throw new HttpsError('unauthenticated', 'You must be logged in.');
+  }
+
+  const adminCheck = await isUserAdmin(auth.uid);
+  if (!adminCheck) {
+    throw new HttpsError('permission-denied', 'Only administrators can send announcements.');
+  }
+
+  const { title, body, audience, channels, scheduledFor } = request.data;
+
+  if (!title || !body) {
+    throw new HttpsError('invalid-argument', 'title and body are required.');
+  }
+  if (!ANNOUNCEMENT_AUDIENCES.includes(audience)) {
+    throw new HttpsError('invalid-argument', `audience must be one of: ${ANNOUNCEMENT_AUDIENCES.join(', ')}`);
+  }
+  if (!channels || (!channels.inApp && !channels.push && !channels.email)) {
+    throw new HttpsError('invalid-argument', 'At least one channel (inApp, push, email) must be selected.');
+  }
+
+  const now = Timestamp.now();
+
+  // Determine if this is a scheduled announcement
+  const isScheduled =
+    scheduledFor &&
+    new Date(scheduledFor) > new Date();
+
+  if (isScheduled) {
+    // Write pending announcement for scheduled delivery
+    const announcementRef = await db.collection('announcements').add({
+      title,
+      body,
+      audience,
+      channels,
+      scheduledFor: Timestamp.fromDate(new Date(scheduledFor)),
+      status: 'pending',
+      createdBy: auth.uid,
+      createdAt: now,
+      sentAt: null,
+      recipientCount: null,
+    });
+
+    console.log(`sendAnnouncement: scheduled for ${scheduledFor}, id=${announcementRef.id}`);
+    return { status: 'scheduled', announcementId: announcementRef.id };
+  }
+
+  // Immediate delivery — write doc first, then deliver
+  const announcementRef = await db.collection('announcements').add({
+    title,
+    body,
+    audience,
+    channels,
+    scheduledFor: null,
+    status: 'pending',
+    createdBy: auth.uid,
+    createdAt: now,
+    sentAt: null,
+    recipientCount: null,
+  });
+
+  try {
+    const recipientCount = await deliverAnnouncement({ title, body, audience, channels }, announcementRef.id);
+    await announcementRef.update({
+      status: 'sent',
+      sentAt: Timestamp.now(),
+      recipientCount,
+    });
+    console.log(`sendAnnouncement: sent to ${recipientCount} recipient(s), id=${announcementRef.id}`);
+    return { status: 'sent', recipientCount };
+  } catch (err) {
+    await announcementRef.update({ status: 'failed' });
+    console.error(`sendAnnouncement: delivery failed for ${announcementRef.id}:`, err);
+    throw new HttpsError('internal', 'Failed to deliver announcement.');
+  }
+});
+
+/**
+ * processScheduledAnnouncements (onSchedule)
+ *
+ * Runs every 5 minutes. Queries pending announcements whose scheduledFor
+ * timestamp is <= now and delivers them across their selected channels.
+ *
+ * Matches the pattern of checkExpiredOffers / updateFairStatuses.
+ */
+exports.processScheduledAnnouncements = onSchedule(
+  {
+    schedule: 'every 5 minutes',
+    timeZone: 'UTC',
+    retryCount: 3,
+  },
+  async () => {
+    console.log('processScheduledAnnouncements: running...');
+    try {
+      const now = Timestamp.now();
+      const pendingSnap = await db.collection('announcements')
+        .where('status', '==', 'pending')
+        .where('scheduledFor', '<=', now)
+        .get();
+
+      if (pendingSnap.empty) {
+        console.log('processScheduledAnnouncements: no pending announcements due.');
+        return;
+      }
+
+      console.log(`processScheduledAnnouncements: processing ${pendingSnap.size} announcement(s).`);
+
+      for (const doc of pendingSnap.docs) {
+        const announcementData = doc.data();
+        try {
+          const recipientCount = await deliverAnnouncement(announcementData, doc.id);
+          await doc.ref.update({
+            status: 'sent',
+            sentAt: Timestamp.now(),
+            recipientCount,
+          });
+          console.log(`processScheduledAnnouncements: sent ${doc.id} to ${recipientCount} recipient(s).`);
+        } catch (err) {
+          await doc.ref.update({ status: 'failed' });
+          console.error(`processScheduledAnnouncements: failed to deliver ${doc.id}:`, err);
+        }
+      }
+    } catch (err) {
+      console.error('processScheduledAnnouncements: unexpected error:', err);
+    }
+  }
+);
