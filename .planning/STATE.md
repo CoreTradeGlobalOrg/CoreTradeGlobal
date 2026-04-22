@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-stopped_at: Phase 12 context gathered
-last_updated: "2026-04-22T08:17:19.951Z"
+stopped_at: Completed 12-01-PLAN.md
+last_updated: "2026-04-22T09:20:31.553Z"
 last_activity: "2026-04-02 - Completed quick task 5: Fix hero not fetching last verified user"
 progress:
   total_phases: 17
   completed_phases: 2
-  total_plans: 6
-  completed_plans: 6
+  total_plans: 11
+  completed_plans: 7
   percent: 71
 ---
 
@@ -101,6 +101,7 @@ Progress: [█████████████] 71%
 | Phase 11-ui-ux-polish-and-visual-fixes P01 | 1 | 2 tasks | 4 files |
 | Phase 11-ui-ux-polish-and-visual-fixes P03 | 2 | 2 tasks | 9 files |
 | Phase 11 P02 | 4 | 2 tasks | 8 files |
+| Phase 12-notifications-and-email-system P01 | 3 | 2 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -282,6 +283,9 @@ Recent decisions affecting current work:
 - [Phase 11-03]: Fairs partition pattern: search filter applied before status partitioning; past bucket sorted newest-first (descending startDate)
 - [Phase 11]: news-card gold styles updated in homepage.css (not globals.css) because homepage.css loads later via (main)/layout.jsx import
 - [Phase 11]: select-none applied only to outer scroll container divs, not card content, preserving user ability to copy card text
+- [Phase 12-01]: querySubcollection now returns _snapshot (raw DocumentSnapshot) on each result — enables cursor-based pagination without bypassing data source abstraction
+- [Phase 12-01]: NotificationCenterPage uses useMessages() for real-time window as page 1; getByUserIdAfter for subsequent pages — avoids duplicate Firestore subscriptions
+- [Phase 12-01]: deleteNotification/deleteAllNotifications aliases added to NotificationRepository for consistent public API naming alongside existing delete/deleteAll methods
 
 ### Pending Todos
 
@@ -305,6 +309,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-22T08:17:19.940Z
-Stopped at: Phase 12 context gathered
-Resume file: .planning/phases/12-notifications-and-email-system/12-CONTEXT.md
+Last session: 2026-04-22T09:20:31.548Z
+Stopped at: Completed 12-01-PLAN.md
+Resume file: None
