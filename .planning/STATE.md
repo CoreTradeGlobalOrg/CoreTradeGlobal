@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-stopped_at: Completed 12-04-PLAN.md
-last_updated: "2026-04-22T09:35:23.096Z"
+stopped_at: Completed 12-05-PLAN.md
+last_updated: "2026-04-22T09:41:08.204Z"
 last_activity: "2026-04-02 - Completed quick task 5: Fix hero not fetching last verified user"
 progress:
   total_phases: 17
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 11
-  completed_plans: 10
+  completed_plans: 11
   percent: 71
 ---
 
@@ -105,6 +105,7 @@ Progress: [█████████████] 71%
 | Phase 12 P02 | 3 | 2 tasks | 1 files |
 | Phase 12 P03 | 1 | 1 tasks | 1 files |
 | Phase 12 P04 | 4 | 2 tasks | 3 files |
+| Phase 12 P05 | 4 | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -295,6 +296,8 @@ Recent decisions affecting current work:
 - [Phase 12]: sendFCMPushToUser extracted as shared helper to avoid duplication across three new CF triggers
 - [Phase 12]: broadcastQuoteRequests sends provider FCM AFTER batch.commit() — non-blocking, outside-transaction pattern
 - [Phase 12]: onRFQCreated uses preferences?.providers category; onNewMemberRegistered uses preferences?.system for admin alerts
+- [Phase 12]: deliverAnnouncement extracted as shared helper to avoid code duplication between sendAnnouncement (immediate) and processScheduledAnnouncements (scheduled)
+- [Phase 12]: Admin users excluded from targeted announcements in deliverAnnouncement loop (audience filter targets member/provider/lawyer roles only)
 
 ### Pending Todos
 
@@ -318,6 +321,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-22T09:35:23.093Z
-Stopped at: Completed 12-04-PLAN.md
+Last session: 2026-04-22T09:41:08.200Z
+Stopped at: Completed 12-05-PLAN.md
 Resume file: None
