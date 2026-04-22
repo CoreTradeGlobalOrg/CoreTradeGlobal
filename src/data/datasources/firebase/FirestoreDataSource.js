@@ -358,10 +358,16 @@ export class FirestoreDataSource {
       q = query(q, limit(options.limit));
     }
 
+    // Apply startAfter for cursor-based pagination
+    if (options.startAfter) {
+      q = query(q, startAfter(options.startAfter));
+    }
+
     const querySnapshot = await getDocs(q);
 
     return querySnapshot.docs.map((doc) => ({
       id: doc.id,
+      _snapshot: doc,
       ...doc.data(),
     }));
   }

@@ -8,7 +8,7 @@
 import { NextResponse } from 'next/server';
 
 // Routes that require authentication
-const protectedRoutes = ['/dashboard', '/messages'];
+const protectedRoutes = ['/dashboard', '/messages', '/notifications'];
 
 // Routes that require admin role
 const adminRoutes = ['/admin'];

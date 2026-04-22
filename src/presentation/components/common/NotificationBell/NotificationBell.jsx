@@ -9,6 +9,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Bell, MessageSquare, FileText, X, Check, Trash2, CheckCircle, XCircle, UserPlus, Handshake, Scale } from 'lucide-react';
 import { useMessages } from '@/presentation/contexts/MessagesContext';
 import { useMarkAsRead } from '@/presentation/hooks/messaging/useMarkAsRead';
@@ -104,7 +105,7 @@ export function NotificationBell() {
   };
 
   // Recent notifications
-  const recentNotifications = notifications.slice(0, 5);
+  const recentNotifications = notifications.slice(0, 10);
 
   const formatTime = (date) => {
     if (!date) return '';
@@ -222,6 +223,24 @@ export function NotificationBell() {
                   Delete all
                 </button>
               </div>
+              <Link
+                href="/notifications"
+                className="notification-view-all"
+                onClick={() => setIsOpen(false)}
+              >
+                View all notifications
+              </Link>
+            </div>
+          )}
+          {notifications.length === 0 && (
+            <div className="notification-footer">
+              <Link
+                href="/notifications"
+                className="notification-view-all"
+                onClick={() => setIsOpen(false)}
+              >
+                View all notifications
+              </Link>
             </div>
           )}
         </div>
