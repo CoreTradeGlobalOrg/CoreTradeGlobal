@@ -100,14 +100,23 @@ export function NotificationListener() {
             notificationBody = `You have a deal ${eventType.replace('_', ' ')} notification`;
             clickUrl = payload.data?.click_action || `/deals/${payload.data?.dealId}`;
             tag = `deal-${payload.data?.dealId || 'unknown'}`;
-          } else {
-            // Default: message notifications (existing behavior)
+          } else if (dataType === 'new_message') {
+            // Direct message notifications
             notificationTitle = payload.data?.senderName || 'New Message';
             notificationBody = payload.data?.messageContent || 'You have a new message';
             clickUrl = payload.data?.conversationId
               ? `/messages/${payload.data.conversationId}`
               : '/messages';
             tag = payload.data?.conversationId || 'message';
+          } else {
+            // Generic fallback — handles rfq_created, new_user_approval, quote_received,
+            // announcement, and any future notification types. Uses title/body fields
+            // that all new CF triggers are required to set in their FCM data payload.
+            // VAPID_KEY must be set in .env.local and production env for FCM to work.
+            notificationTitle = payload.data?.title || 'CoreTradeGlobal';
+            notificationBody = payload.data?.body || payload.data?.messageContent || 'You have a new notification';
+            clickUrl = payload.data?.click_action || payload.data?.link || '/';
+            tag = dataType || 'general';
           }
 
           // Show notification
@@ -121,15 +130,18 @@ export function NotificationListener() {
 
             notification.onclick = () => {
               window.focus();
-              if (dataType === 'deal_event') {
-                // Navigate to deal page
-                window.location.href = clickUrl;
-              } else {
-                // Open FAB with the conversation (existing behavior)
+              if (dataType === 'new_message') {
+                // Open FAB with the conversation (message-specific behavior)
                 const conversationId = payload.data?.conversationId;
                 if (conversationId && openConversationRef.current) {
                   openConversationRef.current(conversationId);
+                } else {
+                  window.location.href = clickUrl;
                 }
+              } else {
+                // Navigate to the target URL for all other notification types
+                // (deal_event, rfq_created, new_user_approval, quote_received, etc.)
+                window.location.href = clickUrl;
               }
               notification.close();
             };
