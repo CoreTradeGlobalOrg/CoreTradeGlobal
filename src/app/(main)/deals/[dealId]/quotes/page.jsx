@@ -19,6 +19,7 @@ import { useDeal } from '@/presentation/hooks/deal/useDeal';
 import { useQuotesForDeal } from '@/presentation/hooks/quote/useQuotesForDeal';
 import { useQuoteActions } from '@/presentation/hooks/quote/useQuoteActions';
 import { QuotesPage } from '@/presentation/components/features/quote/QuotesPage/QuotesPage';
+import { ProviderQuoteChatSidebar } from '@/presentation/components/features/quote/ProviderQuoteChatSidebar/ProviderQuoteChatSidebar';
 import { DEAL_STATUS } from '@/core/constants/dealConstants';
 import { ShieldOff, FileQuestion } from 'lucide-react';
 
@@ -161,18 +162,36 @@ function QuotesDetailPage() {
 
   // ── Main render ────────────────────────────────────────────────────────────
   return (
-    <QuotesPage
-      deal={deal}
-      insuranceQuotes={insuranceQuotes}
-      logisticsQuotes={logisticsQuotes}
-      selectedInsuranceQuote={selectedInsuranceQuote}
-      selectedLogisticsQuote={selectedLogisticsQuote}
-      quoteRequests={quoteRequests}
-      currentUserUid={currentUid}
-      actions={actions}
-      isBuyer={isBuyer}
-      loading={quotesLoading}
-    />
+    <div className="flex h-screen overflow-hidden">
+      {/* Main quotes content */}
+      <div className="flex-1 overflow-y-auto min-w-0">
+        <QuotesPage
+          deal={deal}
+          insuranceQuotes={insuranceQuotes}
+          logisticsQuotes={logisticsQuotes}
+          selectedInsuranceQuote={selectedInsuranceQuote}
+          selectedLogisticsQuote={selectedLogisticsQuote}
+          quoteRequests={quoteRequests}
+          currentUserUid={currentUid}
+          actions={actions}
+          isBuyer={isBuyer}
+          loading={quotesLoading}
+        />
+      </div>
+
+      {/* Chat sidebar */}
+      {deal && currentUid && (
+        <div className="hidden xl:flex" style={{ paddingTop: 'var(--navbar-height)', height: '100vh', position: 'sticky', top: 0 }}>
+          <ProviderQuoteChatSidebar
+            dealId={dealId}
+            buyerId={deal.buyerId}
+            sellerId={deal.sellerId}
+            providerId={null}
+            currentUserId={currentUid}
+          />
+        </div>
+      )}
+    </div>
   );
 }
 

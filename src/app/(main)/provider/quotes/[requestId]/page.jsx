@@ -16,6 +16,7 @@ import { useAuth } from '@/presentation/contexts/AuthContext';
 import { useQuoteRequest } from '@/presentation/hooks/quote/useQuoteRequest';
 import { useQuoteForRequest } from '@/presentation/hooks/quote/useQuoteForRequest';
 import { QuoteDetailView } from '@/presentation/components/features/provider/QuoteDetailView/QuoteDetailView';
+import { ProviderQuoteChatSidebar } from '@/presentation/components/features/quote/ProviderQuoteChatSidebar/ProviderQuoteChatSidebar';
 import { ROLES } from '@/core/constants/roles';
 
 /**
@@ -112,13 +113,40 @@ function QuoteDetailContent({ params }) {
   // Derive provider type from role (admin sees insurance view by default)
   const providerType = user.role === ROLES.INSURANCE_PROVIDER ? 'insurance' : 'logistics';
 
+  // dealId, buyerId, sellerId come from the quote request
+  const dealId = request?.dealId || null;
+  const buyerId = request?.buyerId || null;
+  const sellerId = request?.sellerId || null;
+
   return (
-    <QuoteDetailView
-      request={request}
-      providerType={providerType}
-      onBack={handleBack}
-      existingQuote={quoteLoading ? null : existingQuote}
-    />
+    <div className="flex h-screen overflow-hidden">
+      {/* Main quote detail content */}
+      <div className="flex-1 overflow-y-auto min-w-0">
+        <QuoteDetailView
+          request={request}
+          providerType={providerType}
+          onBack={handleBack}
+          existingQuote={quoteLoading ? null : existingQuote}
+        />
+      </div>
+
+      {/* Chat sidebar — only shown when we have deal context */}
+      {dealId && buyerId && sellerId && (
+        <div
+          className="hidden xl:flex"
+          style={{ paddingTop: 'var(--navbar-height)', height: '100vh', position: 'sticky', top: 0 }}
+        >
+          <ProviderQuoteChatSidebar
+            dealId={dealId}
+            buyerId={buyerId}
+            sellerId={sellerId}
+            providerId={user.uid}
+            providerType={providerType}
+            currentUserId={user.uid}
+          />
+        </div>
+      )}
+    </div>
   );
 }
 
