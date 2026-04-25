@@ -261,13 +261,21 @@ Plans:
 
 ### Phase 13: Messaging and Communication Improvements
 
-**Goal:** [To be planned]
-**Requirements**: TBD
+**Goal:** Improve the existing messaging system with seller/user profile visibility in chat, fix dual chat opening bug, add provider-buyer-seller messaging on quote pages, and rename provider dashboard tabs/columns per provider type
+**Requirements**: MSG-01, MSG-02, MSG-03, MSG-04, MSG-05, MSG-06, MSG-07, MSG-08, MSG-09, MSG-10, MSG-11
 **Depends on:** Phase 12
-**Plans:** 0 plans
+**Success Criteria** (what must be TRUE):
+  1. Every conversation in both the FAB widget and /messages page shows a compact profile card header with avatar, full name, company name, country, and role badge -- clicking it navigates to the user's profile
+  2. FAB widget is hidden when user is on /messages routes -- no dual chat panels; message notification clicks route to the correct view based on current page
+  3. Full chat sidebar on both buyer's quote comparison page and provider's quote detail page, with 3-party conversations (buyer + seller + provider) and separate threads per provider
+  4. Provider dashboard tabs and kanban columns show provider-type-specific labels (insurance vs logistics terminology)
+**Plans**: 4 plans
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 13 to break down)
+- [ ] 13-01-PLAN.md — ConversationProfileCard component + country enrichment in CreateConversationUseCase, integration into FAB widget and /messages page
+- [ ] 13-02-PLAN.md — FAB route-aware hiding on /messages with usePathname + notification click routing fix
+- [ ] 13-03-PLAN.md — Provider quote chat sidebar: new provider_quote conversation type, ConversationRepository methods, ProviderQuoteChatSidebar on both quote pages
+- [ ] 13-04-PLAN.md — Provider dashboard tab and kanban column label renaming per provider type
 
 ### Phase 14: Insurance Quote System Overhaul
 
@@ -311,4 +319,4 @@ Plans:
 
 ---
 *Roadmap created: 2026-02-20*
-*Last updated: 2026-04-22*
+*Last updated: 2026-04-25*

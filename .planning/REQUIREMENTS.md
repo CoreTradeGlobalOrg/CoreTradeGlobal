@@ -95,6 +95,20 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **NOTIF-07**: Admin announcement system with title, body, audience selector, channel toggles (in-app/push/email), optional scheduling, and announcement history
 - [x] **NOTIF-08**: LinkedIn share button and copy-to-clipboard on news detail page (LinkedIn share-offsite URL scheme, no API key)
 
+### Messaging and Communication Improvements
+
+- [ ] **MSG-01**: Every conversation in the FAB widget shows a compact profile card header with avatar, full name, company name, country, and role badge
+- [ ] **MSG-02**: Every conversation on /messages/[conversationId] page shows the same compact profile card header
+- [ ] **MSG-03**: Clicking the profile card navigates to the user's profile page (/profile/[userId])
+- [ ] **MSG-04**: FAB widget is hidden when user is on /messages or /messages/* routes -- no dual chat panels
+- [ ] **MSG-05**: Message notification click on /messages page opens conversation inline; on other pages opens FAB widget
+- [ ] **MSG-06**: Full chat sidebar visible on buyer's quote comparison page (/deals/[dealId]/quotes) with provider thread list
+- [ ] **MSG-07**: Full chat sidebar visible on provider's quote detail page (/provider/quotes/[requestId]) with single thread
+- [ ] **MSG-08**: Both buyer and provider share the same 3-party conversation thread (buyer + seller + provider) per (dealId, providerId) pair
+- [ ] **MSG-09**: Insurance provider dashboard shows "Insurance Requests" and "Active Policies" tab labels
+- [ ] **MSG-10**: Logistics provider dashboard shows "Logistics Requests" and "Active Shipments" tab labels
+- [ ] **MSG-11**: Kanban columns show provider-type-specific labels (e.g., "New Inquiries" for insurance, "New Requests" for logistics)
+
 ## v2 Requirements
 
 Deferred to future release. Tracked but not in current roadmap.
@@ -111,6 +125,10 @@ Deferred to future release. Tracked but not in current roadmap.
 ### Notifications
 
 - **NOTIF-V2-01**: Deal-level notification preferences — users can configure frequency and channels per deal
+
+### Messaging
+
+- **MSG-V2-01**: Report and block functionality in messages with admin moderation UI
 
 ## Out of Scope
 
@@ -185,12 +203,23 @@ Which phases cover which requirements. Updated during roadmap creation.
 | NOTIF-06 | Phase 12 | Planned |
 | NOTIF-07 | Phase 12 | Planned |
 | NOTIF-08 | Phase 12 | Planned |
+| MSG-01 | Phase 13 | Planned |
+| MSG-02 | Phase 13 | Planned |
+| MSG-03 | Phase 13 | Planned |
+| MSG-04 | Phase 13 | Planned |
+| MSG-05 | Phase 13 | Planned |
+| MSG-06 | Phase 13 | Planned |
+| MSG-07 | Phase 13 | Planned |
+| MSG-08 | Phase 13 | Planned |
+| MSG-09 | Phase 13 | Planned |
+| MSG-10 | Phase 13 | Planned |
+| MSG-11 | Phase 13 | Planned |
 
 **Coverage:**
-- v1 requirements: 53 total
-- Mapped to phases: 53
+- v1 requirements: 64 total
+- Mapped to phases: 64
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-20*
-*Last updated: 2026-04-22 after Phase 12 planning*
+*Last updated: 2026-04-25 after Phase 13 planning*
