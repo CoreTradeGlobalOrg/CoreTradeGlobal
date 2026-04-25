@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-stopped_at: Completed 13-01-PLAN.md
-last_updated: "2026-04-25T17:39:00.867Z"
+stopped_at: Completed 13-03-PLAN.md
+last_updated: "2026-04-25T17:44:35.451Z"
 last_activity: "2026-04-02 - Completed quick task 5: Fix hero not fetching last verified user"
 progress:
   total_phases: 17
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 15
-  completed_plans: 14
+  completed_plans: 15
   percent: 71
 ---
 
@@ -109,6 +109,7 @@ Progress: [█████████████] 71%
 | Phase 13-messaging-and-communication-improvements P04 | 5 | 1 tasks | 2 files |
 | Phase 13-messaging-and-communication-improvements P02 | 1 | 1 tasks | 3 files |
 | Phase 13-messaging-and-communication-improvements P01 | 8 | 2 tasks | 4 files |
+| Phase 13-messaging-and-communication-improvements P03 | 3 | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -307,6 +308,8 @@ Recent decisions affecting current work:
 - [Phase 13-02]: Notification click routing is pathname-aware across MessagesWidget, NotificationCenterPage, and NotificationBell: openConversation() on other pages, router.push('/messages?conversation=ID') on /messages
 - [Phase 13-messaging-and-communication-improvements]: ConversationProfileCard is a full-width Next.js Link — entire card clickable to /profile/[userId]; shown only for direct and provider_quote types; onNavigate prop closes FAB in widget context
 - [Phase 13-messaging-and-communication-improvements]: country field added to participantDetails in CreateConversationUseCase following existing companyName denormalization pattern; existing conversations without country gracefully show no country line
+- [Phase 13-03]: ProviderQuoteChatSidebar is self-contained with its own message subscription — does not use global MessagesContext to avoid interfering with FAB widget activeConversationId
+- [Phase 13-03]: Deterministic conversation ID (providerquote_${dealId}_${providerId}) prevents duplicate 3-party provider conversations
 
 ### Pending Todos
 
@@ -330,6 +333,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-25T17:39:00.864Z
-Stopped at: Completed 13-01-PLAN.md
+Last session: 2026-04-25T17:44:35.448Z
+Stopped at: Completed 13-03-PLAN.md
 Resume file: None
