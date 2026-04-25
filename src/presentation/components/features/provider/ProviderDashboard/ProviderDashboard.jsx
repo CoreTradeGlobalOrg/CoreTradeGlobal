@@ -15,34 +15,27 @@ import { RequestKanbanCard } from '@/presentation/components/features/provider/R
 import { ROLES } from '@/core/constants/roles';
 
 /**
- * Kanban column configuration
+ * Returns kanban column configuration based on provider type.
+ * Insurance providers see insurance-domain labels; logistics (and admin) see logistics labels.
+ * @param {'insurance'|'logistics'} providerType
  */
-const COLUMNS = [
-  {
-    key: 'newRequests',
-    label: 'New Requests',
-    dotColor: 'bg-yellow-400',
-    emptyText: 'No new requests',
-  },
-  {
-    key: 'quoted',
-    label: 'Quoted',
-    dotColor: 'bg-blue-400',
-    emptyText: 'No quoted requests',
-  },
-  {
-    key: 'declined',
-    label: 'Declined',
-    dotColor: 'bg-gray-400',
-    emptyText: 'No declined requests',
-  },
-  {
-    key: 'selected',
-    label: 'Selected',
-    dotColor: 'bg-green-400',
-    emptyText: 'No selected requests',
-  },
-];
+function getColumns(providerType) {
+  if (providerType === 'insurance') {
+    return [
+      { key: 'newRequests', label: 'New Inquiries', dotColor: 'bg-yellow-400', emptyText: 'No new inquiries' },
+      { key: 'quoted', label: 'Quoted', dotColor: 'bg-blue-400', emptyText: 'No quoted requests' },
+      { key: 'declined', label: 'Declined', dotColor: 'bg-gray-400', emptyText: 'No declined requests' },
+      { key: 'selected', label: 'Policy Active', dotColor: 'bg-green-400', emptyText: 'No active policies' },
+    ];
+  }
+  // Default covers logistics providers and admin
+  return [
+    { key: 'newRequests', label: 'New Requests', dotColor: 'bg-yellow-400', emptyText: 'No new requests' },
+    { key: 'quoted', label: 'Quoted', dotColor: 'bg-blue-400', emptyText: 'No quoted requests' },
+    { key: 'declined', label: 'Declined', dotColor: 'bg-gray-400', emptyText: 'No declined requests' },
+    { key: 'selected', label: 'Shipment Active', dotColor: 'bg-green-400', emptyText: 'No active shipments' },
+  ];
+}
 
 /**
  * Skeleton card placeholder for loading state
@@ -73,9 +66,12 @@ export function ProviderDashboard({ columns, loading, providerType, providerUid,
 
   const totalCount = Object.values(columns).reduce((sum, col) => sum + col.length, 0);
 
+  // Column label/empty-text config — separate from the data `columns` prop
+  const columnDefs = getColumns(providerType);
+
   const kanbanGrid = (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      {COLUMNS.map((col) => {
+      {columnDefs.map((col) => {
         const cards = columns[col.key] || [];
         const count = cards.length;
 

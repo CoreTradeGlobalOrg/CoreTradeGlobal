@@ -34,10 +34,24 @@ const InsuranceCoverageTab = dynamic(
   { loading: () => <DashboardSkeleton />, ssr: false }
 );
 
-const TABS = [
-  { id: 'quoteRequests', label: 'Quote Requests' },
-  { id: 'activeShipments', label: 'Active Shipments' },
-];
+/**
+ * Returns tab labels based on provider type.
+ * Insurance providers see insurance terminology; logistics (and admin) see logistics terminology.
+ * @param {'insurance'|'logistics'} providerType
+ */
+function getTabs(providerType) {
+  if (providerType === 'insurance') {
+    return [
+      { id: 'quoteRequests', label: 'Insurance Requests' },
+      { id: 'activeShipments', label: 'Active Policies' },
+    ];
+  }
+  // Default covers logistics providers and admin
+  return [
+    { id: 'quoteRequests', label: 'Logistics Requests' },
+    { id: 'activeShipments', label: 'Active Shipments' },
+  ];
+}
 
 /**
  * Loading skeleton for the provider dashboard.
@@ -114,6 +128,7 @@ function ProviderDashboardContent() {
   // Determine provider type from role (admin sees logistics view by default)
   const providerType = user.role === ROLES.INSURANCE_PROVIDER ? 'insurance' : 'logistics';
   const isInsurance = providerType === 'insurance';
+  const tabs = getTabs(providerType);
 
   return (
     <main className="min-h-screen bg-radial-navy pt-[var(--navbar-height)] pb-16">
@@ -127,7 +142,9 @@ function ProviderDashboardContent() {
               Provider Dashboard
             </h1>
             <p className="text-[#A0A0A0] mt-1 text-sm">
-              Manage your quote requests and active shipments
+              {isInsurance
+                ? 'Manage your insurance requests and active policies'
+                : 'Manage your logistics requests and active shipments'}
             </p>
           </div>
           {/* Provider type badge */}
@@ -147,7 +164,7 @@ function ProviderDashboardContent() {
 
         {/* Tab navigation */}
         <div className="flex gap-1 border-b border-[#1E2D3D]">
-          {TABS.map((tab) => (
+          {tabs.map((tab) => (
             <button
               key={tab.id}
               type="button"
