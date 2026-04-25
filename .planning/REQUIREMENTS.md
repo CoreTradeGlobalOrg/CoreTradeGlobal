@@ -105,9 +105,9 @@ Requirements for initial release. Each maps to roadmap phases.
 - [ ] **MSG-06**: Full chat sidebar visible on buyer's quote comparison page (/deals/[dealId]/quotes) with provider thread list
 - [ ] **MSG-07**: Full chat sidebar visible on provider's quote detail page (/provider/quotes/[requestId]) with single thread
 - [ ] **MSG-08**: Both buyer and provider share the same 3-party conversation thread (buyer + seller + provider) per (dealId, providerId) pair
-- [ ] **MSG-09**: Insurance provider dashboard shows "Insurance Requests" and "Active Policies" tab labels
-- [ ] **MSG-10**: Logistics provider dashboard shows "Logistics Requests" and "Active Shipments" tab labels
-- [ ] **MSG-11**: Kanban columns show provider-type-specific labels (e.g., "New Inquiries" for insurance, "New Requests" for logistics)
+- [x] **MSG-09**: Insurance provider dashboard shows "Insurance Requests" and "Active Policies" tab labels
+- [x] **MSG-10**: Logistics provider dashboard shows "Logistics Requests" and "Active Shipments" tab labels
+- [x] **MSG-11**: Kanban columns show provider-type-specific labels (e.g., "New Inquiries" for insurance, "New Requests" for logistics)
 
 ## v2 Requirements
 
