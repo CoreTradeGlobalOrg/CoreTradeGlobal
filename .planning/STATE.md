@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-stopped_at: Completed 13-02-PLAN.md
-last_updated: "2026-04-25T17:38:15.928Z"
+stopped_at: Completed 13-01-PLAN.md
+last_updated: "2026-04-25T17:39:00.867Z"
 last_activity: "2026-04-02 - Completed quick task 5: Fix hero not fetching last verified user"
 progress:
   total_phases: 17
   completed_phases: 3
   total_plans: 15
-  completed_plans: 13
+  completed_plans: 14
   percent: 71
 ---
 
@@ -108,6 +108,7 @@ Progress: [█████████████] 71%
 | Phase 12 P05 | 4 | 2 tasks | 6 files |
 | Phase 13-messaging-and-communication-improvements P04 | 5 | 1 tasks | 2 files |
 | Phase 13-messaging-and-communication-improvements P02 | 1 | 1 tasks | 3 files |
+| Phase 13-messaging-and-communication-improvements P01 | 8 | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -304,6 +305,8 @@ Recent decisions affecting current work:
 - [Phase 13-04]: columnDefs used as variable name for label config inside ProviderDashboard to avoid shadowing the data columns prop
 - [Phase 13-02]: MessagesWidget early-returns null on pathname?.startsWith('/messages') — FAB hidden on /messages and sub-routes
 - [Phase 13-02]: Notification click routing is pathname-aware across MessagesWidget, NotificationCenterPage, and NotificationBell: openConversation() on other pages, router.push('/messages?conversation=ID') on /messages
+- [Phase 13-messaging-and-communication-improvements]: ConversationProfileCard is a full-width Next.js Link — entire card clickable to /profile/[userId]; shown only for direct and provider_quote types; onNavigate prop closes FAB in widget context
+- [Phase 13-messaging-and-communication-improvements]: country field added to participantDetails in CreateConversationUseCase following existing companyName denormalization pattern; existing conversations without country gracefully show no country line
 
 ### Pending Todos
 
@@ -327,6 +330,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-25T17:38:15.925Z
-Stopped at: Completed 13-02-PLAN.md
+Last session: 2026-04-25T17:39:00.864Z
+Stopped at: Completed 13-01-PLAN.md
 Resume file: None
