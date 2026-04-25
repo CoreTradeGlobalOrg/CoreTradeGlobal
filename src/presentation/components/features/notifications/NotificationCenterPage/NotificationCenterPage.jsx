@@ -9,7 +9,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { Bell } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useMessages } from '@/presentation/contexts/MessagesContext';
@@ -41,6 +41,7 @@ const HISTORY_PAGE_SIZE = 30;
 
 export function NotificationCenterPage() {
   const router = useRouter();
+  const pathname = usePathname();
   const { user } = useAuth();
   const { notifications: realtimeNotifications } = useMessages();
   const notificationRepository = container.getNotificationRepository();
@@ -163,10 +164,16 @@ export function NotificationCenterPage() {
       } else if (notification.type === 'deal' && notification.dealId) {
         router.push(`/deals/${notification.dealId}`);
       } else if (notification.data?.conversationId) {
-        router.push('/messages');
+        // If already on /messages, use query param to select conversation inline.
+        // Otherwise, navigate to /messages and let the page handle selection.
+        if (pathname?.startsWith('/messages')) {
+          router.push(`/messages?conversation=${notification.data.conversationId}`);
+        } else {
+          router.push('/messages');
+        }
       }
     },
-    [user?.uid, notificationRepository, router]
+    [user?.uid, notificationRepository, router, pathname]
   );
 
   // Toggle selection for a single notification
@@ -235,10 +242,13 @@ export function NotificationCenterPage() {
   const displayedNotifications = filteredNotifications();
 
   return (
-    <div className="min-h-screen bg-[#0B1120] px-4 py-8">
+    <div className="min-h-screen pt-[var(--navbar-height)] pb-20 px-6 bg-radial-navy">
       <div className="max-w-3xl mx-auto">
         {/* Page title */}
-        <h1 className="text-2xl font-bold text-white mb-6">Notifications</h1>
+        <div className="mt-8 mb-10 text-center">
+          <h1 className="text-4xl font-bold mb-3" style={{ background: 'linear-gradient(180deg, #ffffff 20%, #909090 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Notifications</h1>
+          <p className="text-[#A0A0A0]">Stay up to date with your deals, messages, and updates.</p>
+        </div>
 
         {/* Glass card */}
         <div className="bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.08)] rounded-2xl overflow-hidden">

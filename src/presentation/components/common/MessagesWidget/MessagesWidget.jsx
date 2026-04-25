@@ -12,16 +12,19 @@
 import { useState, useEffect, useRef } from 'react';
 import { MessageCircle, X, ArrowLeft, Minimize2, FileText, Package, MapPin, DollarSign, Handshake } from 'lucide-react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useMessages } from '@/presentation/contexts/MessagesContext';
 import { useAuth } from '@/presentation/contexts/AuthContext';
 import { Modal } from '@/components/ui/Modal';
 import ConversationList from '@/presentation/components/features/messaging/ConversationList/ConversationList';
 import MessageThread from '@/presentation/components/features/messaging/MessageThread/MessageThread';
 import MessageInput from '@/presentation/components/features/messaging/MessageInput/MessageInput';
+import { ConversationProfileCard } from '@/presentation/components/features/messaging/ConversationProfileCard/ConversationProfileCard';
 import './MessagesWidget.css';
 
 export function MessagesWidget() {
   const { user, isAuthenticated } = useAuth();
+  const pathname = usePathname();
   const {
     isWidgetOpen,
     setIsWidgetOpen,
@@ -87,6 +90,11 @@ export function MessagesWidget() {
 
   // Don't render for non-authenticated users
   if (!isAuthenticated) {
+    return null;
+  }
+
+  // Don't render FAB on the full-page messages view — it would duplicate the UI
+  if (pathname?.startsWith('/messages')) {
     return null;
   }
 
@@ -233,6 +241,21 @@ export function MessagesWidget() {
           <div className="messages-widget-content">
             {activeConversationId ? (
               <>
+                {/* Profile Card — shown for direct and provider_quote conversations */}
+                {activeConversation && ['direct', 'provider_quote'].includes(activeConversation.type) && user?.uid && (() => {
+                  const otherUserId = activeConversation.participants?.find((id) => id !== user.uid);
+                  return otherUserId ? (
+                    <ConversationProfileCard
+                      otherUserId={otherUserId}
+                      participantDetails={activeConversation.participantDetails}
+                      onNavigate={() => {
+                        closeConversation();
+                        setIsWidgetOpen(false);
+                      }}
+                    />
+                  ) : null;
+                })()}
+
                 {/* Product Banner */}
                 {activeConversation?.metadata?.productId && (
                   <Link

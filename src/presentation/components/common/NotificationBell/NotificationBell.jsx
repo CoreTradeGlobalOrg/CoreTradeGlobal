@@ -8,7 +8,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { Bell, MessageSquare, FileText, X, Check, Trash2, CheckCircle, XCircle, UserPlus, Handshake, Scale } from 'lucide-react';
 import { useMessages } from '@/presentation/contexts/MessagesContext';
@@ -17,6 +17,7 @@ import './NotificationBell.css';
 
 export function NotificationBell() {
   const router = useRouter();
+  const pathname = usePathname();
   const { notifications, unreadNotificationCount, openConversation } = useMessages();
   const { markNotificationAsRead, markAllNotificationsAsRead, deleteAllNotifications } = useMarkAsRead();
   const [isOpen, setIsOpen] = useState(false);
@@ -57,8 +58,13 @@ export function NotificationBell() {
       // Navigate to deal detail page
       router.push(notification.link || `/deals/${notification.dealId}`);
     } else if (notification.data?.conversationId) {
-      // Open FAB with the conversation (don't navigate to messages page)
-      openConversation(notification.data.conversationId);
+      if (pathname?.startsWith('/messages')) {
+        // Already on /messages — select conversation inline via query param
+        router.push(`/messages?conversation=${notification.data.conversationId}`);
+      } else {
+        // On another page — open the FAB widget with this conversation
+        openConversation(notification.data.conversationId);
+      }
     }
 
     setIsOpen(false);
