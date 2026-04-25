@@ -67,6 +67,7 @@ export class CreateConversationUseCase {
           role: user.role,
           companyId: user.companyId || null,
           companyName: user.companyName || null,
+          country: user.country || null,
         };
       }
     }
