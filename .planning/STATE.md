@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-stopped_at: Completed 13-04-PLAN.md
-last_updated: "2026-04-25T17:37:57.251Z"
+stopped_at: Completed 13-02-PLAN.md
+last_updated: "2026-04-25T17:38:15.928Z"
 last_activity: "2026-04-02 - Completed quick task 5: Fix hero not fetching last verified user"
 progress:
   total_phases: 17
   completed_phases: 3
   total_plans: 15
-  completed_plans: 12
+  completed_plans: 13
   percent: 71
 ---
 
@@ -107,6 +107,7 @@ Progress: [█████████████] 71%
 | Phase 12 P04 | 4 | 2 tasks | 3 files |
 | Phase 12 P05 | 4 | 2 tasks | 6 files |
 | Phase 13-messaging-and-communication-improvements P04 | 5 | 1 tasks | 2 files |
+| Phase 13-messaging-and-communication-improvements P02 | 1 | 1 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -301,6 +302,8 @@ Recent decisions affecting current work:
 - [Phase 12]: Admin users excluded from targeted announcements in deliverAnnouncement loop (audience filter targets member/provider/lawyer roles only)
 - [Phase 13-04]: getTabs and getColumns default to logistics labels for both logistics providers and admin (preserves existing admin behavior)
 - [Phase 13-04]: columnDefs used as variable name for label config inside ProviderDashboard to avoid shadowing the data columns prop
+- [Phase 13-02]: MessagesWidget early-returns null on pathname?.startsWith('/messages') — FAB hidden on /messages and sub-routes
+- [Phase 13-02]: Notification click routing is pathname-aware across MessagesWidget, NotificationCenterPage, and NotificationBell: openConversation() on other pages, router.push('/messages?conversation=ID') on /messages
 
 ### Pending Todos
 
@@ -324,6 +327,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-25T17:37:57.247Z
-Stopped at: Completed 13-04-PLAN.md
+Last session: 2026-04-25T17:38:15.925Z
+Stopped at: Completed 13-02-PLAN.md
 Resume file: None

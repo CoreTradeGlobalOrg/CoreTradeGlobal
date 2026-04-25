@@ -100,8 +100,8 @@ Requirements for initial release. Each maps to roadmap phases.
 - [ ] **MSG-01**: Every conversation in the FAB widget shows a compact profile card header with avatar, full name, company name, country, and role badge
 - [ ] **MSG-02**: Every conversation on /messages/[conversationId] page shows the same compact profile card header
 - [ ] **MSG-03**: Clicking the profile card navigates to the user's profile page (/profile/[userId])
-- [ ] **MSG-04**: FAB widget is hidden when user is on /messages or /messages/* routes -- no dual chat panels
-- [ ] **MSG-05**: Message notification click on /messages page opens conversation inline; on other pages opens FAB widget
+- [x] **MSG-04**: FAB widget is hidden when user is on /messages or /messages/* routes -- no dual chat panels
+- [x] **MSG-05**: Message notification click on /messages page opens conversation inline; on other pages opens FAB widget
 - [ ] **MSG-06**: Full chat sidebar visible on buyer's quote comparison page (/deals/[dealId]/quotes) with provider thread list
 - [ ] **MSG-07**: Full chat sidebar visible on provider's quote detail page (/provider/quotes/[requestId]) with single thread
 - [ ] **MSG-08**: Both buyer and provider share the same 3-party conversation thread (buyer + seller + provider) per (dealId, providerId) pair
