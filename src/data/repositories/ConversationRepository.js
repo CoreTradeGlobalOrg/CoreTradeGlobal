@@ -251,6 +251,54 @@ export class ConversationRepository {
   }
 
   /**
+   * Create a conversation with a specific deterministic ID
+   * @param {string} docId - The document ID to use
+   * @param {Object} conversationData
+   * @returns {Promise<Object>}
+   */
+  async createWithId(docId, conversationData) {
+    return await this.firestoreDataSource.createWithId(
+      COLLECTIONS.CONVERSATIONS,
+      docId,
+      conversationData
+    );
+  }
+
+  /**
+   * Find an existing provider_quote conversation by dealId and providerId
+   * Fallback lookup — primary path is getById with deterministic ID
+   * @param {string} dealId
+   * @param {string} providerId
+   * @returns {Promise<Object|null>}
+   */
+  async findProviderQuoteConversation(dealId, providerId) {
+    const results = await this.firestoreDataSource.query(COLLECTIONS.CONVERSATIONS, {
+      where: [
+        ['type', '==', 'provider_quote'],
+        ['metadata.dealId', '==', dealId],
+        ['metadata.providerId', '==', providerId],
+      ],
+      limit: 1,
+    });
+    return results[0] || null;
+  }
+
+  /**
+   * Get all provider_quote conversations for a given deal
+   * Powers the buyer's sidebar provider list
+   * @param {string} dealId
+   * @returns {Promise<Array>}
+   */
+  async getProviderQuoteConversationsForDeal(dealId) {
+    return await this.firestoreDataSource.query(COLLECTIONS.CONVERSATIONS, {
+      where: [
+        ['type', '==', 'provider_quote'],
+        ['metadata.dealId', '==', dealId],
+      ],
+    });
+  }
+
+  /**
    * Add participant to conversation
    * @param {string} conversationId
    * @param {string} userId

@@ -360,6 +360,23 @@
         { "fieldPath": "adminApproved", "order": "ASCENDING" },
         { "fieldPath": "approvedAt", "order": "DESCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "conversations",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "type", "order": "ASCENDING" },
+        { "fieldPath": "metadata.dealId", "order": "ASCENDING" },
+        { "fieldPath": "metadata.providerId", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "conversations",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "type", "order": "ASCENDING" },
+        { "fieldPath": "metadata.dealId", "order": "ASCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []
