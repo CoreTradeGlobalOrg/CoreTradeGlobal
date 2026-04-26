@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-stopped_at: Completed 14-01-PLAN.md
-last_updated: "2026-04-26T19:03:07.452Z"
+stopped_at: Completed 14-02-PLAN.md
+last_updated: "2026-04-26T19:07:32.643Z"
 last_activity: "2026-04-02 - Completed quick task 5: Fix hero not fetching last verified user"
 progress:
   total_phases: 17
   completed_phases: 4
   total_plans: 20
-  completed_plans: 16
+  completed_plans: 18
   percent: 71
 ---
 
@@ -111,6 +111,8 @@ Progress: [█████████████] 71%
 | Phase 13-messaging-and-communication-improvements P01 | 8 | 2 tasks | 4 files |
 | Phase 13-messaging-and-communication-improvements P03 | 3 | 2 tasks | 6 files |
 | Phase 14 P01 | 2 | 2 tasks | 3 files |
+| Phase 14 P03 | 2 | 2 tasks | 6 files |
+| Phase 14 P02 | 3 | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -315,6 +317,9 @@ Recent decisions affecting current work:
 - [Phase 14]: [14-01]: submitQuote CF uses const cargo = quoteData.cargoMarine || quoteData — single validation path supports both old flat and new Phase 14 nested format
 - [Phase 14]: [14-01]: buyerName/buyerCountry/sellerName/sellerCountry added to both dealSnapshots — both provider types get counterparty identity; logistics still excludes price (PORTAL-05 maintained)
 - [Phase 14]: [14-01]: quoteStatus defaults to { status: 'indicative' } server-side when absent — ensures all new Firestore quote docs have a binding status field without requiring client to send it
+- [Phase 14]: [14-03]: Section components accept register/errors/watch prop subset — each section declares only what it needs; consistent with react-hook-form pass-through pattern
+- [Phase 14]: [14-03]: QuoteSummaryModal cargo reads cm.cargoMarine || cm — forward-compatible with Plan 04 nested cargoMarine schema while flat form values from current QuoteFormInsurance still work
+- [Phase 14]: [14-03]: Indicative radio card uses amber accent, Firm uses green accent — distinct visual coding communicates legal weight difference
 
 ### Pending Todos
 
@@ -338,6 +343,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-26T19:02:57.713Z
-Stopped at: Completed 14-01-PLAN.md
+Last session: 2026-04-26T19:07:32.639Z
+Stopped at: Completed 14-02-PLAN.md
 Resume file: None
