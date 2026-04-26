@@ -10,7 +10,8 @@
 
 'use client';
 
-import { ArrowLeft, Shield, Truck, Package, Calendar, MapPin, FileText, DollarSign, X, RotateCcw } from 'lucide-react';
+import { ArrowLeft, Shield, Truck, Package, Calendar, MapPin, FileText, DollarSign, X, RotateCcw, Users } from 'lucide-react';
+import { getIncotermByCode } from '@/core/constants/incoterms';
 import { CountdownTimer } from '@/presentation/components/features/deal/CountdownTimer/CountdownTimer';
 import { QuoteFormInsurance } from '@/presentation/components/features/provider/QuoteFormInsurance/QuoteFormInsurance';
 import { QuoteFormLogistics } from '@/presentation/components/features/provider/QuoteFormLogistics/QuoteFormLogistics';
@@ -35,6 +36,19 @@ function InfoRow({ icon: Icon, label, value, highlight }) {
       </div>
     </div>
   );
+}
+
+/**
+ * Derive insurance arrangement label from an Incoterm code.
+ * Returns null if code is absent or unknown.
+ */
+function deriveInsuranceArrangement(incotermCode) {
+  if (!incotermCode) return null;
+  const term = getIncotermByCode(incotermCode);
+  if (!term) return null;
+  return term.insuranceDefault === 'seller_provides'
+    ? 'Seller provides cargo insurance'
+    : 'Buyer provides cargo insurance';
 }
 
 /**
@@ -66,6 +80,13 @@ export function QuoteDetailView({ request, providerType, onBack, existingQuote }
         : new Date(dealSnapshot.deliveryDeadline).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }))
     : null;
   const currency = dealSnapshot?.currency || 'USD';
+
+  // Buyer/seller identity — available for BOTH insurance and logistics providers (Plan 14-01)
+  const buyerName = dealSnapshot?.buyerName || null;
+  const buyerCountry = dealSnapshot?.buyerCountry || null;
+  const sellerName = dealSnapshot?.sellerName || null;
+  const sellerCountry = dealSnapshot?.sellerCountry || null;
+  const insuranceArrangement = deriveInsuranceArrangement(incoterm);
 
   // Price fields — only insurance providers see these (logistics dealSnapshot has no price)
   const pricePerUnit = dealSnapshot?.price;
@@ -125,6 +146,21 @@ export function QuoteDetailView({ request, providerType, onBack, existingQuote }
 
               {/* Deal fields */}
               <div className="space-y-0">
+                {/* Buyer & Seller — shown for BOTH insurance and logistics */}
+                {buyerName && (
+                  <InfoRow
+                    icon={Users}
+                    label="Buyer"
+                    value={buyerCountry ? `${buyerName} (${buyerCountry})` : buyerName}
+                  />
+                )}
+                {sellerName && (
+                  <InfoRow
+                    icon={Users}
+                    label="Seller"
+                    value={sellerCountry ? `${sellerName} (${sellerCountry})` : sellerName}
+                  />
+                )}
                 {quantity != null && (
                   <InfoRow
                     icon={Package}
@@ -137,6 +173,14 @@ export function QuoteDetailView({ request, providerType, onBack, existingQuote }
                     icon={FileText}
                     label="Incoterm"
                     value={namedPlace ? `${incoterm} — ${namedPlace}` : incoterm}
+                  />
+                )}
+                {/* Insurance Arrangement — only for insurance providers */}
+                {isInsurance && insuranceArrangement && (
+                  <InfoRow
+                    icon={Shield}
+                    label="Insurance Arrangement"
+                    value={insuranceArrangement}
                   />
                 )}
                 {paymentTerms && (
