@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-stopped_at: Completed 14-05-PLAN.md
-last_updated: "2026-04-26T19:10:52.687Z"
+stopped_at: Completed 14-04-PLAN.md
+last_updated: "2026-04-26T19:11:38.257Z"
 last_activity: "2026-04-02 - Completed quick task 5: Fix hero not fetching last verified user"
 progress:
   total_phases: 17
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 20
-  completed_plans: 19
+  completed_plans: 20
   percent: 71
 ---
 
@@ -114,6 +114,7 @@ Progress: [█████████████] 71%
 | Phase 14 P03 | 2 | 2 tasks | 6 files |
 | Phase 14 P02 | 3 | 2 tasks | 4 files |
 | Phase 14 P05 | 5 | 1 tasks | 1 files |
+| Phase 14 P04 | 2 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -327,6 +328,9 @@ Recent decisions affecting current work:
 - [Phase 14-05]: [14-05]: Within-card expansion used to avoid layout shift in sibling cards in the comparison grid
 - [Phase 14-05]: [14-05]: All Phase 14 entity methods guarded with optional chaining for backward compatibility with old Quote instances
 - [Phase 14-05]: [14-05]: Firm badge uses emerald-500/20 palette; Indicative badge uses amber-500/20 — consistent with Phase 14 radio card coding from Plan 03
+- [Phase 14]: [14-04]: Submit button validates then shows modal; handleConfirmSubmit reuses onSubmit via handleSubmit(onSubmit)()
+- [Phase 14]: [14-04]: watchedValues = watch() called once at orchestrator level and passed as prop to QuoteSummaryModal — avoids duplicate watch subscriptions
+- [Phase 14]: [14-04]: Buyer/Seller InfoRow placed at TOP of deal fields (before Quantity) in QuoteDetailView — counterparty identity is primary context for provider pricing
 
 ### Pending Todos
 
@@ -350,6 +354,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-26T19:10:52.683Z
-Stopped at: Completed 14-05-PLAN.md
+Last session: 2026-04-26T19:11:38.253Z
+Stopped at: Completed 14-04-PLAN.md
 Resume file: None
