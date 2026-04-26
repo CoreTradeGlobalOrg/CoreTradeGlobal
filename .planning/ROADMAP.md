@@ -289,13 +289,16 @@ Plans:
 
 ### Phase 15: Deal and Trade Flow Enhancements
 
-**Goal:** [To be planned]
-**Requirements**: TBD
+**Goal:** Improve deal/trade pages with contract approval UX enhancements (always-expanded clauses, yellow/green highlighting, progress indicators, auto-advance), Hire a Lawyer card on all trade stages, flexible quote skipping, trade flow communication buttons, tooltip-based guidance, and form input polish (Deal ID, DatePicker gold accent, number auto-select, English validation messages)
+**Requirements**: DEAL-01, DEAL-02, DEAL-03, DEAL-04, DEAL-05, DEAL-06, DEAL-07, DEAL-08, DEAL-09, DEAL-10, DEAL-11, DEAL-12, DEAL-13, DEAL-14, DEAL-15, DEAL-16, DEAL-17, DEAL-18
 **Depends on:** Phase 14
-**Plans:** 0 plans
+**Plans:** 4 plans
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 15 to break down)
+- [ ] 15-01-PLAN.md — Contract approval UX: always-expanded clauses with yellow/green visual states, dual progress indicators, auto-advance with toast
+- [ ] 15-02-PLAN.md — LegalBanner overhaul (per-page dismiss, slim collapsed banner, all trade pages), Tooltip component, tooltip placements
+- [ ] 15-03-PLAN.md — Skip quote sections (insurance/logistics independently), confirm button rename, Chat buttons on Trade Summary, message icons on deal pages
+- [ ] 15-04-PLAN.md — Deal ID breadcrumb, PDF download link, DatePicker gold accent, number input onFocus auto-select, Zod validation English audit
 
 ### Phase 16: Product and RFQ Features
 
@@ -319,4 +322,4 @@ Plans:
 
 ---
 *Roadmap created: 2026-02-20*
-*Last updated: 2026-04-25*
+*Last updated: 2026-04-26*
