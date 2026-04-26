@@ -11,13 +11,27 @@
  * - "Expired" badge when quote.isExpired()
  * - Select button for buyer on active non-expired quotes
  * - Selected state: green border + "Selected" badge, no select button
+ * - Firm/Indicative status badge (Phase 14)
+ * - Expandable section for Commercial Risk, Political Risk, Exclusions,
+ *   Claims Handling, Premium Additions, and Message to Buyer (Phase 14)
  */
 
 'use client';
 
-import { Shield, CheckCircle2, XCircle, Award } from 'lucide-react';
+import { useState } from 'react';
+import { Shield, CheckCircle2, XCircle, Award, ChevronDown } from 'lucide-react';
 import { CountdownTimer } from '@/presentation/components/features/deal/CountdownTimer/CountdownTimer';
-import { ICC_COVERAGE, COVERAGE_SCOPE } from '@/core/constants/quoteConstants';
+import {
+  ICC_COVERAGE,
+  COVERAGE_SCOPE,
+  POLITICAL_PERILS,
+  COMMERCIAL_COVERAGE_BASIS,
+  STANDARD_EXCLUSIONS,
+  STANDARD_CONDITIONS_PRECEDENT,
+  CLAIMS_JURISDICTION,
+  CLAIMS_RESPONSE_TIME,
+  PREMIUM_PAYMENT_TERMS,
+} from '@/core/constants/quoteConstants';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -52,6 +66,22 @@ function getCoverageScopeLabel(scopeValue) {
   if (!scopeValue) return '—';
   const scope = COVERAGE_SCOPE.find((s) => s.value === scopeValue);
   return scope ? scope.label : scopeValue;
+}
+
+function lookupLabel(options, value) {
+  if (!value) return '—';
+  const found = options.find((o) => o.value === value);
+  return found ? found.label : value;
+}
+
+function lookupLabels(options, values) {
+  if (!values || !Array.isArray(values) || values.length === 0) return '—';
+  return values
+    .map((v) => {
+      const found = options.find((o) => o.value === v);
+      return found ? found.label : v;
+    })
+    .join(', ');
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -104,12 +134,23 @@ function DetailRow({ label, value, valueClass = 'text-white' }) {
  * @param {string|null} props.ribbon - Ribbon label: "Cheapest" | "Best Value" | null
  */
 export function InsuranceQuoteCard({ quote, isBuyer, isSelected, onSelect, ribbon }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+
   if (!quote) return null;
 
   const isExpired = quote.isExpired();
   const isActive = quote.isActive();
 
   const canSelect = isBuyer && isActive && !isSelected;
+
+  // Determine if this quote has any Phase 14 extended data
+  const hasExtendedData =
+    quote.hasCommercialRisk?.() ||
+    quote.hasPoliticalRisk?.() ||
+    quote.exclusions ||
+    quote.claimsHandling ||
+    quote.premiumAdditions ||
+    quote.messageToBuyer;
 
   // Border styling: selected = green thick border, default = green left accent
   const borderClass = isSelected
@@ -125,7 +166,7 @@ export function InsuranceQuoteCard({ quote, isBuyer, isSelected, onSelect, ribbo
       {/* Ribbon badge */}
       <RibbonBadge ribbon={ribbon} />
 
-      {/* Header: provider info + selected/expired badge */}
+      {/* Header: provider info + selected/expired/firm/indicative badges */}
       <div className="flex items-start gap-3 pr-20">
         <div className="flex-shrink-0 w-9 h-9 rounded-lg bg-emerald-900/40 border border-emerald-800/50 flex items-center justify-center">
           <Shield size={16} className="text-emerald-400" />
@@ -144,6 +185,17 @@ export function InsuranceQuoteCard({ quote, isBuyer, isSelected, onSelect, ribbo
             {isExpired && !isSelected && (
               <span className="text-xs font-semibold bg-red-900/30 text-red-400 border border-red-700 px-2 py-0.5 rounded-full">
                 Expired
+              </span>
+            )}
+            {/* Firm / Indicative badge */}
+            {quote.isFirmQuote?.() && (
+              <span className="inline-flex items-center gap-1 text-xs font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full">
+                Firm Quote
+              </span>
+            )}
+            {quote.isIndicativeQuote?.() && (
+              <span className="inline-flex items-center gap-1 text-xs font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded-full">
+                Subject to Review
               </span>
             )}
           </div>
@@ -171,6 +223,12 @@ export function InsuranceQuoteCard({ quote, isBuyer, isSelected, onSelect, ribbo
           label="Deductible"
           value={quote.deductiblePct != null ? `${quote.deductiblePct}%` : '—'}
         />
+        {(quote.cargoMarine?.lossCoveredPct != null || quote.cargoMarine?.lossCoveredPct === 0) && (
+          <DetailRow
+            label="Loss Covered"
+            value={`${quote.cargoMarine.lossCoveredPct}%`}
+          />
+        )}
         <DetailRow
           label="Coverage Scope"
           value={getCoverageScopeLabel(quote.coverageScope)}
@@ -216,6 +274,126 @@ export function InsuranceQuoteCard({ quote, isBuyer, isSelected, onSelect, ribbo
           </div>
         )}
       </div>
+
+      {/* Expandable toggle — only shown when extended data exists */}
+      {hasExtendedData && (
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="w-full flex items-center justify-center gap-1.5 py-1.5 text-xs text-[#8899AA] hover:text-white transition-colors"
+        >
+          {isExpanded ? 'Hide Details' : 'View Full Coverage Details'}
+          <ChevronDown
+            size={14}
+            className={`transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+          />
+        </button>
+      )}
+
+      {/* Expandable content — within-card expansion, no layout shift on siblings */}
+      {isExpanded && (
+        <div className="border-t border-[#1E2D3D] pt-3 space-y-3">
+          {/* Commercial Risk */}
+          {quote.commercialRisk && (
+            <div>
+              <p className="text-xs font-semibold text-amber-400 mb-1.5">Commercial Risk</p>
+              <DetailRow
+                label="Coverage Limit"
+                value={formatCurrency(quote.commercialRisk.coverageLimit, quote.commercialRisk.currency)}
+              />
+              <DetailRow
+                label="Loss Covered"
+                value={quote.commercialRisk.lossCoveredPct != null ? `${quote.commercialRisk.lossCoveredPct}%` : '—'}
+              />
+              <DetailRow
+                label="Coverage Basis"
+                value={lookupLabel(COMMERCIAL_COVERAGE_BASIS, quote.commercialRisk.coverageBasis)}
+              />
+              <DetailRow
+                label="Waiting Period"
+                value={quote.commercialRisk.waitingPeriodDays ? `${quote.commercialRisk.waitingPeriodDays} days` : '—'}
+              />
+            </div>
+          )}
+
+          {/* Political Risk */}
+          {quote.politicalRisk && (
+            <div>
+              <p className="text-xs font-semibold text-red-400 mb-1.5">Political Risk</p>
+              <DetailRow
+                label="Coverage Limit"
+                value={formatCurrency(quote.politicalRisk.coverageLimit, quote.politicalRisk.currency)}
+              />
+              <DetailRow
+                label="Loss Covered"
+                value={quote.politicalRisk.lossCoveredPct != null ? `${quote.politicalRisk.lossCoveredPct}%` : '—'}
+              />
+              <DetailRow
+                label="Perils Covered"
+                value={lookupLabels(POLITICAL_PERILS, quote.politicalRisk.perils)}
+              />
+            </div>
+          )}
+
+          {/* Exclusions */}
+          {quote.exclusions &&
+            (quote.exclusions.standardItems?.length > 0 || quote.exclusions.customText) && (
+              <div>
+                <p className="text-xs font-semibold text-[#8899AA] mb-1.5">Exclusions</p>
+                {quote.exclusions.standardItems?.map((item) => (
+                  <p key={item} className="text-xs text-[#AAB8C8]">
+                    - {lookupLabel(STANDARD_EXCLUSIONS, item)}
+                  </p>
+                ))}
+                {quote.exclusions.customText && (
+                  <p className="text-xs text-[#AAB8C8] mt-1 italic">{quote.exclusions.customText}</p>
+                )}
+              </div>
+            )}
+
+          {/* Claims Handling */}
+          {quote.claimsHandling && (
+            <div>
+              <p className="text-xs font-semibold text-[#8899AA] mb-1.5">Claims Handling</p>
+              <DetailRow
+                label="Jurisdiction"
+                value={lookupLabel(CLAIMS_JURISDICTION, quote.claimsHandling.jurisdiction)}
+              />
+              <DetailRow
+                label="Response Time"
+                value={lookupLabel(CLAIMS_RESPONSE_TIME, quote.claimsHandling.responseTime)}
+              />
+              {quote.claimsHandling.contactEmail && (
+                <DetailRow label="Contact" value={quote.claimsHandling.contactEmail} />
+              )}
+            </div>
+          )}
+
+          {/* Premium Additions */}
+          {quote.premiumAdditions &&
+            (quote.premiumAdditions.ratePercent || quote.premiumAdditions.paymentTerms) && (
+              <div>
+                <p className="text-xs font-semibold text-[#8899AA] mb-1.5">Premium Additions</p>
+                {quote.premiumAdditions.ratePercent != null && (
+                  <DetailRow label="Premium Rate" value={`${quote.premiumAdditions.ratePercent}%`} />
+                )}
+                {quote.premiumAdditions.paymentTerms && (
+                  <DetailRow
+                    label="Payment Terms"
+                    value={lookupLabel(PREMIUM_PAYMENT_TERMS, quote.premiumAdditions.paymentTerms)}
+                  />
+                )}
+              </div>
+            )}
+
+          {/* Message to Buyer */}
+          {quote.messageToBuyer && (
+            <div>
+              <p className="text-xs font-semibold text-[#8899AA] mb-1">Message from Provider</p>
+              <p className="text-xs text-[#AAB8C8] leading-relaxed">{quote.messageToBuyer}</p>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Validity countdown */}
       {quote.validUntil && !isExpired && (
