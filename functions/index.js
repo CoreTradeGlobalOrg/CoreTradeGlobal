@@ -1937,6 +1937,8 @@ async function sendDealNotifications(dealId, eventType, senderUid, deal) {
                 type: 'deal_event',
                 dealId,
                 eventType,
+                title,
+                body,
                 click_action: `/deals/${dealId}`,
               },
               webpush: {
@@ -2676,6 +2678,18 @@ async function broadcastQuoteRequests(dealId, dealData) {
     return;
   }
 
+  // Phase 14: Fetch buyer and seller user docs for name/country denormalization
+  const [buyerDoc, sellerDoc] = await Promise.all([
+    db.collection('users').doc(dealData.buyerId).get(),
+    db.collection('users').doc(dealData.sellerId).get(),
+  ]);
+  const buyerData = buyerDoc.data() || {};
+  const sellerData = sellerDoc.data() || {};
+  const buyerName = buyerData.companyName || buyerData.displayName || 'Buyer';
+  const buyerCountry = buyerData.country || null;
+  const sellerName = sellerData.companyName || sellerData.displayName || 'Seller';
+  const sellerCountry = sellerData.country || null;
+
   const now = Timestamp.now();
   // Deadline: 72 hours from broadcast
   const deadline = Timestamp.fromMillis(Date.now() + 72 * 60 * 60 * 1000);
@@ -2695,6 +2709,12 @@ async function broadcastQuoteRequests(dealId, dealData) {
     currency: snapshot.currency || null,
     price: snapshot.price || null,
     estimatedTotal: snapshot.estimatedTotal || null,
+    terms: snapshot.terms || null,
+    // Phase 14: buyer/seller identity for quote form context
+    buyerName,
+    buyerCountry,
+    sellerName,
+    sellerCountry,
   };
 
   // Logistics dealSnapshot — explicit allowlist; price/estimatedTotal intentionally excluded (PORTAL-05)
@@ -2709,6 +2729,11 @@ async function broadcastQuoteRequests(dealId, dealData) {
     deliveryDeadline: snapshot.deliveryDeadline || null,
     currency: snapshot.currency || null,
     // price and estimatedTotal are intentionally omitted for logistics providers
+    // Phase 14: buyer/seller identity included for both provider types
+    buyerName,
+    buyerCountry,
+    sellerName,
+    sellerCountry,
   };
 
   let count = 0;
@@ -2861,7 +2886,9 @@ exports.submitQuote = onCall(async (request) => {
 
   // Type-specific validation
   if (isInsurance) {
-    const { iccCoverage, premiumAmount, coverageAmount, deductiblePct, claimsPaymentDays, policyStartDate, policyEndDate, coverageScope } = quoteData;
+    // Support both flat (old) and nested (new Phase 14) cargoMarine format
+    const cargo = quoteData.cargoMarine || quoteData;
+    const { iccCoverage, premiumAmount, coverageAmount, deductiblePct, claimsPaymentDays, policyStartDate, policyEndDate, coverageScope } = cargo;
     if (!['A', 'B', 'C'].includes(iccCoverage)) {
       throw new HttpsError('invalid-argument', 'iccCoverage must be A, B, or C.');
     }
@@ -2882,6 +2909,41 @@ exports.submitQuote = onCall(async (request) => {
     }
     if (!coverageScope) {
       throw new HttpsError('invalid-argument', 'coverageScope is required.');
+    }
+
+    // Validate optional risk type sub-objects (Phase 14) when present
+    if (quoteData.commercialRisk) {
+      const cr = quoteData.commercialRisk;
+      if (!cr.coverageLimit || Number(cr.coverageLimit) <= 0) {
+        throw new HttpsError('invalid-argument', 'commercialRisk.coverageLimit must be > 0');
+      }
+      if (!cr.currency) {
+        throw new HttpsError('invalid-argument', 'commercialRisk.currency is required');
+      }
+    }
+    if (quoteData.politicalRisk) {
+      const pr = quoteData.politicalRisk;
+      if (!pr.coverageLimit || Number(pr.coverageLimit) <= 0) {
+        throw new HttpsError('invalid-argument', 'politicalRisk.coverageLimit must be > 0');
+      }
+      if (!pr.currency) {
+        throw new HttpsError('invalid-argument', 'politicalRisk.currency is required');
+      }
+      if (!pr.perils || !Array.isArray(pr.perils) || pr.perils.length === 0) {
+        throw new HttpsError('invalid-argument', 'politicalRisk.perils must have at least one item');
+      }
+    }
+    if (quoteData.claimsHandling) {
+      if (!quoteData.claimsHandling.jurisdiction) {
+        throw new HttpsError('invalid-argument', 'claimsHandling.jurisdiction is required');
+      }
+      if (!quoteData.claimsHandling.responseTime) {
+        throw new HttpsError('invalid-argument', 'claimsHandling.responseTime is required');
+      }
+    }
+    // quoteStatus defaults to indicative server-side if missing
+    if (!quoteData.quoteStatus) {
+      quoteData.quoteStatus = { status: 'indicative' };
     }
   } else if (isLogistics) {
     const { transportMode, freightCost, estimatedTransitDays, loadingDate, estimatedArrival } = quoteData;
