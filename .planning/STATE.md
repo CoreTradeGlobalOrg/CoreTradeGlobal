@@ -4,7 +4,7 @@ milestone: v1.0
 milestone_name: milestone
 status: completed
 stopped_at: Completed 14-02-PLAN.md
-last_updated: "2026-04-26T19:07:32.643Z"
+last_updated: "2026-04-26T19:07:37.707Z"
 last_activity: "2026-04-02 - Completed quick task 5: Fix hero not fetching last verified user"
 progress:
   total_phases: 17
@@ -320,6 +320,9 @@ Recent decisions affecting current work:
 - [Phase 14]: [14-03]: Section components accept register/errors/watch prop subset — each section declares only what it needs; consistent with react-hook-form pass-through pattern
 - [Phase 14]: [14-03]: QuoteSummaryModal cargo reads cm.cargoMarine || cm — forward-compatible with Plan 04 nested cargoMarine schema while flat form values from current QuoteFormInsurance still work
 - [Phase 14]: [14-03]: Indicative radio card uses amber accent, Firm uses green accent — distinct visual coding communicates legal weight difference
+- [Phase 14]: [14-02]: lossCoveredPct placed as 3rd column in Premium/Coverage row (grid-cols-3) — keeps financially related fields together
+- [Phase 14]: [14-02]: Cargo/Marine accordion always rendered open without AnimatePresence — required section has no performance cost for always-visible content
+- [Phase 14]: [14-02]: normalizeDate() helper in edit mode defaultValues bridges Date objects, ISO strings, and undefined uniformly for policyStartDate/policyEndDate
 
 ### Pending Todos
 
