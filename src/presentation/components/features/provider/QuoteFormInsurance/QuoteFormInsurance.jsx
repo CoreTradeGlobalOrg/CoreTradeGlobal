@@ -29,6 +29,12 @@ import { CURRENCIES } from '@/core/constants/currencies';
 import { CargoMarineSection } from './sections/CargoMarineSection';
 import { CommercialRiskSection } from './sections/CommercialRiskSection';
 import { PoliticalRiskSection } from './sections/PoliticalRiskSection';
+import { ExclusionsSection } from './sections/ExclusionsSection';
+import { ConditionsPrecedentSection } from './sections/ConditionsPrecedentSection';
+import { ClaimsHandlingSection } from './sections/ClaimsHandlingSection';
+import { PremiumAdditionsSection } from './sections/PremiumAdditionsSection';
+import { QuoteStatusSection } from './sections/QuoteStatusSection';
+import { QuoteSummaryModal } from './QuoteSummaryModal';
 
 // Custom chevron for select elements — matches app styling
 const selectChevronBg = `appearance-none bg-[length:16px_16px] bg-[position:right_16px_center] bg-no-repeat`;
@@ -107,7 +113,34 @@ const insuranceQuoteSchema = z.object({
     perils: z.array(z.string()).min(1, 'Select at least one peril'),
   }).optional(),
 
-  // Shared fields — extended in Plan 03 but present now
+  exclusions: z.object({
+    standardItems: z.array(z.string()).default([]),
+    customText: z.string().optional(),
+  }).default({ standardItems: [], customText: '' }),
+
+  conditionsPrecedent: z.object({
+    standardItems: z.array(z.string()).default([]),
+    customText: z.string().optional(),
+  }).default({ standardItems: [], customText: '' }),
+
+  claimsHandling: z.object({
+    jurisdiction: z.string().min(1, 'Jurisdiction is required'),
+    responseTime: z.string().min(1, 'Response time is required'),
+    contactEmail: z.string().email('Invalid email').optional().or(z.literal('')),
+  }).optional(),
+
+  premiumAdditions: z.object({
+    ratePercent: z.number({ invalid_type_error: 'Must be a number' }).min(0).optional(),
+    paymentTerms: z.string().optional(),
+  }).optional(),
+
+  quoteStatus: z.object({
+    status: z.enum(['indicative', 'firm']).default('indicative'),
+    bindingConditions: z.string().optional(),
+    messageToBuyer: z.string().optional(),
+  }).default({ status: 'indicative' }),
+
+  // Shared fields
   currency: z.string().min(1, 'Currency is required'),
   validityHours: z.number({ required_error: 'Required' }).positive(),
   notes: z.string().optional(),
@@ -150,6 +183,9 @@ export function QuoteFormInsurance({ requestId, existingQuote, actions, onSucces
     !!existingQuote?.politicalRisk
   );
 
+  // ── Summary modal state ────────────────────────────────────────────────────
+  const [showSummaryModal, setShowSummaryModal] = useState(false);
+
   // ── Default values — backward-compat with old flat-field quotes ────────────
   const defaultValues = existingQuote
     ? {
@@ -186,6 +222,11 @@ export function QuoteFormInsurance({ requestId, existingQuote, actions, onSucces
         },
         commercialRisk: existingQuote.commercialRisk || undefined,
         politicalRisk: existingQuote.politicalRisk || undefined,
+        exclusions: existingQuote.exclusions || { standardItems: [], customText: '' },
+        conditionsPrecedent: existingQuote.conditionsPrecedent || { standardItems: [], customText: '' },
+        claimsHandling: existingQuote.claimsHandling || undefined,
+        premiumAdditions: existingQuote.premiumAdditions || undefined,
+        quoteStatus: existingQuote.quoteStatus || { status: 'indicative' },
         currency: existingQuote.currency || 'USD',
         validityHours: existingQuote.validityHours || 24,
         notes: existingQuote.notes || '',
@@ -207,6 +248,11 @@ export function QuoteFormInsurance({ requestId, existingQuote, actions, onSucces
         },
         commercialRisk: undefined,
         politicalRisk: undefined,
+        exclusions: { standardItems: [], customText: '' },
+        conditionsPrecedent: { standardItems: [], customText: '' },
+        claimsHandling: undefined,
+        premiumAdditions: undefined,
+        quoteStatus: { status: 'indicative' },
         currency: 'USD',
         validityHours: 24,
         notes: '',
@@ -244,6 +290,9 @@ export function QuoteFormInsurance({ requestId, existingQuote, actions, onSucces
     }
   };
 
+  // ── Watched values for summary modal ─────────────────────────────────────
+  const watchedValues = watch();
+
   // ── Form submit ────────────────────────────────────────────────────────────
   const onSubmit = async (data) => {
     await actions.submitQuote(requestId, {
@@ -251,6 +300,11 @@ export function QuoteFormInsurance({ requestId, existingQuote, actions, onSucces
       ...data,
     });
     if (onSuccess) onSuccess();
+  };
+
+  // ── Modal confirm: triggers actual submission ──────────────────────────────
+  const handleConfirmSubmit = async () => {
+    await handleSubmit(onSubmit)();
   };
 
   // ── Accordion animation variants ─────────────────────────────────────────
@@ -280,7 +334,13 @@ export function QuoteFormInsurance({ requestId, existingQuote, actions, onSucces
         </p>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="p-4 space-y-3">
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          handleSubmit(() => setShowSummaryModal(true))(e);
+        }}
+        className="p-4 space-y-3"
+      >
 
         {/* ── Cargo / Marine Accordion (Required, always open) ─────────────── */}
         <div className="border border-[#2A3B52] rounded-xl overflow-hidden">
@@ -381,6 +441,13 @@ export function QuoteFormInsurance({ requestId, existingQuote, actions, onSucces
           </AnimatePresence>
         </div>
 
+        {/* ── Shared sections ───────────────────────────────────────────────── */}
+        <ExclusionsSection register={register} errors={errors} watch={watch} />
+        <ConditionsPrecedentSection register={register} errors={errors} watch={watch} />
+        <ClaimsHandlingSection register={register} errors={errors} watch={watch} />
+        <PremiumAdditionsSection register={register} errors={errors} watch={watch} />
+        <QuoteStatusSection register={register} errors={errors} watch={watch} />
+
         {/* ── Shared fields: Currency + Validity row ────────────────────────── */}
         <div className="grid grid-cols-2 gap-3">
           <div>
@@ -457,6 +524,17 @@ export function QuoteFormInsurance({ requestId, existingQuote, actions, onSucces
         </button>
 
       </form>
+
+      {/* ── Summary Modal ─────────────────────────────────────────────────── */}
+      <QuoteSummaryModal
+        isOpen={showSummaryModal}
+        onClose={() => setShowSummaryModal(false)}
+        onConfirm={handleConfirmSubmit}
+        watchedValues={watchedValues}
+        isLoading={actions?.loading}
+        commercialRiskEnabled={commercialRiskEnabled}
+        politicalRiskEnabled={politicalRiskEnabled}
+      />
     </div>
   );
 }
