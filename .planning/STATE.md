@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-stopped_at: Completed 14-02-PLAN.md
-last_updated: "2026-04-26T19:07:37.707Z"
+stopped_at: Completed 14-05-PLAN.md
+last_updated: "2026-04-26T19:10:52.687Z"
 last_activity: "2026-04-02 - Completed quick task 5: Fix hero not fetching last verified user"
 progress:
   total_phases: 17
   completed_phases: 4
   total_plans: 20
-  completed_plans: 18
+  completed_plans: 19
   percent: 71
 ---
 
@@ -113,6 +113,7 @@ Progress: [█████████████] 71%
 | Phase 14 P01 | 2 | 2 tasks | 3 files |
 | Phase 14 P03 | 2 | 2 tasks | 6 files |
 | Phase 14 P02 | 3 | 2 tasks | 4 files |
+| Phase 14 P05 | 5 | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -323,6 +324,9 @@ Recent decisions affecting current work:
 - [Phase 14]: [14-02]: lossCoveredPct placed as 3rd column in Premium/Coverage row (grid-cols-3) — keeps financially related fields together
 - [Phase 14]: [14-02]: Cargo/Marine accordion always rendered open without AnimatePresence — required section has no performance cost for always-visible content
 - [Phase 14]: [14-02]: normalizeDate() helper in edit mode defaultValues bridges Date objects, ISO strings, and undefined uniformly for policyStartDate/policyEndDate
+- [Phase 14-05]: [14-05]: Within-card expansion used to avoid layout shift in sibling cards in the comparison grid
+- [Phase 14-05]: [14-05]: All Phase 14 entity methods guarded with optional chaining for backward compatibility with old Quote instances
+- [Phase 14-05]: [14-05]: Firm badge uses emerald-500/20 palette; Indicative badge uses amber-500/20 — consistent with Phase 14 radio card coding from Plan 03
 
 ### Pending Todos
 
@@ -346,6 +350,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-26T19:07:32.639Z
-Stopped at: Completed 14-02-PLAN.md
+Last session: 2026-04-26T19:10:52.683Z
+Stopped at: Completed 14-05-PLAN.md
 Resume file: None
