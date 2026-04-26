@@ -127,6 +127,17 @@ export class Quote {
     this.estimatedArrival = estimatedArrival || null;
     this.capabilityTags = capabilityTags || null;
 
+    // Phase 14: Nested risk type sub-objects (null for old quotes or logistics)
+    this.cargoMarine = null;
+    this.commercialRisk = null;
+    this.politicalRisk = null;
+    this.exclusions = null;
+    this.conditionsPrecedent = null;
+    this.claimsHandling = null;
+    this.premiumAdditions = null;
+    this.quoteStatus = null;
+    this.messageToBuyer = null;
+
     // Shared
     this.currency = currency || 'USD';
     this.notes = notes || '';
@@ -143,7 +154,7 @@ export class Quote {
    * @returns {Quote}
    */
   static fromFirestore(data) {
-    return new Quote(
+    const quote = new Quote(
       data.id,
       data.requestId,
       data.dealId,
@@ -177,6 +188,35 @@ export class Quote {
       data.createdAt?.toDate?.() || data.createdAt || new Date(),
       data.updatedAt?.toDate?.() || data.updatedAt || new Date()
     );
+
+    // Phase 14 nested sub-objects
+    quote.cargoMarine = data.cargoMarine || null;
+    quote.commercialRisk = data.commercialRisk || null;
+    quote.politicalRisk = data.politicalRisk || null;
+    quote.exclusions = data.exclusions || null;
+    quote.conditionsPrecedent = data.conditionsPrecedent || null;
+    quote.claimsHandling = data.claimsHandling || null;
+    quote.premiumAdditions = data.premiumAdditions || null;
+    quote.quoteStatus = data.quoteStatus || null;
+    quote.messageToBuyer = data.messageToBuyer || null;
+
+    // Backward compat: if cargoMarine exists, use its fields for legacy flat-field accessors
+    // This ensures getPrice(), isInsurance(), etc. continue to work on new nested-format docs.
+    if (data.cargoMarine) {
+      quote.iccCoverage = data.cargoMarine.iccCoverage || quote.iccCoverage;
+      quote.warClause = data.cargoMarine.warClause ?? quote.warClause;
+      quote.strikesClause = data.cargoMarine.strikesClause ?? quote.strikesClause;
+      quote.premiumAmount = data.cargoMarine.premiumAmount ?? quote.premiumAmount;
+      quote.coverageAmount = data.cargoMarine.coverageAmount ?? quote.coverageAmount;
+      quote.deductiblePct = data.cargoMarine.deductiblePct ?? quote.deductiblePct;
+      quote.claimsPaymentDays = data.cargoMarine.claimsPaymentDays ?? quote.claimsPaymentDays;
+      quote.policyStartDate = data.cargoMarine.policyStartDate?.toDate?.() || data.cargoMarine.policyStartDate || quote.policyStartDate;
+      quote.policyEndDate = data.cargoMarine.policyEndDate?.toDate?.() || data.cargoMarine.policyEndDate || quote.policyEndDate;
+      quote.coverageScope = data.cargoMarine.coverageScope || quote.coverageScope;
+      quote.certificateType = data.cargoMarine.certificateType || quote.certificateType;
+    }
+
+    return quote;
   }
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -236,6 +276,43 @@ export class Quote {
     if (this.isInsurance()) return this.premiumAmount;
     if (this.isLogistics()) return this.freightCost;
     return null;
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Phase 14: Quote status and risk type helpers
+  // ─────────────────────────────────────────────────────────────────────────
+
+  /**
+   * Check if this is a firm (binding) quote.
+   * @returns {boolean}
+   */
+  isFirmQuote() {
+    return this.quoteStatus?.status === 'firm';
+  }
+
+  /**
+   * Check if this is an indicative (non-binding) quote.
+   * Defaults to indicative when quoteStatus is absent (backward compat).
+   * @returns {boolean}
+   */
+  isIndicativeQuote() {
+    return !this.quoteStatus || this.quoteStatus.status === 'indicative';
+  }
+
+  /**
+   * Check if this quote includes commercial risk coverage.
+   * @returns {boolean}
+   */
+  hasCommercialRisk() {
+    return !!this.commercialRisk;
+  }
+
+  /**
+   * Check if this quote includes political risk coverage.
+   * @returns {boolean}
+   */
+  hasPoliticalRisk() {
+    return !!this.politicalRisk;
   }
 }
 

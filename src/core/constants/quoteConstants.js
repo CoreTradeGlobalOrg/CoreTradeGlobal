@@ -151,6 +151,102 @@ export const QUOTE_VALIDITY_OPTIONS = [
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Phase 14: New Insurance Constants
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Standard exclusion checkboxes for insurance quotes.
+ * Providers select which exclusions apply to their policy.
+ */
+export const STANDARD_EXCLUSIONS = [
+  { value: 'inherent_vice', label: 'Inherent Vice or Nature of Goods' },
+  { value: 'inadequate_packing', label: 'Inadequate Packing or Preparation' },
+  { value: 'delay', label: 'Loss Caused by Delay' },
+  { value: 'insolvency', label: 'Insolvency or Financial Default of Carrier' },
+  { value: 'nuclear', label: 'Nuclear Weapons / Radioactive Contamination' },
+  { value: 'war_sanctions', label: 'War, Sanctions, or Embargo (unless War Clause added)' },
+  { value: 'wear_tear', label: 'Ordinary Wear and Tear / Gradual Deterioration' },
+];
+
+/**
+ * Standard conditions precedent for insurance quotes.
+ * Providers specify which conditions must be met before coverage applies.
+ */
+export const STANDARD_CONDITIONS_PRECEDENT = [
+  { value: 'survey_required', label: 'Pre-shipment Survey Required' },
+  { value: 'packing_standards', label: 'Goods Must Meet ISPM-15 Packing Standards' },
+  { value: 'documentation', label: 'All Shipping Documents Must Be Provided Before Coverage Starts' },
+  { value: 'vessel_class', label: "Vessel Must Be Lloyd's Register Classed" },
+  { value: 'notify_departure', label: 'Insured Must Notify Departure Within 48 Hours' },
+  { value: 'warehouse_cert', label: 'Warehouse Certificate Required for Storage' },
+];
+
+/**
+ * Claims jurisdiction options for insurance quotes.
+ */
+export const CLAIMS_JURISDICTION = [
+  { value: 'english_law', label: 'English Law (London)' },
+  { value: 'us_law', label: 'US Law (New York)' },
+  { value: 'swiss_law', label: 'Swiss Law (Zurich)' },
+  { value: 'singapore_law', label: 'Singapore Law' },
+  { value: 'hong_kong_law', label: 'Hong Kong Law' },
+  { value: 'icc_arbitration', label: 'ICC Arbitration' },
+];
+
+/**
+ * Claims response time options for insurance quotes.
+ */
+export const CLAIMS_RESPONSE_TIME = [
+  { value: '24h', label: '24 Hours' },
+  { value: '48h', label: '48 Hours' },
+  { value: '72h', label: '72 Hours' },
+  { value: '5d', label: '5 Business Days' },
+  { value: '10d', label: '10 Business Days' },
+];
+
+/**
+ * Premium payment terms for insurance quotes.
+ */
+export const PREMIUM_PAYMENT_TERMS = [
+  { value: 'advance', label: 'Payment in Advance' },
+  { value: '30_days', label: 'Net 30 Days' },
+  { value: '60_days', label: 'Net 60 Days' },
+  { value: '90_days', label: 'Net 90 Days' },
+  { value: 'on_shipment', label: 'Due on Shipment' },
+];
+
+/**
+ * Political risk perils for political risk coverage sub-object.
+ */
+export const POLITICAL_PERILS = [
+  { value: 'expropriation', label: 'Expropriation / Nationalization' },
+  { value: 'political_violence', label: 'Political Violence / Terrorism' },
+  { value: 'currency_inconvertibility', label: 'Currency Inconvertibility' },
+  { value: 'contract_frustration', label: 'Contract Frustration' },
+  { value: 'embargo', label: 'Trade Embargo / Sanctions' },
+  { value: 'sovereign_default', label: 'Sovereign Default' },
+  { value: 'forced_divestiture', label: 'Forced Divestiture / Abandonment' },
+];
+
+/**
+ * Commercial risk coverage basis options.
+ */
+export const COMMERCIAL_COVERAGE_BASIS = [
+  { value: 'whole_turnover', label: 'Whole Turnover' },
+  { value: 'key_accounts', label: 'Key Accounts Only' },
+  { value: 'single_buyer', label: 'Single Buyer' },
+  { value: 'specific_contract', label: 'Specific Contract' },
+];
+
+/**
+ * Quote binding status — whether the quote is indicative or firm.
+ */
+export const QUOTE_BINDING_STATUS = {
+  INDICATIVE: 'indicative',
+  FIRM: 'firm',
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Deadline Constant
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -174,4 +270,13 @@ export default {
   CAPABILITY_TAGS,
   QUOTE_VALIDITY_OPTIONS,
   QUOTE_REQUEST_DEADLINE_HOURS,
+  // Phase 14 new constants
+  STANDARD_EXCLUSIONS,
+  STANDARD_CONDITIONS_PRECEDENT,
+  CLAIMS_JURISDICTION,
+  CLAIMS_RESPONSE_TIME,
+  PREMIUM_PAYMENT_TERMS,
+  POLITICAL_PERILS,
+  COMMERCIAL_COVERAGE_BASIS,
+  QUOTE_BINDING_STATUS,
 };
