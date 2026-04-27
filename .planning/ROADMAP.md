@@ -183,7 +183,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 (parallel with 3-4) -> 6 
 | 12. Notifications and Email System | 5/5 | Planned | — |
 | 13. Messaging and Communication Improvements | 4/4 | Planned | — |
 | 14. Insurance Quote System Overhaul | 5/5 | Planned | — |
-| 15. Deal and Trade Flow Enhancements | 2/4 | In Progress|  |
+| 15. Deal and Trade Flow Enhancements | 3/4 | In Progress|  |
 | 16. Product and RFQ Features | 0/0 | Not started | — |
 | 17. Registration, Onboarding and Misc | 0/0 | Not started | — |
 
@@ -312,7 +312,7 @@ Plans:
 **Goal:** Improve deal/trade pages with contract approval UX enhancements (always-expanded clauses, yellow/green highlighting, progress indicators, auto-advance), Hire a Lawyer card on all trade stages, flexible quote skipping, trade flow communication buttons, tooltip-based guidance, and form input polish (Deal ID, DatePicker gold accent, number auto-select, English validation messages)
 **Requirements**: DEAL-01, DEAL-02, DEAL-03, DEAL-04, DEAL-05, DEAL-06, DEAL-07, DEAL-08, DEAL-09, DEAL-10, DEAL-11, DEAL-12, DEAL-13, DEAL-14, DEAL-15, DEAL-16, DEAL-17, DEAL-18
 **Depends on:** Phase 14
-**Plans:** 2/4 plans executed
+**Plans:** 3/4 plans executed
 
 Plans:
 - [ ] 15-01-PLAN.md — Contract approval UX: always-expanded clauses with yellow/green visual states, dual progress indicators, auto-advance with toast

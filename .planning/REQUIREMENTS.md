@@ -124,11 +124,11 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **DEAL-11**: Confirm button reads "Confirm Coverage & Shipment" (not "Quote Selected")
 - [x] **DEAL-12**: Trade Summary shows Chat buttons per party (buyer, seller, providers, lawyer) opening FAB widget
 - [x] **DEAL-13**: Deal/contract pages have message icon buttons that open FAB widget for counterparty
-- [ ] **DEAL-14**: Deal ID visible in page header as formatted short ID (Deal #XXXXXXXX)
-- [ ] **DEAL-15**: Product PDF download link with gold accent styling on deal pages
-- [ ] **DEAL-16**: DatePicker gold accent color for deal/product form contexts
-- [ ] **DEAL-17**: All number inputs across deal/trade pages auto-select content on focus
-- [ ] **DEAL-18**: All Zod validation messages across deal/trade schemas are in English with friendly date error messages
+- [x] **DEAL-14**: Deal ID visible in page header as formatted short ID (Deal #XXXXXXXX)
+- [x] **DEAL-15**: Product PDF download link with gold accent styling on deal pages
+- [x] **DEAL-16**: DatePicker gold accent color for deal/product form contexts
+- [x] **DEAL-17**: All number inputs across deal/trade pages auto-select content on focus
+- [x] **DEAL-18**: All Zod validation messages across deal/trade schemas are in English with friendly date error messages
 
 ## v2 Requirements
 

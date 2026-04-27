@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-stopped_at: Completed 15-01-PLAN.md
-last_updated: "2026-04-27T10:45:10.479Z"
+stopped_at: Completed 15-04-PLAN.md
+last_updated: "2026-04-27T10:46:56.374Z"
 last_activity: "2026-04-02 - Completed quick task 5: Fix hero not fetching last verified user"
 progress:
   total_phases: 17
   completed_phases: 5
   total_plans: 24
-  completed_plans: 22
+  completed_plans: 23
   percent: 71
 ---
 
@@ -117,6 +117,7 @@ Progress: [█████████████] 71%
 | Phase 14 P04 | 2 | 2 tasks | 2 files |
 | Phase 15 P03 | 4 | 2 tasks | 5 files |
 | Phase 15 P01 | 5 | 2 tasks | 4 files |
+| Phase 15-deal-and-trade-flow-enhancements P04 | 12 | 2 tasks | 12 files |
 
 ## Accumulated Context
 
@@ -339,6 +340,9 @@ Recent decisions affecting current work:
 - [Phase 15]: hasExpanded initialized to all section IDs on mount — cleanly decoupled from approval sync; removes expand-before-approve gate
 - [Phase 15]: Submit button moved inside sticky bottom bar alongside ClauseProgressBar — single action zone near viewport bottom
 - [Phase 15]: Auto-advance toast uses prevDealStatusRef — fires only on live transition to CONTRACT_APPROVED, not on initial page load
+- [Phase 15-04]: No productPdfUrl field on deal docs — createDeal CF only denormalizes productName/productImage/productCategory; PDF link renders conditionally (no output with current data)
+- [Phase 15-04]: gold DatePicker uses text-[#0F1C2E] on selected day for contrast on FFD700 background, consistent with platform gold CTA button pattern
+- [Phase 15-04]: onFocus auto-select placed after register() spread on all number inputs so RHF event bindings are not replaced
 
 ### Pending Todos
 
@@ -362,6 +366,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-27T10:45:10.475Z
-Stopped at: Completed 15-01-PLAN.md
+Last session: 2026-04-27T10:46:56.369Z
+Stopped at: Completed 15-04-PLAN.md
 Resume file: None
