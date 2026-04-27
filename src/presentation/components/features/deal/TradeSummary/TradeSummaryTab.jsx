@@ -17,6 +17,8 @@
 
 import { Printer } from 'lucide-react';
 import { useTradeSummary } from '@/presentation/hooks/deal/useTradeSummary';
+import { LegalBanner } from '@/presentation/components/features/legal/LegalBanner/LegalBanner';
+import { Tooltip } from '@/presentation/components/common/Tooltip/Tooltip';
 import { SummaryHeroBanner } from './SummaryHeroBanner';
 import { TradeInfoBar } from './TradeInfoBar';
 import { TradeRouteMap } from './TradeRouteMap';
@@ -93,8 +95,12 @@ export function TradeSummaryTab({ dealId, currentUserUid }) {
 
   return (
     <div className="space-y-4">
-      {/* PDF Export button — hidden when printing */}
-      <div className="flex justify-end no-print">
+      {/* Header row: Trade Summary title + Tooltip + PDF Export button */}
+      <div className="flex items-center justify-between no-print">
+        <div className="flex items-center gap-2">
+          <h2 className="text-sm font-semibold text-white">Trade Summary</h2>
+          <Tooltip content="A complete overview of your deal including agreed terms, selected providers, costs, and shipment status." />
+        </div>
         <button
           type="button"
           onClick={() => window.print()}
@@ -147,6 +153,7 @@ export function TradeSummaryTab({ dealId, currentUserUid }) {
             currentUserUid={currentUserUid}
             dealId={dealId}
           />
+          <LegalBanner dealId={dealId} currentUserUid={currentUserUid} />
         </div>
 
         {/* Right sidebar — map + order timeline */}

@@ -21,6 +21,7 @@ import { useState, useMemo } from 'react';
 import { QuotesSidebar } from '../QuotesSidebar/QuotesSidebar';
 import { TRANSPORT_MODE } from '@/core/constants/quoteConstants';
 import { QuoteGrid } from './QuoteGrid';
+import { LegalBanner } from '@/presentation/components/features/legal/LegalBanner/LegalBanner';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants
@@ -264,6 +265,9 @@ export function QuotesPage({
             />
           </div>
         </div>
+
+        {/* Legal banner — below quote grids */}
+        <LegalBanner dealId={deal.id} currentUserUid={currentUserUid} />
       </div>
     </div>
   );

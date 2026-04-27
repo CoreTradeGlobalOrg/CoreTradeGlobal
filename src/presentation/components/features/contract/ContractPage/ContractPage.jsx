@@ -29,6 +29,8 @@ import { ClauseAccordion } from '../ClauseAccordion/ClauseAccordion';
 import { ContractSidebar } from '../ContractSidebar/ContractSidebar';
 import { GeneratingContractOverlay } from '../GeneratingContractOverlay/GeneratingContractOverlay';
 import { ConfirmDialog } from '@/presentation/components/common/ConfirmDialog/ConfirmDialog';
+import { LegalBanner } from '@/presentation/components/features/legal/LegalBanner/LegalBanner';
+import { Tooltip } from '@/presentation/components/common/Tooltip/Tooltip';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ClauseProgressBar
@@ -225,11 +227,20 @@ export function ContractPage({ deal, contract, currentUserUid, actions }) {
           <WaitingBanner otherPartyLabel={otherPartyLabel} />
         )}
 
+        {/* Legal banner */}
+        <LegalBanner dealId={deal.id} currentUserUid={currentUserUid} />
+
         {/* Main content + sticky sidebar */}
         <div className="flex flex-col lg:flex-row gap-4">
 
           {/* Main column — clause sections (always expanded) */}
           <div className="flex-1 min-w-0 space-y-3">
+
+            {/* Contract Clauses header */}
+            <div className="flex items-center gap-2">
+              <h2 className="text-sm font-semibold text-white">Contract Clauses</h2>
+              <Tooltip content="Each clause must be reviewed and accepted individually by both parties. The deal cannot advance until all clauses are approved." />
+            </div>
 
             {/* Top clause progress bar */}
             {!isFullyApproved && (

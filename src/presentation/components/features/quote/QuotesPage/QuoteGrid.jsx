@@ -11,6 +11,7 @@ import { Shield, Truck } from 'lucide-react';
 import { InsuranceQuoteCard } from '../InsuranceQuoteCard/InsuranceQuoteCard';
 import { LogisticsQuoteCard } from '../LogisticsQuoteCard/LogisticsQuoteCard';
 import { SectionHeader, FilterPills, SortSelect, EmptyState } from './QuoteFilters';
+import { Tooltip } from '@/presentation/components/common/Tooltip/Tooltip';
 
 /**
  * @param {Object} props
@@ -65,16 +66,22 @@ export function QuoteGrid({
     ? 'Waiting for insurance provider quotes...'
     : 'Waiting for logistics provider quotes...';
   const filterKey = isInsurance ? 'insuranceFilter' : 'logisticsFilter';
+  const tooltipContent = isInsurance
+    ? 'Insurance quotes cover cargo damage, loss, and delays during transit. ICC-A provides the broadest coverage.'
+    : 'Logistics quotes cover transportation from origin to destination. Compare rates, transit times, and transport modes.';
 
   return (
     <div className="bg-[#1A283B] border border-[#2A3B52] rounded-xl p-4 space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <SectionHeader
-          icon={icon}
-          title={title}
-          count={quotes.length}
-          accentColor={accentColor}
-        />
+        <div className="flex items-center gap-1.5">
+          <SectionHeader
+            icon={icon}
+            title={title}
+            count={quotes.length}
+            accentColor={accentColor}
+          />
+          <Tooltip content={tooltipContent} />
+        </div>
         <div className="flex items-center gap-3">
           {isBuyer && !skipped && onSkip && (
             <button

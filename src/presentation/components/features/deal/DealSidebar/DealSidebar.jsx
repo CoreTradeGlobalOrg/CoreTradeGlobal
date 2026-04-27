@@ -18,6 +18,7 @@ import { OrderTimeline } from '@/presentation/components/features/deal/TradeSumm
 import { ETACountdown } from '@/presentation/components/features/deal/TradeSummary/ETACountdown';
 import { CurrencyConvertPanel } from './CurrencyConvertPanel';
 import { FreightEstimatorWidget } from './FreightEstimatorWidget';
+import { Tooltip } from '@/presentation/components/common/Tooltip/Tooltip';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Party Info Card
@@ -201,7 +202,10 @@ function OfferSummary({ deal, latestOffer }) {
         </span>
       </div>
       <div className="flex items-center justify-between">
-        <span className="text-xs text-[#8899AA]">Incoterm</span>
+        <span className="flex items-center gap-1 text-xs text-[#8899AA]">
+          Incoterm
+          <Tooltip content="Incoterms define which party bears the cost and risk of shipping. Common terms: FOB (seller delivers to port), CIF (seller covers insurance + freight), DAP (seller delivers to destination)." />
+        </span>
         <span className="text-xs text-white">{snapshot?.incoterm || '—'}</span>
       </div>
       {snapshot?.namedPlace && (
