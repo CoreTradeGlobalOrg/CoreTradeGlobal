@@ -1,25 +1,30 @@
 /**
  * LegalBanner Component
  *
- * Renders on DealPage at ALL deal stages for the current user.
+ * Renders on all 4 trade stage pages (DealPage, ContractPage, QuotesPage,
+ * TradeSummaryTab) for the current user.
  *
- * Two modes:
+ * Three modes:
  *   1. No engagement + not dismissed: Shows promotional hire CTA card
- *   2. Active/pending/completed engagement: Shows compact status badge
+ *   2. No engagement + dismissed: Shows slim gold-accented one-line banner;
+ *      clicking re-expands the full card
+ *   3. Active/pending/completed engagement: Shows compact status badge
+ *
+ * Dismiss state is local React state only (no localStorage).
+ * Each page mount starts with dismissed = false, showing the full card fresh.
+ * Navigating to a new trade page creates a new component instance and resets
+ * the dismissed state automatically.
  *
  * Privacy guarantee: subscribes using current user's UID as clientId only.
  * The opposing party's engagement (if any) is never queried — cross-party
  * detection is prevented by design.
- *
- * Dismiss state stored in localStorage (key: `${dealId}_legal_banner_dismissed`)
- * to prevent cross-party detection via Firestore reads.
  */
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
-import { Scale, Shield, CheckCircle, Clock, ExternalLink } from 'lucide-react';
+import { Scale, Shield, CheckCircle, ExternalLink } from 'lucide-react';
 import { useLegalEngagement } from '@/presentation/hooks/legal/useLegalEngagement';
 import { ENGAGEMENT_STATUS } from '@/core/constants/legalConstants';
 
@@ -93,6 +98,26 @@ function EngagementBadge({ engagement }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Collapsed Banner (slim one-line, shown after dismiss)
+// ─────────────────────────────────────────────────────────────────────────────
+
+function CollapsedBanner({ onExpand }) {
+  return (
+    <button
+      type="button"
+      onClick={onExpand}
+      className="w-full flex items-center gap-2 px-3 py-2 rounded-lg border-l-4 border-amber-500/60 bg-amber-900/10 text-left hover:bg-amber-900/20 transition-colors"
+    >
+      <Scale size={13} className="text-[#FFD700] flex-shrink-0" />
+      <span className="text-xs text-[#8899AA]">Need legal advice?</span>
+      <span className="text-xs font-semibold text-[#FFD700] hover:text-[#FFE44D] ml-auto">
+        Hire a Lawyer
+      </span>
+    </button>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Promotional Banner (no engagement + not dismissed)
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -160,8 +185,6 @@ function PromotionalBanner({ dealId, onDismiss }) {
 // LegalBanner
 // ─────────────────────────────────────────────────────────────────────────────
 
-const DISMISS_KEY = (dealId) => `${dealId}_legal_banner_dismissed`;
-
 /**
  * LegalBanner
  *
@@ -171,20 +194,9 @@ const DISMISS_KEY = (dealId) => `${dealId}_legal_banner_dismissed`;
  */
 export function LegalBanner({ dealId, currentUserUid }) {
   const { engagement, loading } = useLegalEngagement(dealId, currentUserUid);
+
+  // Local state only — no localStorage. Resets on every page mount.
   const [dismissed, setDismissed] = useState(false);
-
-  // Read dismissed state from localStorage on mount
-  useEffect(() => {
-    if (!dealId) return;
-    const isDismissed = localStorage.getItem(DISMISS_KEY(dealId)) === 'true';
-    setDismissed(isDismissed);
-  }, [dealId]);
-
-  const handleDismiss = () => {
-    if (!dealId) return;
-    localStorage.setItem(DISMISS_KEY(dealId), 'true');
-    setDismissed(true);
-  };
 
   // Don't render until we know the engagement state
   if (loading) return null;
@@ -194,12 +206,14 @@ export function LegalBanner({ dealId, currentUserUid }) {
     return <EngagementBadge engagement={engagement} />;
   }
 
-  // If dismissed and no engagement, hide entirely
-  if (dismissed) return null;
+  // No engagement + dismissed: show slim collapsed banner
+  if (dismissed) {
+    return <CollapsedBanner onExpand={() => setDismissed(false)} />;
+  }
 
   // No engagement + not dismissed: show promotional banner
   return (
-    <PromotionalBanner dealId={dealId} onDismiss={handleDismiss} />
+    <PromotionalBanner dealId={dealId} onDismiss={() => setDismissed(true)} />
   );
 }
 
