@@ -127,7 +127,7 @@ export function QuotesSidebar({
   const [confirming, setConfirming] = useState(false);
 
   // A section is "satisfied" if a provider was selected OR the buyer explicitly skipped it.
-  // At least one section must be satisfied to proceed.
+  // At least one section must be satisfied to proceed. The other can be handled later.
   const insuranceSatisfied = !!selectedInsuranceQuote || skippedInsurance;
   const logisticsSatisfied = !!selectedLogisticsQuote || skippedLogistics;
   const hasAnySelection = insuranceSatisfied || logisticsSatisfied;
@@ -158,7 +158,7 @@ export function QuotesSidebar({
     if (!deal?.id || confirming) return;
     setConfirming(true);
     try {
-      await actions.confirmSelection(deal.id);
+      await actions.confirmSelection(deal.id, { skippedInsurance, skippedLogistics });
       router.push(`/deals/${deal.id}`);
     } catch {
       // Error handled in useQuoteActions with toast
@@ -305,7 +305,7 @@ export function QuotesSidebar({
           </button>
           {!hasAnySelection && (
             <p className="text-xs text-[#4A5B6E] text-center mt-2">
-              Select at least one provider to continue.
+              Select or skip at least one provider to continue.
             </p>
           )}
         </div>

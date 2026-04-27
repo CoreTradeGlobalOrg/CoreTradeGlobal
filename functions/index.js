@@ -3270,7 +3270,7 @@ exports.withdrawQuote = onCall(async (request) => {
  * @returns {Promise<{ success: boolean }>}
  */
 exports.confirmProviderSelection = onCall(async (request) => {
-  const { dealId } = request.data;
+  const { dealId, skippedInsurance = false, skippedLogistics = false } = request.data;
   const uid = request.auth?.uid;
 
   if (!uid) throw new HttpsError('unauthenticated', 'Must be logged in.');
@@ -3291,32 +3291,36 @@ exports.confirmProviderSelection = onCall(async (request) => {
       throw new HttpsError('permission-denied', 'Only the buyer can confirm provider selections.');
     }
 
-    // Status guard
-    if (deal.status !== DEAL_STATUS.CONTRACT_APPROVED) {
+    // Status guard — allow both CONTRACT_APPROVED (first confirm) and PROVIDERS_SELECTED (re-confirm after managing providers)
+    if (deal.status !== DEAL_STATUS.CONTRACT_APPROVED && deal.status !== DEAL_STATUS.PROVIDERS_SELECTED) {
       throw new HttpsError(
         'failed-precondition',
-        `Deal is ${deal.status}. Provider selection requires deal status 'contract_approved'.`
+        `Deal is ${deal.status}. Provider selection requires deal status 'contract_approved' or 'providers_selected'.`
       );
     }
 
-    // At least one provider must be selected
-    const hasInsurance = !!deal.selectedInsuranceQuoteId;
-    const hasLogistics = !!deal.selectedLogisticsQuoteId;
-    if (!hasInsurance && !hasLogistics) {
+    // At least one section must be satisfied (selected or explicitly skipped)
+    const insuranceSatisfied = !!deal.selectedInsuranceQuoteId || skippedInsurance;
+    const logisticsSatisfied = !!deal.selectedLogisticsQuoteId || skippedLogistics;
+    if (!insuranceSatisfied && !logisticsSatisfied) {
       throw new HttpsError(
         'failed-precondition',
-        'At least one provider (insurance or logistics) must be selected before confirming.'
+        'At least one provider (insurance or logistics) must be selected or skipped before confirming.'
       );
     }
 
     const now = Timestamp.now();
     t.update(dealRef, {
       status: DEAL_STATUS.PROVIDERS_SELECTED,
+      ...(skippedInsurance && { skippedInsurance: true }),
+      ...(skippedLogistics && { skippedLogistics: true }),
       updatedAt: now,
     });
   });
 
   // Post-transaction: mark non-selected quoteRequests as not_selected (batch)
+  // Skip marking requests for sections the buyer explicitly skipped —
+  // those providers can still submit quotes and the buyer can return later.
   try {
     const allRequestsSnap = await db
       .collection('quoteRequests')
@@ -3331,11 +3335,23 @@ exports.confirmProviderSelection = onCall(async (request) => {
         deal.selectedLogisticsRequestId,
       ].filter(Boolean);
 
+      // Only mark requests as not_selected for sections where a provider was ACTUALLY selected.
+      // Skipped sections and untouched sections: leave their requests as-is.
+      const hasSelectedInsurance = !!deal.selectedInsuranceQuoteId;
+      const hasSelectedLogistics = !!deal.selectedLogisticsQuoteId;
+
       for (const reqDoc of allRequestsSnap.docs) {
+        const reqData = reqDoc.data();
+
+        // Only mark insurance requests if an insurance provider was selected
+        if (reqData.providerType === 'insurance' && !hasSelectedInsurance) continue;
+        // Only mark logistics requests if a logistics provider was selected
+        if (reqData.providerType === 'logistics' && !hasSelectedLogistics) continue;
+
         if (
           !selectedRequestIds.includes(reqDoc.id) &&
-          reqDoc.data().status !== QUOTE_REQUEST_STATUS.SELECTED &&
-          reqDoc.data().status !== QUOTE_REQUEST_STATUS.DECLINED
+          reqData.status !== QUOTE_REQUEST_STATUS.SELECTED &&
+          reqData.status !== QUOTE_REQUEST_STATUS.DECLINED
         ) {
           batch.update(reqDoc.ref, {
             status: QUOTE_REQUEST_STATUS.NOT_SELECTED,
@@ -5103,3 +5119,4 @@ exports.processScheduledAnnouncements = onSchedule(
     }
   }
 );
+

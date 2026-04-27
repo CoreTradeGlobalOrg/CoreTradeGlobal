@@ -19,7 +19,6 @@ import { Modal } from '@/components/ui/Modal';
 import ConversationList from '@/presentation/components/features/messaging/ConversationList/ConversationList';
 import MessageThread from '@/presentation/components/features/messaging/MessageThread/MessageThread';
 import MessageInput from '@/presentation/components/features/messaging/MessageInput/MessageInput';
-import { ConversationProfileCard } from '@/presentation/components/features/messaging/ConversationProfileCard/ConversationProfileCard';
 import './MessagesWidget.css';
 
 export function MessagesWidget() {
@@ -120,7 +119,24 @@ export function MessagesWidget() {
       };
     }
 
-    const otherUserId = activeConversation.participants.find((id) => id !== user.uid);
+    // For provider_quote conversations (3+ parties), show the provider's profile
+    // For direct conversations (2 parties), show the other participant
+    let otherUserId;
+    if (activeConversation.type === 'provider_quote') {
+      const providerId = activeConversation.metadata?.providerId;
+      if (providerId && activeConversation.participants.includes(providerId)) {
+        otherUserId = providerId;
+      } else {
+        // Fallback: find participant with provider role
+        otherUserId = activeConversation.participants.find((id) => {
+          if (id === user.uid) return false;
+          const details = activeConversation.participantDetails?.[id];
+          return details?.role === 'insurance_provider' || details?.role === 'logistics_provider';
+        }) || activeConversation.participants.find((id) => id !== user.uid);
+      }
+    } else {
+      otherUserId = activeConversation.participants.find((id) => id !== user.uid);
+    }
     const otherUser = otherUserId ? activeConversation.participantDetails?.[otherUserId] : null;
 
     return {
@@ -241,21 +257,6 @@ export function MessagesWidget() {
           <div className="messages-widget-content">
             {activeConversationId ? (
               <>
-                {/* Profile Card — shown for direct and provider_quote conversations */}
-                {activeConversation && ['direct', 'provider_quote'].includes(activeConversation.type) && user?.uid && (() => {
-                  const otherUserId = activeConversation.participants?.find((id) => id !== user.uid);
-                  return otherUserId ? (
-                    <ConversationProfileCard
-                      otherUserId={otherUserId}
-                      participantDetails={activeConversation.participantDetails}
-                      onNavigate={() => {
-                        closeConversation();
-                        setIsWidgetOpen(false);
-                      }}
-                    />
-                  ) : null;
-                })()}
-
                 {/* Product Banner */}
                 {activeConversation?.metadata?.productId && (
                   <Link

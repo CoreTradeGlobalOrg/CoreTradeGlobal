@@ -44,7 +44,9 @@ export class Deal {
     round,
     latestOfferSnapshot,
     createdAt,
-    updatedAt
+    updatedAt,
+    skippedInsurance,
+    skippedLogistics
   ) {
     this.id = id;
     this.buyerId = buyerId;
@@ -61,6 +63,8 @@ export class Deal {
     this.latestOfferSnapshot = latestOfferSnapshot || null;
     this.createdAt = createdAt || new Date();
     this.updatedAt = updatedAt || new Date();
+    this.skippedInsurance = skippedInsurance || false;
+    this.skippedLogistics = skippedLogistics || false;
   }
 
   /**
@@ -90,7 +94,9 @@ export class Deal {
           }
         : null,
       data.createdAt?.toDate?.() || data.createdAt || new Date(),
-      data.updatedAt?.toDate?.() || data.updatedAt || new Date()
+      data.updatedAt?.toDate?.() || data.updatedAt || new Date(),
+      data.skippedInsurance || false,
+      data.skippedLogistics || false
     );
   }
 
@@ -114,6 +120,8 @@ export class Deal {
       latestOfferSnapshot: this.latestOfferSnapshot,
       createdAt: this.createdAt,
       updatedAt: this.updatedAt,
+      ...(this.skippedInsurance && { skippedInsurance: true }),
+      ...(this.skippedLogistics && { skippedLogistics: true }),
     };
   }
 

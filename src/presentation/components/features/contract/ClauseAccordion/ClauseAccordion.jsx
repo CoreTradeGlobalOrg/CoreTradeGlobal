@@ -177,15 +177,6 @@ export function ClauseAccordion({
 
       {/* Always-visible clause content */}
       <div>
-        {/* Column headers */}
-        <div className="flex items-center px-4 pb-1">
-          <div className="flex-1" />
-          <div className="flex gap-4 text-[10px] text-[#8899AA] uppercase tracking-wide">
-            <span className="w-5 text-center">You</span>
-            <span className="w-5 text-center">{otherPartyLabel}</span>
-          </div>
-        </div>
-
         {/* Clause rows */}
         <div className="px-4 pb-3">
           {clauses.map((clause) => (

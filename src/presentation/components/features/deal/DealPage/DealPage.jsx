@@ -32,7 +32,7 @@ import { LegalBanner } from '@/presentation/components/features/legal/LegalBanne
 // Terminal State Banner
 // ─────────────────────────────────────────────────────────────────────────────
 
-function TerminalBanner({ status }) {
+function TerminalBanner({ status, deal }) {
   const configs = {
     [DEAL_STATUS.REJECTED]: {
       label: 'Deal Rejected',
@@ -56,11 +56,12 @@ function TerminalBanner({ status }) {
       text: 'text-[#8899AA]',
     },
     [DEAL_STATUS.PROVIDERS_SELECTED]: {
-      label: 'Providers Selected',
-      sub: 'Insurance and logistics providers have been confirmed for this deal.',
+      label: 'Providers Confirmed',
+      sub: 'Coverage and shipment have been confirmed for this deal.',
       bg: 'bg-blue-900/10',
       border: 'border-blue-500/30',
       text: 'text-blue-400',
+      showQuotesLink: true,
     },
     [DEAL_STATUS.DELIVERED]: {
       label: 'Trade Delivered',
@@ -76,8 +77,20 @@ function TerminalBanner({ status }) {
 
   return (
     <div className={`rounded-xl border px-4 py-3 ${cfg.bg} ${cfg.border}`}>
-      <p className={`text-sm font-semibold ${cfg.text}`}>{cfg.label}</p>
-      <p className="text-xs text-[#8899AA] mt-0.5">{cfg.sub}</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <p className={`text-sm font-semibold ${cfg.text}`}>{cfg.label}</p>
+          <p className="text-xs text-[#8899AA] mt-0.5">{cfg.sub}</p>
+        </div>
+        {cfg.showQuotesLink && deal?.id && (
+          <Link
+            href={`/deals/${deal.id}/quotes`}
+            className="text-xs text-[#FFD700] hover:text-[#FFE44D] underline flex-shrink-0"
+          >
+            Manage Providers
+          </Link>
+        )}
+      </div>
     </div>
   );
 }
@@ -177,18 +190,19 @@ export function DealPage({ deal, offers, currentUserUid, actions, otherPartyView
         <ProductHero deal={deal} />
 
         {/* Counterparty message button */}
-        <div className="flex justify-end">
-          <button
-            type="button"
-            onClick={() => openConversation(null)}
-            disabled={true}
-            className="inline-flex items-center gap-1.5 text-xs text-[#8899AA] hover:text-[#FFD700] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-            title="Message counterparty"
-          >
-            <MessageCircle size={14} />
-            Message counterparty
-          </button>
-        </div>
+        {deal.conversationId && (
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={() => openConversation(deal.conversationId)}
+              className="inline-flex items-center gap-1.5 text-xs text-[#8899AA] hover:text-[#FFD700] transition-colors"
+              title="Message counterparty"
+            >
+              <MessageCircle size={14} />
+              Message counterparty
+            </button>
+          </div>
+        )}
 
         {/* Countdown timer */}
         {latestOffer?.expiresAt && !isTerminal && deal.status !== DEAL_STATUS.ACCEPTED && (
@@ -238,7 +252,7 @@ export function DealPage({ deal, offers, currentUserUid, actions, otherPartyView
         )}
 
         {/* Terminal banner (when deal is closed) */}
-        {isTerminal && <TerminalBanner status={deal.status} />}
+        {isTerminal && <TerminalBanner status={deal.status} deal={deal} />}
 
         {/* Legal banner — visible at ALL deal stages; manages its own show/hide logic */}
         <LegalBanner dealId={deal.id} currentUserUid={currentUserUid} />

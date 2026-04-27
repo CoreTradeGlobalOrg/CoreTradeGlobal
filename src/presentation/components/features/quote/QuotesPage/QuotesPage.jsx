@@ -93,8 +93,8 @@ export function QuotesPage({
   const [insuranceSort, setInsuranceSort] = useState('price_asc');
   const [logisticsFilter, setLogisticsFilter] = useState('all');
   const [logisticsSort, setLogisticsSort] = useState('price_asc');
-  const [skippedInsurance, setSkippedInsurance] = useState(false);
-  const [skippedLogistics, setSkippedLogistics] = useState(false);
+  const [skippedInsurance, setSkippedInsurance] = useState(!!deal?.skippedInsurance);
+  const [skippedLogistics, setSkippedLogistics] = useState(!!deal?.skippedLogistics);
 
   const insuranceFilterOptions = [
     { value: 'all', label: 'All' },

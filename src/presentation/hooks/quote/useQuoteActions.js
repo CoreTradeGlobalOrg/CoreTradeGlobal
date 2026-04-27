@@ -135,12 +135,12 @@ export function useQuoteActions() {
    *
    * @param {string} dealId - Deal document ID
    */
-  const confirmSelection = async (dealId) => {
+  const confirmSelection = async (dealId, { skippedInsurance = false, skippedLogistics = false } = {}) => {
     setLoading(true);
     setError(null);
     try {
       const fn = httpsCallable(functions, 'confirmProviderSelection');
-      await fn({ dealId });
+      await fn({ dealId, skippedInsurance, skippedLogistics });
       toast.success('Provider selection confirmed!');
     } catch (err) {
       const msg = err?.message || 'Failed to confirm selection';
