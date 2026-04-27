@@ -43,35 +43,47 @@ function NewDealContent() {
   const searchParams = useSearchParams();
   const conversationId = searchParams.get('conversationId');
   const productId = searchParams.get('productId');
+  const sellerId = searchParams.get('sellerId');
+
+  // Entry modes:
+  //   A) conversationId + productId  — classic path from conversation
+  //   B) productId + sellerId         — direct "Start Deal" path from product detail
+  const isDirectPath = !conversationId && !!productId && !!sellerId;
 
   const { user, isAuthenticated, loading: authLoading } = useAuth();
   const { createDeal, loading: creating, error: createError } = useCreateDeal();
 
   const [product, setProduct] = useState(null);
   const [conversation, setConversation] = useState(null);
+  const [sellerName, setSellerName] = useState(null);
   const [loadingData, setLoadingData] = useState(true);
   const [fetchError, setFetchError] = useState(null);
 
   // Redirect to login if not authenticated
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
-      router.push(
-        `/login?redirect=/deals/new?conversationId=${conversationId}&productId=${productId}`
-      );
+      const redirectBase = isDirectPath
+        ? `/deals/new?productId=${productId}&sellerId=${sellerId}`
+        : `/deals/new?conversationId=${conversationId}&productId=${productId}`;
+      router.push(`/login?redirect=${encodeURIComponent(redirectBase)}`);
     }
-  }, [authLoading, isAuthenticated, router, conversationId, productId]);
+  }, [authLoading, isAuthenticated, router, conversationId, productId, sellerId, isDirectPath]);
 
-  // Validate required query params
+  // Validate required query params — accept EITHER path A or path B
   useEffect(() => {
-    if (!authLoading && isAuthenticated && (!conversationId || !productId)) {
-      setFetchError(
-        'Missing conversation or product context. Please use the "Initiate Deal" button from a product conversation.'
-      );
-      setLoadingData(false);
+    if (!authLoading && isAuthenticated) {
+      const hasConversationPath = conversationId && productId;
+      const hasDirectPath = productId && sellerId;
+      if (!hasConversationPath && !hasDirectPath) {
+        setFetchError(
+          'Missing deal context. Please use the "Initiate Deal" button from a product conversation or the "Start Deal" button on a product page.'
+        );
+        setLoadingData(false);
+      }
     }
-  }, [authLoading, isAuthenticated, conversationId, productId]);
+  }, [authLoading, isAuthenticated, conversationId, productId, sellerId]);
 
-  // Fetch product and conversation data
+  // Fetch product and conversation data (path A — classic)
   useEffect(() => {
     if (!isAuthenticated || !conversationId || !productId) return;
 
@@ -108,10 +120,50 @@ function NewDealContent() {
     fetchData();
   }, [isAuthenticated, conversationId, productId]);
 
+  // Fetch product and seller data (path B — direct "Start Deal")
+  useEffect(() => {
+    if (!isAuthenticated || !isDirectPath) return;
+
+    const fetchData = async () => {
+      setLoadingData(true);
+      setFetchError(null);
+
+      try {
+        const [productRepo, userRepo] = [
+          container.getProductRepository(),
+          container.getUserRepository(),
+        ];
+
+        const [productData, sellerData] = await Promise.all([
+          productRepo.getById(productId),
+          userRepo.getById(sellerId),
+        ]);
+
+        if (!productData) {
+          setFetchError('Product not found.');
+          return;
+        }
+
+        setProduct(productData);
+        setSellerName(
+          sellerData?.companyName || sellerData?.displayName || sellerData?.email || null
+        );
+      } catch (err) {
+        console.error('NewDealPage (direct) fetch error:', err);
+        setFetchError('Failed to load deal context. Please try again.');
+      } finally {
+        setLoadingData(false);
+      }
+    };
+
+    fetchData();
+  }, [isAuthenticated, isDirectPath, productId, sellerId]);
+
   const handleSubmit = async (formData) => {
     try {
       await createDeal({
-        conversationId,
+        // Pass null for conversationId on direct path — CF accepts it as optional
+        conversationId: conversationId || null,
         productId,
         initialOffer: formData,
       });
@@ -143,8 +195,13 @@ function NewDealContent() {
     );
   }
 
-  // ── Determine other party info from conversation ──
+  // ── Determine other party info ──
+  // Path A: derive from conversation participants
+  // Path B: use fetched seller name
   const otherPartyInfo = (() => {
+    if (isDirectPath) {
+      return sellerName ? { name: sellerName, uid: sellerId } : null;
+    }
     if (!conversation || !user?.uid) return null;
     const otherUserId = conversation.participants?.find((id) => id !== user.uid);
     if (!otherUserId) return null;
@@ -164,16 +221,24 @@ function NewDealContent() {
     unit: UNECE_TO_DEAL_UNIT[product?.unit] || product?.unit || '',
   };
 
+  // ── Back link target ──
+  const backHref = isDirectPath
+    ? `/product/${productId}`
+    : conversationId
+      ? `/messages/${conversationId}`
+      : '/messages';
+  const backLabel = isDirectPath ? 'Back to product' : 'Back to conversation';
+
   return (
     <main className="min-h-screen bg-radial-navy pt-24 pb-12">
       <div className="max-w-2xl mx-auto px-4">
         {/* ── Back Link ── */}
         <Link
-          href={conversationId ? `/messages/${conversationId}` : '/messages'}
+          href={backHref}
           className="inline-flex items-center gap-2 text-[#FFD700] hover:text-white text-sm font-semibold mb-6 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
-          Back to conversation
+          {backLabel}
         </Link>
 
         {/* ── Header Card ── */}
