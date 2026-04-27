@@ -15,7 +15,7 @@ import dynamic from 'next/dynamic';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import toast from 'react-hot-toast';
-import { Lock, Eye, EyeOff, Shield, ShieldOff } from 'lucide-react';
+import { Lock, Eye, EyeOff, Shield, ShieldOff, RefreshCw, AlertTriangle } from 'lucide-react';
 import { changePasswordSchema } from '@/core/validation/changePasswordSchema';
 import { usePasswordChange } from '@/presentation/hooks/settings/usePasswordChange';
 import { useTwoFactor } from '@/presentation/hooks/settings/useTwoFactor';
@@ -167,8 +167,13 @@ function PasswordChangeSection() {
 // ---------------------------------------------------------------------------
 function TwoFactorSection() {
   const [disablePassword, setDisablePassword] = useState('');
+  const [disableTotpCode, setDisableTotpCode] = useState('');
   const [showDisablePw, setShowDisablePw] = useState(false);
   const [disabling, setDisabling] = useState(false);
+  const [regenPassword, setRegenPassword] = useState('');
+  const [regenTotpCode, setRegenTotpCode] = useState('');
+  const [showRegenPw, setShowRegenPw] = useState(false);
+  const [showRegenForm, setShowRegenForm] = useState(false);
 
   const {
     step,
@@ -177,21 +182,34 @@ function TwoFactorSection() {
     loading,
     error,
     isEnrolled,
+    remainingCodes,
     startEnrollment,
     reauthAndGenerateSecret,
     verifyAndEnroll,
     disableTwoFactor,
+    regenerateBackupCodes,
     reset,
   } = useTwoFactor();
 
   const handleDisable = async (e) => {
     e.preventDefault();
     setDisabling(true);
-    const result = await disableTwoFactor(disablePassword);
+    await disableTwoFactor(disablePassword, disableTotpCode);
     setDisabling(false);
     if (!error) {
       toast.success('Two-factor authentication disabled');
       setDisablePassword('');
+      setDisableTotpCode('');
+    }
+  };
+
+  const handleRegenerate = async (e) => {
+    e.preventDefault();
+    await regenerateBackupCodes(regenPassword, regenTotpCode);
+    if (!error) {
+      setRegenPassword('');
+      setRegenTotpCode('');
+      setShowRegenForm(false);
     }
   };
 
@@ -245,6 +263,93 @@ function TwoFactorSection() {
         />
       )}
 
+      {/* Enrolled: show backup codes status + regenerate */}
+      {isEnrolled && step === 'idle' && remainingCodes !== null && (
+        <div className="bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.08)] rounded-lg p-4 mb-4">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs text-[#A0A0A0] font-medium">Backup Codes</span>
+            <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+              remainingCodes <= 3
+                ? 'bg-red-900/40 text-red-400 border border-red-800/50'
+                : 'bg-[rgba(255,255,255,0.05)] text-[#A0A0A0] border border-[rgba(255,255,255,0.08)]'
+            }`}>
+              {remainingCodes} remaining
+            </span>
+          </div>
+
+          {remainingCodes <= 3 && (
+            <div className="flex items-start gap-2 mb-3 p-2 bg-amber-900/20 border border-amber-700/30 rounded-lg">
+              <AlertTriangle className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" />
+              <p className="text-xs text-amber-300">
+                {remainingCodes === 0
+                  ? 'You have no backup codes left. Regenerate new codes now.'
+                  : 'You are running low on backup codes. Consider regenerating new ones.'}
+              </p>
+            </div>
+          )}
+
+          {!showRegenForm ? (
+            <button
+              type="button"
+              onClick={() => setShowRegenForm(true)}
+              className="flex items-center gap-2 text-sm text-[#A0A0A0] hover:text-white px-3 py-2 rounded-lg border border-[rgba(255,255,255,0.1)] hover:border-[rgba(255,255,255,0.2)] transition-colors"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              Regenerate Backup Codes
+            </button>
+          ) : (
+            <form onSubmit={handleRegenerate} className="space-y-3">
+              <p className="text-xs text-amber-400">
+                This will invalidate all existing backup codes and generate 10 new ones.
+              </p>
+              <div className="relative">
+                <input
+                  type={showRegenPw ? 'text' : 'password'}
+                  value={regenPassword}
+                  onChange={(e) => setRegenPassword(e.target.value)}
+                  placeholder="Enter password to confirm"
+                  className="w-full bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-lg px-4 py-2.5 text-white text-sm placeholder-[#A0A0A0] pr-10 focus:outline-none focus:border-[#FFD700]/50"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowRegenPw((v) => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#A0A0A0] hover:text-white"
+                >
+                  {showRegenPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              <input
+                type="text"
+                inputMode="numeric"
+                maxLength={6}
+                value={regenTotpCode}
+                onChange={(e) => setRegenTotpCode(e.target.value.replace(/\D/g, ''))}
+                placeholder="6-digit authenticator code"
+                className="w-full bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-lg px-4 py-2.5 text-white text-sm placeholder-[#A0A0A0] focus:outline-none focus:border-[#FFD700]/50"
+              />
+              {error && <p className="text-xs text-red-400">{error}</p>}
+              <div className="flex gap-3">
+                <button
+                  type="submit"
+                  disabled={loading || !regenPassword || regenTotpCode.length !== 6}
+                  className="flex items-center gap-2 bg-[#FFD700] !text-black text-sm font-medium px-4 py-2 rounded-lg hover:bg-[#FFC700] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  {loading ? 'Generating...' : 'Generate New Codes'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setShowRegenForm(false); setRegenPassword(''); setRegenTotpCode(''); }}
+                  className="text-sm text-[#A0A0A0] hover:text-white px-4 py-2 rounded-lg border border-[rgba(255,255,255,0.1)] hover:border-[rgba(255,255,255,0.2)] transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
+      )}
+
       {/* Enrolled: show Disable form */}
       {isEnrolled && step === 'idle' && (
         <form onSubmit={handleDisable} className="space-y-3">
@@ -265,11 +370,21 @@ function TwoFactorSection() {
             </button>
           </div>
 
+          <input
+            type="text"
+            inputMode="numeric"
+            maxLength={6}
+            value={disableTotpCode}
+            onChange={(e) => setDisableTotpCode(e.target.value.replace(/\D/g, ''))}
+            placeholder="6-digit authenticator code"
+            className="w-full bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-lg px-4 py-2.5 text-white text-sm placeholder-[#A0A0A0] focus:outline-none focus:border-red-500/50"
+          />
+
           {error && <p className="text-xs text-red-400">{error}</p>}
 
           <button
             type="submit"
-            disabled={disabling || !disablePassword}
+            disabled={disabling || !disablePassword || disableTotpCode.length !== 6}
             className="flex items-center gap-2 bg-red-900/40 hover:bg-red-900/60 text-red-400 text-sm font-medium px-4 py-2.5 rounded-lg border border-red-800/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <ShieldOff className="w-4 h-4" />

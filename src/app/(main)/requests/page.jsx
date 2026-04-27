@@ -53,9 +53,20 @@ function RequestsContent() {
 
 export default function RequestsPage() {
     return (
-        <main className="min-h-screen pt-[120px] pb-20 px-6 bg-radial-navy">
+        <main className="min-h-screen pt-[var(--navbar-height)] pb-20 px-6 bg-radial-navy">
             <div className="max-w-[1400px] mx-auto">
-                <Suspense fallback={<div className="text-white text-center">Loading...</div>}>
+                <Suspense fallback={
+                  <div className="space-y-6 pt-10">
+                    <div className="h-8 w-64 mx-auto rounded-2xl bg-[rgba(255,255,255,0.07)] animate-pulse" />
+                    <div className="h-4 w-48 mx-auto rounded-2xl bg-[rgba(255,255,255,0.05)] animate-pulse" />
+                    <div className="h-12 max-w-2xl mx-auto rounded-2xl bg-[rgba(255,255,255,0.04)] animate-pulse border border-[rgba(255,255,255,0.06)]" />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
+                      {[1,2,3,4,5,6].map(i => (
+                        <div key={i} className="h-48 rounded-2xl bg-[rgba(255,255,255,0.04)] animate-pulse border border-[rgba(255,255,255,0.06)]" />
+                      ))}
+                    </div>
+                  </div>
+                }>
                     <RequestsContent />
                 </Suspense>
             </div>

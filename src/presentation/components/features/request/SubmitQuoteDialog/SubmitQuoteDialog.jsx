@@ -8,12 +8,16 @@
 'use client';
 
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { submitQuoteSchema } from '@/core/validation/submitQuoteSchema';
 import { Modal } from '@/components/ui/Modal';
 import { useAuth } from '@/presentation/contexts/AuthContext';
 import { useSubmitQuote } from '@/presentation/hooks/request/useSubmitQuote';
 import { getUnitLabel } from '@/core/constants/units';
+import { DatePicker } from '@/presentation/components/common/DatePicker/DatePicker';
 import { Upload, Send, Loader2 } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 // Constants for select options
 const CURRENCIES = [
@@ -91,9 +95,13 @@ export function SubmitQuoteDialog({ isOpen, onClose, request }) {
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors },
     reset,
   } = useForm({
+    resolver: zodResolver(submitQuoteSchema),
+    mode: 'onSubmit',
+    reValidateMode: 'onBlur',
     defaultValues: {
       unitPrice: '',
       currency: 'USD',
@@ -145,6 +153,7 @@ export function SubmitQuoteDialog({ isOpen, onClose, request }) {
       onClose();
     } catch (error) {
       console.error('Quote submission error:', error);
+      toast.error(error.message || 'Failed to submit quote. Please try again.');
     }
   };
 
@@ -205,16 +214,17 @@ export function SubmitQuoteDialog({ isOpen, onClose, request }) {
               {/* Unit Price */}
               <div>
                 <label className={labelClass}>
-                  Unit Price <span className="text-red-500">*</span>
+                  Unit Price <span className="text-red-400">*</span>
                 </label>
                 <input
                   type="number"
                   step="0.01"
                   placeholder="0.00"
-                  {...register('unitPrice', { required: 'Unit price is required', min: { value: 0.01, message: 'Price must be greater than 0' } })}
-                  className={inputClass}
+                  {...register('unitPrice')}
+                  onFocus={e => e.target.select()}
+                  className={`${inputClass} ${errors.unitPrice ? 'border-red-500' : 'border-[rgba(255,255,255,0.1)]'}`}
                 />
-                {errors.unitPrice && <p className="mt-1 text-xs text-red-500">{errors.unitPrice.message}</p>}
+                {errors.unitPrice && <p className="text-xs text-red-400 mt-1">{errors.unitPrice.message}</p>}
               </div>
 
               {/* Currency */}
@@ -299,6 +309,7 @@ export function SubmitQuoteDialog({ isOpen, onClose, request }) {
                   type="number"
                   placeholder="Min amount"
                   {...register('moq')}
+                  onFocus={e => e.target.select()}
                   className={inputClass}
                 />
               </div>
@@ -345,10 +356,18 @@ export function SubmitQuoteDialog({ isOpen, onClose, request }) {
                 <label className={labelClass}>
                   Price Validity Until
                 </label>
-                <input
-                  type="date"
-                  {...register('priceValidUntil')}
-                  className={dateInputClass}
+                <Controller
+                  name="priceValidUntil"
+                  control={control}
+                  render={({ field }) => (
+                    <DatePicker
+                      value={field.value || null}
+                      onChange={(dateStr) => field.onChange(dateStr || '')}
+                      placeholder="Select validity date..."
+                      accentColor="blue"
+                      className={`${inputClass} flex items-center gap-2 cursor-pointer text-left`}
+                    />
+                  )}
                 />
               </div>
 

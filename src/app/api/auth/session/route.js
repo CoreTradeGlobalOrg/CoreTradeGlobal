@@ -31,7 +31,7 @@ export async function POST(request) {
   }
 
   try {
-    const { idToken, role } = await request.json();
+    const { idToken } = await request.json();
 
     if (!idToken) {
       return NextResponse.json({ error: 'Missing ID token' }, { status: 400 });
@@ -47,15 +47,17 @@ export async function POST(request) {
       );
     }
 
-    // Token is valid - use verified data from token, not from request body
+    // Token is valid — use verified data from token, not from request body
     const { uid, email } = verification;
 
-    // Note: Role should be fetched from Firestore on the server, not trusted from client
-    // For now, we'll store it but it should be validated against the database
+    // Role from verified ID token custom claims — not from client body (security fix)
+    // Existing member accounts without a role claim default to 'member'
+    const verifiedRole = verification.role || 'member';
+
     const sessionData = JSON.stringify({
       uid,
       email,
-      role: role || 'member', // Default to member, admin should be verified server-side
+      role: verifiedRole,
       verified: true,
     });
 

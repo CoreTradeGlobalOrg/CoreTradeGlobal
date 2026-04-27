@@ -84,6 +84,52 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **HARDEN-03**: All forms have proper validation with clear error messages
 - [x] **HARDEN-04**: Performance audit and optimization where needed
 
+### Notifications and Email System
+
+- [x] **NOTIF-01**: Full-page notification center at /notifications with filter tabs (All, Deals, Messages, Legal, Providers, System), infinite scroll, and bulk actions (mark read, delete, batch selection)
+- [x] **NOTIF-02**: NotificationBell dropdown shows 10 items with "View all" link navigating to notification center
+- [x] **NOTIF-03**: All automated emails use noreply@coretradeglobal.com sender and shared branded HTML template with CTG logo, gold accents, and unsubscribe footer
+- [x] **NOTIF-04**: Message notification emails throttled to max 1 per user per day across all conversations
+- [x] **NOTIF-05**: Push notifications for new member registration (admin), new RFQ (all members), and quote request broadcast (providers), respecting Phase 10 notification preferences
+- [x] **NOTIF-06**: FCM push notification pipeline debugged and functional (token lifecycle, service worker, foreground/background handlers)
+- [x] **NOTIF-07**: Admin announcement system with title, body, audience selector, channel toggles (in-app/push/email), optional scheduling, and announcement history
+- [x] **NOTIF-08**: LinkedIn share button and copy-to-clipboard on news detail page (LinkedIn share-offsite URL scheme, no API key)
+
+### Messaging and Communication Improvements
+
+- [x] **MSG-01**: Every conversation in the FAB widget shows a compact profile card header with avatar, full name, company name, country, and role badge
+- [x] **MSG-02**: Every conversation on /messages/[conversationId] page shows the same compact profile card header
+- [x] **MSG-03**: Clicking the profile card navigates to the user's profile page (/profile/[userId])
+- [x] **MSG-04**: FAB widget is hidden when user is on /messages or /messages/* routes -- no dual chat panels
+- [x] **MSG-05**: Message notification click on /messages page opens conversation inline; on other pages opens FAB widget
+- [x] **MSG-06**: Full chat sidebar visible on buyer's quote comparison page (/deals/[dealId]/quotes) with provider thread list
+- [x] **MSG-07**: Full chat sidebar visible on provider's quote detail page (/provider/quotes/[requestId]) with single thread
+- [x] **MSG-08**: Both buyer and provider share the same 3-party conversation thread (buyer + seller + provider) per (dealId, providerId) pair
+- [x] **MSG-09**: Insurance provider dashboard shows "Insurance Requests" and "Active Policies" tab labels
+- [x] **MSG-10**: Logistics provider dashboard shows "Logistics Requests" and "Active Shipments" tab labels
+- [x] **MSG-11**: Kanban columns show provider-type-specific labels (e.g., "New Inquiries" for insurance, "New Requests" for logistics)
+
+### Deal and Trade Flow Enhancements
+
+- [x] **DEAL-01**: Contract clauses always expanded (no accordion collapse) with yellow highlight on unaccepted and green checkmark on accepted
+- [x] **DEAL-02**: Progress indicator "X of Y clauses accepted" at top and sticky bottom of clause list
+- [x] **DEAL-03**: Auto-advance with toast notification when both parties approve all contract clauses
+- [x] **DEAL-04**: Parties can un-accept a clause anytime before both parties have fully approved
+- [x] **DEAL-05**: Hire a Lawyer card appears on all trade stages (Negotiation, Contract, Quotes, Trade Summary) with per-page dismiss
+- [x] **DEAL-06**: Dismissed Hire a Lawyer card collapses to slim gold-accented banner that re-expands on click
+- [x] **DEAL-07**: When lawyer is hired, card transforms to show lawyer name, status, and channel link
+- [x] **DEAL-08**: Tooltip icons on key trade page elements show brief domain explanations on hover/click
+- [x] **DEAL-09**: Insurance and logistics quote sections can be independently skipped with "Skip — I'll arrange my own"
+- [x] **DEAL-10**: Skipped quote sections show warning state with Undo skip option
+- [x] **DEAL-11**: Confirm button reads "Confirm Coverage & Shipment" (not "Quote Selected")
+- [x] **DEAL-12**: Trade Summary shows Chat buttons per party (buyer, seller, providers, lawyer) opening FAB widget
+- [x] **DEAL-13**: Deal/contract pages have message icon buttons that open FAB widget for counterparty
+- [x] **DEAL-14**: Deal ID visible in page header as formatted short ID (Deal #XXXXXXXX)
+- [x] **DEAL-15**: Product PDF download link with gold accent styling on deal pages
+- [x] **DEAL-16**: DatePicker gold accent color for deal/product form contexts
+- [x] **DEAL-17**: All number inputs across deal/trade pages auto-select content on focus
+- [x] **DEAL-18**: All Zod validation messages across deal/trade schemas are in English with friendly date error messages
+
 ## v2 Requirements
 
 Deferred to future release. Tracked but not in current roadmap.
@@ -100,6 +146,10 @@ Deferred to future release. Tracked but not in current roadmap.
 ### Notifications
 
 - **NOTIF-V2-01**: Deal-level notification preferences — users can configure frequency and channels per deal
+
+### Messaging
+
+- **MSG-V2-01**: Report and block functionality in messages with admin moderation UI
 
 ## Out of Scope
 
@@ -166,12 +216,49 @@ Which phases cover which requirements. Updated during roadmap creation.
 | HARDEN-02 | Phase 7 | Complete |
 | HARDEN-03 | Phase 7 | Complete |
 | HARDEN-04 | Phase 7 | Complete |
+| NOTIF-01 | Phase 12 | Planned |
+| NOTIF-02 | Phase 12 | Planned |
+| NOTIF-03 | Phase 12 | Planned |
+| NOTIF-04 | Phase 12 | Planned |
+| NOTIF-05 | Phase 12 | Planned |
+| NOTIF-06 | Phase 12 | Planned |
+| NOTIF-07 | Phase 12 | Planned |
+| NOTIF-08 | Phase 12 | Planned |
+| MSG-01 | Phase 13 | Planned |
+| MSG-02 | Phase 13 | Planned |
+| MSG-03 | Phase 13 | Planned |
+| MSG-04 | Phase 13 | Planned |
+| MSG-05 | Phase 13 | Planned |
+| MSG-06 | Phase 13 | Planned |
+| MSG-07 | Phase 13 | Planned |
+| MSG-08 | Phase 13 | Planned |
+| MSG-09 | Phase 13 | Planned |
+| MSG-10 | Phase 13 | Planned |
+| MSG-11 | Phase 13 | Planned |
+| DEAL-01 | Phase 15 | Planned |
+| DEAL-02 | Phase 15 | Planned |
+| DEAL-03 | Phase 15 | Planned |
+| DEAL-04 | Phase 15 | Planned |
+| DEAL-05 | Phase 15 | Planned |
+| DEAL-06 | Phase 15 | Planned |
+| DEAL-07 | Phase 15 | Planned |
+| DEAL-08 | Phase 15 | Planned |
+| DEAL-09 | Phase 15 | Planned |
+| DEAL-10 | Phase 15 | Planned |
+| DEAL-11 | Phase 15 | Planned |
+| DEAL-12 | Phase 15 | Planned |
+| DEAL-13 | Phase 15 | Planned |
+| DEAL-14 | Phase 15 | Planned |
+| DEAL-15 | Phase 15 | Planned |
+| DEAL-16 | Phase 15 | Planned |
+| DEAL-17 | Phase 15 | Planned |
+| DEAL-18 | Phase 15 | Planned |
 
 **Coverage:**
-- v1 requirements: 45 total
-- Mapped to phases: 45
+- v1 requirements: 82 total
+- Mapped to phases: 82
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-20*
-*Last updated: 2026-02-20 after roadmap creation*
+*Last updated: 2026-04-26 after Phase 15 planning*

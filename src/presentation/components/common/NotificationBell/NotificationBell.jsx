@@ -8,14 +8,16 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { Bell, MessageSquare, FileText, X, Check, Trash2, CheckCircle, XCircle, UserPlus } from 'lucide-react';
+import { useRouter, usePathname } from 'next/navigation';
+import Link from 'next/link';
+import { Bell, MessageSquare, FileText, X, Check, Trash2, CheckCircle, XCircle, UserPlus, Handshake, Scale } from 'lucide-react';
 import { useMessages } from '@/presentation/contexts/MessagesContext';
 import { useMarkAsRead } from '@/presentation/hooks/messaging/useMarkAsRead';
 import './NotificationBell.css';
 
 export function NotificationBell() {
   const router = useRouter();
+  const pathname = usePathname();
   const { notifications, unreadNotificationCount, openConversation } = useMessages();
   const { markNotificationAsRead, markAllNotificationsAsRead, deleteAllNotifications } = useMarkAsRead();
   const [isOpen, setIsOpen] = useState(false);
@@ -49,9 +51,20 @@ export function NotificationBell() {
     } else if ((notification.type === 'quote_accepted' || notification.type === 'quote_rejected') && notification.data?.requestId) {
       // Navigate to RFQ detail page (for quote submitter to see status)
       router.push(`/request/${notification.data.requestId}`);
+    } else if (notification.type === 'legal' && (notification.link || notification.dealId)) {
+      // Navigate to legal channel
+      router.push(notification.link || `/deals/${notification.dealId}/legal`);
+    } else if (notification.type === 'deal' && (notification.dealId || notification.link)) {
+      // Navigate to deal detail page
+      router.push(notification.link || `/deals/${notification.dealId}`);
     } else if (notification.data?.conversationId) {
-      // Open FAB with the conversation (don't navigate to messages page)
-      openConversation(notification.data.conversationId);
+      if (pathname?.startsWith('/messages')) {
+        // Already on /messages — select conversation inline via query param
+        router.push(`/messages?conversation=${notification.data.conversationId}`);
+      } else {
+        // On another page — open the FAB widget with this conversation
+        openConversation(notification.data.conversationId);
+      }
     }
 
     setIsOpen(false);
@@ -68,6 +81,10 @@ export function NotificationBell() {
         return <XCircle className="w-4 h-4" />;
       case 'new_user_approval':
         return <UserPlus className="w-4 h-4" />;
+      case 'deal':
+        return <Handshake className="w-4 h-4" />;
+      case 'legal':
+        return <Scale className="w-4 h-4" />;
       default:
         return <MessageSquare className="w-4 h-4" />;
     }
@@ -84,13 +101,17 @@ export function NotificationBell() {
         return 'rejected-icon';
       case 'new_user_approval':
         return 'approval-icon';
+      case 'deal':
+        return 'deal-icon';
+      case 'legal':
+        return 'deal-icon';
       default:
         return '';
     }
   };
 
   // Recent notifications
-  const recentNotifications = notifications.slice(0, 5);
+  const recentNotifications = notifications.slice(0, 10);
 
   const formatTime = (date) => {
     if (!date) return '';
@@ -178,7 +199,7 @@ export function NotificationBell() {
                       </span>
                     </div>
                     {!notification.isRead && (
-                      <span className={`notification-unread-dot ${notification.type === 'quote_accepted' ? 'accepted' : notification.type === 'quote_rejected' ? 'rejected' : notification.type === 'new_user_approval' ? 'approval' : ''}`} />
+                      <span className={`notification-unread-dot ${notification.type === 'quote_accepted' ? 'accepted' : notification.type === 'quote_rejected' ? 'rejected' : notification.type === 'new_user_approval' ? 'approval' : notification.type === 'deal' ? 'deal' : ''}`} />
                     )}
                   </div>
                 ))}
@@ -208,6 +229,24 @@ export function NotificationBell() {
                   Delete all
                 </button>
               </div>
+              <Link
+                href="/notifications"
+                className="notification-view-all"
+                onClick={() => setIsOpen(false)}
+              >
+                View all notifications
+              </Link>
+            </div>
+          )}
+          {notifications.length === 0 && (
+            <div className="notification-footer">
+              <Link
+                href="/notifications"
+                className="notification-view-all"
+                onClick={() => setIsOpen(false)}
+              >
+                View all notifications
+              </Link>
             </div>
           )}
         </div>

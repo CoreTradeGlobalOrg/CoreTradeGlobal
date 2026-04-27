@@ -12,6 +12,7 @@ import { useState } from 'react';
 import { useQuotes } from '@/presentation/hooks/request/useQuotes';
 import { useUpdateQuoteStatus } from '@/presentation/hooks/request/useUpdateQuoteStatus';
 import { useConversations } from '@/presentation/hooks/messaging/useConversations';
+import toast from 'react-hot-toast';
 import { getUnitLabel } from '@/core/constants/units';
 import {
   MessageCircle,
@@ -93,6 +94,7 @@ export function QuotesSection({ request, isOwner }) {
       );
     } catch (error) {
       console.error('Failed to accept quote:', error);
+      toast.error(error.message || 'Failed to accept quote. Please try again.');
     } finally {
       setProcessingQuoteId(null);
     }
@@ -106,6 +108,7 @@ export function QuotesSection({ request, isOwner }) {
       await rejectQuote(requestId, quote.id, quote.userId, productName);
     } catch (error) {
       console.error('Failed to reject quote:', error);
+      toast.error(error.message || 'Failed to reject quote. Please try again.');
     } finally {
       setProcessingQuoteId(null);
     }
@@ -127,6 +130,7 @@ export function QuotesSection({ request, isOwner }) {
       });
     } catch (error) {
       console.error('Failed to start conversation:', error);
+      toast.error(error.message || 'Failed to start conversation. Please try again.');
     }
   };
 

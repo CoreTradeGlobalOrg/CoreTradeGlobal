@@ -6,6 +6,14 @@ html, body {
   color: #F5F5F5;
 }
 
+:root {
+  --navbar-height: 100px; /* fallback until ResizeObserver sets actual value (navbar only, ticker excluded) */
+}
+
+html {
+  scroll-padding-top: calc(var(--navbar-height) + 16px);
+}
+
 /* Hide number input spinners/arrows */
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button {
@@ -15,6 +23,14 @@ input[type="number"]::-webkit-outer-spin-button {
 input[type="number"] {
   -moz-appearance: textfield;
   appearance: textfield;
+}
+
+/* Date picker: white icon, dark scheme */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+}
+input[type="date"] {
+  color-scheme: dark;
 }
 
 :root {
@@ -206,12 +222,13 @@ a:hover {
 /* RFQ Card Exact Match */
 .rfq-card {
   background: linear-gradient(160deg, rgba(26, 28, 32, 0.6) 0%, rgba(15, 27, 43, 0.8) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  /* border-bottom unified with border */
   border-radius: 20px;
   padding: 24px;
   display: flex;
   flex-direction: column;
-  transition: all 0.3s ease;
+  transition: border-color 300ms ease, box-shadow 300ms ease, transform 0.3s ease;
   position: relative;
   overflow: hidden;
   cursor: pointer;
@@ -225,9 +242,9 @@ a:hover {
 }
 
 .rfq-card:hover {
-  transform: translateY(-8px);
-  border-color: rgba(255, 215, 0, 0.4);
-  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+  transform: translateY(-6px);
+  border-color: rgba(255, 215, 0, 0.5);
+  box-shadow: 0 0 12px rgba(255, 215, 0, 0.1);
 }
 
 /* Form Inputs */
@@ -255,19 +272,14 @@ a:hover {
   top: 0;
   left: 0;
   width: 100%;
-  height: 100px;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 40px;
+  flex-direction: column;
   z-index: 1000;
   background: #0F1B2B;
   overflow: visible;
   border-bottom: 1px solid transparent;
   /* Smooth transitions for size/shadow only - NO background transition */
-  transition: height 0.25s ease-out,
-              padding 0.25s ease-out,
-              border-color 0.25s ease-out,
+  transition: border-color 0.25s ease-out,
               box-shadow 0.25s ease-out;
   /* GPU acceleration to prevent glitches */
   -webkit-backface-visibility: hidden;
@@ -275,16 +287,29 @@ a:hover {
   transform: translateZ(0);
 }
 
+.navbar-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  height: 72px;
+  padding: 0 40px;
+  transition: height 0.25s ease-out, padding 0.25s ease-out;
+}
+
 .navbar.scrolled {
-  height: 80px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.navbar.scrolled .navbar-content {
+  height: 56px;
 }
 
 /* Sticky Search Bar */
 .sticky-search {
   position: fixed;
-  top: 85px;
+  top: var(--navbar-height);
   left: 50%;
   transform: translateX(-50%) scale(0);
   width: 400px;
@@ -304,7 +329,7 @@ a:hover {
 /* Sticky Search Toggle Button */
 .sticky-search-toggle {
   position: fixed;
-  top: 85px;
+  top: var(--navbar-height);
   right: 40px;
   width: 50px;
   height: 50px;
@@ -350,7 +375,7 @@ a:hover {
 }
 
 .nav-logo-img {
-  height: 120px;
+  height: 64px;
   width: auto;
   object-fit: contain;
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
@@ -358,7 +383,7 @@ a:hover {
 }
 
 .navbar.scrolled .nav-logo-img {
-  height: 80px;
+  height: 48px;
 }
 
 .nav-brand-text {
@@ -456,17 +481,19 @@ a:hover {
 /* --- HOMEPAGE RFQ CARD --- */
 .hp-rfq-card {
   background: linear-gradient(160deg, rgba(26, 40, 59, 0.6) 0%, rgba(15, 27, 43, 0.9) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  /* border-bottom unified with border */
   border-radius: 16px;
   padding: 20px;
-  transition: all 0.3s ease;
+  transition: border-color 300ms ease, box-shadow 300ms ease, transform 0.3s ease;
 }
 
 .hp-rfq-card:hover {
-  border-color: rgba(255, 215, 0, 0.3);
+  border-color: rgba(255, 215, 0, 0.5);
   transform: translateY(-4px);
-  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 0 12px rgba(255, 215, 0, 0.1);
 }
+
 
 /* --- FOOTER STYLES (Moved from homepage.css) --- */
 .footer-section {
@@ -581,8 +608,8 @@ a:hover {
 @media (max-width: 768px) {
 
   /* Navbar Adjustments */
-  .navbar {
-    height: 70px;
+  .navbar-content {
+    height: 56px;
     padding: 0 16px;
   }
 
@@ -592,7 +619,7 @@ a:hover {
   }
 
   .nav-logo-img {
-    height: 70px;
+    height: 48px;
   }
 
   .nav-brand-text {
@@ -600,13 +627,13 @@ a:hover {
     transform: translateY(-2px);
   }
 
-  .navbar.scrolled {
-    height: 60px;
+  .navbar.scrolled .navbar-content {
+    height: 48px;
     padding: 0 16px;
   }
 
   .navbar.scrolled .nav-logo-img {
-    height: 50px;
+    height: 40px;
   }
 
   .navbar.scrolled .nav-brand-text {
@@ -829,13 +856,14 @@ a:hover {
   min-width: 280px;
   height: 380px;
   background: linear-gradient(160deg, rgba(26,28,32,0.6) 0%, rgba(15,27,43,0.8) 100%);
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  /* border-bottom unified with border */
   border-radius: 20px;
   padding: 20px;
   position: relative;
   display: flex;
   flex-direction: column;
-  transition: 0.3s;
+  transition: border-color 300ms ease, box-shadow 300ms ease, transform 0.3s;
   cursor: pointer;
   flex-shrink: 0;
   text-decoration: none;
@@ -843,7 +871,8 @@ a:hover {
 
 .fair-card:hover {
   transform: translateY(-8px);
-  border-color: #FFD700;
+  border-color: rgba(255, 215, 0, 0.5);
+  box-shadow: 0 0 12px rgba(255, 215, 0, 0.1);
 }
 
 .fair-content {
@@ -1031,6 +1060,65 @@ a:hover {
   transform: scale(0.95);
 }
 
+/* --- HERO SLOGAN SILVER GRADIENT --- */
+.hero-slogan {
+  background: linear-gradient(180deg, #E8E8E8 0%, #C0C0C0 50%, #A0A0A0 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* --- SHIMMER ANIMATION (shared utility) --- */
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.03) 25%,
+    rgba(255, 255, 255, 0.08) 50%,
+    rgba(255, 255, 255, 0.03) 75%
+  );
+  background-size: 800px 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* --- SHARED CARD UTILITY CLASSES --- */
+.card-surface {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.card-border-gold {
+  border: 1px solid rgba(255, 215, 0, 0.2);
+}
+
+.card-hover-gold {
+  transition: border-color 300ms ease, box-shadow 300ms ease;
+}
+.card-hover-gold:hover {
+  border-color: rgba(255, 215, 0, 0.5);
+  box-shadow: 0 0 12px rgba(255, 215, 0, 0.1);
+}
+
+/* Note: border-image + border-radius are CSS-incompatible.
+   Use solid gold bottom border instead. */
+.card-bottom-gold {
+  /* border-bottom unified with border */
+}
+
+/* --- CURRENCY TICKER MARQUEE ANIMATION --- */
+/* Used by CurrencyTicker component on the homepage */
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+  animation: marquee 40s linear infinite;
+}
+
 /* --- EDIT MODE GLOW ANIMATION --- */
 @keyframes pulse-glow {
   0%, 100% {
@@ -1120,5 +1208,117 @@ a:hover {
 
   .profile-rfq-grid .rfq-card > p {
     flex: 1;
+  }
+}
+
+/* ── Print-only helper (hidden on screen) ──────────────────────────────── */
+.print-only {
+  display: none;
+}
+
+/* ── Contract PDF Print Styles ──────────────────────────────────────────── */
+@media print {
+  /* Hide non-printable elements */
+  nav,
+  .no-print,
+  button,
+  footer,
+  .print-hide {
+    display: none !important;
+  }
+
+  /* Show print-only elements */
+  .print-only {
+    display: block !important;
+  }
+
+  /* Reset background for printing */
+  body {
+    background: white !important;
+    color: black !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Contract content fills page */
+  .contract-content {
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 20px !important;
+  }
+
+  /* Remove sticky positioning for print */
+  .lg\:sticky {
+    position: static !important;
+  }
+
+  /* Ensure clause sections do not break mid-clause */
+  .clause-section {
+    break-inside: avoid;
+  }
+
+  /* Force accordion sections open for print */
+  .accordion-content {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  /* Remove padding-top from main layout (navbar is hidden on print) */
+  .pt-\[var\(--navbar-height\)\] {
+    padding-top: 20px !important;
+  }
+
+  /* Trade Summary print styles */
+  /* Show trade summary full-width for PDF output */
+  .trade-summary-print {
+    max-width: 100% !important;
+    padding: 20px !important;
+  }
+
+  /* Force two-column summary to single-column for print clarity */
+  .trade-summary-print .lg\:flex-row {
+    flex-direction: column !important;
+  }
+
+  /* Keep card borders visible on print */
+  .trade-summary-print [class*="border"] {
+    border-color: #ccc !important;
+  }
+
+  /* Readable text on white background */
+  .trade-summary-print,
+  .trade-summary-print * {
+    color: black !important;
+    background: white !important;
+    border-color: #ccc !important;
+  }
+
+  /* Page break rules for trade summary sections */
+  .trade-summary-print .space-y-4 > * {
+    break-inside: avoid;
+  }
+
+  /* @page margin:0 removes the margin area where browsers render URL footers.
+   * body padding preserves content spacing. */
+  @page {
+    margin: 0;
+    size: A4;
+  }
+
+  body {
+    padding: 20mm 15mm 25mm !important;
+    margin: 0 !important;
+  }
+
+  /* Branded print footer replacing browser URL */
+  body::after {
+    content: "coretradeglobal.com";
+    position: fixed;
+    bottom: 5mm;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-size: 9px;
+    color: #999;
   }
 }

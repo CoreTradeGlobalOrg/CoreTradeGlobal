@@ -4,8 +4,9 @@ import {
   TotpMultiFactorGenerator,
   reauthenticateWithCredential,
   EmailAuthProvider,
+  getMultiFactorResolver,
 } from 'firebase/auth';
-import { doc, setDoc, deleteDoc } from 'firebase/firestore';
+import { doc, setDoc, deleteDoc, getDoc } from 'firebase/firestore';
 import { auth, db } from '@/core/config/firebase.config';
 
 /**
@@ -24,10 +25,11 @@ export function useTwoFactor() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [isEnrolled, setIsEnrolled] = useState(false);
+  const [remainingCodes, setRemainingCodes] = useState(null);
 
   const totpSecretRef = useRef(null);
 
-  // Check enrollment status on mount
+  // Check enrollment status and remaining backup codes on mount
   useEffect(() => {
     const user = auth.currentUser;
     if (!user) return;
@@ -36,6 +38,17 @@ export function useTwoFactor() {
       const factors = multiFactor(user).enrolledFactors;
       const enrolled = factors.some((f) => f.factorId === 'totp');
       setIsEnrolled(enrolled);
+
+      if (enrolled) {
+        // Fetch remaining backup codes count
+        getDoc(doc(db, 'users', user.uid, 'security', 'backupCodes')).then((snap) => {
+          if (snap.exists()) {
+            setRemainingCodes(snap.data().codes?.length ?? 0);
+          } else {
+            setRemainingCodes(0);
+          }
+        });
+      }
     } catch {
       // multiFactor may throw if user not loaded yet — ignore
     }
@@ -109,8 +122,8 @@ export function useTwoFactor() {
     }
   };
 
-  /** Disable 2FA: reauthenticate, unenroll TOTP factor, delete backup codes */
-  const disableTwoFactor = async (currentPassword) => {
+  /** Disable 2FA: reauthenticate (with MFA challenge), unenroll TOTP factor, delete backup codes */
+  const disableTwoFactor = async (currentPassword, totpCode) => {
     setLoading(true);
     setError(null);
 
@@ -118,8 +131,27 @@ export function useTwoFactor() {
       const user = auth.currentUser;
       if (!user) throw new Error('Not authenticated');
 
+      // Reauthentication with MFA requires resolving the MFA challenge
       const credential = EmailAuthProvider.credential(user.email, currentPassword);
-      await reauthenticateWithCredential(user, credential);
+      try {
+        await reauthenticateWithCredential(user, credential);
+      } catch (reauthErr) {
+        if (reauthErr.code === 'auth/multi-factor-auth-required') {
+          // Resolve MFA challenge with the provided TOTP code
+          if (!totpCode) {
+            setError('Please enter your authenticator code to disable 2FA');
+            setLoading(false);
+            return;
+          }
+          const resolver = getMultiFactorResolver(auth, reauthErr);
+          const totpHint = resolver.hints.find((h) => h.factorId === 'totp');
+          if (!totpHint) throw new Error('No TOTP factor found for MFA resolution');
+          const assertion = TotpMultiFactorGenerator.assertionForSignIn(totpHint.uid, totpCode);
+          await resolver.resolveSignIn(assertion);
+        } else {
+          throw reauthErr;
+        }
+      }
 
       const factors = multiFactor(user).enrolledFactors;
       const totpFactor = factors.find((f) => f.factorId === 'totp');
@@ -139,10 +171,58 @@ export function useTwoFactor() {
     } catch (err) {
       if (err.code === 'auth/user-token-expired') {
         setError('You have been signed out. Please log in again.');
-        // Redirect handled by caller after seeing this error
       } else {
         setError(_mapError(err));
       }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /** Regenerate backup codes (requires reauthentication + TOTP) */
+  const regenerateBackupCodes = async (currentPassword, totpCode) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const user = auth.currentUser;
+      if (!user) throw new Error('Not authenticated');
+
+      // Reauthenticate — will trigger MFA challenge since 2FA is enrolled
+      const credential = EmailAuthProvider.credential(user.email, currentPassword);
+      try {
+        await reauthenticateWithCredential(user, credential);
+      } catch (reauthErr) {
+        if (reauthErr.code === 'auth/multi-factor-auth-required') {
+          if (!totpCode) {
+            setError('Please also enter your authenticator code');
+            setLoading(false);
+            return;
+          }
+          const resolver = getMultiFactorResolver(auth, reauthErr);
+          const totpHint = resolver.hints.find((h) => h.factorId === 'totp');
+          if (!totpHint) throw new Error('No TOTP factor found for MFA resolution');
+          const assertion = TotpMultiFactorGenerator.assertionForSignIn(totpHint.uid, totpCode);
+          await resolver.resolveSignIn(assertion);
+        } else {
+          throw reauthErr;
+        }
+      }
+
+      // Generate new codes
+      const plainCodes = await _generateBackupCodes(10);
+      const hashedCodes = await Promise.all(plainCodes.map(_sha256Hex));
+
+      await setDoc(doc(db, 'users', user.uid, 'security', 'backupCodes'), {
+        codes: hashedCodes,
+        createdAt: new Date(),
+      });
+
+      setBackupCodes(plainCodes);
+      setRemainingCodes(10);
+      setStep('showCodes');
+    } catch (err) {
+      setError(_mapError(err));
     } finally {
       setLoading(false);
     }
@@ -168,6 +248,8 @@ export function useTwoFactor() {
     reauthAndGenerateSecret,
     verifyAndEnroll,
     disableTwoFactor,
+    regenerateBackupCodes,
+    remainingCodes,
     reset,
   };
 }
@@ -208,6 +290,10 @@ function _mapError(err) {
       return 'Too many attempts. Please try again later';
     case 'auth/invalid-verification-code':
       return 'Invalid code. Please check your authenticator app';
+    case 'auth/multi-factor-auth-required':
+      return 'Please enter your authenticator code';
+    case 'auth/mfa-enrollment-already-complete':
+      return '2FA is already enrolled. Disable it first to re-enroll.';
     default:
       return err.message || 'An error occurred. Please try again';
   }

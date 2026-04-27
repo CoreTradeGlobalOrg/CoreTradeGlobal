@@ -72,45 +72,30 @@ export default function NewsDetailClient() {
     };
 
     const handleShare = async () => {
+        const articleUrl = `https://coretradeglobal.com/news/${newsId}`;
         if (navigator.share) {
             try {
                 await navigator.share({
                     title: news.title,
                     text: news.excerpt,
-                    url: window.location.href,
+                    url: articleUrl,
                 });
             } catch (err) {
-                console.log('Share cancelled');
+                // Share was cancelled by user
             }
         } else {
-            navigator.clipboard.writeText(window.location.href);
+            navigator.clipboard.writeText(articleUrl);
             alert('Link copied to clipboard!');
         }
     };
 
-    const handleLinkedInShare = async () => {
-        const shareText = `${news.title}\n\nI found this interesting article on Core Trade Global!`;
-        const shareUrl = `https://coretradeglobal.com/news/${newsId}`;
-
-        // Check if mobile
-        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-
-        if (isMobile && navigator.share) {
-            // Mobile: Use native share API
-            try {
-                await navigator.share({
-                    title: news.title,
-                    text: shareText,
-                    url: shareUrl,
-                });
-            } catch (err) {
-                console.log('Share cancelled');
-            }
-        } else {
-            // Desktop: Open LinkedIn with pre-filled text
-            const linkedInUrl = `https://www.linkedin.com/feed/?shareActive=true&text=${encodeURIComponent(shareText + '\n\n' + shareUrl)}`;
-            window.open(linkedInUrl, '_blank');
-        }
+    const handleLinkedInShare = () => {
+        const articleUrl = `https://coretradeglobal.com/news/${newsId}`;
+        const content = news.excerpt || news.content || '';
+        const snippet = content.length > 200 ? content.slice(0, 200) + '...' : content;
+        const shareText = `${news.title}\n\n${snippet}\n\n${articleUrl}`;
+        const url = `https://www.linkedin.com/feed/?shareActive=true&text=${encodeURIComponent(shareText)}`;
+        window.open(url, '_blank', 'noopener,noreferrer');
     };
 
     if (loading) {
@@ -123,7 +108,7 @@ export default function NewsDetailClient() {
 
     if (error || !news) {
         return (
-            <div className="min-h-screen pt-[120px] pb-20 bg-radial-navy flex items-center justify-center px-4">
+            <div className="min-h-screen pt-[var(--navbar-height)] pb-20 bg-radial-navy flex items-center justify-center px-4">
                 <div className="glass-card max-w-lg w-full p-8 text-center">
                     <div className="text-6xl mb-4">📰</div>
                     <h2 className="text-2xl font-bold text-white mb-2">News Not Found</h2>
@@ -137,7 +122,7 @@ export default function NewsDetailClient() {
     }
 
     return (
-        <div className="min-h-screen pt-[120px] pb-20 bg-radial-navy">
+        <div className="min-h-screen pt-[var(--navbar-height)] pb-20 bg-radial-navy">
             <div className="max-w-[1200px] mx-auto px-4">
                 {/* Back Button */}
                 <button

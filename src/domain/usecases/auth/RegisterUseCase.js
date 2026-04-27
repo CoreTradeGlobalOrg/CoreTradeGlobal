@@ -88,20 +88,11 @@ export class RegisterUseCase {
 
       // 4. Upload company logo if provided
       if (companyLogoFile && user.uid) {
-        console.log('📸 [RegisterUseCase] Starting logo upload for user:', user.uid);
-        console.log('📸 [RegisterUseCase] Logo file details:', {
-          name: companyLogoFile.name,
-          type: companyLogoFile.type,
-          size: companyLogoFile.size,
-        });
-
         try {
           const logoUrl = await this.authRepository.uploadCompanyLogo(
             user.uid,
             companyLogoFile
           );
-
-          console.log('📸 [RegisterUseCase] Logo uploaded successfully, URL:', logoUrl);
 
           // Update user profile with logo URL
           if (logoUrl) {
@@ -109,18 +100,11 @@ export class RegisterUseCase {
               companyLogo: logoUrl,
               updatedAt: new Date(),
             });
-            console.log('📸 [RegisterUseCase] User profile updated with logo URL');
           }
         } catch (logoError) {
-          console.error('❌ [RegisterUseCase] Failed to upload company logo:', logoError);
-          console.error('❌ [RegisterUseCase] Error details:', logoError.message, logoError.stack);
+          console.error('❌ [RegisterUseCase] Failed to upload company logo:', logoError.message);
           // Don't fail registration if logo upload fails
         }
-      } else {
-        console.log('📸 [RegisterUseCase] No logo to upload:', {
-          hasFile: !!companyLogoFile,
-          hasUserId: !!user.uid,
-        });
       }
 
       // 5. Send email verification

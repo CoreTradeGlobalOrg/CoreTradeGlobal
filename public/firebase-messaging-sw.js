@@ -1,13 +1,13 @@
 /**
  * Firebase Messaging Service Worker
  *
- * Handles push notifications when the app is in the background
+ * Uses Firebase compat SDK for token management (required by getToken).
+ * Uses native push event handler for notification display (avoids compat SDK hang).
  */
 
-importScripts('https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js');
-importScripts('https://www.gstatic.com/firebasejs/9.0.0/firebase-messaging-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/12.9.0/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/12.9.0/firebase-messaging-compat.js');
 
-// Firebase config - same as in your app
 const firebaseConfig = {
   apiKey: "AIzaSyCcaUZDmLXsHFthz3Se1a4EbULPVwjsdJA",
   authDomain: "core-trade-global.firebaseapp.com",
@@ -18,69 +18,91 @@ const firebaseConfig = {
   measurementId: "G-MV8N1HJ29Q"
 };
 
-// Initialize Firebase
 firebase.initializeApp(firebaseConfig);
-
-// Initialize Firebase Messaging
+// Initialize messaging instance — required for getToken() to work from the client
 const messaging = firebase.messaging();
+// Suppress compat SDK's default notification — we handle push natively below
+messaging.onBackgroundMessage(() => {});
 
-// Handle background messages (data-only messages)
-messaging.onBackgroundMessage((payload) => {
-  console.log('[firebase-messaging-sw.js] Received background message:', payload);
+// Handle push events natively (more reliable than onBackgroundMessage)
+self.addEventListener('push', (event) => {
+  // Skip if Firebase SDK already handled it via onBackgroundMessage
+  if (event.__handled) return;
 
-  // Use data fields since we're using data-only messages
-  const notificationTitle = payload.data?.senderName || 'New Message';
-  const notificationOptions = {
-    body: payload.data?.messageContent || 'You have a new message',
-    icon: '/icons/icon-192x192.png',
-    badge: '/icons/icon-192x192.png',
-    tag: payload.data?.conversationId || 'message',
-    data: payload.data,
-    vibrate: [100, 50, 100],
-    actions: [
-      {
-        action: 'open',
-        title: 'Open',
-      },
-      {
-        action: 'close',
-        title: 'Close',
-      },
-    ],
-  };
+  console.log('[firebase-messaging-sw.js] Push received');
 
-  self.registration.showNotification(notificationTitle, notificationOptions);
+  let data = {};
+  try {
+    const payload = event.data?.json();
+    data = payload?.data || payload || {};
+  } catch {
+    data = { messageContent: event.data?.text() || 'New notification' };
+  }
+
+  const dataType = data.type;
+  let notificationTitle;
+  let notificationBody;
+  let tag;
+  let clickUrl;
+
+  if (dataType === 'deal_event') {
+    notificationTitle = data.title || 'Deal Update';
+    notificationBody = data.body || 'You have a new deal update';
+    tag = 'deal-' + (data.dealId || 'unknown');
+    clickUrl = data.click_action || ('/deals/' + data.dealId);
+  } else if (dataType === 'new_message') {
+    notificationTitle = data.senderName || 'New Message';
+    notificationBody = data.messageContent || 'You have a new message';
+    tag = data.conversationId || 'message';
+    clickUrl = data.conversationId
+      ? ('/messages/' + data.conversationId)
+      : '/messages';
+  } else {
+    notificationTitle = data.title || 'CoreTradeGlobal';
+    notificationBody = data.body || data.messageContent || 'You have a new notification';
+    tag = 'general';
+    clickUrl = '/';
+  }
+
+  event.waitUntil(
+    // Skip if a client window is focused (foreground onMessage handler will show it)
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      const hasFocusedClient = clientList.some((client) => client.visibilityState === 'visible');
+      if (hasFocusedClient) return;
+
+      return self.registration.showNotification(notificationTitle, {
+      body: notificationBody,
+      icon: '/icons/icon-192x192.png',
+      badge: '/icons/icon-192x192.png',
+      tag: tag,
+      data: { ...data, clickUrl },
+      vibrate: [100, 50, 100],
+      actions: [
+        { action: 'open', title: 'Open' },
+        { action: 'close', title: 'Close' },
+      ],
+    });
+    })
+  );
 });
 
 // Handle notification click
 self.addEventListener('notificationclick', (event) => {
-  console.log('[firebase-messaging-sw.js] Notification clicked:', event);
-
   event.notification.close();
 
-  if (event.action === 'close') {
-    return;
-  }
+  if (event.action === 'close') return;
 
-  // Build full URL to open
-  const conversationId = event.notification.data?.conversationId;
-  const path = conversationId ? `/messages/${conversationId}` : '/messages';
+  const clickUrl = event.notification.data?.clickUrl;
+  const path = clickUrl || '/';
   const urlToOpen = new URL(path, self.location.origin).href;
-
-  console.log('[firebase-messaging-sw.js] Opening URL:', urlToOpen);
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-      // Check if there's already an open window on our origin
       for (const client of clientList) {
         if (client.url.startsWith(self.location.origin) && 'focus' in client) {
-          // Navigate existing window to the conversation
-          return client.focus().then(() => {
-            return client.navigate(urlToOpen);
-          });
+          return client.focus().then(() => client.navigate(urlToOpen));
         }
       }
-      // Open new window if none exists
       if (clients.openWindow) {
         return clients.openWindow(urlToOpen);
       }

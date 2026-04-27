@@ -46,10 +46,6 @@ class NewsletterService {
       // Save to Firebase
       const docRef = await addDoc(collection(db, this.collectionName), docData);
 
-      // Log success (you can replace with analytics)
-      if (process.env.NODE_ENV === 'development') {
-        console.log('Newsletter subscription successful:', docRef.id);
-      }
 
       return {
         success: true,

@@ -41,7 +41,6 @@ export function NotificationListener() {
         // Check if FCM is supported
         const supported = await isSupported();
         if (!supported) {
-          console.log('[FCM] Not supported in this browser');
           return;
         }
 
@@ -49,7 +48,11 @@ export function NotificationListener() {
         let registration = await navigator.serviceWorker.getRegistration('/firebase-messaging-sw.js');
         if (!registration) {
           registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
-          console.log('[FCM] Service worker registered');
+        }
+        // Wait for the service worker to be ready
+        if (!registration.active) {
+          await navigator.serviceWorker.ready;
+          registration = await navigator.serviceWorker.getRegistration('/firebase-messaging-sw.js');
         }
 
         // Get messaging instance
@@ -68,55 +71,76 @@ export function NotificationListener() {
             fcmToken: token,
             fcmTokenUpdatedAt: new Date(),
           });
-          console.log('[FCM] Token refreshed and saved');
         }
 
         // Listen for foreground messages (data-only messages)
         unsubscribe = onMessage(messaging, (payload) => {
-          console.log('[FCM] Foreground message received:', payload);
 
-          // Use data fields since we're using data-only messages
-          const notificationTitle = payload.data?.senderName || 'New Message';
-          const notificationBody = payload.data?.messageContent || 'You have a new message';
+          const dataType = payload.data?.type;
 
-          // Try native Notification API first (works better in Chrome)
+          // Determine notification content based on type
+          let notificationTitle;
+          let notificationBody;
+          let clickUrl;
+          let tag;
+
+          if (dataType === 'deal_event') {
+            notificationTitle = payload.data?.title || 'Deal Update';
+            notificationBody = payload.data?.body || 'You have a new deal update';
+            clickUrl = payload.data?.click_action || `/deals/${payload.data?.dealId}`;
+            tag = `deal-${payload.data?.dealId || 'unknown'}`;
+          } else if (dataType === 'new_message') {
+            // Direct message notifications
+            notificationTitle = payload.data?.senderName || 'New Message';
+            notificationBody = payload.data?.messageContent || 'You have a new message';
+            clickUrl = payload.data?.conversationId
+              ? `/messages/${payload.data.conversationId}`
+              : '/messages';
+            tag = payload.data?.conversationId || 'message';
+          } else {
+            // Generic fallback — handles rfq_created, new_user_approval, quote_received,
+            // announcement, and any future notification types. Uses title/body fields
+            // that all new CF triggers are required to set in their FCM data payload.
+            // VAPID_KEY must be set in .env.local and production env for FCM to work.
+            notificationTitle = payload.data?.title || 'CoreTradeGlobal';
+            notificationBody = payload.data?.body || payload.data?.messageContent || 'You have a new notification';
+            clickUrl = payload.data?.click_action || payload.data?.link || '/';
+            tag = dataType || 'general';
+          }
+
+          // Show notification
           try {
             const notification = new Notification(notificationTitle, {
               body: notificationBody,
               icon: '/icons/icon-192x192.png',
-              tag: payload.data?.conversationId || 'message',
-              data: payload.data,
+              tag,
+              data: { ...payload.data, clickUrl },
             });
 
             notification.onclick = () => {
               window.focus();
-              const conversationId = payload.data?.conversationId;
-              if (conversationId && openConversationRef.current) {
-                // Open FAB with the conversation instead of navigating
-                openConversationRef.current(conversationId);
+              if (dataType === 'new_message') {
+                // Open FAB with the conversation (message-specific behavior)
+                const conversationId = payload.data?.conversationId;
+                if (conversationId && openConversationRef.current) {
+                  openConversationRef.current(conversationId);
+                } else {
+                  window.location.href = clickUrl;
+                }
+              } else {
+                // Navigate to the target URL for all other notification types
+                // (deal_event, rfq_created, new_user_approval, quote_received, etc.)
+                window.location.href = clickUrl;
               }
               notification.close();
             };
 
-            console.log('[FCM] Notification shown via native API');
           } catch (err) {
             console.error('[FCM] Native notification failed:', err);
-
-            // Fallback to service worker
-            navigator.serviceWorker.ready.then((reg) => {
-              reg.showNotification(notificationTitle, {
-                body: notificationBody,
-                icon: '/icons/icon-192x192.png',
-                tag: payload.data?.conversationId || 'message',
-                data: payload.data,
-              });
-              console.log('[FCM] Notification shown via service worker');
-            });
           }
         });
 
         setIsSetup(true);
-        console.log('[FCM] Listener setup complete');
       } catch (err) {
         console.error('[FCM] Setup error:', err);
       }

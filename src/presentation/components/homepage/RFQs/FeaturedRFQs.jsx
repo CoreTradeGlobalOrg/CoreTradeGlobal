@@ -282,7 +282,7 @@ export function FeaturedRFQs() {
 
         {/* RFQs Grid (using existing dynamic-container logic for scroll) */}
         <div className="featured-rfqs-grid">
-          <div className="dynamic-container" style={{ padding: 0, background: 'transparent' }}>
+          <div className="dynamic-container select-none" style={{ padding: 0, background: 'transparent' }}>
             {/* Scroll Arrows */}
             <button
               className={`scroll-arrow-btn scroll-left ${showLeftArrow ? 'visible' : ''}`}

@@ -99,7 +99,7 @@ export function DangerSection() {
             <div>
               <p className="text-sm font-medium text-white">Delete Account</p>
               <p className="text-xs text-[#A0A0A0] mt-0.5">
-                Your account will be scheduled for deletion with a 15-day recovery period.
+                If you decide to delete your account will be scheduled for deletion with a 15-day recovery period.
               </p>
             </div>
             <button
@@ -107,7 +107,7 @@ export function DangerSection() {
               onClick={handleOpenDeleteModal}
               className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white transition-colors text-sm font-medium flex-shrink-0"
             >
-              Delete Account
+              Permanently Delete Account
             </button>
           </div>
         </div>

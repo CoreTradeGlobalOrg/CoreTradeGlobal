@@ -3,6 +3,7 @@
  *
  * Login form with email and password
  * Uses useLogin hook for login functionality
+ * Supports MFA (TOTP) second step
  * MATCHES UI: login sayfası.html (Radial gradient background, glassmorphism)
  */
 
@@ -16,7 +17,7 @@ import toast from 'react-hot-toast';
 import { container } from '@/core/di/container';
 import { DeletedAccountDialog } from '@/presentation/components/features/auth/DeletedAccountDialog/DeletedAccountDialog';
 import { useTrackEvent } from '@/presentation/hooks/analytics';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, ShieldCheck, KeyRound } from 'lucide-react';
 
 export function LoginForm() {
   const [email, setEmail] = useState('');
@@ -24,56 +25,55 @@ export function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [showDeletedDialog, setShowDeletedDialog] = useState(false);
   const [deletionInfo, setDeletionInfo] = useState(null);
-  const { login, loading, error } = useLogin();
+  const [totpCode, setTotpCode] = useState('');
+  const [useBackupCode, setUseBackupCode] = useState(false);
+  const [backupCode, setBackupCode] = useState('');
+  const { login, completeMfaLogin, loginWithBackupCode, clearError, loading, error, mfaRequired } = useLogin();
   const { trackLogin } = useTrackEvent();
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get('redirect');
+
+  const handleLoginSuccess = async (user) => {
+    // Check if email is verified
+    const authRepo = container.getAuthRepository();
+    if (!authRepo.isEmailVerified()) {
+      toast.error('Please verify your email before logging in.');
+      router.push('/verify-email');
+      return;
+    }
+
+    // Set session cookie BEFORE navigating so middleware can read it
+    try {
+      const firebaseUser = authRepo.getCurrentUser();
+      if (firebaseUser) {
+        const idToken = await firebaseUser.getIdToken();
+        await fetch('/api/auth/session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ idToken, role: user.role }),
+        });
+      }
+    } catch (cookieError) {
+      console.error('Failed to set session cookie:', cookieError);
+    }
+
+    trackLogin('email');
+    toast.success('Login successful!');
+    localStorage.removeItem('ctg_auth_redirect');
+    window.location.href = redirectTo || '/';
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     try {
       const user = await login(email, password);
-
-      // Check if email is verified
-      const authRepo = container.getAuthRepository();
-      if (!authRepo.isEmailVerified()) {
-        toast.error('Please verify your email before logging in.');
-        router.push('/verify-email');
-        return;
-      }
-
-      // Set session cookie BEFORE navigating so middleware can read it
-      try {
-        const firebaseUser = authRepo.getCurrentUser();
-        if (firebaseUser) {
-          const idToken = await firebaseUser.getIdToken();
-          await fetch('/api/auth/session', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ idToken, role: user.role }),
-          });
-        }
-      } catch (cookieError) {
-        console.error('Failed to set session cookie:', cookieError);
-      }
-
-      // Track successful login
-      trackLogin('email');
-
-      // Success - redirect to homepage or intended page (from URL param only)
-      toast.success('Login successful!');
-
-      // Clear any stored redirect from ViewLimitGuard
-      localStorage.removeItem('ctg_auth_redirect');
-
-      // Use window.location for full page reload to ensure auth state is properly loaded
-      window.location.href = redirectTo || '/';
+      if (!user) return; // MFA required — form will switch to TOTP input
+      await handleLoginSuccess(user);
     } catch (err) {
       console.error('Login failed:', err);
 
-      // Check if account is deleted/banned
       if (err.message === 'ACCOUNT_DELETED' && err.deletionInfo) {
         setDeletionInfo(err.deletionInfo);
         setShowDeletedDialog(true);
@@ -84,12 +84,132 @@ export function LoginForm() {
     }
   };
 
+  const handleMfaSubmit = async (e) => {
+    e.preventDefault();
+
+    try {
+      if (useBackupCode) {
+        const user = await loginWithBackupCode(email, backupCode);
+        if (user.remainingBackupCodes !== undefined) {
+          toast.success(`Logged in with backup code. ${user.remainingBackupCodes} codes remaining.`);
+        }
+        await handleLoginSuccess(user);
+      } else {
+        const user = await completeMfaLogin(totpCode);
+        await handleLoginSuccess(user);
+      }
+    } catch (err) {
+      console.error('MFA verification failed:', err);
+      toast.error(error || (useBackupCode ? 'Invalid backup code.' : 'Invalid authenticator code.'));
+    }
+  };
+
   const handleAccountRecovered = () => {
-    // Clear form and show success message
     setEmail('');
     setPassword('');
     toast.success('Your account has been recovered. Please log in again.');
   };
+
+  // MFA step — show TOTP code or backup code input
+  if (mfaRequired) {
+    const isSubmitDisabled = useBackupCode
+      ? loading || backupCode.trim().length === 0
+      : loading || totpCode.length !== 6;
+
+    return (
+      <div className="login-card w-full max-w-[440px] p-10 text-center relative z-10">
+        <div className="flex justify-center mb-4">
+          <div className="w-16 h-16 rounded-full bg-[#FFD700]/10 flex items-center justify-center">
+            {useBackupCode
+              ? <KeyRound className="w-8 h-8 text-[#FFD700]" />
+              : <ShieldCheck className="w-8 h-8 text-[#FFD700]" />
+            }
+          </div>
+        </div>
+        <h1 className="text-[28px] font-bold text-white mb-2">
+          {useBackupCode ? 'Backup Code' : 'Two-Factor Authentication'}
+        </h1>
+        <p className="text-sm text-[#A0A0A0] mb-8 leading-relaxed">
+          {useBackupCode
+            ? 'Enter one of your backup codes to sign in.'
+            : 'Enter the 6-digit code from your authenticator app to continue.'
+          }
+        </p>
+
+        <form onSubmit={handleMfaSubmit} className="text-left">
+          {useBackupCode ? (
+            <div className="mb-5">
+              <label className="block text-xs text-[#A0A0A0] font-semibold tracking-wider uppercase mb-2">
+                Backup Code
+              </label>
+              <input
+                type="text"
+                value={backupCode}
+                onChange={(e) => setBackupCode(e.target.value.toUpperCase())}
+                placeholder="XXXXX-XXXXX"
+                className="form-input-anasyf text-center text-xl tracking-widest font-mono"
+                required
+                autoFocus
+                disabled={loading}
+              />
+            </div>
+          ) : (
+            <div className="mb-5">
+              <label className="block text-xs text-[#A0A0A0] font-semibold tracking-wider uppercase mb-2">
+                Authenticator Code
+              </label>
+              <input
+                type="text"
+                inputMode="numeric"
+                maxLength={6}
+                value={totpCode}
+                onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, ''))}
+                placeholder="000000"
+                className="form-input-anasyf text-center text-2xl tracking-[0.5em] font-mono"
+                required
+                autoFocus
+                disabled={loading}
+              />
+            </div>
+          )}
+
+          {error && (
+            <div className="p-3 mb-5 bg-red-900/20 border border-red-500/50 text-red-200 rounded text-sm">
+              {error}
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={isSubmitDisabled}
+            className="w-full p-4 bg-gradient-to-br from-[#FFD700] to-[#FDB931] text-[#0F1B2B] font-bold text-base rounded-full shadow-[0_4px_20px_rgba(255,215,0,0.2)] hover:-translate-y-0.5 hover:bg-white hover:shadow-[0_6px_30px_rgba(255,215,0,0.4)] active:scale-[0.98] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? 'Verifying...' : 'Verify & Log In'}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setUseBackupCode(!useBackupCode);
+              clearError();
+              setTotpCode('');
+              setBackupCode('');
+            }}
+            className="w-full mt-3 p-3 text-sm text-[#A0A0A0] hover:text-[#FFD700] transition-colors"
+          >
+            {useBackupCode ? 'Use authenticator app instead' : 'Lost your device? Use a backup code'}
+          </button>
+
+          <p className="mt-2 text-center text-xs text-[#A0A0A0]">
+            Having trouble? Contact{' '}
+            <a href="mailto:support@coretradeglobal.com" className="text-[#FFD700]">
+              support@coretradeglobal.com
+            </a>
+          </p>
+        </form>
+      </div>
+    );
+  }
 
   return (
     <div className="login-card w-full max-w-[440px] p-10 text-center relative z-10">

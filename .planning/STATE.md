@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-stopped_at: Completed 10-03-PLAN.md
-last_updated: "2026-04-12T18:20:06.998Z"
+stopped_at: Completed 15-02-PLAN.md
+last_updated: "2026-04-27T11:00:20.113Z"
 last_activity: "2026-04-02 - Completed quick task 5: Fix hero not fetching last verified user"
 progress:
   total_phases: 17
-  completed_phases: 1
-  total_plans: 3
-  completed_plans: 3
+  completed_phases: 6
+  total_plans: 24
+  completed_plans: 24
   percent: 71
 ---
 
@@ -98,6 +98,27 @@ Progress: [█████████████] 71%
 | Phase 10-settings-page P01 | 8 | 2 tasks | 4 files |
 | Phase 10-settings-page P02 | 12 | 2 tasks | 7 files |
 | Phase 10-settings-page P03 | 5 | 2 tasks | 8 files |
+| Phase 11-ui-ux-polish-and-visual-fixes P01 | 1 | 2 tasks | 4 files |
+| Phase 11-ui-ux-polish-and-visual-fixes P03 | 2 | 2 tasks | 9 files |
+| Phase 11 P02 | 4 | 2 tasks | 8 files |
+| Phase 12-notifications-and-email-system P01 | 3 | 2 tasks | 10 files |
+| Phase 12 P02 | 3 | 2 tasks | 1 files |
+| Phase 12 P03 | 1 | 1 tasks | 1 files |
+| Phase 12 P04 | 4 | 2 tasks | 3 files |
+| Phase 12 P05 | 4 | 2 tasks | 6 files |
+| Phase 13-messaging-and-communication-improvements P04 | 5 | 1 tasks | 2 files |
+| Phase 13-messaging-and-communication-improvements P02 | 1 | 1 tasks | 3 files |
+| Phase 13-messaging-and-communication-improvements P01 | 8 | 2 tasks | 4 files |
+| Phase 13-messaging-and-communication-improvements P03 | 3 | 2 tasks | 6 files |
+| Phase 14 P01 | 2 | 2 tasks | 3 files |
+| Phase 14 P03 | 2 | 2 tasks | 6 files |
+| Phase 14 P02 | 3 | 2 tasks | 4 files |
+| Phase 14 P05 | 5 | 1 tasks | 1 files |
+| Phase 14 P04 | 2 | 2 tasks | 2 files |
+| Phase 15 P03 | 4 | 2 tasks | 5 files |
+| Phase 15 P01 | 5 | 2 tasks | 4 files |
+| Phase 15-deal-and-trade-flow-enhancements P04 | 12 | 2 tasks | 12 files |
+| Phase 15 P02 | 5 | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -272,6 +293,59 @@ Recent decisions affecting current work:
 - [Phase 10-03]: subscription-status GET endpoint uses SHA-256 hash matching Phase 9 CF pattern for consistent email identity
 - [Phase 10-03]: useNotificationPreferences deep-merges Firestore prefs with defaults to prevent undefined toggle states
 - [Phase 10-03]: EmailSubscriptionsSection is single global toggle (not 3 categories) — Phase 9 model stores one doc per email
+- [Phase 11-01]: CurrencyTicker moved to layout.jsx above Navbar — scrolls away with page; navbar ResizeObserver now measures navbar-only height
+- [Phase 11-01]: scroll-padding-top on html = var(--navbar-height) + 16px prevents anchor links hiding behind fixed navbar
+- [Phase 11-01]: card-bottom-gold uses solid border-bottom (not border-image) — border-image and border-radius are CSS-incompatible
+- [Phase 11-03]: DatePicker accepts YYYY-MM-DD strings directly — pass null for empty; react-hook-form uses Controller wrapper; useState-controlled forms wire directly
+- [Phase 11-03]: Fairs partition pattern: search filter applied before status partitioning; past bucket sorted newest-first (descending startDate)
+- [Phase 11]: news-card gold styles updated in homepage.css (not globals.css) because homepage.css loads later via (main)/layout.jsx import
+- [Phase 11]: select-none applied only to outer scroll container divs, not card content, preserving user ability to copy card text
+- [Phase 12-01]: querySubcollection now returns _snapshot (raw DocumentSnapshot) on each result — enables cursor-based pagination without bypassing data source abstraction
+- [Phase 12-01]: NotificationCenterPage uses useMessages() for real-time window as page 1; getByUserIdAfter for subsequent pages — avoids duplicate Firestore subscriptions
+- [Phase 12-01]: deleteNotification/deleteAllNotifications aliases added to NotificationRepository for consistent public API naming alongside existing delete/deleteAll methods
+- [Phase 12]: buildBrandedEmailHtml is the single email template — all callers pass body HTML + optional CTA + optional footer note
+- [Phase 12]: Message email throttle is global per user via lastMessageEmailSentAt field — race condition acceptable for 1/day limit
+- [Phase 12]: LinkedIn share uses share-offsite URL pattern for direct dialog opening
+- [Phase 12]: sendFCMPushToUser extracted as shared helper to avoid duplication across three new CF triggers
+- [Phase 12]: broadcastQuoteRequests sends provider FCM AFTER batch.commit() — non-blocking, outside-transaction pattern
+- [Phase 12]: onRFQCreated uses preferences?.providers category; onNewMemberRegistered uses preferences?.system for admin alerts
+- [Phase 12]: deliverAnnouncement extracted as shared helper to avoid code duplication between sendAnnouncement (immediate) and processScheduledAnnouncements (scheduled)
+- [Phase 12]: Admin users excluded from targeted announcements in deliverAnnouncement loop (audience filter targets member/provider/lawyer roles only)
+- [Phase 13-04]: getTabs and getColumns default to logistics labels for both logistics providers and admin (preserves existing admin behavior)
+- [Phase 13-04]: columnDefs used as variable name for label config inside ProviderDashboard to avoid shadowing the data columns prop
+- [Phase 13-02]: MessagesWidget early-returns null on pathname?.startsWith('/messages') — FAB hidden on /messages and sub-routes
+- [Phase 13-02]: Notification click routing is pathname-aware across MessagesWidget, NotificationCenterPage, and NotificationBell: openConversation() on other pages, router.push('/messages?conversation=ID') on /messages
+- [Phase 13-messaging-and-communication-improvements]: ConversationProfileCard is a full-width Next.js Link — entire card clickable to /profile/[userId]; shown only for direct and provider_quote types; onNavigate prop closes FAB in widget context
+- [Phase 13-messaging-and-communication-improvements]: country field added to participantDetails in CreateConversationUseCase following existing companyName denormalization pattern; existing conversations without country gracefully show no country line
+- [Phase 13-03]: ProviderQuoteChatSidebar is self-contained with its own message subscription — does not use global MessagesContext to avoid interfering with FAB widget activeConversationId
+- [Phase 13-03]: Deterministic conversation ID (providerquote_${dealId}_${providerId}) prevents duplicate 3-party provider conversations
+- [Phase 14]: [14-01]: Quote entity uses null defaults for Phase 14 nested sub-objects — backward compat in fromFirestore() bridges both old flat-field and new nested docs
+- [Phase 14]: [14-01]: submitQuote CF uses const cargo = quoteData.cargoMarine || quoteData — single validation path supports both old flat and new Phase 14 nested format
+- [Phase 14]: [14-01]: buyerName/buyerCountry/sellerName/sellerCountry added to both dealSnapshots — both provider types get counterparty identity; logistics still excludes price (PORTAL-05 maintained)
+- [Phase 14]: [14-01]: quoteStatus defaults to { status: 'indicative' } server-side when absent — ensures all new Firestore quote docs have a binding status field without requiring client to send it
+- [Phase 14]: [14-03]: Section components accept register/errors/watch prop subset — each section declares only what it needs; consistent with react-hook-form pass-through pattern
+- [Phase 14]: [14-03]: QuoteSummaryModal cargo reads cm.cargoMarine || cm — forward-compatible with Plan 04 nested cargoMarine schema while flat form values from current QuoteFormInsurance still work
+- [Phase 14]: [14-03]: Indicative radio card uses amber accent, Firm uses green accent — distinct visual coding communicates legal weight difference
+- [Phase 14]: [14-02]: lossCoveredPct placed as 3rd column in Premium/Coverage row (grid-cols-3) — keeps financially related fields together
+- [Phase 14]: [14-02]: Cargo/Marine accordion always rendered open without AnimatePresence — required section has no performance cost for always-visible content
+- [Phase 14]: [14-02]: normalizeDate() helper in edit mode defaultValues bridges Date objects, ISO strings, and undefined uniformly for policyStartDate/policyEndDate
+- [Phase 14-05]: [14-05]: Within-card expansion used to avoid layout shift in sibling cards in the comparison grid
+- [Phase 14-05]: [14-05]: All Phase 14 entity methods guarded with optional chaining for backward compatibility with old Quote instances
+- [Phase 14-05]: [14-05]: Firm badge uses emerald-500/20 palette; Indicative badge uses amber-500/20 — consistent with Phase 14 radio card coding from Plan 03
+- [Phase 14]: [14-04]: Submit button validates then shows modal; handleConfirmSubmit reuses onSubmit via handleSubmit(onSubmit)()
+- [Phase 14]: [14-04]: watchedValues = watch() called once at orchestrator level and passed as prop to QuoteSummaryModal — avoids duplicate watch subscriptions
+- [Phase 14]: [14-04]: Buyer/Seller InfoRow placed at TOP of deal fields (before Quantity) in QuoteDetailView — counterparty identity is primary context for provider pricing
+- [Phase 15]: [15-03]: skippedInsurance/skippedLogistics are client-side local state only — no Firestore writes; TradeSummary naturally handles partial provider selection
+- [Phase 15]: [15-03]: Provider chat buttons use deterministic ID providerquote_${dealId}_${providerId}; buyer/seller buttons always disabled per Research Pitfall 3
+- [Phase 15]: [15-03]: DealPage counterparty message button always disabled — visual affordance only; no deterministic direct conversation ID available
+- [Phase 15]: hasExpanded initialized to all section IDs on mount — cleanly decoupled from approval sync; removes expand-before-approve gate
+- [Phase 15]: Submit button moved inside sticky bottom bar alongside ClauseProgressBar — single action zone near viewport bottom
+- [Phase 15]: Auto-advance toast uses prevDealStatusRef — fires only on live transition to CONTRACT_APPROVED, not on initial page load
+- [Phase 15-04]: No productPdfUrl field on deal docs — createDeal CF only denormalizes productName/productImage/productCategory; PDF link renders conditionally (no output with current data)
+- [Phase 15-04]: gold DatePicker uses text-[#0F1C2E] on selected day for contrast on FFD700 background, consistent with platform gold CTA button pattern
+- [Phase 15-04]: onFocus auto-select placed after register() spread on all number inputs so RHF event bindings are not replaced
+- [Phase 15-02]: LegalBanner uses local useState(false) only — no localStorage; each page mount resets dismissed to false automatically via new component instance
+- [Phase 15-02]: CollapsedBanner is a full-width button with border-l-4 amber accent — preserves click semantics for re-expansion
 
 ### Pending Todos
 
@@ -295,6 +369,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-12T18:15:25.928Z
-Stopped at: Completed 10-03-PLAN.md
+Last session: 2026-04-27T10:54:44.807Z
+Stopped at: Completed 15-02-PLAN.md
 Resume file: None

@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CoreTradeGlobal — Ticaret Özeti & Canlı Takip</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:           #0b1120;
+    --surface:      #111827;
+    --surface2:     #1a2540;
+    --border:       #1e2d47;
+    --border2:      #253353;
+    --gold:         #f5c518;
+    --gold-dim:     rgba(245,197,24,0.10);
+    --gold-border:  rgba(245,197,24,0.30);
+    --blue:         #3b82f6;
+    --blue-dim:     rgba(59,130,246,0.10);
+    --blue-border:  rgba(59,130,246,0.30);
+    --green:        #22c55e;
+    --green-dim:    rgba(34,197,94,0.10);
+    --green-border: rgba(34,197,94,0.30);
+    --orange:       #f97316;
+    --orange-dim:   rgba(249,115,22,0.10);
+    --orange-border:rgba(249,115,22,0.30);
+    --red:          #ef4444;
+    --red-dim:      rgba(239,68,68,0.10);
+    --text:         #f1f5f9;
+    --text2:        #94a3b8;
+    --text3:        #4b6080;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; font-size:14px; min-height:100vh; }
+
+  ::-webkit-scrollbar { width:4px; }
+  ::-webkit-scrollbar-thumb { background:var(--border2); border-radius:2px; }
+
+  /* ── NAVBAR ── */
+  nav {
+    background:var(--surface); border-bottom:1px solid var(--border);
+    padding:0 32px; height:60px; display:flex; align-items:center;
+    justify-content:space-between; position:sticky; top:0; z-index:200;
+  }
+  .nav-logo { display:flex; align-items:center; gap:10px; text-decoration:none; }
+  .nav-logo-icon { width:34px; height:34px; background:var(--gold); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:16px; }
+  .nav-logo-text { font-size:16px; font-weight:700; color:var(--text); }
+  .nav-logo-text span { color:var(--gold); }
+
+  .nav-center { display:flex; align-items:center; gap:8px; }
+  .trade-badge { background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:5px 14px; font-size:13px; color:var(--text2); display:flex; align-items:center; gap:6px; }
+  .trade-badge strong { color:var(--gold); font-family:monospace; }
+
+  .step-trail { display:flex; align-items:center; background:var(--surface2); border:1px solid var(--border); border-radius:8px; overflow:hidden; }
+  .st { padding:6px 14px; font-size:11px; font-weight:600; color:var(--text3); display:flex; align-items:center; gap:5px; border-right:1px solid var(--border); white-space:nowrap; }
+  .st:last-child { border-right:none; }
+  .st.done { color:var(--green); }
+  .st.active { color:var(--gold); background:var(--gold-dim); }
+
+  .nav-right { display:flex; align-items:center; gap:10px; }
+  .btn { padding:7px 16px; border-radius:8px; font-family:'Inter',sans-serif; font-size:12px; font-weight:700; cursor:pointer; border:none; transition:all 0.2s; }
+  .btn-outline { background:transparent; color:var(--text2); border:1px solid var(--border2); }
+  .btn-outline:hover { border-color:var(--text2); color:var(--text); }
+  .btn-gold { background:var(--gold); color:#0b1120; }
+  .btn-gold:hover { background:#ffd740; }
+  .btn-blue { background:var(--blue); color:#fff; }
+  .btn-blue:hover { background:#2563eb; }
+
+  /* ── PAGE ── */
+  .page { max-width:1360px; margin:0 auto; padding:28px 32px 80px; }
+
+  /* ── HERO ── */
+  .hero {
+    background:var(--surface); border:1px solid var(--border); border-radius:16px;
+    padding:24px 28px; display:flex; align-items:center; justify-content:space-between;
+    margin-bottom:24px; position:relative; overflow:hidden;
+  }
+  .hero::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:linear-gradient(90deg,var(--green),var(--gold),var(--blue)); }
+  .hero-left { display:flex; align-items:center; gap:16px; }
+  .hero-icon { width:52px; height:52px; background:var(--green-dim); border:2px solid var(--green-border); border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:24px; flex-shrink:0; }
+  .hero-label { font-size:11px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--green); margin-bottom:4px; }
+  .hero-title { font-size:21px; font-weight:800; color:var(--text); margin-bottom:3px; }
+  .hero-sub { font-size:12px; color:var(--text2); }
+
+  .hero-right { display:flex; align-items:center; gap:10px; }
+  .live-pill { display:flex; align-items:center; gap:7px; padding:7px 16px; border-radius:20px; font-size:12px; font-weight:700; background:var(--green-dim); border:1px solid var(--green-border); color:var(--green); }
+  .pulse-dot { width:8px; height:8px; border-radius:50%; background:var(--green); animation:blink 1.5s infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.25} }
+
+  /* ── TRADE INFO BAR ── */
+  .trade-info-bar {
+    background:var(--surface); border:1px solid var(--border); border-radius:12px;
+    padding:16px 22px; display:flex; gap:0; margin-bottom:24px;
+  }
+  .tib-item { flex:1; padding:0 18px; border-right:1px solid var(--border); }
+  .tib-item:first-child { padding-left:0; }
+  .tib-item:last-child { border-right:none; }
+  .tib-label { font-size:10px; text-transform:uppercase; letter-spacing:0.08em; color:var(--text3); margin-bottom:4px; font-weight:600; }
+  .tib-val { font-size:14px; font-weight:700; color:var(--text); }
+  .tib-val.gold { color:var(--gold); }
+  .tib-val.green { color:var(--green); }
+  .tib-val.blue { color:var(--blue); }
+
+  /* ── MAIN GRID ── */
+  .main-grid { display:grid; grid-template-columns:1fr 400px; gap:24px; margin-bottom:24px; }
+
+  /* ── SECTION HEADER ── */
+  .sec-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+  .sec-title { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; color:var(--text3); display:flex; align-items:center; gap:8px; }
+  .sec-title .dot { width:6px; height:6px; border-radius:50%; }
+
+  /* ── CARD ── */
+  .card {
+    background:var(--surface); border:1px solid var(--border); border-radius:14px;
+    padding:20px 22px; margin-bottom:20px;
+  }
+  .card:last-child { margin-bottom:0; }
+
+  /* ── ÖZET TABLO ── */
+  .summary-table { display:flex; flex-direction:column; gap:0; }
+  .sum-row {
+    display:flex; justify-content:space-between; align-items:center;
+    padding:10px 0; border-bottom:1px solid var(--border);
+  }
+  .sum-row:last-child { border-bottom:none; }
+  .sum-k { font-size:12px; color:var(--text2); }
+  .sum-v { font-size:13px; font-weight:700; color:var(--text); text-align:right; }
+  .sum-v.gold { color:var(--gold); font-size:16px; }
+  .sum-v.green { color:var(--green); }
+  .sum-v.blue { color:var(--blue); }
+
+  /* ── PARTIES MINI ── */
+  .parties-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:20px; }
+  .party-mini {
+    background:var(--surface2); border:1px solid var(--border2); border-radius:12px; padding:14px 16px;
+  }
+  .pm-head { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+  .pm-ava { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:800; flex-shrink:0; }
+  .pm-ava.seller { background:rgba(245,197,24,0.2); color:var(--gold); }
+  .pm-ava.buyer { background:rgba(59,130,246,0.2); color:var(--blue); }
+  .pm-name { font-size:13px; font-weight:700; }
+  .pm-role { font-size:11px; color:var(--text2); }
+  .pm-detail { font-size:11px; color:var(--text3); display:flex; flex-direction:column; gap:3px; }
+  .pm-detail span { color:var(--text2); }
+
+  /* ── BELGE LISTESI ── */
+  .doc-list { display:flex; flex-direction:column; gap:8px; }
+  .doc-row {
+    display:flex; align-items:center; justify-content:space-between;
+    background:var(--surface2); border:1px solid var(--border2); border-radius:8px;
+    padding:10px 14px;
+  }
+  .doc-left { display:flex; align-items:center; gap:10px; }
+  .doc-icon { font-size:18px; }
+  .doc-name { font-size:13px; font-weight:600; }
+  .doc-meta { font-size:11px; color:var(--text3); }
+  .doc-badge { font-size:10px; font-weight:700; padding:3px 10px; border-radius:10px; }
+  .doc-badge.ok { background:var(--green-dim); color:var(--green); border:1px solid var(--green-border); }
+  .doc-badge.warn { background:var(--orange-dim); color:var(--orange); border:1px solid var(--orange-border); }
+
+  /* ── CANLÜ TAKİP MAP ── */
+  .tracking-wrap {
+    background:var(--surface); border:1px solid var(--border); border-radius:14px;
+    overflow:hidden; margin-bottom:24px;
+  }
+  .tracking-head {
+    padding:16px 20px; border-bottom:1px solid var(--border);
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .tracking-title { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; color:var(--text3); display:flex; align-items:center; gap:8px; }
+  .live-badge { display:flex; align-items:center; gap:6px; font-size:11px; font-weight:700; color:var(--green); background:var(--green-dim); border:1px solid var(--green-border); padding:3px 10px; border-radius:12px; }
+
+  /* Fake SVG Map */
+  .map-svg-wrap {
+    position:relative; background:#0d1929; height:300px; overflow:hidden;
+  }
+  .map-svg-wrap svg { width:100%; height:100%; }
+
+  /* Ship marker */
+  .ship-marker {
+    position:absolute;
+    font-size:22px;
+    animation:shipMove 8s ease-in-out infinite alternate;
+    filter:drop-shadow(0 0 8px rgba(245,197,24,0.8));
+    transform:translateX(-50%) translateY(-50%);
+  }
+  @keyframes shipMove {
+    0%   { left:28%; top:52%; }
+    25%  { left:38%; top:48%; }
+    50%  { left:50%; top:44%; }
+    75%  { left:62%; top:46%; }
+    100% { left:74%; top:42%; }
+  }
+
+  /* Route dots */
+  .route-dot {
+    position:absolute; width:10px; height:10px; border-radius:50%;
+    transform:translateX(-50%) translateY(-50%);
+  }
+  .route-dot.origin { background:var(--gold); box-shadow:0 0 10px var(--gold); left:20%; top:58%; }
+  .route-dot.dest   { background:var(--blue); box-shadow:0 0 10px var(--blue); left:82%; top:36%; }
+
+  .port-label {
+    position:absolute; font-size:10px; font-weight:700; letter-spacing:0.06em;
+    color:var(--text2); white-space:nowrap;
+  }
+  .port-label.origin { left:21%; top:64%; transform:translateX(-50%); color:var(--gold); }
+  .port-label.dest   { left:82%; top:42%; transform:translateX(-50%); color:var(--blue); }
+
+  /* ETA box */
+  .map-eta {
+    position:absolute; top:12px; right:12px;
+    background:rgba(11,17,32,0.85); border:1px solid var(--border2);
+    border-radius:10px; padding:10px 14px; backdrop-filter:blur(4px);
+  }
+  .map-eta-label { font-size:9px; text-transform:uppercase; letter-spacing:0.1em; color:var(--text3); margin-bottom:2px; font-weight:600; }
+  .map-eta-val { font-size:15px; font-weight:800; color:var(--green); font-family:monospace; }
+  .map-eta-sub { font-size:10px; color:var(--text3); margin-top:1px; }
+
+  .map-pos-box {
+    position:absolute; top:12px; left:12px;
+    background:rgba(11,17,32,0.85); border:1px solid var(--border2);
+    border-radius:10px; padding:10px 14px; backdrop-filter:blur(4px);
+    font-size:11px; color:var(--text2); line-height:1.6;
+  }
+  .map-pos-box strong { color:var(--gold); }
+
+  /* ── TRACKING TIMELINE ── */
+  .track-timeline { padding:18px 20px; display:flex; flex-direction:column; gap:0; }
+  .track-item { display:flex; gap:14px; position:relative; padding-bottom:18px; }
+  .track-item:last-child { padding-bottom:0; }
+  .track-item:not(:last-child)::before {
+    content:''; position:absolute; left:14px; top:28px;
+    width:1px; height:calc(100% - 10px); background:var(--border2);
+  }
+  .track-ic {
+    width:28px; height:28px; border-radius:50%; display:flex; align-items:center;
+    justify-content:center; font-size:12px; flex-shrink:0; position:relative; z-index:1;
+  }
+  .track-ic.done { background:var(--green-dim); border:2px solid var(--green-border); color:var(--green); }
+  .track-ic.active { background:var(--gold-dim); border:2px solid var(--gold-border); color:var(--gold); animation:pulseRing 2s infinite; }
+  .track-ic.pending { background:var(--surface2); border:1px solid var(--border2); color:var(--text3); }
+  @keyframes pulseRing { 0%,100%{box-shadow:0 0 0 0 rgba(245,197,24,0.4)} 50%{box-shadow:0 0 0 6px rgba(245,197,24,0)} }
+
+  .track-body { flex:1; padding-top:4px; }
+  .track-name { font-size:13px; font-weight:700; color:var(--text); margin-bottom:2px; }
+  .track-name.done { color:var(--green); }
+  .track-name.active { color:var(--gold); }
+  .track-name.pending { color:var(--text3); }
+  .track-desc { font-size:11px; color:var(--text3); }
+  .track-time { font-size:10px; color:var(--text3); margin-top:3px; font-family:monospace; }
+
+  /* ── RIGHT SIDEBAR ── */
+  .right-col { display:flex; flex-direction:column; gap:20px; }
+
+  /* ── KARGO BİLGİLERİ ── */
+  .info-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .info-cell { background:var(--surface2); border:1px solid var(--border2); border-radius:10px; padding:12px 14px; }
+  .ic-label { font-size:10px; text-transform:uppercase; letter-spacing:0.08em; color:var(--text3); margin-bottom:4px; font-weight:600; }
+  .ic-val { font-size:13px; font-weight:700; color:var(--text); }
+  .ic-val.gold { color:var(--gold); }
+  .ic-val.blue { color:var(--blue); }
+  .ic-val.green { color:var(--green); }
+
+  /* ── UYARI NOTU ── */
+  .disclaimer {
+    background:var(--surface2); border:1px solid var(--border2); border-radius:10px;
+    padding:12px 16px; display:flex; align-items:flex-start; gap:10px;
+  }
+  .disclaimer-icon { font-size:14px; flex-shrink:0; margin-top:1px; opacity:0.6; }
+  .disclaimer-text { font-size:10px; color:var(--text3); line-height:1.55; }
+  .disclaimer-text strong { color:var(--text2); }
+
+  /* ── PDF PREVIEW ── */
+  .pdf-wrap {
+    background:var(--surface); border:1px solid var(--border); border-radius:14px;
+    overflow:hidden; margin-bottom:24px;
+  }
+  .pdf-head {
+    padding:16px 20px; border-bottom:1px solid var(--border);
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .pdf-title { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; color:var(--text3); display:flex; align-items:center; gap:8px; }
+  .pdf-body { padding:20px; }
+
+  /* ── PDF PREVIEW CARD ── */
+  .pdf-preview {
+    background:#fff; border-radius:10px; padding:28px 32px;
+    color:#1a1a2e; font-family:'Inter',sans-serif; font-size:12px;
+    box-shadow:0 0 40px rgba(0,0,0,0.5);
+  }
+  .pdf-logo-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; padding-bottom:16px; border-bottom:2px solid #f0f0f0; }
+  .pdf-logo-txt { font-size:20px; font-weight:800; color:#0b1120; }
+  .pdf-logo-txt em { color:#f5c518; font-style:normal; }
+  .pdf-trade-id { font-size:11px; color:#888; text-align:right; }
+  .pdf-trade-id strong { font-size:14px; color:#0b1120; display:block; font-family:monospace; }
+
+  .pdf-section-title { font-size:9px; font-weight:800; text-transform:uppercase; letter-spacing:0.15em; color:#999; margin-bottom:8px; margin-top:16px; }
+  .pdf-section-title:first-of-type { margin-top:0; }
+
+  .pdf-row { display:flex; justify-content:space-between; padding:5px 0; border-bottom:1px solid #f5f5f5; }
+  .pdf-row:last-child { border-bottom:none; }
+  .pdf-row-k { color:#555; }
+  .pdf-row-v { font-weight:700; color:#0b1120; }
+  .pdf-row-v.gold { color:#c8970d; }
+
+  .pdf-parties { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .pdf-party { background:#f9f9f9; border-radius:6px; padding:10px 12px; }
+  .pdf-party-role { font-size:9px; font-weight:800; text-transform:uppercase; letter-spacing:0.12em; color:#999; margin-bottom:4px; }
+  .pdf-party-name { font-size:13px; font-weight:800; color:#0b1120; }
+  .pdf-party-sub { font-size:10px; color:#777; margin-top:2px; }
+
+  .pdf-disclaimer {
+    margin-top:20px; padding-top:14px; border-top:1px dashed #ddd;
+    font-size:8.5px; color:#aaa; line-height:1.5; text-align:center;
+  }
+  .pdf-disclaimer strong { color:#888; }
+
+  /* ── PRINT / PDF STYLES ── */
+  @media print {
+    nav, .nav-right, .btn, .tracking-wrap, .pdf-head .btn-gold,
+    .hero-right .btn-gold, .step-trail, .live-pill { display:none !important; }
+    body { background:#fff; color:#000; }
+    .page { padding:0; max-width:100%; }
+    .pdf-preview { box-shadow:none; }
+    .pdf-wrap, .pdf-body { border:none; padding:0; }
+  }
+
+  /* ── COMPLETE BADGE ── */
+  .complete-banner {
+    background:var(--green-dim); border:1px solid var(--green-border);
+    border-radius:12px; padding:14px 20px; display:flex; align-items:center;
+    gap:14px; margin-bottom:24px;
+  }
+  .cb-icon { font-size:24px; }
+  .cb-text { font-size:14px; font-weight:700; color:var(--green); }
+  .cb-sub { font-size:12px; color:var(--text2); }
+</style>
+</head>
+<body>
+
+<!-- ── NAVBAR ── -->
+<nav>
+  <a class="nav-logo" href="#">
+    <div class="nav-logo-icon">🌐</div>
+    <div class="nav-logo-text">Core<span>Trade</span>Global</div>
+  </a>
+
+  <div class="nav-center">
+    <div class="trade-badge">📋 İşlem No: <strong>CTG-2025-04821</strong></div>
+    <div class="step-trail">
+      <div class="st done">✓ Müzakere</div>
+      <div class="st done">✓ Anlaşma</div>
+      <div class="st done">✓ Sigorta & Taşıma</div>
+      <div class="st active">⬢ Özet & Takip</div>
+    </div>
+  </div>
+
+  <div class="nav-right">
+    <button class="btn btn-outline" onclick="window.print()">🖨️ Yazdır</button>
+    <button class="btn btn-gold" onclick="downloadPDF()">⬇ PDF İndir</button>
+  </div>
+</nav>
+
+<!-- ── PAGE ── -->
+<div class="page">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-left">
+      <div class="hero-icon">✅</div>
+      <div>
+        <div class="hero-label">Ticaret Tamamlandı — Teslimat Süreci</div>
+        <div class="hero-title">Ticaret Özeti & Canlı Sevkiyat Takibi</div>
+        <div class="hero-sub">Tüm ticaret adımları tamamlandı · Kargo yolda · Tahmini varış: 14 Şubat 2025</div>
+      </div>
+    </div>
+    <div class="hero-right">
+      <div class="live-pill"><div class="pulse-dot"></div> Canlı Takip</div>
+      <button class="btn btn-gold" onclick="downloadPDF()">⬇ PDF Özet İndir</button>
+    </div>
+  </div>
+
+  <!-- TRADE INFO BAR -->
+  <div class="trade-info-bar">
+    <div class="tib-item">
+      <div class="tib-label">İşlem No</div>
+      <div class="tib-val" style="font-family:monospace">CTG-2025-04821</div>
+    </div>
+    <div class="tib-item">
+      <div class="tib-label">Ürün</div>
+      <div class="tib-val">Organik Pamuk Kumaş</div>
+    </div>
+    <div class="tib-item">
+      <div class="tib-label">Toplam Tutar</div>
+      <div class="tib-val gold">$58,500</div>
+    </div>
+    <div class="tib-item">
+      <div class="tib-label">Teslim Şartı</div>
+      <div class="tib-val">FOB İzmir</div>
+    </div>
+    <div class="tib-item">
+      <div class="tib-label">Konteyner</div>
+      <div class="tib-val blue">CSNU 7483621</div>
+    </div>
+    <div class="tib-item">
+      <div class="tib-label">Durum</div>
+      <div class="tib-val green">🟢 Yolda</div>
+    </div>
+  </div>
+
+  <!-- MAIN GRID -->
+  <div class="main-grid">
+
+    <!-- LEFT -->
+    <div>
+
+      <!-- TARAFLAR -->
+      <div class="sec-head">
+        <div class="sec-title"><div class="dot" style="background:var(--gold)"></div> Taraflar</div>
+      </div>
+      <div class="parties-row">
+        <div class="party-mini">
+          <div class="pm-head">
+            <div class="pm-ava seller">ST</div>
+            <div>
+              <div class="pm-name">Sofra Tekstil A.Ş.</div>
+              <div class="pm-role">Satıcı · 🇹🇷 Bursa, Türkiye</div>
+            </div>
+          </div>
+          <div class="pm-detail">
+            <div>İletişim: <span>Ali Kaya</span></div>
+            <div>Vergi No: <span>1234567890</span></div>
+            <div>Puan: <span style="color:var(--gold)">★ 4.9</span></div>
+          </div>
+        </div>
+        <div class="party-mini">
+          <div class="pm-head">
+            <div class="pm-ava buyer">MK</div>
+            <div>
+              <div class="pm-name">Moda Kumaş Ltd.</div>
+              <div class="pm-role">Alıcı · 🇹🇷 İstanbul, Türkiye</div>
+            </div>
+          </div>
+          <div class="pm-detail">
+            <div>İletişim: <span>Selin Demir</span></div>
+            <div>Vergi No: <span>9876543210</span></div>
+            <div>Puan: <span style="color:var(--gold)">★ 4.7</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TİCARET ÖZETİ -->
+      <div class="sec-head">
+        <div class="sec-title"><div class="dot" style="background:var(--blue)"></div> Ticaret Özeti</div>
+      </div>
+      <div class="card">
+        <div class="summary-table">
+          <div class="sum-row"><span class="sum-k">Ürün Adı</span><span class="sum-v">Organik Pamuk Kumaş (GOTS Sertifikalı)</span></div>
+          <div class="sum-row"><span class="sum-k">HS Kodu</span><span class="sum-v" style="font-family:monospace">5208.12.16</span></div>
+          <div class="sum-row"><span class="sum-k">Miktar</span><span class="sum-v">15.000 kg</span></div>
+          <div class="sum-row"><span class="sum-k">Birim Fiyat</span><span class="sum-v">$3.90 / kg</span></div>
+          <div class="sum-row"><span class="sum-k">Ödeme Vadesi</span><span class="sum-v">60 gün vadeli</span></div>
+          <div class="sum-row"><span class="sum-k">Ödeme Yöntemi</span><span class="sum-v">Banka Havalesi (T/T)</span></div>
+          <div class="sum-row"><span class="sum-k">Teslim Şartı (Incoterms)</span><span class="sum-v">FOB İzmir</span></div>
+          <div class="sum-row"><span class="sum-k">Menşei</span><span class="sum-v">🇹🇷 Türkiye</span></div>
+          <div class="sum-row"><span class="sum-k">Anlaşma Tarihi</span><span class="sum-v">06 Şubat 2025</span></div>
+          <div class="sum-row"><span class="sum-k">Toplam Tutar</span><span class="sum-v gold">$58,500.00</span></div>
+        </div>
+      </div>
+
+      <!-- SİGORTA & TAŞIMA ÖZETİ -->
+      <div class="sec-head" style="margin-top:20px">
+        <div class="sec-title"><div class="dot" style="background:var(--green)"></div> Sigorta & Taşıma</div>
+      </div>
+      <div class="card">
+        <div class="summary-table">
+          <div class="sum-row"><span class="sum-k">Taşıyıcı</span><span class="sum-v">Maersk Line</span></div>
+          <div class="sum-row"><span class="sum-k">Lojistik Şirketi</span><span class="sum-v">DHL Trade</span></div>
+          <div class="sum-row"><span class="sum-k">Konteyner No</span><span class="sum-v blue" style="font-family:monospace">CSNU 7483621</span></div>
+          <div class="sum-row"><span class="sum-k">Bill of Lading</span><span class="sum-v" style="font-family:monospace">MAEU-2025-098432</span></div>
+          <div class="sum-row"><span class="sum-k">Çıkış Limanı</span><span class="sum-v">İzmir, Türkiye</span></div>
+          <div class="sum-row"><span class="sum-k">Varış Limanı</span><span class="sum-v">Hamburg, Almanya</span></div>
+          <div class="sum-row"><span class="sum-k">Sigorta Şirketi</span><span class="sum-v">Allianz Trade</span></div>
+          <div class="sum-row"><span class="sum-k">Sigorta Poliçe No</span><span class="sum-v" style="font-family:monospace">ALZ-2025-TK-33821</span></div>
+          <div class="sum-row"><span class="sum-k">Sigorta Değeri</span><span class="sum-v">$65,000 (CIF +10%)</span></div>
+          <div class="sum-row"><span class="sum-k">Taşıma Ücreti</span><span class="sum-v">$1,850</span></div>
+          <div class="sum-row"><span class="sum-k">Tahmini Varış</span><span class="sum-v green">14 Şubat 2025</span></div>
+        </div>
+      </div>
+
+      <!-- BELGELER -->
+      <div class="sec-head" style="margin-top:20px">
+        <div class="sec-title"><div class="dot" style="background:var(--orange)"></div> Belgeler</div>
+      </div>
+      <div class="doc-list">
+        <div class="doc-row">
+          <div class="doc-left">
+            <div class="doc-icon">📄</div>
+            <div>
+              <div class="doc-name">Ticari Fatura (Commercial Invoice)</div>
+              <div class="doc-meta">CTG-INV-2025-04821 · 06.02.2025</div>
+            </div>
+          </div>
+          <div class="doc-badge ok">✓ Onaylı</div>
+        </div>
+        <div class="doc-row">
+          <div class="doc-left">
+            <div class="doc-icon">📦</div>
+            <div>
+              <div class="doc-name">Packing List</div>
+              <div class="doc-meta">15.000 kg · 250 bale</div>
+            </div>
+          </div>
+          <div class="doc-badge ok">✓ Onaylı</div>
+        </div>
+        <div class="doc-row">
+          <div class="doc-left">
+            <div class="doc-icon">🚢</div>
+            <div>
+              <div class="doc-name">Bill of Lading</div>
+              <div class="doc-meta">MAEU-2025-098432</div>
+            </div>
+          </div>
+          <div class="doc-badge ok">✓ Onaylı</div>
+        </div>
+        <div class="doc-row">
+          <div class="doc-left">
+            <div class="doc-icon">🏅</div>
+            <div>
+              <div class="doc-name">Menşei Şahadetnamesi</div>
+              <div class="doc-meta">İzmir Ticaret Odası · A.TR</div>
+            </div>
+          </div>
+          <div class="doc-badge ok">✓ Onaylı</div>
+        </div>
+        <div class="doc-row">
+          <div class="doc-left">
+            <div class="doc-icon">🌿</div>
+            <div>
+              <div class="doc-name">GOTS Sertifikası</div>
+              <div class="doc-meta">Organik tekstil sertifikası</div>
+            </div>
+          </div>
+          <div class="doc-badge ok">✓ Onaylı</div>
+        </div>
+        <div class="doc-row">
+          <div class="doc-left">
+            <div class="doc-icon">🛡️</div>
+            <div>
+              <div class="doc-name">Sigorta Poliçesi</div>
+              <div class="doc-meta">ALZ-2025-TK-33821 · Allianz Trade</div>
+            </div>
+          </div>
+          <div class="doc-badge ok">✓ Onaylı</div>
+        </div>
+        <div class="doc-row">
+          <div class="doc-left">
+            <div class="doc-icon">📑</div>
+            <div>
+              <div class="doc-name">Gümrük Beyannamesi</div>
+              <div class="doc-meta">Hamburg Gümrük · Bekleniyor</div>
+            </div>
+          </div>
+          <div class="doc-badge warn">⏳ Bekleniyor</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT SIDEBAR -->
+    <div class="right-col">
+
+      <!-- KARGO BİLGİLERİ -->
+      <div>
+        <div class="sec-head">
+          <div class="sec-title"><div class="dot" style="background:var(--blue)"></div> Kargo Detayları</div>
+        </div>
+        <div class="info-grid">
+          <div class="info-cell">
+            <div class="ic-label">Yükleme Tarihi</div>
+            <div class="ic-val">08.02.2025</div>
+          </div>
+          <div class="info-cell">
+            <div class="ic-label">Tahmini Varış</div>
+            <div class="ic-val green">14.02.2025</div>
+          </div>
+          <div class="info-cell">
+            <div class="ic-label">Kalan Süre</div>
+            <div class="ic-val gold" id="kalan-sure">—</div>
+          </div>
+          <div class="info-cell">
+            <div class="ic-label">Konum</div>
+            <div class="ic-val blue">Akdeniz</div>
+          </div>
+          <div class="info-cell">
+            <div class="ic-label">Hız</div>
+            <div class="ic-val">14.2 knot</div>
+          </div>
+          <div class="info-cell">
+            <div class="ic-label">Durum</div>
+            <div class="ic-val green">🟢 Yolda</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ÖDEME DURUMU -->
+      <div>
+        <div class="sec-head">
+          <div class="sec-title"><div class="dot" style="background:var(--gold)"></div> Ödeme Durumu</div>
+        </div>
+        <div class="card" style="padding:16px 18px">
+          <div class="summary-table">
+            <div class="sum-row"><span class="sum-k">Ödeme Yöntemi</span><span class="sum-v">Banka Havalesi</span></div>
+            <div class="sum-row"><span class="sum-k">Toplam Tutar</span><span class="sum-v gold">$58,500</span></div>
+            <div class="sum-row"><span class="sum-k">Vade Tarihi</span><span class="sum-v">08 Nisan 2025</span></div>
+            <div class="sum-row"><span class="sum-k">Durum</span><span class="sum-v" style="color:var(--orange)">⏳ Vadede Bekliyor</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DISCLAIMER -->
+      <div class="disclaimer">
+        <div class="disclaimer-icon">ℹ️</div>
+        <div class="disclaimer-text">
+          <strong>Önemli Not:</strong> Bu belge yalnızca bilgilendirme amaçlıdır ve herhangi bir resmi ya da hukuki nitelik taşımamaktadır. <strong>CoreTradeGlobal</strong>, bu ticari işlemin tarafı değildir, anlaşmaya dahil değildir ve işlemden doğabilecek herhangi bir hukuki, mali veya operasyonel sorumluluk üstlenmemektedir. Taraflar arasındaki tüm hukuki sorumluluk ve yükümlülükler ilgili sözleşmeye ve yürürlükteki mevzuata tabidir.
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── CANLI TAKİP ── -->
+  <div class="tracking-wrap">
+    <div class="tracking-head">
+      <div class="tracking-title">
+        🛳️ Canlı Sevkiyat Takibi
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <div class="live-badge"><div class="pulse-dot"></div> Canlı</div>
+        <div style="font-size:11px;color:var(--text3)">Son güncelleme: <span id="last-update">—</span></div>
+        <button class="btn btn-outline" onclick="refreshTracking()" style="font-size:11px;padding:5px 12px">↻ Yenile</button>
+      </div>
+    </div>
+
+    <!-- MAP -->
+    <div class="map-svg-wrap">
+      <!-- Simple dark ocean SVG background -->
+      <svg viewBox="0 0 1200 300" preserveAspectRatio="xMidYMid slice">
+        <defs>
+          <radialGradient id="oceanGlow" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#0d2a4a" stop-opacity="1"/>
+            <stop offset="100%" stop-color="#060e1c" stop-opacity="1"/>
+          </radialGradient>
+          <filter id="glow">
+            <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+            <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+        <rect width="1200" height="300" fill="url(#oceanGlow)"/>
+
+        <!-- Grid lines -->
+        <g stroke="#1a2d44" stroke-width="0.5" opacity="0.6">
+          <line x1="0" y1="75" x2="1200" y2="75"/>
+          <line x1="0" y1="150" x2="1200" y2="150"/>
+          <line x1="0" y1="225" x2="1200" y2="225"/>
+          <line x1="200" y1="0" x2="200" y2="300"/>
+          <line x1="400" y1="0" x2="400" y2="300"/>
+          <line x1="600" y1="0" x2="600" y2="300"/>
+          <line x1="800" y1="0" x2="800" y2="300"/>
+          <line x1="1000" y1="0" x2="1000" y2="300"/>
+        </g>
+
+        <!-- Simplified land masses (Turkey area) -->
+        <path d="M320 140 Q380 120 440 130 Q480 125 510 140 Q540 150 560 145 Q590 135 600 155 Q580 170 550 165 Q520 160 490 170 Q460 180 430 170 Q390 165 350 175 Q330 165 320 140Z" fill="#1a2d3a" opacity="0.7"/>
+        <!-- Greece/Balkans -->
+        <path d="M230 100 Q270 90 300 110 Q310 130 300 145 Q270 140 240 150 Q210 145 200 130 Q210 110 230 100Z" fill="#1a2d3a" opacity="0.6"/>
+        <!-- Italy shape -->
+        <path d="M160 80 Q190 70 210 90 Q205 120 195 140 Q180 160 165 155 Q155 140 160 110Z" fill="#1a2d3a" opacity="0.5"/>
+        <!-- Central Europe -->
+        <path d="M100 40 Q250 20 350 50 Q380 60 370 80 Q310 75 250 70 Q180 65 120 80 Q95 70 100 40Z" fill="#152030" opacity="0.6"/>
+        <!-- Germany/Hamburg area -->
+        <path d="M80 0 Q200 0 300 40 Q290 60 260 55 Q200 45 140 50 Q100 55 80 45Z" fill="#1a2d3a" opacity="0.6"/>
+
+        <!-- Dotted route line -->
+        <path d="M240 175 Q400 145 550 130 Q700 118 850 108 Q920 104 980 100" fill="none" stroke="#f5c518" stroke-width="1.5" stroke-dasharray="8,5" opacity="0.6" filter="url(#glow)"/>
+
+        <!-- Completed route -->
+        <path d="M240 175 Q340 158 420 148" fill="none" stroke="#22c55e" stroke-width="2" opacity="0.8"/>
+
+        <!-- Origin dot (İzmir) -->
+        <circle cx="240" cy="175" r="6" fill="#f5c518" filter="url(#glow)"/>
+        <circle cx="240" cy="175" r="10" fill="none" stroke="#f5c518" stroke-width="1" opacity="0.4" class="ring-pulse"/>
+
+        <!-- Destination dot (Hamburg) -->
+        <circle cx="980" cy="100" r="6" fill="#3b82f6" filter="url(#glow)"/>
+        <circle cx="980" cy="100" r="10" fill="none" stroke="#3b82f6" stroke-width="1" opacity="0.4"/>
+
+        <!-- Ship position -->
+        <g id="ship-pos" transform="translate(420, 148)">
+          <circle r="12" fill="rgba(245,197,24,0.2)" stroke="#f5c518" stroke-width="1.5"/>
+          <text text-anchor="middle" dominant-baseline="central" font-size="14">🚢</text>
+        </g>
+
+        <!-- Labels -->
+        <text x="240" y="195" text-anchor="middle" font-family="Inter,sans-serif" font-size="10" font-weight="700" fill="#f5c518">İZMİR</text>
+        <text x="980" y="118" text-anchor="middle" font-family="Inter,sans-serif" font-size="10" font-weight="700" fill="#3b82f6">HAMBURG</text>
+        <text x="420" y="168" text-anchor="middle" font-family="Inter,sans-serif" font-size="9" fill="#94a3b8">📍 Şu an burada</text>
+
+        <!-- Progress indicator -->
+        <text x="600" y="20" text-anchor="middle" font-family="Inter,sans-serif" font-size="9" fill="#4b6080">Akdeniz Güzergahı</text>
+      </svg>
+
+      <!-- ETA Box -->
+      <div class="map-eta">
+        <div class="map-eta-label">Tahmini Varış</div>
+        <div class="map-eta-val" id="eta-countdown">5g 14s 22d</div>
+        <div class="map-eta-sub">Hamburg Limanı · 14.02.2025</div>
+      </div>
+
+      <!-- Position Box -->
+      <div class="map-pos-box">
+        <strong>📡 Güncel Konum</strong><br>
+        Akdeniz — 37.4°K / 22.8°D<br>
+        Hız: 14.2 knot · Rota: 285°
+      </div>
+    </div>
+
+    <!-- TRACKING TIMELINE -->
+    <div class="track-timeline">
+      <div class="track-item">
+        <div class="track-ic done">✓</div>
+        <div class="track-body">
+          <div class="track-name done">Yükleme Tamamlandı</div>
+          <div class="track-desc">İzmir Limanı'nda konteyner yüklendi · CSNU 7483621</div>
+          <div class="track-time">08 Şubat 2025 · 09:42</div>
+        </div>
+      </div>
+      <div class="track-item">
+        <div class="track-ic done">✓</div>
+        <div class="track-body">
+          <div class="track-name done">Gemi Hareket Etti</div>
+          <div class="track-desc">İzmir Limanı'ndan ayrıldı · Maersk Sealand</div>
+          <div class="track-time">08 Şubat 2025 · 14:15</div>
+        </div>
+      </div>
+      <div class="track-item">
+        <div class="track-ic done">✓</div>
+        <div class="track-body">
+          <div class="track-name done">Ege Denizi Geçişi</div>
+          <div class="track-desc">Çanakkale Boğazı geçişi tamamlandı</div>
+          <div class="track-time">09 Şubat 2025 · 06:30</div>
+        </div>
+      </div>
+      <div class="track-item">
+        <div class="track-ic active">🚢</div>
+        <div class="track-body">
+          <div class="track-name active">Akdeniz — Güzergahta</div>
+          <div class="track-desc">37.4°K / 22.8°D · Hız: 14.2 knot · Tahmini süre: ~5 gün</div>
+          <div class="track-time" id="current-time-label">Şu an · Canlı</div>
+        </div>
+      </div>
+      <div class="track-item">
+        <div class="track-ic pending">5</div>
+        <div class="track-body">
+          <div class="track-name pending">Cebelitarık Boğazı</div>
+          <div class="track-desc">Atlantik geçişine hazırlık</div>
+          <div class="track-time">Tahmini: 11 Şubat 2025</div>
+        </div>
+      </div>
+      <div class="track-item">
+        <div class="track-ic pending">6</div>
+        <div class="track-body">
+          <div class="track-name pending">Hamburg Limanı — Varış</div>
+          <div class="track-desc">Gümrük işlemleri ve teslimat</div>
+          <div class="track-time">Tahmini: 14 Şubat 2025</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PDF ÖZET BÖLÜMÜ ── -->
+  <div class="pdf-wrap">
+    <div class="pdf-head">
+      <div class="pdf-title">📄 Yazdırılabilir / İndirilebilir Ticaret Özeti</div>
+      <button class="btn btn-gold" onclick="downloadPDF()">⬇ PDF İndir</button>
+    </div>
+    <div class="pdf-body">
+      <div class="pdf-preview" id="pdf-content">
+
+        <div class="pdf-logo-row">
+          <div>
+            <div class="pdf-logo-txt">Core<em>Trade</em>Global</div>
+            <div style="font-size:10px;color:#999;margin-top:2px">B2B Ticaret Platformu — Ticaret Özet Belgesi</div>
+          </div>
+          <div class="pdf-trade-id">
+            İşlem Numarası<strong>CTG-2025-04821</strong>
+            <div style="font-size:9px;color:#aaa;margin-top:2px">Oluşturulma: 09.02.2025 · 11:34</div>
+          </div>
+        </div>
+
+        <div class="pdf-section-title">Taraflar</div>
+        <div class="pdf-parties">
+          <div class="pdf-party">
+            <div class="pdf-party-role">Satıcı</div>
+            <div class="pdf-party-name">Sofra Tekstil A.Ş.</div>
+            <div class="pdf-party-sub">Ali Kaya · Bursa, Türkiye · Vergi No: 1234567890</div>
+          </div>
+          <div class="pdf-party">
+            <div class="pdf-party-role">Alıcı</div>
+            <div class="pdf-party-name">Moda Kumaş Ltd.</div>
+            <div class="pdf-party-sub">Selin Demir · İstanbul, Türkiye · Vergi No: 9876543210</div>
+          </div>
+        </div>
+
+        <div class="pdf-section-title">Ticaret Detayları</div>
+        <div class="pdf-row"><span class="pdf-row-k">Ürün</span><span class="pdf-row-v">Organik Pamuk Kumaş (GOTS)</span></div>
+        <div class="pdf-row"><span class="pdf-row-k">HS Kodu</span><span class="pdf-row-v">5208.12.16</span></div>
+        <div class="pdf-row"><span class="pdf-row-k">Miktar</span><span class="pdf-row-v">15.000 kg</span></div>
+        <div class="pdf-row"><span class="pdf-row-k">Birim Fiyat</span><span class="pdf-row-v">$3.90 / kg</span></div>
+        <div class="pdf-row"><span class="pdf-row-k">Toplam Tutar</span><span class="pdf-row-v gold">$58,500.00</span></div>
+        <div class="pdf-row"><span class="pdf-row-k">Ödeme Vadesi</span><span class="pdf-row-v">60 gün (08.04.2025)</span></div>
+        <div class="pdf-row"><span class="pdf-row-k">Teslim Şartı</span><span class="pdf-row-v">FOB İzmir (Incoterms 2020)</span></div>
+        <div class="pdf-row"><span class="pdf-row-k">Anlaşma Tarihi</span><span class="pdf-row-v">06.02.2025</span></div>
+
+        <div class="pdf-section-title">Taşıma & Sigorta</div>
+        <div class="pdf-row"><span class="pdf-row-k">Taşıyıcı</span><span class="pdf-row-v">Maersk Line</span></div>
+        <div class="pdf-row"><span class="pdf-row-k">Konteyner No</span><span class="pdf-row-v">CSNU 7483621</span></div>
+        <div class="pdf-row"><span class="pdf-row-k">Bill of Lading</span><span class="pdf-row-v">MAEU-2025-098432</span></div>
+        <div class="pdf-row"><span class="pdf-row-k">Çıkış Limanı</span><span class="pdf-row-v">İzmir, Türkiye · 08.02.2025</span></div>
+        <div class="pdf-row"><span class="pdf-row-k">Varış Limanı</span><span class="pdf-row-v">Hamburg, Almanya · Tahmini 14.02.2025</span></div>
+        <div class="pdf-row"><span class="pdf-row-k">Sigorta</span><span class="pdf-row-v">Allianz Trade · ALZ-2025-TK-33821</span></div>
+        <div class="pdf-row"><span class="pdf-row-k">Sigorta Değeri</span><span class="pdf-row-v">$65,000</span></div>
+
+        <div class="pdf-disclaimer">
+          <strong>⚠ Önemli Uyarı:</strong> Bu belge yalnızca bilgilendirme amaçlı hazırlanmış olup herhangi bir resmi veya hukuki nitelik taşımamaktadır.
+          <strong>CoreTradeGlobal</strong>, bu ticari işlemin tarafı, aracısı veya garantörü değildir; anlaşmaya dahil olmamakta ve işlemden doğabilecek
+          hiçbir hukuki, mali ya da operasyonel sorumluluk üstlenmemektedir. Tüm hukuki yükümlülükler taraflar arasındaki sözleşmeye ve yürürlükteki mevzuata tabidir.
+          Bu belge platformun sunduğu kolaylık kapsamında oluşturulmuştur ve herhangi bir mahkeme, gümrük veya resmi kurum önünde delil veya resmi belge niteliği taşımaz.
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /page -->
+
+<script>
+// ── ETA COUNTDOWN ──
+function updateETA() {
+  const target = new Date('2025-02-14T10:00:00');
+  const now = new Date();
+  const diff = target - now;
+  if (diff <= 0) {
+    document.getElementById('eta-countdown').textContent = 'Ulaştı!';
+    return;
+  }
+  const days = Math.floor(diff / 86400000);
+  const hours = Math.floor((diff % 86400000) / 3600000);
+  const mins = Math.floor((diff % 3600000) / 60000);
+  document.getElementById('eta-countdown').textContent = `${days}g ${hours}s ${mins}d`;
+
+  const kalanEl = document.getElementById('kalan-sure');
+  if (kalanEl) kalanEl.textContent = `${days}g ${hours}s`;
+}
+updateETA();
+setInterval(updateETA, 30000);
+
+// ── LAST UPDATE ──
+function updateTime() {
+  const now = new Date();
+  const t = now.toLocaleTimeString('tr-TR', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+  document.getElementById('last-update').textContent = t;
+  const cl = document.getElementById('current-time-label');
+  if (cl) cl.textContent = `Şu an · ${t} — Canlı`;
+}
+updateTime();
+setInterval(updateTime, 1000);
+
+// ── REFRESH ──
+function refreshTracking() {
+  const btn = document.querySelector('[onclick="refreshTracking()"]');
+  btn.textContent = '↻ Güncelleniyor...';
+  btn.disabled = true;
+  setTimeout(() => {
+    updateTime();
+    btn.textContent = '↻ Yenile';
+    btn.disabled = false;
+  }, 1200);
+}
+
+// ── PDF DOWNLOAD ──
+function downloadPDF() {
+  // Use browser print dialog with PDF mode
+  const originalTitle = document.title;
+  document.title = 'CTG-2025-04821_Ticaret_Ozeti';
+  window.print();
+  document.title = originalTitle;
+}
+</script>
+
+</body>
+</html>

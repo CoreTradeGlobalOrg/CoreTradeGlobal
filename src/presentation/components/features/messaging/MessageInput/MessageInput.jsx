@@ -102,6 +102,7 @@ export function MessageInput({ conversationId }) {
       }
     } catch (err) {
       console.error('Failed to send message:', err);
+      toast.error(err.message || 'Failed to send message. Please try again.');
     }
   };
 

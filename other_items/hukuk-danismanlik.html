@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CoreTradeGlobal — Hukuk Danışmanlığı</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:           #0b1120;
+    --surface:      #111827;
+    --surface2:     #1a2540;
+    --border:       #1e2d47;
+    --border2:      #253353;
+    --gold:         #f5c518;
+    --gold-dim:     rgba(245,197,24,0.10);
+    --gold-border:  rgba(245,197,24,0.30);
+    --blue:         #3b82f6;
+    --blue-dim:     rgba(59,130,246,0.10);
+    --blue-border:  rgba(59,130,246,0.30);
+    --green:        #22c55e;
+    --green-dim:    rgba(34,197,94,0.10);
+    --green-border: rgba(34,197,94,0.30);
+    --purple:       #a855f7;
+    --purple-dim:   rgba(168,85,247,0.10);
+    --purple-border:rgba(168,85,247,0.30);
+    --red:          #ef4444;
+    --red-dim:      rgba(239,68,68,0.10);
+    --text:         #f1f5f9;
+    --text2:        #94a3b8;
+    --text3:        #4b6080;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; font-size:14px; min-height:100vh; overflow:hidden; }
+
+  ::-webkit-scrollbar { width:4px; height:4px; }
+  ::-webkit-scrollbar-thumb { background:var(--border2); border-radius:2px; }
+
+  /* ── NAVBAR ── */
+  nav {
+    background:var(--surface); border-bottom:1px solid var(--border);
+    padding:0 24px; height:56px; display:flex; align-items:center;
+    justify-content:space-between; position:sticky; top:0; z-index:200; flex-shrink:0;
+  }
+  .nav-logo { display:flex; align-items:center; gap:10px; text-decoration:none; }
+  .nav-logo-icon { width:30px; height:30px; background:var(--gold); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:14px; }
+  .nav-logo-text { font-size:15px; font-weight:700; color:var(--text); }
+  .nav-logo-text span { color:var(--gold); }
+
+  .nav-center { display:flex; align-items:center; gap:8px; }
+  .trade-badge { background:var(--surface2); border:1px solid var(--border); border-radius:7px; padding:4px 12px; font-size:12px; color:var(--text2); display:flex; align-items:center; gap:6px; }
+  .trade-badge strong { color:var(--gold); font-family:monospace; }
+
+  .page-badge {
+    display:flex; align-items:center; gap:6px; padding:4px 12px; border-radius:7px;
+    font-size:11px; font-weight:700; background:var(--purple-dim); border:1px solid var(--purple-border); color:var(--purple);
+  }
+  .pulse-dot { width:6px; height:6px; border-radius:50%; animation:blink 1.5s infinite; }
+  .pulse-dot.purple { background:var(--purple); }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.25} }
+
+  .nav-right { display:flex; align-items:center; gap:8px; }
+  .nav-btn { padding:6px 14px; border-radius:7px; font-family:'Inter',sans-serif; font-size:12px; font-weight:600; cursor:pointer; transition:all 0.2s; }
+  .nav-btn-ghost { background:transparent; color:var(--text2); border:1px solid var(--border2); }
+  .nav-btn-ghost:hover { border-color:var(--text2); color:var(--text); }
+  .nav-btn-gold { background:var(--gold); color:#0b1120; border:none; font-weight:800; }
+  .nav-btn-gold:hover { background:#ffd740; }
+
+  /* ── LAYOUT ── */
+  .app {
+    display:grid;
+    grid-template-columns: 300px 1fr 320px;
+    grid-template-rows: 1fr;
+    height: calc(100vh - 56px);
+    overflow: hidden;
+  }
+
+  /* ── LEFT PANEL ── */
+  .left-panel {
+    border-right:1px solid var(--border);
+    display:flex; flex-direction:column; overflow:hidden; background:var(--surface);
+  }
+
+  .panel-head {
+    padding:14px 16px; border-bottom:1px solid var(--border); flex-shrink:0;
+  }
+  .panel-head-title { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; color:var(--text3); margin-bottom:10px; }
+
+  /* LAWYER CARD */
+  .lawyer-profile {
+    background:var(--bg); border:1px solid var(--border2); border-radius:10px; padding:14px;
+  }
+  .lp-head { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+  .lp-avatar {
+    width:42px; height:42px; border-radius:50%; flex-shrink:0;
+    background:linear-gradient(135deg,var(--purple-dim),var(--blue-dim));
+    border:2px solid var(--purple-border);
+    display:flex; align-items:center; justify-content:center; font-size:18px;
+    position:relative;
+  }
+  .lp-online {
+    position:absolute; bottom:1px; right:1px;
+    width:9px; height:9px; background:var(--green); border-radius:50%;
+    border:2px solid var(--bg); animation:blink 2s infinite;
+  }
+  .lp-name { font-size:13px; font-weight:700; color:var(--text); }
+  .lp-title { font-size:11px; color:var(--text3); }
+  .lp-bar { font-size:11px; color:var(--purple); margin-top:1px; }
+
+  .lp-stats { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:10px; }
+  .lp-stat { background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:6px 8px; }
+  .lp-stat-val { font-size:13px; font-weight:800; color:var(--text); }
+  .lp-stat-label { font-size:9px; color:var(--text3); text-transform:uppercase; letter-spacing:0.05em; }
+
+  .lp-tags { display:flex; flex-wrap:wrap; gap:4px; }
+  .lp-tag { font-size:10px; font-weight:600; padding:2px 7px; border-radius:4px; background:var(--purple-dim); color:var(--purple); border:1px solid var(--purple-border); }
+
+  .online-badge { display:inline-flex; align-items:center; gap:5px; font-size:11px; color:var(--green); background:var(--green-dim); border:1px solid var(--green-border); padding:2px 8px; border-radius:10px; margin-top:8px; }
+
+  /* TRADE INFO */
+  .panel-scroll { flex:1; overflow-y:auto; padding:14px 16px; display:flex; flex-direction:column; gap:12px; }
+
+  .info-card { background:var(--bg); border:1px solid var(--border2); border-radius:10px; overflow:hidden; }
+  .info-card-head { padding:9px 12px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:6px; }
+  .info-card-title { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--text3); }
+  .info-card-body { padding:10px 12px; display:flex; flex-direction:column; gap:7px; }
+  .info-row { display:flex; justify-content:space-between; align-items:center; font-size:12px; }
+  .info-key { color:var(--text3); }
+  .info-val { font-weight:600; color:var(--text); font-family:monospace; font-size:11px; text-align:right; }
+  .info-val.gold { color:var(--gold); font-size:13px; font-weight:800; }
+  .info-val.blue { color:var(--blue); }
+  .info-val.green { color:var(--green); }
+
+  /* TASK LIST */
+  .task-list { display:flex; flex-direction:column; gap:0; }
+  .task-item { display:flex; align-items:center; gap:8px; padding:8px 0; border-bottom:1px solid var(--border); font-size:12px; }
+  .task-item:last-child { border-bottom:none; }
+  .task-check { width:16px; height:16px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:9px; font-weight:700; }
+  .task-check.done { background:var(--green-dim); color:var(--green); border:1px solid var(--green-border); }
+  .task-check.active { background:var(--gold-dim); color:var(--gold); border:1px solid var(--gold-border); animation:blink 2s infinite; }
+  .task-check.pending { background:var(--surface2); color:var(--text3); border:1px solid var(--border2); }
+  .task-text { flex:1; color:var(--text2); }
+  .task-text.done { color:var(--text3); text-decoration:line-through; }
+  .task-text.active { color:var(--text); font-weight:600; }
+
+  /* DOCS */
+  .doc-list { display:flex; flex-direction:column; gap:6px; }
+  .doc-item { display:flex; align-items:center; gap:8px; font-size:12px; background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:8px 10px; cursor:pointer; transition:border-color 0.2s; }
+  .doc-item:hover { border-color:var(--border2); }
+  .doc-icon { font-size:16px; flex-shrink:0; }
+  .doc-name { flex:1; color:var(--text2); font-weight:500; }
+  .doc-status { font-size:10px; font-weight:700; padding:1px 6px; border-radius:8px; }
+  .doc-status.ready { background:var(--green-dim); color:var(--green); border:1px solid var(--green-border); }
+  .doc-status.draft { background:var(--gold-dim); color:var(--gold); border:1px solid var(--gold-border); }
+  .doc-status.pending { background:var(--surface2); color:var(--text3); border:1px solid var(--border2); }
+
+  /* ── MIDDLE — CHAT ── */
+  .chat-panel {
+    display:flex; flex-direction:column; overflow:hidden;
+    background:var(--bg);
+  }
+
+  .chat-topbar {
+    background:var(--surface); border-bottom:1px solid var(--border);
+    padding:12px 20px; display:flex; align-items:center; justify-content:space-between; flex-shrink:0;
+  }
+  .chat-topbar-left { display:flex; align-items:center; gap:10px; }
+  .chat-who { font-size:13px; font-weight:700; color:var(--text); }
+  .chat-who-sub { font-size:11px; color:var(--text3); }
+  .chat-actions { display:flex; gap:7px; }
+  .chat-action-btn { padding:5px 12px; border-radius:6px; font-size:11px; font-weight:600; cursor:pointer; transition:all 0.2s; font-family:'Inter',sans-serif; }
+  .cab-ghost { background:transparent; color:var(--text2); border:1px solid var(--border2); }
+  .cab-ghost:hover { border-color:var(--text2); color:var(--text); }
+  .cab-purple { background:var(--purple); color:#fff; border:none; }
+  .cab-purple:hover { background:#c084fc; }
+
+  .chat-messages {
+    flex:1; overflow-y:auto; padding:20px;
+    display:flex; flex-direction:column; gap:16px;
+  }
+
+  /* Date divider */
+  .chat-date {
+    text-align:center; font-size:11px; color:var(--text3);
+    display:flex; align-items:center; gap:10px;
+  }
+  .chat-date::before, .chat-date::after { content:''; flex:1; height:1px; background:var(--border); }
+
+  /* System message */
+  .sys-msg {
+    background:var(--purple-dim); border:1px solid var(--purple-border); border-radius:8px;
+    padding:8px 14px; text-align:center; font-size:12px; color:var(--purple);
+    display:flex; align-items:center; justify-content:center; gap:6px;
+  }
+
+  /* Message bubbles */
+  .msg-row { display:flex; gap:10px; align-items:flex-start; }
+  .msg-row.lawyer { }
+  .msg-row.client { flex-direction:row-reverse; }
+
+  .msg-avatar {
+    width:32px; height:32px; border-radius:50%; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; font-size:14px;
+    border:1.5px solid var(--border2);
+  }
+  .msg-avatar.lawyer-av { background:var(--purple-dim); border-color:var(--purple-border); }
+  .msg-avatar.client-av { background:var(--gold-dim); border-color:var(--gold-border); }
+
+  .msg-body { max-width:72%; }
+  .msg-name { font-size:10px; font-weight:700; color:var(--text3); margin-bottom:4px; }
+  .msg-row.client .msg-name { text-align:right; }
+
+  .msg-bubble {
+    padding:11px 14px; border-radius:12px; font-size:13px; line-height:1.55; color:var(--text2);
+  }
+  .msg-row.lawyer .msg-bubble {
+    background:var(--surface); border:1px solid var(--border2);
+    border-radius:4px 12px 12px 12px;
+  }
+  .msg-row.client .msg-bubble {
+    background:var(--gold-dim); border:1px solid var(--gold-border); color:var(--text);
+    border-radius:12px 4px 12px 12px;
+  }
+  .msg-bubble strong { color:var(--text); font-weight:600; }
+  .msg-bubble .highlight { color:var(--gold); font-weight:700; font-family:monospace; }
+  .msg-bubble .warn { color:var(--red); font-weight:600; }
+  .msg-bubble .ok { color:var(--green); font-weight:600; }
+
+  .msg-time { font-size:10px; color:var(--text3); margin-top:4px; font-family:monospace; }
+  .msg-row.client .msg-time { text-align:right; }
+
+  /* File attachment in message */
+  .msg-attachment {
+    margin-top:8px; background:var(--surface2); border:1px solid var(--border2);
+    border-radius:8px; padding:8px 12px; display:flex; align-items:center; gap:8px;
+    cursor:pointer; transition:border-color 0.2s;
+  }
+  .msg-attachment:hover { border-color:var(--purple); }
+  .att-icon { font-size:18px; }
+  .att-name { font-size:12px; font-weight:600; color:var(--text); }
+  .att-size { font-size:10px; color:var(--text3); }
+  .att-dl { font-size:10px; color:var(--purple); font-weight:700; margin-left:auto; }
+
+  /* Typing indicator */
+  .typing-indicator {
+    display:flex; align-items:center; gap:10px;
+  }
+  .typing-dots { display:flex; gap:4px; padding:10px 14px; background:var(--surface); border:1px solid var(--border2); border-radius:12px; }
+  .td { width:6px; height:6px; border-radius:50%; background:var(--text3); animation:typingBounce 1.2s infinite; }
+  .td:nth-child(2) { animation-delay:0.2s; }
+  .td:nth-child(3) { animation-delay:0.4s; }
+  @keyframes typingBounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-5px)} }
+
+  /* Chat input */
+  .chat-input-area {
+    background:var(--surface); border-top:1px solid var(--border);
+    padding:12px 16px; flex-shrink:0;
+  }
+  .chat-toolbar { display:flex; gap:6px; margin-bottom:10px; flex-wrap:wrap; }
+  .toolbar-btn {
+    padding:4px 10px; border-radius:5px; font-size:11px; font-weight:600; cursor:pointer;
+    background:var(--surface2); border:1px solid var(--border2); color:var(--text3);
+    transition:all 0.15s; font-family:'Inter',sans-serif; display:flex; align-items:center; gap:4px;
+  }
+  .toolbar-btn:hover { border-color:var(--purple); color:var(--purple); }
+
+  .chat-input-row { display:flex; gap:8px; align-items:flex-end; }
+  .chat-input {
+    flex:1; background:var(--surface2); border:1px solid var(--border2); border-radius:10px;
+    padding:10px 14px; color:var(--text); font-family:'Inter',sans-serif; font-size:13px;
+    outline:none; resize:none; min-height:42px; max-height:120px; line-height:1.45;
+    transition:border-color 0.2s;
+  }
+  .chat-input:focus { border-color:var(--purple); }
+  .chat-input::placeholder { color:var(--text3); }
+  .send-btn {
+    width:42px; height:42px; border-radius:10px; background:var(--purple); border:none;
+    cursor:pointer; display:flex; align-items:center; justify-content:center;
+    font-size:16px; transition:all 0.2s; flex-shrink:0;
+  }
+  .send-btn:hover { background:#c084fc; transform:translateY(-1px); }
+
+  /* ── RIGHT PANEL — CONTRACT ── */
+  .right-panel {
+    border-left:1px solid var(--border); background:var(--surface);
+    display:flex; flex-direction:column; overflow:hidden;
+  }
+
+  .contract-tabs {
+    display:flex; border-bottom:1px solid var(--border); flex-shrink:0;
+  }
+  .ctab {
+    flex:1; padding:12px 8px; text-align:center; font-size:11px; font-weight:700;
+    cursor:pointer; color:var(--text3); border-bottom:2px solid transparent;
+    transition:all 0.2s; background:transparent; border-top:none; border-left:none; border-right:none;
+    font-family:'Inter',sans-serif;
+  }
+  .ctab:hover { color:var(--text2); }
+  .ctab.active { color:var(--gold); border-bottom-color:var(--gold); }
+
+  .contract-scroll { flex:1; overflow-y:auto; padding:16px; }
+
+  /* CONTRACT VIEWER */
+  .contract-header-card {
+    background:linear-gradient(135deg,#0f1e3a,#1a1206);
+    border:1px solid var(--gold-border); border-radius:10px; padding:16px;
+    text-align:center; margin-bottom:14px; position:relative; overflow:hidden;
+  }
+  .contract-header-card::before {
+    content:''; position:absolute; inset:0;
+    background-image:linear-gradient(rgba(245,197,24,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(245,197,24,0.04) 1px,transparent 1px);
+    background-size:24px 24px; pointer-events:none;
+  }
+  .contract-logo { font-size:28px; margin-bottom:6px; position:relative; }
+  .contract-title-main { font-size:14px; font-weight:800; color:var(--gold); margin-bottom:2px; position:relative; }
+  .contract-title-sub { font-size:11px; color:var(--text2); position:relative; }
+  .contract-ref { font-family:monospace; font-size:10px; color:var(--text3); margin-top:6px; position:relative; }
+
+  .contract-version {
+    display:flex; align-items:center; justify-content:space-between;
+    margin-bottom:12px;
+  }
+  .ver-badge { font-size:11px; font-weight:700; color:var(--purple); background:var(--purple-dim); border:1px solid var(--purple-border); padding:2px 10px; border-radius:10px; }
+  .ver-date { font-size:11px; color:var(--text3); font-family:monospace; }
+
+  /* Contract sections */
+  .contract-section { margin-bottom:14px; }
+  .cs-num { font-size:10px; font-weight:800; color:var(--text3); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:6px; }
+  .cs-title { font-size:13px; font-weight:800; color:var(--text); margin-bottom:6px; }
+  .cs-body {
+    font-size:12px; color:var(--text2); line-height:1.65;
+    background:var(--bg); border:1px solid var(--border2); border-radius:8px; padding:12px 14px;
+  }
+  .cs-body strong { color:var(--text); font-weight:600; }
+  .cs-body .gold { color:var(--gold); font-weight:700; font-family:monospace; }
+  .cs-body .note { color:var(--purple); font-style:italic; }
+  .cs-highlight {
+    background:rgba(245,197,24,0.06); border-left:3px solid var(--gold);
+    padding:8px 10px; border-radius:0 6px 6px 0; margin-top:8px; font-size:12px; color:var(--text2);
+  }
+
+  /* Signature section */
+  .sig-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px; }
+  .sig-box {
+    border:1px solid var(--border2); border-radius:8px; padding:12px;
+    background:var(--bg); text-align:center;
+  }
+  .sig-label { font-size:10px; text-transform:uppercase; letter-spacing:0.08em; color:var(--text3); margin-bottom:8px; }
+  .sig-area { height:40px; border-bottom:1px dashed var(--border2); margin-bottom:6px; display:flex; align-items:center; justify-content:center; font-size:10px; color:var(--text3); }
+  .sig-name { font-size:11px; font-weight:600; color:var(--text2); }
+  .sig-date { font-size:10px; color:var(--text3); }
+  .sig-status { font-size:10px; font-weight:700; margin-top:6px; }
+  .sig-status.signed { color:var(--green); }
+  .sig-status.pending { color:var(--gold); }
+
+  /* Revision history */
+  .rev-list { display:flex; flex-direction:column; gap:8px; }
+  .rev-item { background:var(--bg); border:1px solid var(--border2); border-radius:8px; padding:10px 12px; }
+  .rev-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; }
+  .rev-ver { font-size:11px; font-weight:700; color:var(--purple); font-family:monospace; }
+  .rev-time { font-size:10px; color:var(--text3); font-family:monospace; }
+  .rev-author { font-size:11px; color:var(--text2); margin-bottom:4px; }
+  .rev-changes { display:flex; flex-wrap:wrap; gap:4px; }
+  .rev-change { font-size:10px; padding:1px 7px; border-radius:4px; font-weight:600; }
+  .rev-change.add { background:var(--green-dim); color:var(--green); border:1px solid var(--green-border); }
+  .rev-change.mod { background:var(--gold-dim); color:var(--gold); border:1px solid var(--gold-border); }
+  .rev-change.del { background:var(--red-dim); color:var(--red); border:1px solid rgba(239,68,68,0.3); }
+
+  /* Risk panel */
+  .risk-list { display:flex; flex-direction:column; gap:8px; }
+  .risk-item { background:var(--bg); border:1px solid var(--border2); border-radius:8px; padding:10px 12px; display:flex; gap:10px; align-items:flex-start; }
+  .risk-icon { font-size:18px; flex-shrink:0; }
+  .risk-level { font-size:9px; font-weight:800; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:3px; }
+  .risk-level.low { color:var(--green); }
+  .risk-level.med { color:var(--gold); }
+  .risk-level.high { color:var(--red); }
+  .risk-title { font-size:12px; font-weight:700; color:var(--text); margin-bottom:2px; }
+  .risk-desc { font-size:11px; color:var(--text3); line-height:1.45; }
+
+  .contract-action-bar {
+    padding:12px 16px; border-top:1px solid var(--border); flex-shrink:0;
+    display:flex; gap:8px;
+  }
+  .btn-contract { flex:1; padding:10px; border-radius:8px; font-family:'Inter',sans-serif; font-size:12px; font-weight:700; cursor:pointer; transition:all 0.2s; border:none; display:flex; align-items:center; justify-content:center; gap:5px; }
+  .btn-download { background:var(--surface2); color:var(--text2); border:1px solid var(--border2) !important; border:none; }
+  .btn-download:hover { border-color:var(--text2) !important; color:var(--text); }
+  .btn-approve-contract { background:var(--gold); color:#0b1120; }
+  .btn-approve-contract:hover { background:#ffd740; }
+</style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav>
+  <a href="#" class="nav-logo">
+    <div class="nav-logo-icon">🌐</div>
+    <span class="nav-logo-text">CoreTrade<span>Global</span></span>
+  </a>
+  <div class="nav-center">
+    <div class="trade-badge">Ticaret <strong>#TRD-2025-08841</strong></div>
+    <div class="page-badge"><div class="pulse-dot purple"></div> Hukuk Danışmanlığı Aktif</div>
+  </div>
+  <div class="nav-right">
+    <button class="nav-btn nav-btn-ghost">← Ticarete Dön</button>
+    <button class="nav-btn nav-btn-gold">📥 Sözleşmeyi İndir</button>
+  </div>
+</nav>
+
+<div class="app">
+
+  <!-- ══ LEFT PANEL ══ -->
+  <div class="left-panel">
+    <div class="panel-head">
+      <div class="panel-head-title">Avukat Profiliniz</div>
+      <div class="lawyer-profile">
+        <div class="lp-head">
+          <div class="lp-avatar">
+            👩‍⚖️
+            <div class="lp-online"></div>
+          </div>
+          <div>
+            <div class="lp-name">Av. Merve Kaya</div>
+            <div class="lp-title">Ticaret Hukuku Uzmanı</div>
+            <div class="lp-bar">İstanbul Barosu · Sicil: 42817</div>
+          </div>
+        </div>
+        <div class="lp-stats">
+          <div class="lp-stat"><div class="lp-stat-val">★ 4.9</div><div class="lp-stat-label">Puan</div></div>
+          <div class="lp-stat"><div class="lp-stat-val">12 Yıl</div><div class="lp-stat-label">Deneyim</div></div>
+          <div class="lp-stat"><div class="lp-stat-val">218</div><div class="lp-stat-label">Dava</div></div>
+          <div class="lp-stat"><div class="lp-stat-val">%97</div><div class="lp-stat-label">Başarı</div></div>
+        </div>
+        <div class="lp-tags">
+          <span class="lp-tag">B2B Sözleşme</span>
+          <span class="lp-tag">İhracat</span>
+          <span class="lp-tag">Tahkim</span>
+          <span class="lp-tag">CISG</span>
+        </div>
+        <div class="online-badge"><div class="pulse-dot" style="background:var(--green);width:5px;height:5px;"></div> Şu an aktif</div>
+      </div>
+    </div>
+
+    <div class="panel-scroll">
+
+      <!-- TRADE INFO -->
+      <div class="info-card">
+        <div class="info-card-head">📋 <span class="info-card-title">Ticaret Bilgileri</span></div>
+        <div class="info-card-body">
+          <div class="info-row"><span class="info-key">Ürün</span><span class="info-val">Pamuk İplik 30/1</span></div>
+          <div class="info-row"><span class="info-key">Miktar</span><span class="info-val">15.000 kg</span></div>
+          <div class="info-row"><span class="info-key">Birim Fiyat</span><span class="info-val gold">$4.05/kg</span></div>
+          <div class="info-row"><span class="info-key">Toplam</span><span class="info-val gold">$60,750</span></div>
+          <div class="info-row"><span class="info-key">Ödeme</span><span class="info-val">60 Gün Vadeli</span></div>
+          <div class="info-row"><span class="info-key">Teslim</span><span class="info-val blue">FOB İzmir</span></div>
+          <div class="info-row"><span class="info-key">Tarih</span><span class="info-val">15 Mar 2025</span></div>
+        </div>
+      </div>
+
+      <!-- PARTIES -->
+      <div class="info-card">
+        <div class="info-card-head">🤝 <span class="info-card-title">Taraflar</span></div>
+        <div class="info-card-body">
+          <div class="info-row"><span class="info-key">Satıcı</span><span class="info-val" style="color:var(--gold)">Sofra Tekstil A.Ş.</span></div>
+          <div class="info-row"><span class="info-key">VKN</span><span class="info-val">4820193742</span></div>
+          <div class="info-row"><span class="info-key">Alıcı</span><span class="info-val green">Moda Kumaş Ltd.</span></div>
+          <div class="info-row"><span class="info-key">VKN</span><span class="info-val">7193048201</span></div>
+          <div class="info-row"><span class="info-key">Siz</span><span class="info-val">Alıcı Tarafı</span></div>
+          <div class="info-row"><span class="info-key">Yetki Bölgesi</span><span class="info-val">Türkiye / ISTAC</span></div>
+        </div>
+      </div>
+
+      <!-- TASKS -->
+      <div class="info-card">
+        <div class="info-card-head">✅ <span class="info-card-title">Danışmanlık Görevleri</span></div>
+        <div class="info-card-body" style="padding:0 12px;">
+          <div class="task-list">
+            <div class="task-item">
+              <div class="task-check done">✓</div>
+              <span class="task-text done">Ticaret koşulları incelendi</span>
+            </div>
+            <div class="task-item">
+              <div class="task-check done">✓</div>
+              <span class="task-text done">Risk analizi tamamlandı</span>
+            </div>
+            <div class="task-item">
+              <div class="task-check active">●</div>
+              <span class="task-text active">Sözleşme taslağı hazırlanıyor</span>
+            </div>
+            <div class="task-item">
+              <div class="task-check pending">4</div>
+              <span class="task-text">Taraf onayı bekleniyor</span>
+            </div>
+            <div class="task-item">
+              <div class="task-check pending">5</div>
+              <span class="task-text">Final sözleşme imzası</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DOCS -->
+      <div class="info-card">
+        <div class="info-card-head">📁 <span class="info-card-title">Belgeler</span></div>
+        <div class="info-card-body">
+          <div class="doc-list">
+            <div class="doc-item">
+              <span class="doc-icon">📄</span>
+              <span class="doc-name">Risk Analiz Raporu</span>
+              <span class="doc-status ready">Hazır</span>
+            </div>
+            <div class="doc-item">
+              <span class="doc-icon">📜</span>
+              <span class="doc-name">Sözleşme Taslağı v2</span>
+              <span class="doc-status draft">Taslak</span>
+            </div>
+            <div class="doc-item">
+              <span class="doc-icon">🏅</span>
+              <span class="doc-name">GOTS Sertifikası</span>
+              <span class="doc-status ready">Hazır</span>
+            </div>
+            <div class="doc-item">
+              <span class="doc-icon">⚖️</span>
+              <span class="doc-name">Tahkim Maddesi</span>
+              <span class="doc-status draft">Taslak</span>
+            </div>
+            <div class="doc-item">
+              <span class="doc-icon">🔒</span>
+              <span class="doc-name">Gizlilik Sözleşmesi (NDA)</span>
+              <span class="doc-status pending">Bekliyor</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══ CHAT PANEL ══ -->
+  <div class="chat-panel">
+    <div class="chat-topbar">
+      <div class="chat-topbar-left">
+        <div>
+          <div class="chat-who">⚖️ Av. Merve Kaya ile Hukuki Danışma</div>
+          <div class="chat-who-sub">Ticaret #TRD-2025-08841 · Gizli & Şifreli Kanal</div>
+        </div>
+      </div>
+      <div class="chat-actions">
+        <button class="chat-action-btn cab-ghost">📞 Ara</button>
+        <button class="chat-action-btn cab-ghost">🎥 Görüntülü</button>
+        <button class="chat-action-btn cab-purple">📋 Sözleşme İste</button>
+      </div>
+    </div>
+
+    <div class="chat-messages" id="chatMessages">
+
+      <div class="chat-date">14 Şubat 2025</div>
+
+      <div class="sys-msg">
+        ⚖️ Hukuki danışmanlık oturumu başlatıldı. Tüm konuşmalar şifrelidir ve kayıt altına alınmaktadır.
+      </div>
+
+      <!-- Lawyer -->
+      <div class="msg-row lawyer">
+        <div class="msg-avatar lawyer-av">👩‍⚖️</div>
+        <div class="msg-body">
+          <div class="msg-name">Av. Merve Kaya · 10:31</div>
+          <div class="msg-bubble">
+            Merhaba, ben Av. Merve Kaya. <strong>#TRD-2025-08841</strong> numaralı ticaret dosyanızı inceledim. Ticaret koşullarını analiz ettim ve bazı önemli noktaları paylaşmak istiyorum.
+          </div>
+        </div>
+      </div>
+
+      <div class="msg-row lawyer">
+        <div class="msg-avatar lawyer-av">👩‍⚖️</div>
+        <div class="msg-body">
+          <div class="msg-name">Av. Merve Kaya · 10:32</div>
+          <div class="msg-bubble">
+            <strong>Ön Risk Değerlendirmesi:</strong><br><br>
+            ✅ <span class="ok">FOB İzmir teslim şartı:</span> Alıcı açısından uygun. Yükleme sonrası risk satıcıdan size geçiyor.<br><br>
+            ⚠️ <span style="color:var(--gold)">60 gün vadeli ödeme:</span> Tavsiye ederim ki ödeme koşuluna gecikme faizi maddesi ekleyelim. Mevcut haliyle alıcı aleyhine boşluk var.<br><br>
+            🔴 <span class="warn">Uyuşmazlık maddesi:</span> Sözleşmede tahkim yeri belirsiz. ISTAC tahkimini net olarak belirtmemiz gerekiyor.
+          </div>
+        </div>
+      </div>
+
+      <!-- Client -->
+      <div class="msg-row client">
+        <div class="msg-avatar client-av">👤</div>
+        <div class="msg-body">
+          <div class="msg-name">Siz (Moda Kumaş Ltd.) · 10:45</div>
+          <div class="msg-bubble">
+            Teşekkürler. Ödeme gecikme faizi için ne önerirsiniz? Ayrıca satıcı tarafın kalite garantisi konusunda ne düşünüyorsunuz? GOTS sertifikası yeterli mi?
+          </div>
+        </div>
+      </div>
+
+      <!-- Lawyer -->
+      <div class="msg-row lawyer">
+        <div class="msg-avatar lawyer-av">👩‍⚖️</div>
+        <div class="msg-body">
+          <div class="msg-name">Av. Merve Kaya · 10:52</div>
+          <div class="msg-bubble">
+            Gecikme faizi için yıllık <span class="highlight">%12</span> (aylık %1) öneririm — bu Türkiye piyasasında standart ve mahkemede savunulabilir bir oran.<br><br>
+            GOTS sertifikası kalite standardı için yeterli, ancak sözleşmeye şu eklemeleri yapmalıyız:<br>
+            • Sevkiyat öncesi <strong>numune onayı</strong> zorunluluğu<br>
+            • Parti bazında <strong>test raporu</strong> ibrazı<br>
+            • Kalite uyumsuzluğunda <strong>iade veya indirim</strong> hakkı
+          </div>
+          <div class="msg-attachment">
+            <span class="att-icon">📄</span>
+            <div>
+              <div class="att-name">Risk_Analiz_TRD2025-08841.pdf</div>
+              <div class="att-size">287 KB · PDF</div>
+            </div>
+            <span class="att-dl">↓ İndir</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="chat-date">15 Şubat 2025</div>
+
+      <!-- Lawyer -->
+      <div class="msg-row lawyer">
+        <div class="msg-avatar lawyer-av">👩‍⚖️</div>
+        <div class="msg-body">
+          <div class="msg-name">Av. Merve Kaya · 09:14</div>
+          <div class="msg-bubble">
+            Sözleşme taslağının v2'sini hazırladım. Ana değişiklikler:
+            <br><br>
+            📝 <strong>Madde 4:</strong> Gecikme faizi %12/yıl eklendi<br>
+            📝 <strong>Madde 6:</strong> Kalite kontrol prosedürü detaylandırıldı<br>
+            📝 <strong>Madde 9:</strong> ISTAC tahkim maddesi güncellendi<br>
+            📝 <strong>Madde 11:</strong> Mücbir sebep kapsamı genişletildi<br><br>
+            Sağ panelden taslağı inceleyebilirsiniz. Onayınızı bekliyorum.
+          </div>
+          <div class="msg-attachment">
+            <span class="att-icon">📜</span>
+            <div>
+              <div class="att-name">Sozlesme_Taslak_v2_TRD2025-08841.docx</div>
+              <div class="att-size">124 KB · DOCX</div>
+            </div>
+            <span class="att-dl">↓ İndir</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Client -->
+      <div class="msg-row client">
+        <div class="msg-avatar client-av">👤</div>
+        <div class="msg-body">
+          <div class="msg-name">Siz · 09:28</div>
+          <div class="msg-bubble">
+            Taslağı inceledim. Madde 6'daki "numune onayı süresi" 5 iş günü çok kısa gözüküyor, bunu 10 iş günü yapabilir miyiz?
+          </div>
+        </div>
+      </div>
+
+      <!-- Lawyer -->
+      <div class="msg-row lawyer">
+        <div class="msg-avatar lawyer-av">👩‍⚖️</div>
+        <div class="msg-body">
+          <div class="msg-name">Av. Merve Kaya · 09:35</div>
+          <div class="msg-bubble">
+            Kesinlikle makul bir talep. 10 iş günü standart uluslararası ticaret pratikleriyle uyumlu. Taslağı güncelleyip <span class="highlight">v3</span> olarak paylaşıyorum. Satıcı avukatına da göndereceğim.
+          </div>
+        </div>
+      </div>
+
+      <!-- Typing -->
+      <div class="typing-indicator" id="typingIndicator" style="display:none">
+        <div class="msg-avatar lawyer-av">👩‍⚖️</div>
+        <div class="typing-dots">
+          <div class="td"></div><div class="td"></div><div class="td"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- INPUT -->
+    <div class="chat-input-area">
+      <div class="chat-toolbar">
+        <button class="toolbar-btn" onclick="insertQuick('Sözleşme taslağını onaylıyorum.')">✓ Onayla</button>
+        <button class="toolbar-btn" onclick="insertQuick('Bu madde hakkında daha fazla bilgi alabilir miyim?')">❓ Bilgi İste</button>
+        <button class="toolbar-btn" onclick="insertQuick('Değişiklik talep ediyorum:')">✏️ Değişiklik</button>
+        <button class="toolbar-btn">📎 Dosya Ekle</button>
+        <button class="toolbar-btn">📋 Madde Alıntıla</button>
+      </div>
+      <div class="chat-input-row">
+        <textarea class="chat-input" id="chatInput" placeholder="Avukatınıza mesaj yazın..." rows="1" onkeydown="handleKey(event)"></textarea>
+        <button class="send-btn" onclick="sendMessage()">➤</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ RIGHT PANEL — CONTRACT ══ -->
+  <div class="right-panel">
+    <div class="contract-tabs">
+      <button class="ctab active" onclick="switchTab(this,'contract')">📜 Sözleşme</button>
+      <button class="ctab" onclick="switchTab(this,'revisions')">🔄 Revizyonlar</button>
+      <button class="ctab" onclick="switchTab(this,'risks')">⚠️ Riskler</button>
+    </div>
+
+    <!-- CONTRACT TAB -->
+    <div class="contract-scroll" id="tab-contract">
+
+      <div class="contract-header-card">
+        <div class="contract-logo">⚖️</div>
+        <div class="contract-title-main">ULUSLARARASI TICARET SÖZLEŞMESI</div>
+        <div class="contract-title-sub">Mal Alım-Satım Sözleşmesi</div>
+        <div class="contract-ref">Ref: TRD-2025-08841 · CoreTradeGlobal Platformu</div>
+      </div>
+
+      <div class="contract-version">
+        <span class="ver-badge">Versiyon 2 / Taslak</span>
+        <span class="ver-date">15 Şub 2025, 09:35</span>
+      </div>
+
+      <div class="contract-section">
+        <div class="cs-num">MADDE 1</div>
+        <div class="cs-title">Taraflar</div>
+        <div class="cs-body">
+          <strong>Satıcı:</strong> Sofra Tekstil A.Ş., Bursa / Türkiye, VKN: 4820193742<br>
+          <strong>Alıcı:</strong> Moda Kumaş Ltd. Şti., İstanbul / Türkiye, VKN: 7193048201<br><br>
+          İşbu sözleşme, yukarıda belirtilen taraflar arasında aşağıdaki koşullarda imzalanmıştır.
+        </div>
+      </div>
+
+      <div class="contract-section">
+        <div class="cs-num">MADDE 2</div>
+        <div class="cs-title">Ürün ve Miktar</div>
+        <div class="cs-body">
+          Satıcı, aşağıda belirtilen ürünü teslim etmeyi taahhüt eder:<br><br>
+          <strong>Ürün:</strong> Organik Pamuk İplik, 30/1 Ne Ring İplik<br>
+          <strong>HS Kodu:</strong> 5205.11<br>
+          <strong>Miktar:</strong> <span class="gold">15.000 kg</span> (± %5 tolerans)<br>
+          <strong>Sertifikasyon:</strong> GOTS, ISO 9001
+        </div>
+      </div>
+
+      <div class="contract-section">
+        <div class="cs-num">MADDE 3</div>
+        <div class="cs-title">Fiyat ve Ödeme</div>
+        <div class="cs-body">
+          <strong>Birim Fiyat:</strong> <span class="gold">$4.05 / kg</span><br>
+          <strong>Toplam Bedel:</strong> <span class="gold">$60,750.00 USD</span><br>
+          <strong>Ödeme Şekli:</strong> Banka havalesi (T/T)<br>
+          <strong>Ödeme Vadesi:</strong> Fatura tarihinden itibaren 60 (altmış) gün
+          <div class="cs-highlight">
+            ⚖️ <em>Avukat notu:</em> Gecikme halinde ödenmemiş tutar üzerinden yıllık <strong>%12</strong> gecikme faizi uygulanacaktır. <span class="note">(v2 ile eklendi)</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="contract-section">
+        <div class="cs-num">MADDE 4</div>
+        <div class="cs-title">Teslim Koşulları</div>
+        <div class="cs-body">
+          <strong>Teslim Şartı:</strong> FOB Alsancak Limanı, İzmir (Incoterms® 2020)<br>
+          <strong>Teslim Tarihi:</strong> 15 Mart 2025<br>
+          <strong>Gecikmede Sorumluluk:</strong> Her gecikme günü için bedelin %0,1'i ceza
+        </div>
+      </div>
+
+      <div class="contract-section">
+        <div class="cs-num">MADDE 5</div>
+        <div class="cs-title">Kalite Kontrol</div>
+        <div class="cs-body">
+          Sevkiyat öncesi Alıcı'ya numune gönderilecek, Alıcı <strong>10 iş günü</strong> içinde onay verecektir. Her partiye ait test raporu fatura ile birlikte teslim edilecektir.
+          <div class="cs-highlight">
+            ⚖️ <em>Avukat notu:</em> Numune onay süresi 5'ten 10 iş gününe güncellendi. <span class="note">(v2 talebi)</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="contract-section">
+        <div class="cs-num">MADDE 6</div>
+        <div class="cs-title">Uyuşmazlık Çözümü</div>
+        <div class="cs-body">
+          Bu sözleşmeden doğan uyuşmazlıklar önce arabuluculukla, çözülemezse <strong>İstanbul Tahkim Merkezi (ISTAC)</strong> tahkim kurallarına göre İstanbul'da çözüme kavuşturulacaktır. Tahkim dili Türkçe'dir.
+          <div class="cs-highlight">
+            ⚖️ <em>Avukat notu:</em> ISTAC tahkim maddesi belirsizliği giderildi. <span class="note">(v2 ile eklendi)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- SIGNATURES -->
+      <div class="cs-num" style="margin-bottom:8px">İMZALAR</div>
+      <div class="sig-grid">
+        <div class="sig-box">
+          <div class="sig-label">Satıcı</div>
+          <div class="sig-area">Sofra Tekstil A.Ş.</div>
+          <div class="sig-name">Yetkili: Ali Kaya</div>
+          <div class="sig-date">Tarih: ___________</div>
+          <div class="sig-status pending">⏳ İmza Bekleniyor</div>
+        </div>
+        <div class="sig-box">
+          <div class="sig-label">Alıcı</div>
+          <div class="sig-area">Moda Kumaş Ltd.</div>
+          <div class="sig-name">Yetkili: Selin Demir</div>
+          <div class="sig-date">Tarih: ___________</div>
+          <div class="sig-status pending">⏳ İmza Bekleniyor</div>
+        </div>
+      </div>
+      <div style="margin-top:8px; text-align:center;">
+        <div style="font-size:10px; color:var(--text3); margin-bottom:4px;">Avukat Onayı</div>
+        <div style="font-size:11px; color:var(--purple); font-weight:700;">✓ Av. Merve Kaya — İstanbul Barosu</div>
+      </div>
+    </div>
+
+    <!-- REVISIONS TAB -->
+    <div class="contract-scroll" id="tab-revisions" style="display:none">
+      <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; color:var(--text3); margin-bottom:12px;">Revizyon Geçmişi</div>
+      <div class="rev-list">
+        <div class="rev-item" style="border-color:var(--purple-border)">
+          <div class="rev-head"><span class="rev-ver">v2 — Güncel</span><span class="rev-time">15 Şub 09:35</span></div>
+          <div class="rev-author">✏️ Av. Merve Kaya + Müvekkil talebi</div>
+          <div class="rev-changes">
+            <span class="rev-change add">+ Gecikme faizi %12</span>
+            <span class="rev-change mod">~ Numune süresi 10 gün</span>
+            <span class="rev-change add">+ ISTAC maddesi</span>
+            <span class="rev-change add">+ Mücbir sebep genişletildi</span>
+          </div>
+        </div>
+        <div class="rev-item">
+          <div class="rev-head"><span class="rev-ver">v1 — İlk Taslak</span><span class="rev-time">14 Şub 11:05</span></div>
+          <div class="rev-author">✏️ Av. Merve Kaya</div>
+          <div class="rev-changes">
+            <span class="rev-change add">+ Temel sözleşme oluşturuldu</span>
+            <span class="rev-change add">+ Taraf bilgileri</span>
+            <span class="rev-change add">+ FOB teslim maddesi</span>
+          </div>
+        </div>
+        <div class="rev-item">
+          <div class="rev-head"><span class="rev-ver">v0 — Platform Şablonu</span><span class="rev-time">14 Şub 10:30</span></div>
+          <div class="rev-author">🤖 CoreTradeGlobal sistemi</div>
+          <div class="rev-changes">
+            <span class="rev-change add">+ Otomatik şablon oluşturuldu</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RISKS TAB -->
+    <div class="contract-scroll" id="tab-risks" style="display:none">
+      <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; color:var(--text3); margin-bottom:12px;">Hukuki Risk Analizi</div>
+      <div class="risk-list">
+        <div class="risk-item">
+          <div class="risk-icon">🟢</div>
+          <div>
+            <div class="risk-level low">Düşük Risk</div>
+            <div class="risk-title">FOB Teslim Şartı</div>
+            <div class="risk-desc">Alıcı açısından uygun. Yükleme sonrası risk ve maliyet alıcıya geçer; bu standart ve öngörülebilir.</div>
+          </div>
+        </div>
+        <div class="risk-item">
+          <div class="risk-icon">🟢</div>
+          <div>
+            <div class="risk-level low">Düşük Risk</div>
+            <div class="risk-title">GOTS Sertifikasyonu</div>
+            <div class="risk-desc">Uluslararası kabul görmüş sertifika. Kalite uyuşmazlığı riskini minimize eder.</div>
+          </div>
+        </div>
+        <div class="risk-item">
+          <div class="risk-icon">🟡</div>
+          <div>
+            <div class="risk-level med">Orta Risk</div>
+            <div class="risk-title">60 Gün Vadeli Ödeme</div>
+            <div class="risk-desc">Gecikme faizi maddesi eklendi (v2). Ancak satıcı iflası halinde malın iadesi için ek teminat düşünülebilir.</div>
+          </div>
+        </div>
+        <div class="risk-item">
+          <div class="risk-icon">🟡</div>
+          <div>
+            <div class="risk-level med">Orta Risk</div>
+            <div class="risk-title">±%5 Miktar Toleransı</div>
+            <div class="risk-desc">15.000 kg ±%5 aralığı 750 kg sapma yaratabilir. Önerilen: birim fiyat sabit tutularak kesin miktarı belirtin.</div>
+          </div>
+        </div>
+        <div class="risk-item">
+          <div class="risk-icon">🔴</div>
+          <div>
+            <div class="risk-level high">Yüksek Risk — Çözüldü ✓</div>
+            <div class="risk-title">Belirsiz Tahkim Yeri</div>
+            <div class="risk-desc">v1'de tahkim yeri belirtilmemişti. v2 ile ISTAC İstanbul olarak netleştirildi.</div>
+          </div>
+        </div>
+        <div class="risk-item">
+          <div class="risk-icon">🟡</div>
+          <div>
+            <div class="risk-level med">Orta Risk</div>
+            <div class="risk-title">Döviz Kur Riski</div>
+            <div class="risk-desc">Sözleşme USD cinsinden. TL kuru dalgalanmaları etkilemez ancak transfer maliyeti eklenebilir.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="contract-action-bar">
+      <button class="btn-contract btn-download">📥 İndir</button>
+      <button class="btn-contract btn-approve-contract" onclick="approveContract()">✓ Sözleşmeyi Onayla</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // ── TAB SWITCH ──
+  function switchTab(btn, tab) {
+    document.querySelectorAll('.ctab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('[id^="tab-"]').forEach(t => t.style.display = 'none');
+    document.getElementById('tab-' + tab).style.display = 'block';
+  }
+
+  // ── CHAT ──
+  function handleKey(e) {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+  }
+
+  function insertQuick(text) {
+    const inp = document.getElementById('chatInput');
+    inp.value = text;
+    inp.focus();
+  }
+
+  function sendMessage() {
+    const inp = document.getElementById('chatInput');
+    const text = inp.value.trim();
+    if (!text) return;
+
+    const msgs = document.getElementById('chatMessages');
+    const now = new Date().toLocaleTimeString('tr-TR', {hour:'2-digit', minute:'2-digit'});
+
+    // Add client message
+    const row = document.createElement('div');
+    row.className = 'msg-row client';
+    row.innerHTML = `
+      <div class="msg-avatar client-av">👤</div>
+      <div class="msg-body">
+        <div class="msg-name">Siz · ${now}</div>
+        <div class="msg-bubble">${text.replace(/\n/g,'<br>')}</div>
+      </div>`;
+    msgs.appendChild(row);
+    inp.value = '';
+    msgs.scrollTop = msgs.scrollHeight;
+
+    // Show typing
+    const typing = document.getElementById('typingIndicator');
+    typing.style.display = 'flex';
+    msgs.scrollTop = msgs.scrollHeight;
+
+    // Lawyer auto-reply
+    setTimeout(() => {
+      typing.style.display = 'none';
+      const replies = [
+        'Talebinizi aldım. Sözleşmede gerekli düzenlemeleri yapıp güncelliyorum.',
+        'Haklı bir nokta. Bu maddeyi daha koruyucu bir şekilde yeniden kaleme alacağım.',
+        'Hukuki açıdan değerlendirdim. Bu talep standart ticaret hukuku çerçevesinde kabul edilebilir.',
+        'Evet, bu riski de öngördüm. Risk analizine ekledim, sağ panelden inceleyebilirsiniz.',
+        'Anladım. Karşı tarafın avukatıyla da görüşeceğim ve sonucu bildireceğim.'
+      ];
+      const reply = replies[Math.floor(Math.random() * replies.length)];
+      const rRow = document.createElement('div');
+      rRow.className = 'msg-row lawyer';
+      const rNow = new Date().toLocaleTimeString('tr-TR', {hour:'2-digit', minute:'2-digit'});
+      rRow.innerHTML = `
+        <div class="msg-avatar lawyer-av">👩‍⚖️</div>
+        <div class="msg-body">
+          <div class="msg-name">Av. Merve Kaya · ${rNow}</div>
+          <div class="msg-bubble">${reply}</div>
+        </div>`;
+      msgs.appendChild(rRow);
+      msgs.scrollTop = msgs.scrollHeight;
+    }, 1800);
+  }
+
+  // ── APPROVE CONTRACT ──
+  function approveContract() {
+    if (!confirm('Sözleşme v2 taslağını onaylıyor musunuz? Satıcı tarafına bildirim gönderilecek.')) return;
+    const btn = document.querySelector('.btn-approve-contract');
+    btn.textContent = '✓ Onaylandı';
+    btn.style.background = 'var(--green)';
+    btn.disabled = true;
+
+    // Update sig
+    const sigs = document.querySelectorAll('.sig-status');
+    sigs[1].textContent = '✓ Onaylandı';
+    sigs[1].className = 'sig-status signed';
+
+    // Send system message in chat
+    const msgs = document.getElementById('chatMessages');
+    const sysMsg = document.createElement('div');
+    sysMsg.className = 'sys-msg';
+    sysMsg.textContent = '✅ Sözleşme taslağı (v2) alıcı tarafından onaylandı. Satıcı onayı bekleniyor.';
+    msgs.appendChild(sysMsg);
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  // Scroll chat to bottom on load
+  window.addEventListener('load', () => {
+    const msgs = document.getElementById('chatMessages');
+    msgs.scrollTop = msgs.scrollHeight;
+  });
+</script>
+
+</body>
+</html>

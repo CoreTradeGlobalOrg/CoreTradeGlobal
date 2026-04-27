@@ -25,18 +25,89 @@ export class CreateConversationUseCase {
   /**
    * Execute creating a conversation
    * @param {Object} params
-   * @param {string} params.type - Conversation type ('direct' | 'contact' | 'system')
+   * @param {string} params.type - Conversation type ('direct' | 'contact' | 'system' | 'provider_quote')
    * @param {Array<string>} params.participantIds - User IDs to include
    * @param {string} params.creatorId - ID of the user creating the conversation
    * @param {string} params.initialMessage - Optional initial message content
-   * @param {Object} params.metadata - Optional metadata (subject, source, etc.)
+   * @param {Object} params.metadata - Optional metadata (subject, source, dealId, providerId, etc.)
    * @returns {Promise<Object>} Created conversation
    */
   async execute({ type = 'direct', participantIds, creatorId, initialMessage = null, metadata = {} }) {
     // 1. Validate inputs
     this.validateInputs(type, participantIds, creatorId);
 
-    // 2. For direct conversations, check if one already exists with the same context
+    // 2. For provider_quote conversations, use deterministic ID deduplication
+    if (type === 'provider_quote' && metadata.dealId && metadata.providerId) {
+      const deterministicId = `providerquote_${metadata.dealId}_${metadata.providerId}`;
+      const existing = await this.conversationRepository.getById(deterministicId);
+      if (existing) return existing;
+
+      // Fetch participant details for denormalization
+      const participantDetails = {};
+      for (const participantId of participantIds) {
+        const user = await this.userRepository.getById(participantId);
+        if (user) {
+          participantDetails[participantId] = {
+            displayName: user.displayName || user.email,
+            photoURL: user.companyLogo || user.photoURL || null,
+            email: user.email,
+            role: user.role,
+            companyId: user.companyId || null,
+            companyName: user.companyName || null,
+            country: user.country || null,
+          };
+        }
+      }
+
+      const conversationData = {
+        type,
+        participants: participantIds,
+        participantDetails,
+        lastMessage: null,
+        unreadCount: {},
+        metadata: {
+          source: 'provider_quote',
+          dealId: metadata.dealId,
+          providerId: metadata.providerId,
+          providerType: metadata.providerType || null,
+          subject: metadata.subject || null,
+        },
+      };
+      participantIds.forEach((id) => {
+        conversationData.unreadCount[id] = 0;
+      });
+
+      const conversation = await this.conversationRepository.createWithId(deterministicId, conversationData);
+
+      // If there's an initial message, create it
+      if (initialMessage && creatorId) {
+        const creatorDetails = participantDetails[creatorId];
+        const messageData = {
+          senderId: creatorId,
+          senderName: creatorDetails?.displayName || 'Unknown',
+          content: initialMessage,
+          type: 'text',
+          metadata: {},
+          readBy: [creatorId],
+        };
+        const message = await this.messageRepository.create(conversation.id, messageData);
+        await this.conversationRepository.updateLastMessage(conversation.id, {
+          content: initialMessage.substring(0, 100),
+          senderId: creatorId,
+          senderName: creatorDetails?.displayName || 'Unknown',
+          createdAt: new Date(),
+          type: messageData.type,
+        });
+        const otherParticipants = participantIds.filter((id) => id !== creatorId);
+        for (const participantId of otherParticipants) {
+          await this.conversationRepository.incrementUnreadCount(conversation.id, participantId);
+        }
+      }
+
+      return conversation;
+    }
+
+    // 3. For direct conversations, check if one already exists with the same context
     if (type === 'direct' && participantIds.length === 2) {
       // Build context for matching - each product/RFQ gets its own conversation
       const context = {
@@ -67,6 +138,7 @@ export class CreateConversationUseCase {
           role: user.role,
           companyId: user.companyId || null,
           companyName: user.companyName || null,
+          country: user.country || null,
         };
       }
     }
@@ -158,7 +230,7 @@ export class CreateConversationUseCase {
    * @param {string} creatorId
    */
   validateInputs(type, participantIds, creatorId) {
-    const validTypes = ['direct', 'contact', 'system'];
+    const validTypes = ['direct', 'contact', 'system', 'provider_quote'];
     if (!validTypes.includes(type)) {
       throw new Error('Invalid conversation type');
     }
@@ -169,6 +241,10 @@ export class CreateConversationUseCase {
 
     if (type === 'direct' && participantIds.length !== 2) {
       throw new Error('Direct conversations require exactly 2 participants');
+    }
+
+    if (type === 'provider_quote' && participantIds.length !== 3) {
+      throw new Error('Provider quote conversations require exactly 3 participants');
     }
 
     if (!creatorId || creatorId.trim() === '') {

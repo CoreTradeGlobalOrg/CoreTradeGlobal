@@ -360,6 +360,60 @@
   text-overflow: ellipsis;
 }
 
+/* Deal Banner */
+.messages-widget-deal-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 16px;
+  background: rgba(255, 215, 0, 0.05);
+  border-bottom: 1px solid rgba(255, 215, 0, 0.12);
+  text-decoration: none;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.messages-widget-deal-banner:hover {
+  background: rgba(255, 215, 0, 0.1);
+}
+
+.messages-widget-deal-icon {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 215, 0, 0.15);
+  border-radius: 8px;
+  color: #FFD700;
+  flex-shrink: 0;
+}
+
+.messages-widget-deal-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  flex: 1;
+}
+
+.messages-widget-deal-label {
+  font-size: 10px;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.messages-widget-deal-status {
+  font-size: 13px;
+  font-weight: 500;
+  color: #FFD700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* Messages Area */
 .messages-widget-messages {
   flex: 1;

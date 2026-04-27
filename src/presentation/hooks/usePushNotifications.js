@@ -123,7 +123,6 @@ export function usePushNotifications() {
         fcmTokenUpdatedAt: new Date(),
         fcmTokenPlatform: getPlatform(),
       });
-      console.log('[FCM] Token saved to Firestore');
     } catch (err) {
       console.error('Error saving FCM token to Firestore:', err);
     }
@@ -159,7 +158,6 @@ export function usePushNotifications() {
         fcmTokenPlatform: null,
       });
       setFcmToken(null);
-      console.log('[FCM] Token removed from Firestore');
     } catch (err) {
       console.error('Error removing FCM token:', err);
     }

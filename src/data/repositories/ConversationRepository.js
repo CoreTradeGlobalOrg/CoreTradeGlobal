@@ -251,6 +251,58 @@ export class ConversationRepository {
   }
 
   /**
+   * Create a conversation with a specific deterministic ID
+   * @param {string} docId - The document ID to use
+   * @param {Object} conversationData
+   * @returns {Promise<Object>}
+   */
+  async createWithId(docId, conversationData) {
+    return await this.firestoreDataSource.createWithId(
+      COLLECTIONS.CONVERSATIONS,
+      docId,
+      conversationData
+    );
+  }
+
+  /**
+   * Find an existing provider_quote conversation by dealId and providerId
+   * Fallback lookup — primary path is getById with deterministic ID
+   * @param {string} dealId
+   * @param {string} providerId
+   * @returns {Promise<Object|null>}
+   */
+  async findProviderQuoteConversation(dealId, providerId, uid) {
+    const where = [
+      ['type', '==', 'provider_quote'],
+      ['metadata.dealId', '==', dealId],
+      ['metadata.providerId', '==', providerId],
+    ];
+    if (uid) where.push(['participants', 'array-contains', uid]);
+    const results = await this.firestoreDataSource.query(COLLECTIONS.CONVERSATIONS, {
+      where,
+      limit: 1,
+    });
+    return results[0] || null;
+  }
+
+  /**
+   * Get all provider_quote conversations for a given deal
+   * Powers the buyer's sidebar provider list
+   * @param {string} dealId
+   * @param {string} uid - Current user's UID (required for Firestore rules compliance)
+   * @returns {Promise<Array>}
+   */
+  async getProviderQuoteConversationsForDeal(dealId, uid) {
+    return await this.firestoreDataSource.query(COLLECTIONS.CONVERSATIONS, {
+      where: [
+        ['type', '==', 'provider_quote'],
+        ['metadata.dealId', '==', dealId],
+        ['participants', 'array-contains', uid],
+      ],
+    });
+  }
+
+  /**
    * Add participant to conversation
    * @param {string} conversationId
    * @param {string} userId

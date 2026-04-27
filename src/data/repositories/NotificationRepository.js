@@ -62,6 +62,26 @@ export class NotificationRepository {
   }
 
   /**
+   * Get notifications for a user after a cursor document (cursor-based pagination)
+   * @param {string} userId
+   * @param {Object} afterDoc - Firestore DocumentSnapshot (_snapshot from a previous result)
+   * @param {number} limitCount
+   * @returns {Promise<Array>}
+   */
+  async getByUserIdAfter(userId, afterDoc, limitCount = 30) {
+    return await this.firestoreDataSource.querySubcollection(
+      COLLECTIONS.USERS,
+      userId,
+      SUBCOLLECTIONS.NOTIFICATIONS,
+      {
+        orderBy: [['createdAt', 'desc']],
+        limit: limitCount,
+        startAfter: afterDoc,
+      }
+    );
+  }
+
+  /**
    * Get unread notifications for a user
    * @param {string} userId
    * @param {number} limitCount
@@ -176,6 +196,25 @@ export class NotificationRepository {
         this.delete(userId, notification.id)
       )
     );
+  }
+
+  /**
+   * Delete notification (alias for delete)
+   * @param {string} userId
+   * @param {string} notificationId
+   * @returns {Promise<void>}
+   */
+  async deleteNotification(userId, notificationId) {
+    return this.delete(userId, notificationId);
+  }
+
+  /**
+   * Delete all notifications for a user (alias for deleteAll)
+   * @param {string} userId
+   * @returns {Promise<void>}
+   */
+  async deleteAllNotifications(userId) {
+    return this.deleteAll(userId);
   }
 
   /**

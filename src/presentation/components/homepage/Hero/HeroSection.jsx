@@ -1,8 +1,8 @@
 /**
  * HeroSection Component
  *
- * Main hero section with 3D globe, search bar, and CTAs
- * Matches design exactly from index.html
+ * Main hero section orchestrator. Composes HeroGlobe, HeroStats, HeroDataCards
+ * and inline search/CTA blocks. Manages all state and data fetching.
  *
  * Props:
  * - fetchData: boolean (default: false) - Enable API calls for latest data
@@ -12,61 +12,31 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import dynamic from 'next/dynamic';
 import { useAuth } from '@/presentation/contexts/AuthContext';
 import { container } from '@/core/di/container';
-import { COUNTRIES } from '@/core/constants/countries';
-import { CountryFlag } from '@/presentation/components/common/CountryFlag/CountryFlag';
 import { Modal } from '@/components/ui/Modal';
 import { ProductForm } from '@/presentation/components/features/product/ProductForm/ProductForm';
 import { RequestForm } from '@/presentation/components/features/request/RequestForm/RequestForm';
 import { useCreateProduct } from '@/presentation/hooks/product/useCreateProduct';
 import { useCreateRequest } from '@/presentation/hooks/request/useCreateRequest';
-
-// Helper to get country name from ISO code
-const getCountryName = (countryCode) => {
-  if (!countryCode) return 'Global';
-  const country = COUNTRIES.find(c => c.value === countryCode);
-  if (country) {
-    return country.label.replace(/^[\u{1F1E0}-\u{1F1FF}]{2}\s*/u, '').trim();
-  }
-  return countryCode;
-};
-
-// Map currency codes to symbols
-const CURRENCY_SYMBOLS = {
-  'USD': '$', 'EUR': '€', 'GBP': '£', 'TRY': '₺', 'JPY': '¥', 'CNY': '¥',
-  'AUD': 'A$', 'CAD': 'C$', 'CHF': 'CHF', 'SEK': 'kr', 'NZD': 'NZ$',
-  'SGD': 'S$', 'HKD': 'HK$', 'NOK': 'kr', 'KRW': '₩', 'MXN': '$',
-  'INR': '₹', 'RUB': '₽', 'BRL': 'R$', 'ZAR': 'R'
-};
-
-// Dynamic import for 3D globe to avoid SSR issues
-const GlobeCanvas = dynamic(
-  () => import('../Globe/GlobeCanvas').then((mod) => mod.GlobeCanvas),
-  {
-    ssr: false,
-    loading: () => null,
-  }
-);
-
-const SEARCH_TAGS = ['Marble', 'Steel', 'Textile', 'Machinery', 'Cotton'];
+import { HeroGlobe } from './HeroGlobe';
+import { HeroStats } from './HeroStats';
+import { HeroDataCards } from './HeroDataCards';
+import { HeroSearchBar } from './HeroSearchBar';
+import toast from 'react-hot-toast';
 
 // Daily slogans - changes based on day of week
 const DAILY_SLOGANS = {
-  0: "Global Trade, Simplified: Navigate the Complex Markets with Ease.", // Sunday - Simplicity
-  1: "The Global Hub of Trust: Trade Exclusively with Verified Suppliers.", // Monday - Trust
-  2: "Scale Beyond Borders: Expand Your Business to Every Global Market.", // Tuesday - Growth
-  3: "Trading at the Speed of Light: Get Instant Quotes for Your RFQs.", // Wednesday - Speed
-  4: "The Intersection of Global Trade: Connecting Buyers and Sellers with Transparency.", // Thursday - Connection
-  5: "The Operating System for Trade: A Future-Ready, Data-Driven B2B Experience.", // Friday - Innovation
-  6: "Unlock New Opportunities: Find Your Next Strategic Partner Today.", // Saturday - Discovery
+  0: "Global Trade, Simplified: Navigate the Complex Markets with Ease.",
+  1: "The Global Hub of Trust: Trade Exclusively with Verified Suppliers.",
+  2: "Scale Beyond Borders: Expand Your Business to Every Global Market.",
+  3: "Trading at the Speed of Light: Get Instant Quotes for Your RFQs.",
+  4: "The Intersection of Global Trade: Connecting Buyers and Sellers with Transparency.",
+  5: "The Operating System for Trade: A Future-Ready, Data-Driven B2B Experience.",
+  6: "Unlock New Opportunities: Find Your Next Strategic Partner Today.",
 };
 
-const getDailySlogan = () => {
-  const day = new Date().getDay();
-  return DAILY_SLOGANS[day];
-};
+const getDailySlogan = () => DAILY_SLOGANS[new Date().getDay()];
 
 export function HeroSection({ fetchData = false }) {
   const { user, isAuthenticated, loading } = useAuth();
@@ -174,26 +144,13 @@ export function HeroSection({ fetchData = false }) {
     }
   };
 
-  const toggleSearchType = () => {
-    setSearchType(prev => prev === 'Products' ? 'RFQs' : 'Products');
-  };
-
-  const applySearchTag = (tag) => {
-    setSearchQuery(tag);
-  };
-
-  const formatDate = (date) => {
-    if (!date) return '';
-    const d = date?.toDate ? date.toDate() : new Date(date);
-    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  };
-
   const handleProductSubmit = async (data, imageFiles) => {
     try {
       await createProduct(data, imageFiles);
       setProductModalOpen(false);
     } catch (error) {
       console.error('Error creating product:', error);
+      toast.error(error.message || 'Failed to create product. Please try again.');
     }
   };
 
@@ -203,6 +160,7 @@ export function HeroSection({ fetchData = false }) {
       setRequestModalOpen(false);
     } catch (error) {
       console.error('Error creating request:', error);
+      toast.error(error.message || 'Failed to submit request. Please try again.');
     }
   };
 
@@ -215,113 +173,20 @@ export function HeroSection({ fetchData = false }) {
 
       {/* Hero Section */}
       <section id="hero-section">
-        {/* Globe Loading Text - hides when globe is loaded */}
-        <div
-          className="globe-loading-text"
-          id="loading"
-          style={{
-            opacity: globeLoaded ? 0 : 0.9,
-            transition: 'opacity 0.5s ease-out',
-            pointerEvents: globeLoaded ? 'none' : 'auto',
-          }}
-        >
-          Welcome to CoreTradeGlobal
-        </div>
+        <HeroGlobe mounted={mounted} globeLoaded={globeLoaded} />
 
         {/* Hero Overlay with Slogan and Search */}
         <div className="hero-overlay">
           <div className="slogan-container">
             <h1 className="hero-slogan">{getDailySlogan()}</h1>
-            <div className="search-bar-container">
-              {/* Switch above bar on mobile */}
-              {isMobile && (
-                <div className="flex justify-center" style={{ marginBottom: '12px' }}>
-                <div className="search-switch-container">
-                  <div
-                    className="search-switch-slider"
-                    style={{
-                      transform: searchType === 'Products' ? 'translateX(0)' : 'translateX(100%)',
-                      background: searchType === 'Products' ? '#FFD700' : '#3B82F6'
-                    }}
-                  />
-                  <button
-                    type="button"
-                    className={`search-switch-btn ${searchType === 'Products' ? 'active' : ''}`}
-                    onClick={() => setSearchType('Products')}
-                    style={{ color: searchType === 'Products' ? '#0F1B2B' : '#fff' }}
-                  >
-                    Products
-                  </button>
-                  <button
-                    type="button"
-                    className={`search-switch-btn ${searchType === 'RFQs' ? 'active' : ''}`}
-                    onClick={() => setSearchType('RFQs')}
-                    style={{ color: searchType === 'RFQs' ? '#fff' : '#fff' }}
-                  >
-                    RFQs
-                  </button>
-                </div>
-                </div>
-              )}
-
-              <form className="search-bar" onSubmit={handleSearch}>
-                {/* Switch inside bar on desktop only */}
-                {!isMobile && (
-                  <div className="search-switch-container">
-                    <div
-                      className="search-switch-slider"
-                      style={{
-                        transform: searchType === 'Products' ? 'translateX(0)' : 'translateX(100%)',
-                        background: searchType === 'Products' ? '#FFD700' : '#3B82F6'
-                      }}
-                    />
-                    <button
-                      type="button"
-                      className={`search-switch-btn ${searchType === 'Products' ? 'active' : ''}`}
-                      onClick={() => setSearchType('Products')}
-                      style={{ color: searchType === 'Products' ? '#0F1B2B' : '#fff' }}
-                    >
-                      Products
-                    </button>
-                    <button
-                      type="button"
-                      className={`search-switch-btn ${searchType === 'RFQs' ? 'active' : ''}`}
-                      onClick={() => setSearchType('RFQs')}
-                      style={{ color: searchType === 'RFQs' ? '#fff' : '#fff' }}
-                    >
-                      RFQs
-                    </button>
-                  </div>
-                )}
-                <input
-                  type="text"
-                  className="search-input"
-                  id="search-input"
-                  placeholder={searchType === 'Products'
-                    ? (isMobile ? "Search products..." : "Search for products, companies, or RFQs...")
-                    : (isMobile ? "Search RFQs..." : "Search for active RFQs...")}
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-                <button type="submit" className="search-btn">
-                  <svg className="search-icon" width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                  </svg>
-                </button>
-              </form>
-
-              <div className="search-tags">
-                {(isMobile ? SEARCH_TAGS.slice(0, 3) : SEARCH_TAGS).map((tag) => (
-                  <span
-                    key={tag}
-                    className="search-tag-pill"
-                    onClick={() => applySearchTag(tag)}
-                  >
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            </div>
+            <HeroSearchBar
+              isMobile={isMobile}
+              searchType={searchType}
+              setSearchType={setSearchType}
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+              onSearch={handleSearch}
+            />
           </div>
         </div>
 
@@ -358,162 +223,15 @@ export function HeroSection({ fetchData = false }) {
           </div>
         </div>
 
-        {/* Social Proof Stats */}
-        <div className="social-proof-bar">
-          <div className="sp-item">
-            <span className="sp-number">15K+</span>
-            <span className="sp-label">Active Buyers</span>
-          </div>
-          <div style={{ width: '1px', height: '30px', background: 'rgba(255,255,255,0.1)' }} />
-          <div className="sp-item">
-            <span className="sp-number">500+</span>
-            <span className="sp-label">Daily RFQs</span>
-          </div>
-          <div style={{ width: '1px', height: '30px', background: 'rgba(255,255,255,0.1)' }} />
-          <div className="sp-item">
-            <span className="sp-number">120+</span>
-            <span className="sp-label">Countries</span>
-          </div>
-        </div>
+        <HeroStats />
 
-        {/* Left Side Info Cards */}
-        <div className="hero-left-cards">
-          {/* Product Card */}
-          <Link href={fetchData && latestProduct ? `/product/${latestProduct.id}` : '/products'} className="hero-info-card hero-product-card">
-            <div className="card-icon">
-              {fetchData && latestProduct?.images?.[0] ? (
-                <img src={latestProduct.images[0]} alt={latestProduct.name} className="w-12 h-12 object-cover rounded" />
-              ) : '📦'}
-            </div>
-            <div className="card-content">
-              <h3>{fetchData ? 'Latest Product' : 'Products'}</h3>
-              <p className="card-product-name">
-                {fetchData && latestProduct ? latestProduct.name : 'Browse Products'}
-              </p>
-              <p
-                className="card-specs"
-                style={{
-                  background: 'linear-gradient(180deg, #ffffff 20%, #909090 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text'
-                }}
-              >
-                {fetchData && latestProduct ? (
-                  latestProduct.price ? (
-                    <>
-                      {CURRENCY_SYMBOLS[latestProduct.currency] || latestProduct.currency || '$'} {latestProduct.price}
-                      {latestProduct.unit && ` / ${latestProduct.unit}`}
-                    </>
-                  ) : 'Price on request'
-                ) : 'From verified suppliers'}
-              </p>
-              <p className="card-price">{fetchData ? 'See Details ▼' : 'Explore →'}</p>
-            </div>
-          </Link>
-
-          {/* RFQ Card */}
-          <Link href={fetchData && latestRequest ? `/request/${latestRequest.id}` : '/requests'} className="hero-info-card hero-rfq-card">
-            <div className="card-icon">📋</div>
-            <div className="card-content">
-              <h3>{fetchData ? 'Latest RFQ' : 'RFQs'}</h3>
-              <p className="card-product-name">
-                {fetchData && latestRequest ? (latestRequest.productName || latestRequest.title) : 'Active Requests'}
-              </p>
-              <p
-                className="card-specs"
-                style={{
-                  background: 'linear-gradient(180deg, #ffffff 20%, #909090 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px'
-                }}
-              >
-                {fetchData && latestRequest ? (
-                  <>
-                    {latestRequest.targetCountry && <CountryFlag countryCode={latestRequest.targetCountry} size={14} />}
-                    <span>Qty: {latestRequest.quantity || '-'} {latestRequest.unit && `${latestRequest.unit}`}</span>
-                  </>
-                ) : 'Find business opportunities'}
-              </p>
-              <p className="card-budget">{fetchData ? 'Check Details ▼' : 'View All →'}</p>
-            </div>
-          </Link>
-        </div>
-
-        {/* Right Side Info Cards */}
-        <div className="hero-right-cards">
-          {/* Fair Card */}
-          <Link href={fetchData && latestFair ? `/fair/${latestFair.id}` : '/fairs'} className="hero-info-card hero-fair-card">
-            <div className="card-icon">🎪</div>
-            <div className="card-content">
-              <h3>{fetchData ? 'Latest Fair' : 'Trade Fairs'}</h3>
-              <p className="card-product-name">
-                {fetchData && latestFair ? latestFair.name : 'Upcoming Events'}
-              </p>
-              <p
-                className="card-specs"
-                style={{
-                  background: 'linear-gradient(180deg, #ffffff 20%, #909090 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text'
-                }}
-              >
-                {fetchData && latestFair
-                  ? `${formatDate(latestFair.startDate)} • ${latestFair.location || ''}`
-                  : 'Connect in person'}
-              </p>
-              <p className="card-price">{fetchData ? '' : 'See Schedule →'}</p>
-            </div>
-          </Link>
-
-          {/* Supplier Card */}
-          <Link href={fetchData && latestSupplier ? `/profile/${latestSupplier.id}` : '/companies'} className="hero-info-card hero-supplier-card">
-            <div className="card-icon">
-              {fetchData && (latestSupplier?.companyLogo || latestSupplier?.photoURL) ? (
-                <img
-                  src={latestSupplier.companyLogo || latestSupplier.photoURL}
-                  alt={latestSupplier.companyName}
-                  className="w-full h-full object-cover rounded-lg"
-                />
-              ) : '🏭'}
-            </div>
-            <div className="card-content" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-              <h3>{fetchData ? 'Latest Supplier' : 'Suppliers'}</h3>
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                <p className="card-product-name" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  {fetchData && latestSupplier ? (
-                    <>
-                      <CountryFlag countryCode={latestSupplier.country} size={18} />
-                      <span>{latestSupplier.companyName}</span>
-                    </>
-                  ) : 'Verified Companies'}
-                </p>
-                <p
-                  className="card-specs"
-                  style={{
-                    background: 'linear-gradient(180deg, #ffffff 20%, #909090 100%)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text'
-                  }}
-                >
-                  {fetchData && latestSupplier ? (latestSupplier.industry || '') : 'Worldwide network'}
-                </p>
-              </div>
-              {!fetchData && <p className="card-budget">Browse →</p>}
-            </div>
-          </Link>
-        </div>
-
-        {/* Three.js Canvas Container */}
-        <div id="canvas-container" style={{ opacity: globeLoaded ? 1 : 0 }}>
-          {mounted && <GlobeCanvas />}
-        </div>
+        <HeroDataCards
+          fetchData={fetchData}
+          latestProduct={latestProduct}
+          latestRequest={latestRequest}
+          latestFair={latestFair}
+          latestSupplier={latestSupplier}
+        />
       </section>
 
       {/* Product Creation Modal */}

@@ -79,7 +79,7 @@ export function useSubmitQuote() {
         });
       } catch (updateError) {
         // Non-critical, don't fail the whole operation
-        console.warn('Could not update quote count:', updateError);
+        console.error('Could not update quote count:', updateError);
       }
 
       // Send notification to RFQ owner
@@ -101,7 +101,7 @@ export function useSubmitQuote() {
           await notificationRepository.create(requestDoc.userId, notificationData);
         } catch (notificationError) {
           // Non-critical, don't fail the whole operation
-          console.warn('Could not send notification to RFQ owner:', notificationError);
+          console.error('Could not send notification to RFQ owner:', notificationError);
         }
       }
 

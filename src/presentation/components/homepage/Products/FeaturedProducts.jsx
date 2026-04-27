@@ -10,7 +10,7 @@
 import { useState, useEffect, useRef, memo } from 'react';
 import Link from 'next/link';
 import { container } from '@/core/di/container';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Package } from 'lucide-react';
 import { useCategories } from '@/presentation/hooks/category/useCategories';
 import { useResponsiveLimit, useScrollLoadMore } from '@/presentation/hooks/useResponsiveLimit';
 
@@ -143,15 +143,18 @@ const ProductCardImage = memo(function ProductCardImage({ src, alt }) {
   const [error, setError] = useState(false);
 
   if (!src || error) {
-    return <div className="text-6xl">📦</div>;
+    return (
+      <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-[#1A283B] to-[#0F1B2B] gap-2">
+        <Package className="w-10 h-10 text-[rgba(255,255,255,0.2)]" />
+        <span className="text-[10px] text-[rgba(255,255,255,0.3)] font-medium uppercase tracking-wider">No image</span>
+      </div>
+    );
   }
 
   return (
     <>
       {loading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-[#1A283B] z-10">
-          <div className="w-8 h-8 border-2 border-[#FFD700] border-t-transparent rounded-full animate-spin"></div>
-        </div>
+        <div className="absolute inset-0 animate-shimmer z-10" />
       )}
       <img
         src={src}
@@ -341,7 +344,7 @@ export function FeaturedProducts() {
 
         {/* Products Grid */}
         <div className="featured-products-grid">
-          <div className="dynamic-container">
+          <div className="dynamic-container select-none">
             {/* Scroll Arrows */}
             <button
               className={`scroll-arrow-btn scroll-left ${showLeftArrow ? 'visible' : ''}`}

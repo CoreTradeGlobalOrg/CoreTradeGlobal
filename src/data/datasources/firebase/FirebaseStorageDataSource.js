@@ -23,18 +23,8 @@ export class FirebaseStorageDataSource {
    * @returns {Promise<string>} Download URL of uploaded file
    */
   async uploadFile(path, file, metadata = {}) {
-    console.log('📸 [FirebaseStorageDataSource] uploadFile called');
-    console.log('📸 [FirebaseStorageDataSource] Path:', path);
-    console.log('📸 [FirebaseStorageDataSource] File:', {
-      name: file?.name,
-      type: file?.type,
-      size: file?.size,
-    });
-    console.log('📸 [FirebaseStorageDataSource] Storage instance:', storage);
-
     try {
       const storageRef = ref(storage, path);
-      console.log('📸 [FirebaseStorageDataSource] Storage ref created:', storageRef);
 
       // Set default metadata
       const fileMetadata = {
@@ -45,21 +35,11 @@ export class FirebaseStorageDataSource {
         },
       };
 
-      console.log('📸 [FirebaseStorageDataSource] Metadata:', fileMetadata);
-      console.log('📸 [FirebaseStorageDataSource] Starting upload...');
-
       // Upload file
       const snapshot = await uploadBytes(storageRef, file, fileMetadata);
 
-      console.log('📸 [FirebaseStorageDataSource] Upload complete, snapshot:', {
-        fullPath: snapshot.ref.fullPath,
-        bucket: snapshot.ref.bucket,
-      });
-
       // Get download URL
       const downloadURL = await getDownloadURL(snapshot.ref);
-
-      console.log('📸 [FirebaseStorageDataSource] Download URL obtained:', downloadURL);
 
       return downloadURL;
     } catch (error) {
@@ -107,7 +87,7 @@ export class FirebaseStorageDataSource {
     } catch (error) {
       // Ignore "object-not-found" errors - file might already be deleted
       if (error.code === 'storage/object-not-found') {
-        console.warn('File already deleted or not found:', url);
+        // File already deleted or not found — ignore silently
         return;
       }
       console.error('Error deleting file by URL:', error);

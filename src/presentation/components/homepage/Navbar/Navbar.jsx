@@ -3,6 +3,7 @@
  *
  * Fixed navigation bar for the public homepage
  * Changes background on scroll - matches design exactly
+ * Nav links are filtered by user role — unauthorized areas are hidden completely.
  */
 
 'use client';
@@ -14,15 +15,37 @@ import { useAuth } from '@/presentation/contexts/AuthContext';
 import { useLogout } from '@/presentation/hooks/auth/useLogout';
 import { Menu, X, User, LogOut, Settings as SettingsIcon } from 'lucide-react';
 import { NotificationBell } from '@/presentation/components/common/NotificationBell/NotificationBell';
+import { CurrencyTicker } from '@/presentation/components/homepage/CurrencyTicker/CurrencyTicker';
+import { ROLES } from '@/core/constants/roles';
+import toast from 'react-hot-toast';
 
+/**
+ * NAV_LINKS
+ *
+ * roles: null  — visible to everyone (authenticated or not)
+ * roles: [...]  — only visible when user.role is in the array
+ *
+ * User decision: menu items hidden completely for unauthorized areas (not greyed out).
+ */
 const NAV_LINKS = [
-  { label: 'Products', href: '/products' },
-  { label: 'RFQs', href: '/requests' },
-  { label: 'Categories', href: '/categories' },
-  { label: 'Fairs', href: '/fairs' },
-  { label: 'News', href: '/news' },
-  { label: 'FAQ', href: '/faq' },
-  { label: 'About Us', href: '/about-us' },
+  { label: 'Products', href: '/products', roles: null },
+  { label: 'RFQs', href: '/requests', roles: [ROLES.MEMBER, ROLES.ADMIN] },
+  { label: 'My Deals', href: '/deals', roles: [ROLES.MEMBER, ROLES.ADMIN] },
+  { label: 'Categories', href: '/categories', roles: null },
+  { label: 'Fairs', href: '/fairs', roles: null },
+  { label: 'News', href: '/news', roles: null },
+  { label: 'FAQ', href: '/faq', roles: null },
+  { label: 'About Us', href: '/about-us', roles: null },
+  // Provider-only navigation
+  {
+    label: 'Provider Dashboard',
+    href: '/provider/dashboard',
+    roles: [ROLES.LOGISTICS_PROVIDER, ROLES.INSURANCE_PROVIDER],
+  },
+  // Lawyer-only navigation — admin included for oversight
+  { label: 'Lawyer Dashboard', href: '/lawyer/dashboard', roles: [ROLES.LAWYER, ROLES.ADMIN] },
+  { label: 'Client Channels', href: '/lawyer/channels', roles: [ROLES.LAWYER, ROLES.ADMIN] },
+  { label: 'Deal Review', href: '/lawyer/deals', roles: [ROLES.LAWYER, ROLES.ADMIN] },
 ];
 
 import { usePathname } from 'next/navigation';
@@ -35,6 +58,25 @@ export function Navbar() {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const dropdownRef = useRef(null);
   const pathname = usePathname();
+  const navRef = useRef(null);
+
+  // Track navbar height and expose as CSS variable
+  useEffect(() => {
+    const nav = navRef.current;
+    if (!nav) return;
+
+    const updateHeight = () => {
+      document.documentElement.style.setProperty(
+        '--navbar-height',
+        `${nav.offsetHeight}px`
+      );
+    };
+
+    updateHeight();
+    const ro = new ResizeObserver(updateHeight);
+    ro.observe(nav);
+    return () => ro.disconnect();
+  }, []);
 
   useEffect(() => {
     let rafId = null;
@@ -111,6 +153,7 @@ export function Navbar() {
       window.location.href = '/';
     } catch (error) {
       console.error('Logout failed', error);
+      toast.error('Failed to log out. Please try again.');
     }
   };
 
@@ -118,8 +161,22 @@ export function Navbar() {
     return pathname === path || (path !== '/' && pathname.startsWith(path));
   };
 
+  // Show loading state while role is still resolving (prevents flash of default nav)
+  const roleLoading = loading || (isAuthenticated && !user?.role);
+
+  /**
+   * Filter nav links by user role.
+   * - roles: null  → always visible
+   * - roles: [...]  → only visible when user.role is in the list
+   */
+  const visibleLinks = NAV_LINKS.filter(
+    (link) => link.roles === null || (user && link.roles.includes(user.role))
+  );
+
   return (
-    <nav className={`navbar ${isScrolled ? 'scrolled' : ''}`}>
+    <nav ref={navRef} className={`navbar ${isScrolled ? 'scrolled' : ''}`}>
+      {/* Main nav row — logo, links, auth */}
+      <div className="navbar-content">
       {/* Logo Container */}
       <div className="nav-logo-container">
         <Link
@@ -144,20 +201,28 @@ export function Navbar() {
 
       {/* Desktop Navigation Links */}
       <div className="nav-links hidden md:flex">
-        {NAV_LINKS.map((link) => (
-          <Link
-            key={link.href}
-            href={link.href}
-            className={`nav-link ${isActive(link.href) ? 'font-bold opacity-100' : ''}`}
-            style={{ color: isActive(link.href) ? '#FFD700' : undefined }}
-            onClick={(e) => handleNavClick(link.href, e)}
-          >
-            {link.label}
-          </Link>
-        ))}
+        {roleLoading ? (
+          <div className="flex items-center gap-4">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="w-16 h-4 bg-[rgba(255,255,255,0.1)] rounded animate-pulse" />
+            ))}
+          </div>
+        ) : (
+          visibleLinks.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className={`nav-link ${isActive(link.href) ? 'font-bold opacity-100' : ''}`}
+              style={{ color: isActive(link.href) ? '#FFD700' : undefined }}
+              onClick={(e) => handleNavClick(link.href, e)}
+            >
+              {link.label}
+            </Link>
+          ))
+        )}
 
         {/* Auth Section */}
-        {loading ? (
+        {roleLoading ? (
           <div className="w-20 h-8 bg-[rgba(255,255,255,0.1)] rounded-full animate-pulse" />
         ) : isAuthenticated && user ? (
           <div className="flex items-center gap-3">
@@ -189,7 +254,8 @@ export function Navbar() {
               </button>
 
               <div
-                className={`absolute right-0 top-full mt-2 w-48 bg-[#0F1B2B] border border-[rgba(255,255,255,0.1)] rounded-xl shadow-xl overflow-hidden transition-all duration-200 ${showUserMenu ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible -translate-y-2'}`}
+                style={{ backgroundColor: '#0F1B2B' }}
+                className={`absolute right-0 top-full mt-2 w-48 border border-[rgba(255,255,255,0.1)] rounded-xl shadow-xl overflow-hidden transition-all duration-200 z-50 ${showUserMenu ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible -translate-y-2'}`}
               >
                 <Link
                   href={`/profile/${user.uid}`}
@@ -270,24 +336,34 @@ export function Navbar() {
         </button>
       </div>
 
+      </div>{/* end navbar-content */}
+
       {/* Mobile Menu */}
       {isMobileMenuOpen && (
         <div className="md:hidden absolute top-full left-0 right-0 bg-[#0F1B2B] border-t border-[rgba(255,255,255,0.1)] shadow-lg">
           <div className="px-6 py-4 space-y-1">
-            {NAV_LINKS.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="block py-3 transition-colors hover:text-[#FFD700]"
-                style={{ color: isActive(link.href) ? '#FFD700' : '#FFFFFF', fontWeight: isActive(link.href) ? 600 : 400 }}
-                onClick={(e) => handleNavClick(link.href, e)}
-              >
-                {link.label}
-              </Link>
-            ))}
+            {roleLoading ? (
+              <div className="space-y-3">
+                {[...Array(4)].map((_, i) => (
+                  <div key={i} className="w-24 h-4 bg-[rgba(255,255,255,0.1)] rounded animate-pulse" />
+                ))}
+              </div>
+            ) : (
+              visibleLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="block py-3 transition-colors hover:text-[#FFD700]"
+                  style={{ color: isActive(link.href) ? '#FFD700' : '#FFFFFF', fontWeight: isActive(link.href) ? 600 : 400 }}
+                  onClick={(e) => handleNavClick(link.href, e)}
+                >
+                  {link.label}
+                </Link>
+              ))
+            )}
 
             <div className="pt-4 mt-2 border-t border-[rgba(255,255,255,0.1)] space-y-1">
-              {loading ? (
+              {roleLoading ? (
                 <div className="w-full h-10 bg-[rgba(255,255,255,0.1)] rounded-full animate-pulse" />
               ) : isAuthenticated && user ? (
                 <>
@@ -358,6 +434,9 @@ export function Navbar() {
           </div>
         </div>
       )}
+
+      {/* Currency ticker — renders at bottom of nav so ResizeObserver includes it in --navbar-height */}
+      <CurrencyTicker />
     </nav>
   );
 }

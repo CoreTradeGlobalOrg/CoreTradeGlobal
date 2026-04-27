@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CoreTradeGlobal — Sigorta Teklif Portalı</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:           #0b1120;
+    --surface:      #111827;
+    --surface2:     #1a2540;
+    --border:       #1e2d47;
+    --border2:      #253353;
+    --gold:         #f5c518;
+    --gold-dim:     rgba(245,197,24,0.10);
+    --gold-border:  rgba(245,197,24,0.30);
+    --blue:         #3b82f6;
+    --blue-dim:     rgba(59,130,246,0.10);
+    --blue-border:  rgba(59,130,246,0.30);
+    --green:        #22c55e;
+    --green-dim:    rgba(34,197,94,0.10);
+    --green-border: rgba(34,197,94,0.30);
+    --orange:       #f97316;
+    --orange-dim:   rgba(249,115,22,0.10);
+    --orange-border:rgba(249,115,22,0.30);
+    --purple:       #a855f7;
+    --purple-dim:   rgba(168,85,247,0.10);
+    --purple-border:rgba(168,85,247,0.30);
+    --red:          #ef4444;
+    --red-dim:      rgba(239,68,68,0.10);
+    --red-border:   rgba(239,68,68,0.30);
+    --teal:         #14b8a6;
+    --teal-dim:     rgba(20,184,166,0.10);
+    --teal-border:  rgba(20,184,166,0.30);
+    --text:         #f1f5f9;
+    --text2:        #94a3b8;
+    --text3:        #4b6080;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; font-size:14px; min-height:100vh; }
+  ::-webkit-scrollbar { width:4px; }
+  ::-webkit-scrollbar-thumb { background:var(--border2); border-radius:2px; }
+
+  /* ── NAVBAR ── */
+  nav {
+    background:var(--surface); border-bottom:1px solid var(--border);
+    padding:0 32px; height:60px; display:flex; align-items:center;
+    justify-content:space-between; position:sticky; top:0; z-index:200;
+  }
+  .nav-logo { display:flex; align-items:center; gap:10px; text-decoration:none; }
+  .nav-logo-icon { width:34px; height:34px; background:var(--gold); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:16px; }
+  .nav-logo-text { font-size:16px; font-weight:700; color:var(--text); }
+  .nav-logo-text span { color:var(--gold); }
+
+  .nav-center { display:flex; align-items:center; gap:8px; }
+  .trade-badge { background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:5px 14px; font-size:13px; color:var(--text2); display:flex; align-items:center; gap:6px; }
+  .trade-badge strong { color:var(--gold); font-family:monospace; }
+  .portal-badge { background:var(--green-dim); border:1px solid var(--green-border); border-radius:8px; padding:5px 14px; font-size:12px; font-weight:700; color:var(--green); display:flex; align-items:center; gap:6px; }
+
+  .nav-right { display:flex; align-items:center; gap:10px; }
+  .btn { padding:7px 16px; border-radius:8px; font-family:'Inter',sans-serif; font-size:12px; font-weight:700; cursor:pointer; border:none; transition:all 0.2s; }
+  .btn-outline { background:transparent; color:var(--text2); border:1px solid var(--border2); }
+  .btn-outline:hover { border-color:var(--text2); color:var(--text); }
+
+  /* ── PAGE ── */
+  .page { max-width:1440px; margin:0 auto; padding:28px 32px 80px; }
+
+  /* ── HERO ── */
+  .hero {
+    background:var(--surface); border:1px solid var(--border); border-radius:16px;
+    padding:22px 28px; display:flex; align-items:center; justify-content:space-between;
+    margin-bottom:22px; position:relative; overflow:hidden;
+  }
+  .hero::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:linear-gradient(90deg,var(--green),var(--teal),var(--gold)); }
+  .hero-left { display:flex; align-items:center; gap:16px; }
+  .hero-icon { width:52px; height:52px; background:var(--green-dim); border:2px solid var(--green-border); border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:24px; flex-shrink:0; }
+  .hero-label { font-size:11px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--green); margin-bottom:4px; }
+  .hero-title { font-size:21px; font-weight:800; color:var(--text); margin-bottom:3px; }
+  .hero-sub { font-size:12px; color:var(--text2); }
+  .hero-right { display:flex; align-items:center; gap:12px; }
+
+  .new-pill { background:var(--orange-dim); border:1px solid var(--orange-border); border-radius:20px; padding:6px 14px; font-size:12px; font-weight:700; color:var(--orange); display:flex; align-items:center; gap:6px; }
+  .pulse-dot { width:7px; height:7px; border-radius:50%; background:var(--orange); animation:blink 1.5s infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.25} }
+
+  .deadline-box { background:var(--surface2); border:1px solid var(--border2); border-radius:10px; padding:8px 16px; text-align:center; }
+  .deadline-label { font-size:10px; text-transform:uppercase; letter-spacing:0.08em; color:var(--text3); font-weight:600; }
+  .deadline-val { font-size:18px; font-weight:800; color:var(--orange); font-family:monospace; }
+  .deadline-sub { font-size:10px; color:var(--text3); }
+
+  /* ── BRİFİNG BAR ── */
+  .briefing-bar {
+    display:grid; grid-template-columns:repeat(6,1fr);
+    background:var(--surface); border:1px solid var(--border); border-radius:12px;
+    overflow:hidden; margin-bottom:22px;
+  }
+  .bb-item { padding:14px 18px; border-right:1px solid var(--border); }
+  .bb-item:last-child { border-right:none; }
+  .bb-label { font-size:10px; text-transform:uppercase; letter-spacing:0.08em; color:var(--text3); margin-bottom:4px; font-weight:600; }
+  .bb-val { font-size:13px; font-weight:700; color:var(--text); }
+  .bb-val.gold { color:var(--gold); }
+  .bb-val.green { color:var(--green); }
+  .bb-val.orange { color:var(--orange); }
+  .bb-val.blue { color:var(--blue); }
+
+  /* ── MAIN LAYOUT ── */
+  .main-layout { display:grid; grid-template-columns:1fr 420px; gap:24px; align-items:start; }
+  .left-col { display:flex; flex-direction:column; gap:24px; }
+
+  /* ── SECTION HEAD ── */
+  .sec-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+  .sec-title { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; color:var(--text3); display:flex; align-items:center; gap:8px; }
+  .sec-title .dot { width:6px; height:6px; border-radius:50%; }
+
+  /* ── RİSK BİLGİ KARTI ── */
+  .risk-card { background:var(--surface); border:1px solid var(--border); border-radius:14px; overflow:hidden; }
+  .rc-header { padding:16px 20px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; background:linear-gradient(135deg,var(--surface2),var(--surface)); }
+  .rc-title { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; color:var(--text3); display:flex; align-items:center; gap:8px; }
+  .rc-badge { font-size:10px; font-weight:700; padding:3px 10px; border-radius:10px; background:var(--orange-dim); color:var(--orange); border:1px solid var(--orange-border); }
+  .rc-body { padding:20px; }
+
+  /* Güzergah görseli */
+  .route-visual { background:var(--surface2); border:1px solid var(--border2); border-radius:10px; padding:16px 20px; display:flex; align-items:center; gap:0; margin-bottom:16px; }
+  .route-port { text-align:center; flex-shrink:0; }
+  .rp-flag { font-size:20px; margin-bottom:4px; }
+  .rp-name { font-size:14px; font-weight:800; }
+  .rp-city { font-size:11px; color:var(--text3); margin-top:2px; }
+  .rp-type { font-size:10px; font-weight:700; padding:2px 8px; border-radius:6px; margin-top:4px; display:inline-block; }
+  .rp-type.origin { color:var(--gold); background:var(--gold-dim); border:1px solid var(--gold-border); }
+  .rp-type.dest { color:var(--green); background:var(--green-dim); border:1px solid var(--green-border); }
+
+  .route-line { flex:1; display:flex; align-items:center; gap:12px; padding:0 20px; }
+  .rl-track { flex:1; height:2px; background:linear-gradient(90deg,var(--gold),var(--green)); border-radius:2px; position:relative; }
+  .rl-ship { position:absolute; top:50%; left:50%; transform:translate(-50%,-60%); font-size:18px; }
+  .rl-info { text-align:center; min-width:80px; }
+  .rl-nm { font-size:11px; font-weight:700; color:var(--gold); }
+  .rl-days { font-size:10px; color:var(--text3); }
+
+  /* Kargo detay grid */
+  .cargo-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:16px; }
+  .cg-item { background:var(--surface2); border:1px solid var(--border2); border-radius:10px; padding:12px 14px; }
+  .cg-label { font-size:10px; text-transform:uppercase; letter-spacing:0.07em; color:var(--text3); margin-bottom:4px; font-weight:600; }
+  .cg-val { font-size:13px; font-weight:700; color:var(--text); }
+  .cg-val.gold { color:var(--gold); }
+  .cg-val.green { color:var(--green); }
+  .cg-val.orange { color:var(--orange); }
+  .cg-val.blue { color:var(--blue); }
+
+  /* Risk faktörleri */
+  .risk-factors { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
+  .rf-tag { display:flex; align-items:center; gap:6px; padding:6px 12px; border-radius:8px; font-size:12px; font-weight:600; }
+  .rf-tag.high { background:var(--red-dim); color:var(--red); border:1px solid var(--red-border); }
+  .rf-tag.mid  { background:var(--orange-dim); color:var(--orange); border:1px solid var(--orange-border); }
+  .rf-tag.low  { background:var(--green-dim); color:var(--green); border:1px solid var(--green-border); }
+  .rf-tag.info { background:var(--blue-dim); color:var(--blue); border:1px solid var(--blue-border); }
+
+  /* Gerekli belgeler */
+  .doc-list-mini { display:flex; flex-direction:column; gap:6px; }
+  .doc-mini { display:flex; align-items:center; gap:8px; font-size:12px; color:var(--text2); }
+  .doc-mini-ic { font-size:14px; }
+
+  /* ── SİGORTA TEKLİF FORMU ── */
+  .quote-form-card { background:var(--surface); border:1px solid var(--border); border-radius:14px; overflow:hidden; }
+  .qf-header { padding:16px 20px; border-bottom:1px solid var(--border); background:linear-gradient(135deg,var(--surface2),var(--surface)); position:relative; overflow:hidden; }
+  .qf-header::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg,var(--green),var(--teal),var(--gold)); }
+  .qf-title { font-size:15px; font-weight:800; color:var(--text); margin-bottom:3px; }
+  .qf-sub { font-size:12px; color:var(--text2); }
+  .qf-body { padding:22px; }
+
+  /* Form elemanları */
+  .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px; }
+  .form-grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-bottom:14px; }
+  .form-full { margin-bottom:14px; }
+  .form-group { display:flex; flex-direction:column; gap:5px; }
+  .form-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--text3); }
+  .form-label .req-star { color:var(--red); }
+  .form-input { background:var(--surface2); border:1px solid var(--border2); border-radius:8px; padding:10px 13px; color:var(--text); font-family:'Inter',sans-serif; font-size:13px; transition:all 0.2s; outline:none; width:100%; }
+  .form-input:focus { border-color:var(--green); box-shadow:0 0 0 3px rgba(34,197,94,0.12); }
+  .form-input::placeholder { color:var(--text3); }
+  select.form-input { cursor:pointer; }
+  select.form-input option { background:var(--surface); }
+  textarea.form-input { resize:vertical; min-height:80px; }
+
+  /* Kapsam seçici */
+  .scope-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:14px; }
+  .scope-pill { background:var(--surface2); border:2px solid var(--border2); border-radius:10px; padding:12px 10px; text-align:center; cursor:pointer; transition:all 0.2s; font-family:'Inter',sans-serif; }
+  .scope-pill:hover { border-color:var(--border); }
+  .scope-pill.active { border-color:var(--green); background:var(--green-dim); }
+  .scope-pill .sp-icon { font-size:22px; margin-bottom:5px; }
+  .scope-pill .sp-label { font-size:11px; font-weight:800; color:var(--text2); }
+  .scope-pill .sp-sub { font-size:10px; color:var(--text3); margin-top:2px; }
+  .scope-pill.active .sp-label { color:var(--green); }
+
+  /* Teminat hesaplama */
+  .coverage-section { background:var(--surface2); border:1px solid var(--border2); border-radius:10px; padding:16px; margin-bottom:14px; }
+  .cs-title { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.09em; color:var(--text3); margin-bottom:12px; display:flex; align-items:center; gap:6px; }
+
+  .coverage-row { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+  .coverage-row:last-child { margin-bottom:0; }
+  .cr-label { font-size:12px; color:var(--text2); min-width:160px; }
+  .cr-input-wrap { flex:1; position:relative; }
+  .cr-prefix { position:absolute; left:10px; top:50%; transform:translateY(-50%); font-size:12px; color:var(--text3); font-weight:700; }
+  .cr-input { background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:8px 10px 8px 28px; color:var(--text); font-family:'Inter',sans-serif; font-size:13px; font-weight:700; width:100%; outline:none; transition:all 0.2s; }
+  .cr-input:focus { border-color:var(--green); }
+  .cr-suffix { font-size:10px; color:var(--text3); min-width:50px; }
+
+  .cov-divider { height:1px; background:var(--border); margin:10px 0; }
+  .prim-row { display:flex; align-items:center; justify-content:space-between; background:var(--green-dim); border:1px solid var(--green-border); border-radius:8px; padding:12px 14px; }
+  .prim-label { font-size:12px; font-weight:700; color:var(--green); }
+  .prim-val { font-size:22px; font-weight:800; color:var(--green); font-family:monospace; }
+
+  /* ICC kapsam toggle */
+  .icc-options { display:flex; flex-direction:column; gap:8px; margin-bottom:14px; }
+  .icc-row { display:flex; align-items:flex-start; gap:10px; background:var(--surface2); border:1px solid var(--border2); border-radius:8px; padding:12px 14px; cursor:pointer; transition:all 0.2s; }
+  .icc-row:hover { border-color:var(--border); }
+  .icc-row.checked { border-color:var(--green); background:var(--green-dim); }
+  .icc-box { width:16px; height:16px; border-radius:50%; border:2px solid var(--border2); flex-shrink:0; margin-top:2px; display:flex; align-items:center; justify-content:center; transition:all 0.2s; }
+  .icc-row.checked .icc-box { border-color:var(--green); background:var(--green); }
+  .icc-row.checked .icc-box::after { content:''; width:6px; height:6px; background:#fff; border-radius:50%; display:block; }
+  .icc-content { flex:1; }
+  .icc-title { font-size:13px; font-weight:700; color:var(--text); margin-bottom:2px; }
+  .icc-row.checked .icc-title { color:var(--green); }
+  .icc-desc { font-size:11px; color:var(--text3); line-height:1.4; }
+  .icc-prim { font-size:11px; font-weight:700; color:var(--text2); margin-top:4px; }
+  .icc-row.checked .icc-prim { color:var(--green); }
+
+  /* Ek teminatlar */
+  .extra-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:14px; }
+  .extra-check { background:var(--surface2); border:1px solid var(--border2); border-radius:8px; padding:10px 12px; cursor:pointer; display:flex; align-items:center; gap:10px; transition:all 0.2s; }
+  .extra-check:hover { border-color:var(--border); }
+  .extra-check.checked { border-color:var(--teal); background:var(--teal-dim); }
+  .ec-box { width:16px; height:16px; border-radius:4px; border:2px solid var(--border2); flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:10px; transition:all 0.2s; }
+  .extra-check.checked .ec-box { border-color:var(--teal); background:var(--teal); color:#0b1120; }
+  .ec-label { font-size:12px; font-weight:600; color:var(--text2); }
+  .extra-check.checked .ec-label { color:var(--text); }
+  .ec-prim { font-size:10px; color:var(--text3); margin-left:auto; font-weight:700; }
+  .extra-check.checked .ec-prim { color:var(--teal); }
+
+  /* Form divider */
+  .form-divider { height:1px; background:var(--border); margin:18px 0; position:relative; }
+  .form-divider-label { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:var(--surface); padding:0 12px; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; color:var(--text3); }
+
+  /* CTA */
+  .form-cta { display:flex; flex-direction:column; gap:8px; }
+  .btn-submit { width:100%; padding:14px; background:var(--green); color:#0b1120; font-weight:800; font-size:15px; border:none; border-radius:10px; cursor:pointer; font-family:'Inter',sans-serif; transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow:0 4px 20px rgba(34,197,94,0.25); }
+  .btn-submit:hover { background:#4ade80; transform:translateY(-1px); box-shadow:0 8px 28px rgba(34,197,94,0.35); }
+  .btn-draft { width:100%; padding:10px; background:transparent; color:var(--text3); border:1px solid var(--border2); border-radius:10px; cursor:pointer; font-family:'Inter',sans-serif; font-size:13px; font-weight:600; transition:all 0.2s; }
+  .btn-draft:hover { border-color:var(--text2); color:var(--text2); }
+
+  /* ── RIGHT SİDEBAR ── */
+  .right-col { display:flex; flex-direction:column; gap:20px; }
+
+  /* Risk skoru kartı */
+  .risk-score-card { background:var(--surface); border:1px solid var(--border); border-radius:14px; overflow:hidden; }
+  .rsc-head { padding:14px 18px; border-bottom:1px solid var(--border); background:var(--surface2); }
+  .rsc-title { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; color:var(--text3); display:flex; align-items:center; gap:7px; }
+  .rsc-body { padding:18px; }
+
+  /* Gauge */
+  .gauge-wrap { text-align:center; margin-bottom:16px; }
+  .gauge-svg { width:160px; height:90px; }
+  .gauge-label { font-size:11px; color:var(--text3); margin-top:4px; }
+  .gauge-score { font-size:28px; font-weight:800; color:var(--gold); }
+  .gauge-sub { font-size:11px; color:var(--text3); }
+
+  .risk-breakdown { display:flex; flex-direction:column; gap:8px; }
+  .rb-item { display:flex; align-items:center; gap:10px; }
+  .rb-label { font-size:12px; color:var(--text2); min-width:110px; }
+  .rb-bar-wrap { flex:1; height:6px; background:var(--border2); border-radius:3px; overflow:hidden; }
+  .rb-bar { height:100%; border-radius:3px; transition:width 1s ease; }
+  .rb-val { font-size:11px; font-weight:700; min-width:36px; text-align:right; }
+
+  /* Teklif kuralları */
+  .rules-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; overflow:hidden; }
+  .rules-head { padding:14px 18px; border-bottom:1px solid var(--border); background:var(--surface2); }
+  .rules-title { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; color:var(--text3); display:flex; align-items:center; gap:7px; }
+  .rules-body { padding:16px 18px; display:flex; flex-direction:column; gap:10px; }
+  .rule-item { display:flex; align-items:flex-start; gap:10px; }
+  .rule-ic { width:28px; height:28px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:13px; flex-shrink:0; }
+  .rule-ic.warn { background:var(--orange-dim); }
+  .rule-ic.info { background:var(--blue-dim); }
+  .rule-ic.ok   { background:var(--green-dim); }
+  .rule-text { font-size:12px; color:var(--text2); line-height:1.5; padding-top:4px; }
+  .rule-text strong { color:var(--text); }
+
+  /* ── MODAL ── */
+  .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:1000; align-items:center; justify-content:center; backdrop-filter:blur(6px); padding:20px; }
+  .modal-overlay.show { display:flex; }
+  .modal { background:var(--surface); border:1px solid var(--border2); border-radius:20px; padding:36px 32px; max-width:500px; width:100%; text-align:center; animation:popIn 0.3s ease; position:relative; overflow:hidden; }
+  .modal::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:linear-gradient(90deg,var(--green),var(--teal),var(--gold)); }
+  @keyframes popIn { from{opacity:0;transform:scale(0.9)} to{opacity:1;transform:scale(1)} }
+  .modal-icon { font-size:56px; margin-bottom:16px; }
+  .modal-title { font-size:22px; font-weight:800; margin-bottom:8px; }
+  .modal-sub { font-size:14px; color:var(--text2); line-height:1.55; margin-bottom:22px; }
+  .modal-ref { background:var(--surface2); border:1px solid var(--border2); border-radius:8px; padding:10px 16px; font-family:monospace; font-size:14px; color:var(--green); margin-bottom:22px; }
+  .modal-btns { display:flex; gap:10px; }
+  .modal-btn { flex:1; padding:12px; border-radius:10px; font-family:'Inter',sans-serif; font-size:13px; font-weight:700; cursor:pointer; border:none; transition:all 0.2s; }
+  .modal-btn-green { background:var(--green); color:#0b1120; }
+  .modal-btn-green:hover { background:#4ade80; }
+  .modal-btn-outline { background:transparent; color:var(--text2); border:1px solid var(--border2); }
+  .modal-btn-outline:hover { border-color:var(--text2); }
+</style>
+</head>
+<body>
+
+<!-- ── NAVBAR ── -->
+<nav>
+  <a class="nav-logo" href="#">
+    <div class="nav-logo-icon">🌐</div>
+    <div class="nav-logo-text">Core<span>Trade</span>Global</div>
+  </a>
+
+  <div class="nav-center">
+    <div class="trade-badge">📋 İşlem: <strong>CTG-2025-04821</strong></div>
+    <div class="portal-badge">🛡️ Sigorta Firma Portalı</div>
+  </div>
+
+  <div class="nav-right">
+    <button class="btn btn-outline">⚙ Firma Profili</button>
+    <button class="btn btn-outline" style="color:var(--red);border-color:var(--red-border)">Çıkış</button>
+  </div>
+</nav>
+
+<!-- ── PAGE ── -->
+<div class="page">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-left">
+      <div class="hero-icon">🛡️</div>
+      <div>
+        <div class="hero-label">Yeni Sigorta Teklif Talebi</div>
+        <div class="hero-title">Organik Pamuk Kumaş — Deniz Yük Sigortası</div>
+        <div class="hero-sub">İzmir → Hamburg · 15.000 kg · FOB İzmir · Mal Değeri: $58,500 · Teklif verme kapanıyor</div>
+      </div>
+    </div>
+    <div class="hero-right">
+      <div class="new-pill"><div class="pulse-dot"></div> Teklif Açık</div>
+      <div class="deadline-box">
+        <div class="deadline-label">Teklif Kapanıyor</div>
+        <div class="deadline-val" id="deadline-timer">23:47:12</div>
+        <div class="deadline-sub">10 Şubat 2025 · 17:00</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BRİFİNG BAR -->
+  <div class="briefing-bar">
+    <div class="bb-item">
+      <div class="bb-label">Ürün / Emtia</div>
+      <div class="bb-val">Organik Pamuk Kumaş</div>
+    </div>
+    <div class="bb-item">
+      <div class="bb-label">HS Kodu</div>
+      <div class="bb-val" style="font-family:monospace">5208.12.16</div>
+    </div>
+    <div class="bb-item">
+      <div class="bb-label">Sigorta Değeri</div>
+      <div class="bb-val gold">$58,500</div>
+    </div>
+    <div class="bb-item">
+      <div class="bb-label">Taşıma Modu</div>
+      <div class="bb-val blue">🚢 FCL Deniz</div>
+    </div>
+    <div class="bb-item">
+      <div class="bb-label">Güzergah</div>
+      <div class="bb-val">İzmir → Hamburg</div>
+    </div>
+    <div class="bb-item">
+      <div class="bb-label">Teklif Kapanış</div>
+      <div class="bb-val orange">10 Şub 2025 · 17:00</div>
+    </div>
+  </div>
+
+  <!-- MAIN LAYOUT -->
+  <div class="main-layout">
+
+    <!-- ── LEFT ── -->
+    <div class="left-col">
+
+      <!-- RİSK BİLGİLERİ -->
+      <div>
+        <div class="sec-head">
+          <div class="sec-title"><div class="dot" style="background:var(--green)"></div> Sigorta Talep Bilgileri</div>
+          <div style="font-size:11px;color:var(--text3)">İşlem No: <span style="color:var(--gold);font-family:monospace">CTG-2025-04821</span></div>
+        </div>
+
+        <div class="risk-card">
+          <div class="rc-header">
+            <div class="rc-title">🛡️ Sigortalanacak Kargo Detayları</div>
+            <div class="rc-badge">⏳ Teklif Bekleniyor</div>
+          </div>
+          <div class="rc-body">
+
+            <!-- Güzergah -->
+            <div class="route-visual">
+              <div class="route-port">
+                <div class="rp-flag">🇹🇷</div>
+                <div class="rp-name">İZMİR</div>
+                <div class="rp-city">Alsancak Limanı</div>
+                <div class="rp-type origin">Yükleme Noktası</div>
+              </div>
+              <div class="route-line">
+                <div class="rl-info">
+                  <div class="rl-nm">~3.100 NM</div>
+                  <div class="rl-days">≈ 8–12 gün</div>
+                </div>
+                <div class="rl-track">
+                  <span class="rl-ship">🚢</span>
+                </div>
+              </div>
+              <div class="route-port">
+                <div class="rp-flag">🇩🇪</div>
+                <div class="rp-name">HAMBURG</div>
+                <div class="rp-city">Hamburg Limanı</div>
+                <div class="rp-type dest">Varış Noktası</div>
+              </div>
+            </div>
+
+            <!-- Kargo detayları -->
+            <div class="cargo-grid">
+              <div class="cg-item">
+                <div class="cg-label">Ürün / Emtia</div>
+                <div class="cg-val">Organik Pamuk Kumaş</div>
+              </div>
+              <div class="cg-item">
+                <div class="cg-label">HS Kodu</div>
+                <div class="cg-val" style="font-family:monospace">5208.12.16</div>
+              </div>
+              <div class="cg-item">
+                <div class="cg-label">Mal Değeri (CIF Bazı)</div>
+                <div class="cg-val gold">$58,500</div>
+              </div>
+              <div class="cg-item">
+                <div class="cg-label">Ağırlık</div>
+                <div class="cg-val">15.000 kg</div>
+              </div>
+              <div class="cg-item">
+                <div class="cg-label">Hacim / Ambalaj</div>
+                <div class="cg-val">42 m³ · 250 bale</div>
+              </div>
+              <div class="cg-item">
+                <div class="cg-label">Konteyner</div>
+                <div class="cg-val">1 × 20' FCL</div>
+              </div>
+              <div class="cg-item">
+                <div class="cg-label">Yükleme Tarihi</div>
+                <div class="cg-val orange">12–14 Şubat 2025</div>
+              </div>
+              <div class="cg-item">
+                <div class="cg-label">Tahmini Varış</div>
+                <div class="cg-val orange">Maks. 28 Şubat 2025</div>
+              </div>
+              <div class="cg-item">
+                <div class="cg-label">Incoterms</div>
+                <div class="cg-val">FOB İzmir</div>
+              </div>
+              <div class="cg-item">
+                <div class="cg-label">Menşei</div>
+                <div class="cg-val">🇹🇷 Türkiye</div>
+              </div>
+              <div class="cg-item">
+                <div class="cg-label">Taşıma Modu</div>
+                <div class="cg-val blue">Deniz — FCL</div>
+              </div>
+              <div class="cg-item">
+                <div class="cg-label">Taşıyıcı Tipi</div>
+                <div class="cg-val">Konteyner Gemisi</div>
+              </div>
+            </div>
+
+            <!-- Risk faktörleri -->
+            <div style="margin-bottom:16px">
+              <div class="form-label" style="margin-bottom:8px">Risk Faktörleri</div>
+              <div class="risk-factors">
+                <div class="rf-tag low">🟢 GOTS Sertifikalı Ürün</div>
+                <div class="rf-tag low">🟢 Standart FCL Konteyner</div>
+                <div class="rf-tag mid">🟡 Akdeniz–Atlantik Geçişi</div>
+                <div class="rf-tag mid">🟡 Nem Hassasiyeti (Tekstil)</div>
+                <div class="rf-tag low">🟢 Bilinen Güzergah</div>
+                <div class="rf-tag info">🔵 AB Gümrük Bölgesi Varış</div>
+                <div class="rf-tag info">🔵 Sefer Süresi: 8–12 Gün</div>
+              </div>
+            </div>
+
+            <!-- Talep edilen kapsam -->
+            <div>
+              <div class="form-label" style="margin-bottom:8px">Talep Edilen Teminat & Özel Koşullar</div>
+              <div class="doc-list-mini">
+                <div class="doc-mini"><div class="doc-mini-ic">📋</div> Minimum ICC (A) kapsamı — Tüm riskler tercihli</div>
+                <div class="doc-mini"><div class="doc-mini-ic">💧</div> Su hasarı, nem ve rutubet teminatı dahil olmalıdır</div>
+                <div class="doc-mini"><div class="doc-mini-ic">🔒</div> Hırsızlık ve kayıp teminatı zorunludur</div>
+                <div class="doc-mini"><div class="doc-mini-ic">⚡</div> Hasar tazminat süresi en fazla 7 iş günü olmalıdır</div>
+                <div class="doc-mini"><div class="doc-mini-ic">📄</div> Teklif kabul edilirse poliçe 48 saat içinde sunulmalıdır</div>
+                <div class="doc-mini"><div class="doc-mini-ic">🌍</div> Uluslararası geçerli poliçe (TR ve DE geçerli)</div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- ── TEKLİF FORMU ── -->
+      <div>
+        <div class="sec-head">
+          <div class="sec-title"><div class="dot" style="background:var(--gold)"></div> Sigorta Teklifi Ver</div>
+        </div>
+
+        <div class="quote-form-card">
+          <div class="qf-header">
+            <div class="qf-title">🛡️ Sigorta Teklif Formu</div>
+            <div class="qf-sub">Tüm zorunlu alanları doldurunuz. Teklifiniz ticaret taraflarına anonim olarak iletilecektir.</div>
+          </div>
+          <div class="qf-body">
+
+            <!-- Sigorta kapsamı seçici -->
+            <div class="form-label" style="margin-bottom:8px">Poliçe Kapsamı <span class="req-star">*</span></div>
+            <div class="scope-grid">
+              <div class="scope-pill active" onclick="selectScope(this)">
+                <div class="sp-icon">🛡️</div>
+                <div class="sp-label">ICC (A)</div>
+                <div class="sp-sub">Tüm Riskler</div>
+              </div>
+              <div class="scope-pill" onclick="selectScope(this)">
+                <div class="sp-icon">🔰</div>
+                <div class="sp-label">ICC (B)</div>
+                <div class="sp-sub">Geniş Kapsam</div>
+              </div>
+              <div class="scope-pill" onclick="selectScope(this)">
+                <div class="sp-icon">🔒</div>
+                <div class="sp-label">ICC (C)</div>
+                <div class="sp-sub">Temel Kapsam</div>
+              </div>
+            </div>
+
+            <!-- ICC Kapsam seçenekleri -->
+            <div class="form-label" style="margin-bottom:8px">Kapsam Detayı <span class="req-star">*</span></div>
+            <div class="icc-options">
+              <div class="icc-row checked" onclick="selectICC(this)">
+                <div class="icc-box"></div>
+                <div class="icc-content">
+                  <div class="icc-title">ICC (A) — Tüm Riskler (All Risks)</div>
+                  <div class="icc-desc">Su hasarı, hırsızlık, yangın, batma, çarpışma, nem, rutubet ve tüm beklenmedik kayıpları kapsar. En kapsamlı teminat.</div>
+                  <div class="icc-prim">Tavsiye edilen prim oranı: %0.7–1.2 (mal değeri üzerinden)</div>
+                </div>
+              </div>
+              <div class="icc-row" onclick="selectICC(this)">
+                <div class="icc-box"></div>
+                <div class="icc-content">
+                  <div class="icc-title">ICC (B) — Geniş Kapsam</div>
+                  <div class="icc-desc">Yangın, patlama, batma, çarpışma ve su hasarını kapsar. Hırsızlık hariç tutulabilir.</div>
+                  <div class="icc-prim">Tavsiye edilen prim oranı: %0.4–0.7</div>
+                </div>
+              </div>
+              <div class="icc-row" onclick="selectICC(this)">
+                <div class="icc-box"></div>
+                <div class="icc-content">
+                  <div class="icc-title">ICC (C) — Temel Kapsam</div>
+                  <div class="icc-desc">Sadece büyük rizikolar: yangın, patlama, batma, karaya oturma. Minimum teminat.</div>
+                  <div class="icc-prim">Tavsiye edilen prim oranı: %0.2–0.4</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Teminat & Prim hesaplama -->
+            <div class="form-divider"><div class="form-divider-label">Teminat & Prim Hesaplama</div></div>
+
+            <div class="coverage-section">
+              <div class="cs-title">💰 Teminat Kırılımı</div>
+
+              <div class="coverage-row">
+                <div class="cr-label">Sigorta Bedeli (CIF+%10)</div>
+                <div class="cr-input-wrap">
+                  <span class="cr-prefix">$</span>
+                  <input class="cr-input" type="number" id="c-bedel" placeholder="0.00" value="64350" oninput="calcPrim()">
+                </div>
+                <div class="cr-suffix">USD</div>
+              </div>
+              <div class="coverage-row">
+                <div class="cr-label">Prim Oranı</div>
+                <div class="cr-input-wrap" style="position:relative">
+                  <span class="cr-prefix">%</span>
+                  <input class="cr-input" type="number" id="c-oran" placeholder="0.00" step="0.01" oninput="calcPrim()">
+                </div>
+                <div class="cr-suffix">oran</div>
+              </div>
+              <div class="coverage-row">
+                <div class="cr-label">Muafiyet (Franchise)</div>
+                <div class="cr-input-wrap">
+                  <span class="cr-prefix">%</span>
+                  <input class="cr-input" type="number" id="c-muafiyet" placeholder="0" step="0.1" oninput="calcPrim()">
+                </div>
+                <div class="cr-suffix">oran</div>
+              </div>
+              <div class="coverage-row">
+                <div class="cr-label">Hasar Ödeme Süresi</div>
+                <div class="cr-input-wrap" style="position:relative">
+                  <input class="cr-input" type="number" id="c-sure" placeholder="5" style="padding-left:12px">
+                </div>
+                <div class="cr-suffix">iş günü</div>
+              </div>
+
+              <div class="cov-divider"></div>
+
+              <div class="prim-row">
+                <div class="prim-label">⚡ Toplam Prim Tutarı</div>
+                <div class="prim-val" id="prim-display">$ —</div>
+              </div>
+            </div>
+
+            <!-- Ek teminatlar -->
+            <div class="form-label" style="margin-bottom:8px">Ek Teminatlar (Opsiyonel)</div>
+            <div class="extra-grid">
+              <div class="extra-check checked" onclick="toggleExtra(this)">
+                <div class="ec-box">✓</div>
+                <div class="ec-label">💧 Su & Nem Hasarı</div>
+                <div class="ec-prim">+%0.08</div>
+              </div>
+              <div class="extra-check checked" onclick="toggleExtra(this)">
+                <div class="ec-box">✓</div>
+                <div class="ec-label">🔒 Hırsızlık & Kayıp</div>
+                <div class="ec-prim">+%0.10</div>
+              </div>
+              <div class="extra-check" onclick="toggleExtra(this)">
+                <div class="ec-box"></div>
+                <div class="ec-label">⚡ Grev & Kargaşa</div>
+                <div class="ec-prim">+%0.05</div>
+              </div>
+              <div class="extra-check" onclick="toggleExtra(this)">
+                <div class="ec-box"></div>
+                <div class="ec-label">🏛️ Siyasi Risk</div>
+                <div class="ec-prim">+%0.12</div>
+              </div>
+              <div class="extra-check" onclick="toggleExtra(this)">
+                <div class="ec-box"></div>
+                <div class="ec-label">🏠 Depo Teminatı</div>
+                <div class="ec-prim">+%0.06</div>
+              </div>
+              <div class="extra-check checked" onclick="toggleExtra(this)">
+                <div class="ec-box">✓</div>
+                <div class="ec-label">🌍 Uluslararası Geçerlilik</div>
+                <div class="ec-prim">Dahil</div>
+              </div>
+            </div>
+
+            <div class="form-divider"><div class="form-divider-label">Poliçe Bilgileri</div></div>
+
+            <!-- Poliçe detayları -->
+            <div class="form-grid">
+              <div class="form-group">
+                <div class="form-label">Poliçe Geçerlilik Başlangıcı <span class="req-star">*</span></div>
+                <input class="form-input" type="date" value="2025-02-12">
+              </div>
+              <div class="form-group">
+                <div class="form-label">Poliçe Bitiş Tarihi <span class="req-star">*</span></div>
+                <input class="form-input" type="date" value="2025-03-14">
+              </div>
+            </div>
+
+            <div class="form-grid">
+              <div class="form-group">
+                <div class="form-label">Poliçe Kapsam Şekli <span class="req-star">*</span></div>
+                <select class="form-input">
+                  <option>Depo-Depo (Warehouse to Warehouse)</option>
+                  <option selected>Port-Port</option>
+                  <option>Kapıdan Kapıya</option>
+                  <option>FOB Bazlı</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <div class="form-label">Para Birimi <span class="req-star">*</span></div>
+                <select class="form-input">
+                  <option selected>USD — Amerikan Doları</option>
+                  <option>EUR — Euro</option>
+                  <option>TRY — Türk Lirası</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-grid">
+              <div class="form-group">
+                <div class="form-label">Teklif Geçerlilik Süresi <span class="req-star">*</span></div>
+                <select class="form-input">
+                  <option>12 saat</option>
+                  <option selected>24 saat</option>
+                  <option>48 saat</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <div class="form-label">Sertifika Türü <span class="req-star">*</span></div>
+                <select class="form-input">
+                  <option>Dijital Sertifika</option>
+                  <option selected>Uluslararası Sertifika</option>
+                  <option>Orijinal + Dijital</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- İletişim -->
+            <div class="form-grid">
+              <div class="form-group">
+                <div class="form-label">İletişim Kişisi <span class="req-star">*</span></div>
+                <input class="form-input" type="text" placeholder="Yetkili kişi adı soyadı">
+              </div>
+              <div class="form-group">
+                <div class="form-label">Acente / Referans No</div>
+                <input class="form-input" type="text" placeholder="İç referans numaranız">
+              </div>
+            </div>
+
+            <div class="form-full">
+              <div class="form-group">
+                <div class="form-label">Açıklama & Özel Şartlar</div>
+                <textarea class="form-input" placeholder="Poliçe şartları, özel koşullar veya ek bilgiler..."></textarea>
+              </div>
+            </div>
+
+            <!-- CTA -->
+            <div class="form-cta">
+              <button class="btn-submit" onclick="submitQuote()">
+                🛡️ Teklifi Gönder
+              </button>
+              <button class="btn-draft" onclick="saveDraft()">
+                💾 Taslak Olarak Kaydet
+              </button>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ── RIGHT SİDEBAR ── -->
+    <div class="right-col">
+
+      <!-- Risk Skoru -->
+      <div class="risk-score-card">
+        <div class="rsc-head">
+          <div class="rsc-title">📊 Kargo Risk Analizi</div>
+        </div>
+        <div class="rsc-body">
+          <div class="gauge-wrap">
+            <svg class="gauge-svg" viewBox="0 0 160 90">
+              <path d="M20 80 A60 60 0 0 1 140 80" fill="none" stroke="#1e2d47" stroke-width="12" stroke-linecap="round"/>
+              <path d="M20 80 A60 60 0 0 1 140 80" fill="none" stroke="url(#gaugeGrad)" stroke-width="12" stroke-linecap="round" stroke-dasharray="188" stroke-dashoffset="75"/>
+              <defs>
+                <linearGradient id="gaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stop-color="#22c55e"/>
+                  <stop offset="60%" stop-color="#f5c518"/>
+                  <stop offset="100%" stop-color="#ef4444"/>
+                </linearGradient>
+              </defs>
+              <text x="80" y="72" text-anchor="middle" font-family="Inter,sans-serif" font-size="22" font-weight="800" fill="#f5c518">62</text>
+              <text x="80" y="84" text-anchor="middle" font-family="Inter,sans-serif" font-size="9" fill="#4b6080">/ 100</text>
+              <text x="22" y="90" font-family="Inter,sans-serif" font-size="8" fill="#22c55e">DÜŞÜK</text>
+              <text x="118" y="90" font-family="Inter,sans-serif" font-size="8" fill="#ef4444">YÜKSEK</text>
+            </svg>
+            <div style="font-size:13px;font-weight:700;color:var(--gold)">Orta Risk</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px">Standart tekstil kargo profiline uygun</div>
+          </div>
+
+          <div class="risk-breakdown">
+            <div class="rb-item">
+              <div class="rb-label">Güzergah Riski</div>
+              <div class="rb-bar-wrap"><div class="rb-bar" style="width:45%;background:var(--gold)"></div></div>
+              <div class="rb-val" style="color:var(--gold)">45</div>
+            </div>
+            <div class="rb-item">
+              <div class="rb-label">Ürün Hassasiyeti</div>
+              <div class="rb-bar-wrap"><div class="rb-bar" style="width:55%;background:var(--orange)"></div></div>
+              <div class="rb-val" style="color:var(--orange)">55</div>
+            </div>
+            <div class="rb-item">
+              <div class="rb-label">Taşıma Güvenliği</div>
+              <div class="rb-bar-wrap"><div class="rb-bar" style="width:30%;background:var(--green)"></div></div>
+              <div class="rb-val" style="color:var(--green)">30</div>
+            </div>
+            <div class="rb-item">
+              <div class="rb-label">Hava/İklim Riski</div>
+              <div class="rb-bar-wrap"><div class="rb-bar" style="width:40%;background:var(--gold)"></div></div>
+              <div class="rb-val" style="color:var(--gold)">40</div>
+            </div>
+            <div class="rb-item">
+              <div class="rb-label">Liman Riski</div>
+              <div class="rb-bar-wrap"><div class="rb-bar" style="width:25%;background:var(--green)"></div></div>
+              <div class="rb-val" style="color:var(--green)">25</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Teklif kuralları -->
+      <div class="rules-card">
+        <div class="rules-head">
+          <div class="rules-title">⚠️ Teklif Kuralları & Uyarılar</div>
+        </div>
+        <div class="rules-body">
+          <div class="rule-item">
+            <div class="rule-ic warn">🔴</div>
+            <div class="rule-text"><strong>Minimum ICC (A)</strong> kapsamı talep edilmektedir. ICC (B) veya (C) teklifleri ek açıklama gerektirmektedir.</div>
+          </div>
+          <div class="rule-item">
+            <div class="rule-ic warn">💧</div>
+            <div class="rule-text"><strong>Su ve nem teminatı</strong> tekstil kargo için zorunludur. Bu teminatı içermeyen teklifler değerlendirmeye alınmayabilir.</div>
+          </div>
+          <div class="rule-item">
+            <div class="rule-ic info">📅</div>
+            <div class="rule-text">Poliçe <strong>yükleme tarihinden itibaren geçerli</strong> olmalıdır. Geriye dönük poliçe kabul edilmez.</div>
+          </div>
+          <div class="rule-item">
+            <div class="rule-ic info">⚡</div>
+            <div class="rule-text"><strong>Hasar tazminat süresi</strong> en fazla 7 iş günü olarak talep edilmektedir.</div>
+          </div>
+          <div class="rule-item">
+            <div class="rule-ic ok">🌍</div>
+            <div class="rule-text">Poliçe hem <strong>Türkiye hem de AB (Almanya)</strong> hukukunda geçerli ve uluslararası tanınan bir kurum tarafından düzenlenmelidir.</div>
+          </div>
+          <div class="rule-item">
+            <div class="rule-ic ok">💰</div>
+            <div class="rule-text">Teklif kabul edilmesi durumunda prim ödemesi <strong>CoreTradeGlobal platformu</strong> üzerinden yapılacaktır.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Disclaimer -->
+      <div style="background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:12px 16px;display:flex;align-items:flex-start;gap:10px">
+        <div style="font-size:14px;flex-shrink:0;opacity:0.5;margin-top:1px">ℹ️</div>
+        <div style="font-size:10px;color:var(--text3);line-height:1.55">
+          <strong style="color:var(--text2)">Önemli Not:</strong> Bu platform yalnızca teklif eşleştirme aracıdır. <strong style="color:var(--text2)">CoreTradeGlobal</strong>, sigorta firmaları ile ticaret tarafları arasındaki poliçenin tarafı değildir; poliçeden doğan hiçbir hukuki, mali ya da tazminat yükümlülüğü üstlenmez. Tüm sorumluluklar sigorta şirketi ile poliçe sahibi arasındaki sözleşmeye tabidir.
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<!-- ── BAŞARI MODAL ── -->
+<div class="modal-overlay" id="successModal">
+  <div class="modal">
+    <div class="modal-icon">🎉</div>
+    <div class="modal-title">Teklifiniz Gönderildi!</div>
+    <div class="modal-sub">Sigorta teklifiniz başarıyla sisteme iletildi. Taraflar değerlendirme sonrasında platformdan bildirim alacaksınız.</div>
+    <div class="modal-ref">Teklif Ref: CTG-INS-2025-04821-<span id="modal-ref-num">042</span></div>
+    <div class="modal-btns">
+      <button class="modal-btn modal-btn-green" onclick="closeModal()">Tamam</button>
+      <button class="modal-btn modal-btn-outline" onclick="closeModal()">Diğer İşlemler</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── TASLAK MODAL ── -->
+<div class="modal-overlay" id="draftModal">
+  <div class="modal">
+    <div class="modal-icon">💾</div>
+    <div class="modal-title" style="color:var(--blue)">Taslak Kaydedildi</div>
+    <div class="modal-sub">Sigorta teklifiniz taslak olarak kaydedildi. 48 saat içinde tamamlayarak gönderebilirsiniz.</div>
+    <div class="modal-ref" style="color:var(--blue)">Taslak ID: DRAFT-INS-04821-<span id="draft-ref-num">019</span></div>
+    <div class="modal-btns">
+      <button class="modal-btn modal-btn-green" onclick="closeDraftModal()">Devam Et</button>
+      <button class="modal-btn modal-btn-outline" onclick="closeDraftModal()">Kapat</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── COUNTDOWN ──
+function updateDeadline() {
+  const target = new Date('2025-02-10T17:00:00');
+  const now = new Date();
+  const diff = target - now;
+  if (diff <= 0) { document.getElementById('deadline-timer').textContent = 'KAPANDI'; return; }
+  const h = Math.floor(diff / 3600000);
+  const m = Math.floor((diff % 3600000) / 60000);
+  const s = Math.floor((diff % 60000) / 1000);
+  document.getElementById('deadline-timer').textContent =
+    String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+}
+updateDeadline();
+setInterval(updateDeadline, 1000);
+
+// ── KAPSAM SEÇİCİ ──
+function selectScope(el) {
+  document.querySelectorAll('.scope-pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// ── ICC SEÇİCİ ──
+function selectICC(el) {
+  document.querySelectorAll('.icc-row').forEach(r => r.classList.remove('checked'));
+  el.classList.add('checked');
+  calcPrim();
+}
+
+// ── EK TEMİNAT TOGGLE ──
+function toggleExtra(el) {
+  el.classList.toggle('checked');
+  const box = el.querySelector('.ec-box');
+  box.textContent = el.classList.contains('checked') ? '✓' : '';
+}
+
+// ── PRİM HESAPLA ──
+function calcPrim() {
+  const bedel = parseFloat(document.getElementById('c-bedel').value) || 0;
+  const oran  = parseFloat(document.getElementById('c-oran').value)  || 0;
+  const disp  = document.getElementById('prim-display');
+  if (bedel > 0 && oran > 0) {
+    const prim = bedel * (oran / 100);
+    disp.textContent = '$' + prim.toLocaleString('tr-TR', {minimumFractionDigits:2});
+  } else {
+    disp.textContent = '$ —';
+  }
+}
+
+// ── TEKLİF GÖNDER ──
+function submitQuote() {
+  const prim = document.getElementById('prim-display').textContent;
+  if (prim === '$ —') {
+    alert('Lütfen sigorta bedeli ve prim oranını giriniz.');
+    return;
+  }
+  document.getElementById('modal-ref-num').textContent = Math.floor(Math.random() * 900 + 100);
+  document.getElementById('successModal').classList.add('show');
+}
+
+function closeModal() {
+  document.getElementById('successModal').classList.remove('show');
+}
+
+// ── TASLAK ──
+function saveDraft() {
+  document.getElementById('draft-ref-num').textContent = Math.floor(Math.random() * 900 + 100);
+  document.getElementById('draftModal').classList.add('show');
+}
+
+function closeDraftModal() {
+  document.getElementById('draftModal').classList.remove('show');
+}
+
+// Overlay tıklama kapatma
+document.querySelectorAll('.modal-overlay').forEach(el => {
+  el.addEventListener('click', function(e) {
+    if (e.target === this) this.classList.remove('show');
+  });
+});
+</script>
+
+</body>
+</html>
