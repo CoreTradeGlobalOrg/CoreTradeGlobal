@@ -92,6 +92,8 @@ export function QuotesPage({
   const [insuranceSort, setInsuranceSort] = useState('price_asc');
   const [logisticsFilter, setLogisticsFilter] = useState('all');
   const [logisticsSort, setLogisticsSort] = useState('price_asc');
+  const [skippedInsurance, setSkippedInsurance] = useState(false);
+  const [skippedLogistics, setSkippedLogistics] = useState(false);
 
   const insuranceFilterOptions = [
     { value: 'all', label: 'All' },
@@ -222,6 +224,9 @@ export function QuotesPage({
               selectedQuote={selectedInsuranceQuote}
               isBuyer={isBuyer}
               onSelect={actions.acceptQuote}
+              skipped={skippedInsurance}
+              onSkip={() => setSkippedInsurance(true)}
+              onUndoSkip={() => setSkippedInsurance(false)}
             />
 
             <QuoteGrid
@@ -240,6 +245,9 @@ export function QuotesPage({
               selectedQuote={selectedLogisticsQuote}
               isBuyer={isBuyer}
               onSelect={actions.acceptQuote}
+              skipped={skippedLogistics}
+              onSkip={() => setSkippedLogistics(true)}
+              onUndoSkip={() => setSkippedLogistics(false)}
             />
           </div>
 
@@ -251,6 +259,8 @@ export function QuotesPage({
               selectedLogisticsQuote={selectedLogisticsQuote}
               isBuyer={isBuyer}
               actions={actions}
+              skippedInsurance={skippedInsurance}
+              skippedLogistics={skippedLogistics}
             />
           </div>
         </div>

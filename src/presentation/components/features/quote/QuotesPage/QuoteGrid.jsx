@@ -29,6 +29,9 @@ import { SectionHeader, FilterPills, SortSelect, EmptyState } from './QuoteFilte
  * @param {import('@/domain/entities/Quote').Quote|null} props.selectedQuote
  * @param {boolean} props.isBuyer
  * @param {Function} props.onSelect - (quoteRequestId, quoteId) => void
+ * @param {boolean} [props.skipped] - section skipped by buyer
+ * @param {Function} [props.onSkip] - mark section as skipped
+ * @param {Function} [props.onUndoSkip] - undo skip
  */
 export function QuoteGrid({
   type,
@@ -46,6 +49,9 @@ export function QuoteGrid({
   selectedQuote,
   isBuyer,
   onSelect,
+  skipped = false,
+  onSkip,
+  onUndoSkip,
 }) {
   const isInsurance = type === 'insurance';
   const icon = isInsurance
@@ -69,50 +75,82 @@ export function QuoteGrid({
           count={quotes.length}
           accentColor={accentColor}
         />
-        <SortSelect options={sortOptions} value={sortValue} onChange={onSortChange} />
+        <div className="flex items-center gap-3">
+          {isBuyer && !skipped && onSkip && (
+            <button
+              type="button"
+              onClick={onSkip}
+              className="text-xs text-[#8899AA] hover:text-amber-400 transition-colors"
+            >
+              Skip — I'll arrange my own
+            </button>
+          )}
+          <SortSelect options={sortOptions} value={sortValue} onChange={onSortChange} />
+        </div>
       </div>
 
-      <FilterPills
-        options={filterOptions}
-        value={filterValue}
-        onChange={onFilterChange}
-        accentColor={accentColor}
-      />
-
-      {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {[1, 2].map((i) => (
-            <div key={i} className="h-48 bg-[#0F1C2E] rounded-xl animate-pulse" />
-          ))}
-        </div>
-      ) : displayedQuotes.length === 0 ? (
-        <EmptyState
-          message={filterValue !== 'all' ? emptyFilterMsg : emptyWaitMsg}
-        />
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {displayedQuotes.map((quote) =>
-            isInsurance ? (
-              <InsuranceQuoteCard
-                key={quote.id}
-                quote={quote}
-                isBuyer={isBuyer}
-                isSelected={selectedQuote?.id === quote.id}
-                onSelect={onSelect}
-                ribbon={ribbons[quote.id] || null}
-              />
-            ) : (
-              <LogisticsQuoteCard
-                key={quote.id}
-                quote={quote}
-                isBuyer={isBuyer}
-                isSelected={selectedQuote?.id === quote.id}
-                onSelect={onSelect}
-                ribbon={ribbons[quote.id] || null}
-              />
-            )
+      {/* Skipped state */}
+      {skipped ? (
+        <div className="flex items-center gap-2 py-3 px-4 rounded-lg bg-amber-900/10 border border-amber-500/30">
+          <span className="text-amber-400 text-sm">&#x26A0;</span>
+          <span className="text-xs text-[#8899AA]">
+            {isInsurance ? 'Insurance' : 'Logistics'} not arranged via platform
+          </span>
+          {onUndoSkip && (
+            <button
+              type="button"
+              onClick={onUndoSkip}
+              className="ml-auto text-xs text-[#FFD700] hover:text-[#FFE44D] underline"
+            >
+              Undo skip
+            </button>
           )}
         </div>
+      ) : (
+        <>
+          <FilterPills
+            options={filterOptions}
+            value={filterValue}
+            onChange={onFilterChange}
+            accentColor={accentColor}
+          />
+
+          {loading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {[1, 2].map((i) => (
+                <div key={i} className="h-48 bg-[#0F1C2E] rounded-xl animate-pulse" />
+              ))}
+            </div>
+          ) : displayedQuotes.length === 0 ? (
+            <EmptyState
+              message={filterValue !== 'all' ? emptyFilterMsg : emptyWaitMsg}
+            />
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {displayedQuotes.map((quote) =>
+                isInsurance ? (
+                  <InsuranceQuoteCard
+                    key={quote.id}
+                    quote={quote}
+                    isBuyer={isBuyer}
+                    isSelected={selectedQuote?.id === quote.id}
+                    onSelect={onSelect}
+                    ribbon={ribbons[quote.id] || null}
+                  />
+                ) : (
+                  <LogisticsQuoteCard
+                    key={quote.id}
+                    quote={quote}
+                    isBuyer={isBuyer}
+                    isSelected={selectedQuote?.id === quote.id}
+                    onSelect={onSelect}
+                    ribbon={ribbons[quote.id] || null}
+                  />
+                )
+              )}
+            </div>
+          )}
+        </>
       )}
     </div>
   );

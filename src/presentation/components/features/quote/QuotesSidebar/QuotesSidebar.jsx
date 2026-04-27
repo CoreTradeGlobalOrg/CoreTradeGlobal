@@ -111,6 +111,8 @@ function TradeStepper() {
  * @param {import('@/domain/entities/Quote').Quote|null} props.selectedLogisticsQuote
  * @param {boolean} props.isBuyer
  * @param {{ confirmSelection: Function, loading: boolean }} props.actions
+ * @param {boolean} [props.skippedInsurance] - buyer skipped insurance section
+ * @param {boolean} [props.skippedLogistics] - buyer skipped logistics section
  */
 export function QuotesSidebar({
   deal,
@@ -118,11 +120,17 @@ export function QuotesSidebar({
   selectedLogisticsQuote,
   isBuyer,
   actions,
+  skippedInsurance = false,
+  skippedLogistics = false,
 }) {
   const router = useRouter();
   const [confirming, setConfirming] = useState(false);
 
-  const hasAnySelection = selectedInsuranceQuote || selectedLogisticsQuote;
+  // A section is "satisfied" if a provider was selected OR the buyer explicitly skipped it.
+  // At least one section must be satisfied to proceed.
+  const insuranceSatisfied = !!selectedInsuranceQuote || skippedInsurance;
+  const logisticsSatisfied = !!selectedLogisticsQuote || skippedLogistics;
+  const hasAnySelection = insuranceSatisfied || logisticsSatisfied;
 
   // Goods value from deal's latest offer snapshot
   const goodsValue = deal?.latestOfferSnapshot?.estimatedTotal
@@ -187,6 +195,8 @@ export function QuotesSidebar({
                 <p className="text-xs font-semibold text-emerald-400">
                   {formatCurrency(selectedInsuranceQuote.premiumAmount, selectedInsuranceQuote.currency)} premium
                 </p>
+              ) : skippedInsurance ? (
+                <p className="text-xs text-amber-400 italic">Arranging own coverage</p>
               ) : (
                 <p className="text-xs text-[#4A5B6E] italic">Not selected yet</p>
               )}
@@ -204,6 +214,8 @@ export function QuotesSidebar({
                 <p className="text-xs font-semibold text-blue-400">
                   {formatCurrency(selectedLogisticsQuote.freightCost, selectedLogisticsQuote.currency)} freight
                 </p>
+              ) : skippedLogistics ? (
+                <p className="text-xs text-amber-400 italic">Arranging own logistics</p>
               ) : (
                 <p className="text-xs text-[#4A5B6E] italic">Not selected yet</p>
               )}
@@ -289,7 +301,7 @@ export function QuotesSidebar({
             )}
             {confirming || actions.loading
               ? 'Confirming...'
-              : 'Confirm Selections & Continue'}
+              : 'Confirm Coverage & Shipment'}
           </button>
           {!hasAnySelection && (
             <p className="text-xs text-[#4A5B6E] text-center mt-2">
