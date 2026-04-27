@@ -115,10 +115,10 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **DEAL-02**: Progress indicator "X of Y clauses accepted" at top and sticky bottom of clause list
 - [x] **DEAL-03**: Auto-advance with toast notification when both parties approve all contract clauses
 - [x] **DEAL-04**: Parties can un-accept a clause anytime before both parties have fully approved
-- [ ] **DEAL-05**: Hire a Lawyer card appears on all trade stages (Negotiation, Contract, Quotes, Trade Summary) with per-page dismiss
-- [ ] **DEAL-06**: Dismissed Hire a Lawyer card collapses to slim gold-accented banner that re-expands on click
-- [ ] **DEAL-07**: When lawyer is hired, card transforms to show lawyer name, status, and channel link
-- [ ] **DEAL-08**: Tooltip icons on key trade page elements show brief domain explanations on hover/click
+- [x] **DEAL-05**: Hire a Lawyer card appears on all trade stages (Negotiation, Contract, Quotes, Trade Summary) with per-page dismiss
+- [x] **DEAL-06**: Dismissed Hire a Lawyer card collapses to slim gold-accented banner that re-expands on click
+- [x] **DEAL-07**: When lawyer is hired, card transforms to show lawyer name, status, and channel link
+- [x] **DEAL-08**: Tooltip icons on key trade page elements show brief domain explanations on hover/click
 - [x] **DEAL-09**: Insurance and logistics quote sections can be independently skipped with "Skip — I'll arrange my own"
 - [x] **DEAL-10**: Skipped quote sections show warning state with Undo skip option
 - [x] **DEAL-11**: Confirm button reads "Confirm Coverage & Shipment" (not "Quote Selected")

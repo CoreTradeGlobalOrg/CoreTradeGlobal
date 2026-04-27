@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-stopped_at: Completed 15-04-PLAN.md
-last_updated: "2026-04-27T10:46:56.374Z"
+stopped_at: Completed 15-02-PLAN.md
+last_updated: "2026-04-27T10:54:44.812Z"
 last_activity: "2026-04-02 - Completed quick task 5: Fix hero not fetching last verified user"
 progress:
   total_phases: 17
-  completed_phases: 5
+  completed_phases: 6
   total_plans: 24
-  completed_plans: 23
+  completed_plans: 24
   percent: 71
 ---
 
@@ -118,6 +118,7 @@ Progress: [█████████████] 71%
 | Phase 15 P03 | 4 | 2 tasks | 5 files |
 | Phase 15 P01 | 5 | 2 tasks | 4 files |
 | Phase 15-deal-and-trade-flow-enhancements P04 | 12 | 2 tasks | 12 files |
+| Phase 15 P02 | 5 | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -343,6 +344,8 @@ Recent decisions affecting current work:
 - [Phase 15-04]: No productPdfUrl field on deal docs — createDeal CF only denormalizes productName/productImage/productCategory; PDF link renders conditionally (no output with current data)
 - [Phase 15-04]: gold DatePicker uses text-[#0F1C2E] on selected day for contrast on FFD700 background, consistent with platform gold CTA button pattern
 - [Phase 15-04]: onFocus auto-select placed after register() spread on all number inputs so RHF event bindings are not replaced
+- [Phase 15-02]: LegalBanner uses local useState(false) only — no localStorage; each page mount resets dismissed to false automatically via new component instance
+- [Phase 15-02]: CollapsedBanner is a full-width button with border-l-4 amber accent — preserves click semantics for re-expansion
 
 ### Pending Todos
 
@@ -366,6 +369,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-27T10:46:56.369Z
-Stopped at: Completed 15-04-PLAN.md
+Last session: 2026-04-27T10:54:44.807Z
+Stopped at: Completed 15-02-PLAN.md
 Resume file: None
