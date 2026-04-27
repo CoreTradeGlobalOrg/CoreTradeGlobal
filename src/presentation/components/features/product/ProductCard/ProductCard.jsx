@@ -9,9 +9,9 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
-import { Pencil, Trash2, Power, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Pencil, Trash2, Power, ChevronLeft, ChevronRight, Star } from 'lucide-react';
 
-export function ProductCard({ product, isOwnProfile, onEdit, onDelete, onToggleStatus }) {
+export function ProductCard({ product, isOwnProfile, onEdit, onDelete, onToggleStatus, isFavorited, onToggleFavorite }) {
   const router = useRouter();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [imageLoading, setImageLoading] = useState(true);
@@ -141,12 +141,29 @@ export function ProductCard({ product, isOwnProfile, onEdit, onDelete, onToggleS
           </div>
         )}
 
-        {/* Status Badge */}
-        <div className="absolute top-2 right-2">
+        {/* Status Badge - moved to top-left to make room for star */}
+        <div className="absolute top-2 left-2">
           <span className={`px-2 py-1 text-xs font-medium rounded ${getStatusColor(product.status)}`}>
             {product.status}
           </span>
         </div>
+
+        {/* Star / Favorite Button */}
+        {onToggleFavorite && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleFavorite(product.id);
+            }}
+            className="absolute top-2 right-2 z-10 bg-black/40 hover:bg-black/60 rounded-full p-1.5 transition-colors"
+            aria-label={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
+          >
+            <Star
+              className="w-4 h-4 transition-colors"
+              style={isFavorited ? { fill: '#FFD700', color: '#FFD700' } : { color: 'white' }}
+            />
+          </button>
+        )}
       </div>
 
       {/* Product Details */}

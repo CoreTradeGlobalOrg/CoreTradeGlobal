@@ -10,10 +10,12 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
+import { Star } from 'lucide-react';
 import { container } from '@/core/di/container';
 import { COUNTRIES } from '@/core/constants/countries';
 import { CountryFlag } from '@/presentation/components/common/CountryFlag/CountryFlag';
 import { useCategories } from '@/presentation/hooks/category/useCategories';
+import { useFavoriteProduct } from '@/presentation/hooks/product/useFavoriteProduct';
 
 // Helper to get country name from ISO code
 const getCountryName = (countryCode) => {
@@ -132,6 +134,7 @@ export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter, sid
     const [displayCount, setDisplayCount] = useState(PAGE_SIZE);
     const sentinelRef = useRef(null);
     const { categories } = useCategories();
+    const { isFavorited, toggleFavorite } = useFavoriteProduct();
 
     // Fetch Products
     useEffect(() => {
@@ -250,7 +253,13 @@ export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter, sid
         <>
             <div className={`grid ${gridColsClass} gap-6`}>
                 {visibleProducts.map((product) => (
-                    <ProductCard key={product.id} product={product} categories={categories} />
+                    <ProductCard
+                        key={product.id}
+                        product={product}
+                        categories={categories}
+                        isFavorited={isFavorited(product.id)}
+                        onToggleFavorite={toggleFavorite}
+                    />
                 ))}
             </div>
             {/* Infinite scroll sentinel */}
@@ -261,7 +270,7 @@ export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter, sid
     );
 }
 
-function ProductCard({ product, categories }) {
+function ProductCard({ product, categories, isFavorited, onToggleFavorite }) {
     const [imageLoading, setImageLoading] = useState(true);
 
     // Resolve category name from categoryId
@@ -291,6 +300,23 @@ function ProductCard({ product, categories }) {
                     </>
                 ) : (
                     <div className="text-4xl">📦</div>
+                )}
+                {/* Star / Favorite Button */}
+                {onToggleFavorite && (
+                    <button
+                        onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            onToggleFavorite(product.id);
+                        }}
+                        className="absolute top-2 right-2 z-20 bg-black/40 hover:bg-black/60 rounded-full p-1.5 transition-colors"
+                        aria-label={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
+                    >
+                        <Star
+                            className="w-4 h-4 transition-colors"
+                            style={isFavorited ? { fill: '#FFD700', color: '#FFD700' } : { color: 'white' }}
+                        />
+                    </button>
                 )}
             </div>
 

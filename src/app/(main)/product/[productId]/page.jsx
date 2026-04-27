@@ -16,12 +16,13 @@ import { useDeleteProduct } from '@/presentation/hooks/product/useDeleteProduct'
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { ProductForm } from '@/presentation/components/features/product/ProductForm/ProductForm';
-import { ArrowLeft, Pencil, Trash2, Power } from 'lucide-react';
+import { ArrowLeft, Pencil, Trash2, Power, Star, Share2, Handshake } from 'lucide-react';
 import { container } from '@/core/di/container';
 import { useConversations } from '@/presentation/hooks/messaging/useConversations';
 import { useRecommendedProducts } from '@/presentation/hooks/product/useRecommendedProducts';
 import { ProductCard } from '@/presentation/components/homepage/Products/FeaturedProducts';
 import { useTrackEvent } from '@/presentation/hooks/analytics';
+import { useFavoriteProduct } from '@/presentation/hooks/product/useFavoriteProduct';
 import toast from 'react-hot-toast';
 import { ProductGallery } from './ProductGallery';
 import { ProductSellerCard } from './ProductSellerCard';
@@ -48,6 +49,7 @@ export default function ProductDetailPage() {
   const { startDirectConversation } = useConversations();
   const { trackViewItem, trackContactSeller } = useTrackEvent();
   const { products: recommendedProducts, loading: recommendedLoading } = useRecommendedProducts(productId, product?.categoryId, 3);
+  const { isFavorited, toggleFavorite } = useFavoriteProduct();
 
   const isAdmin = currentUser?.role === 'admin';
   const isOwnProduct = currentUser?.uid === product?.userId || isAdmin;
@@ -102,6 +104,20 @@ export default function ProductDetailPage() {
     } catch { toast.error('Failed to update product status'); }
   };
 
+  const handleShare = async () => {
+    const url = window.location.href;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: product.name, url });
+      } catch {
+        // User cancelled share — no error needed
+      }
+    } else {
+      navigator.clipboard.writeText(url);
+      toast.success('Link copied!');
+    }
+  };
+
   if (productLoading) {
     return <div className="flex justify-center items-center min-h-screen bg-[#0a1628]"><div className="w-12 h-12 border-4 border-[#FFD700] border-t-transparent rounded-full animate-spin"></div></div>;
   }
@@ -152,6 +168,25 @@ export default function ProductDetailPage() {
                       <span className="px-3 py-1.5 text-xs uppercase tracking-wider font-bold rounded-full border bg-purple-500/10 border-purple-500/30 text-purple-400">Admin Created</span>
                     )}
                     <span className={`px-4 py-1.5 text-xs uppercase tracking-wider font-bold rounded-full border ${product.status === 'active' ? 'border-green-500/30 text-green-400' : 'border-gray-500/30 text-gray-400'}`}>{product.status}</span>
+                    {/* Share button */}
+                    <button
+                      onClick={handleShare}
+                      className="p-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors"
+                      title="Share product"
+                    >
+                      <Share2 className="w-5 h-5 text-gray-400 hover:text-white transition-colors" />
+                    </button>
+                    {/* Favorite star button */}
+                    <button
+                      onClick={() => toggleFavorite(product.id)}
+                      className="p-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors"
+                      title={isFavorited(product.id) ? 'Remove from favorites' : 'Add to favorites'}
+                    >
+                      <Star
+                        className="w-5 h-5 transition-colors"
+                        style={isFavorited(product.id) ? { fill: '#FFD700', color: '#FFD700' } : { color: '#9CA3AF' }}
+                      />
+                    </button>
                   </div>
                 </div>
                 <div className="flex items-end gap-2 mt-2">
@@ -195,6 +230,19 @@ export default function ProductDetailPage() {
                 </button>
               )}
             </div>
+
+            {/* Start Deal button — shown to authenticated non-owners only */}
+            {currentUser?.uid && !isOwnProduct && (
+              <div className="pt-2">
+                <Button
+                  onClick={() => router.push(`/deals/new?productId=${product.id}&sellerId=${product.userId}`)}
+                  className="w-full h-14 rounded-xl bg-[#FFD700] hover:brightness-110 !text-black font-semibold flex items-center justify-center gap-3 transition-all hover:shadow-[0_0_20px_rgba(255,215,0,0.3)]"
+                >
+                  <Handshake className="w-5 h-5" />
+                  Start Deal
+                </Button>
+              </div>
+            )}
 
             {isOwnProduct && (
               <div className="pt-4 space-y-4">
