@@ -393,10 +393,11 @@ export default function RequestDetailsPage() {
         request={request}
       />
 
-      {/* Edit Request Modal */}
+      {/* Edit Request Modal - onClose is no-op to prevent accidental close on backdrop click.
+          Use the Cancel button inside RequestForm to dismiss. */}
       <Modal
         isOpen={editModalOpen}
-        onClose={() => setEditModalOpen(false)}
+        onClose={() => {}}
         title="Edit Request"
         variant="blue"
       >
