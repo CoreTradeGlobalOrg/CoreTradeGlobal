@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-stopped_at: Phase 17 context gathered
-last_updated: "2026-04-27T17:08:00.043Z"
+stopped_at: Completed 16-02-PLAN.md
+last_updated: "2026-04-27T17:08:58.682Z"
 last_activity: "2026-04-02 - Completed quick task 5: Fix hero not fetching last verified user"
 progress:
   total_phases: 17
   completed_phases: 6
   total_plans: 28
-  completed_plans: 24
+  completed_plans: 26
   percent: 71
 ---
 
@@ -119,6 +119,8 @@ Progress: [█████████████] 71%
 | Phase 15 P01 | 5 | 2 tasks | 4 files |
 | Phase 15-deal-and-trade-flow-enhancements P04 | 12 | 2 tasks | 12 files |
 | Phase 15 P02 | 5 | 2 tasks | 7 files |
+| Phase 16 P03 | 3 | 2 tasks | 3 files |
+| Phase 16 P02 | 8 | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -346,6 +348,11 @@ Recent decisions affecting current work:
 - [Phase 15-04]: onFocus auto-select placed after register() spread on all number inputs so RHF event bindings are not replaced
 - [Phase 15-02]: LegalBanner uses local useState(false) only — no localStorage; each page mount resets dismissed to false automatically via new component instance
 - [Phase 15-02]: CollapsedBanner is a full-width button with border-l-4 amber accent — preserves click semantics for re-expansion
+- [Phase 16]: onClose=no-op at RequestForm Modal call sites prevents backdrop close without modifying global Modal — Cancel button is explicit dismiss path
+- [Phase 16]: QuotesSection best-quote detection uses useMemo with parseFloat comparison for string-typed unitPrice values from form inputs
+- [Phase 16]: ProductCategorySidebar hidden on mobile (lg:hidden) — top SearchBar + category chip remain for mobile
+- [Phase 16]: isDirectPath = !conversationId && productId && sellerId in deals/new — clean flag for dual entry path without duplicate guards
+- [Phase 16]: Start Deal button condition: currentUser?.uid && !isOwnProduct — guards both unauthenticated and product owner cases
 
 ### Pending Todos
 
@@ -369,6 +376,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-27T17:08:00.035Z
-Stopped at: Phase 17 context gathered
-Resume file: .planning/phases/17-registration-onboarding-and-misc/17-CONTEXT.md
+Last session: 2026-04-27T17:08:58.678Z
+Stopped at: Completed 16-02-PLAN.md
+Resume file: None
