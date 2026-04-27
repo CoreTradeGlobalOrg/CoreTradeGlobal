@@ -5069,6 +5069,184 @@ exports.sendAnnouncement = onCall(async (request) => {
   }
 });
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Bulk Product Upload Cloud Function
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * bulkUploadProducts (onCall, admin only)
+ *
+ * Accepts an array of pre-validated product rows and a target userId (member).
+ * For each row:
+ *   1. Creates a product document in the `products` collection.
+ *   2. Downloads each image URL (with 10s timeout) and stores in Firebase Storage.
+ *   3. Updates the product's `images` array with successfully downloaded URLs.
+ *
+ * Rows are processed sequentially with a concurrency limit of 3 to avoid
+ * overwhelming external image servers.
+ *
+ * @param {{ userId: string, rows: Array<{name, categoryId, price, currency, quantity, unit, description, imageUrls}> }}
+ * @returns {{ created: number, skipped: number, errors: Array<{row: number, reason: string}> }}
+ */
+exports.bulkUploadProducts = onCall(
+  { timeoutSeconds: 300 },
+  async (request) => {
+    const auth = request.auth;
+
+    // Auth check — admin only
+    if (!auth) {
+      throw new HttpsError('unauthenticated', 'You must be logged in.');
+    }
+    if (auth.token?.role !== 'admin') {
+      const adminCheck = await isUserAdmin(auth.uid);
+      if (!adminCheck) {
+        throw new HttpsError('permission-denied', 'Only administrators can bulk upload products.');
+      }
+    }
+
+    const { userId, rows } = request.data;
+
+    if (!userId) {
+      throw new HttpsError('invalid-argument', 'userId is required.');
+    }
+    if (!Array.isArray(rows) || rows.length === 0) {
+      throw new HttpsError('invalid-argument', 'rows must be a non-empty array.');
+    }
+    if (rows.length > 500) {
+      throw new HttpsError('invalid-argument', 'Maximum 500 rows per upload.');
+    }
+
+    // Verify target user exists
+    const userDoc = await db.collection('users').doc(userId).get();
+    if (!userDoc.exists) {
+      throw new HttpsError('not-found', `User ${userId} not found.`);
+    }
+
+    const bucket = admin.storage().bucket();
+    let created = 0;
+    let skipped = 0;
+    const errors = [];
+
+    /**
+     * Download an image from a URL and upload it to Firebase Storage.
+     * Returns the public download URL on success, or null on failure.
+     */
+    async function downloadAndStoreImage(imageUrl, userId, productId, index) {
+      try {
+        // Fetch image with 10-second timeout (Node 20 built-in fetch)
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+        let response;
+        try {
+          response = await fetch(imageUrl, { signal: controller.signal });
+        } finally {
+          clearTimeout(timeoutId);
+        }
+
+        if (!response.ok) {
+          console.warn(`bulkUploadProducts: image fetch failed (${response.status}) for ${imageUrl}`);
+          return null;
+        }
+
+        // Determine file extension from Content-Type or URL
+        const contentType = response.headers.get('content-type') || 'image/jpeg';
+        let ext = 'jpg';
+        if (contentType.includes('png')) ext = 'png';
+        else if (contentType.includes('gif')) ext = 'gif';
+        else if (contentType.includes('webp')) ext = 'webp';
+        else {
+          // Try to get extension from URL path
+          const urlPath = new URL(imageUrl).pathname;
+          const urlExt = urlPath.split('.').pop().toLowerCase();
+          if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(urlExt)) {
+            ext = urlExt === 'jpeg' ? 'jpg' : urlExt;
+          }
+        }
+
+        const buffer = Buffer.from(await response.arrayBuffer());
+        const storagePath = `${userId}/products/${productId}/image_${index}.${ext}`;
+        const fileRef = bucket.file(storagePath);
+
+        await fileRef.save(buffer, {
+          metadata: { contentType },
+          public: true,
+        });
+
+        const publicUrl = `https://storage.googleapis.com/${bucket.name}/${storagePath}`;
+        return publicUrl;
+      } catch (err) {
+        console.warn(`bulkUploadProducts: failed to download/store image ${imageUrl}:`, err.message);
+        return null;
+      }
+    }
+
+    /**
+     * Process a single product row: create Firestore doc, download images.
+     */
+    async function processRow(row, rowIndex) {
+      try {
+        const now = FieldValue.serverTimestamp();
+
+        // Create product document (images populated after download)
+        const productRef = db.collection('products').doc();
+        const productId = productRef.id;
+
+        await productRef.set({
+          name: row.name,
+          categoryId: row.categoryId,
+          price: row.price,
+          currency: row.currency,
+          quantity: row.quantity,
+          unit: row.unit,
+          description: row.description || '',
+          images: [],
+          userId,
+          status: 'active',
+          createdAt: now,
+          updatedAt: now,
+        });
+
+        // Process image URLs if provided
+        const rawImageUrls = row.imageUrls || '';
+        const imageUrlList = rawImageUrls
+          .split(',')
+          .map((u) => u.trim())
+          .filter(Boolean);
+
+        if (imageUrlList.length > 0) {
+          const downloadedUrls = [];
+          for (let i = 0; i < imageUrlList.length; i++) {
+            const url = await downloadAndStoreImage(imageUrlList[i], userId, productId, i);
+            if (url) downloadedUrls.push(url);
+          }
+
+          if (downloadedUrls.length > 0) {
+            await productRef.update({ images: downloadedUrls, updatedAt: FieldValue.serverTimestamp() });
+          }
+        }
+
+        created++;
+        console.log(`bulkUploadProducts: created product ${productId} (row ${rowIndex + 1})`);
+      } catch (err) {
+        skipped++;
+        errors.push({ row: rowIndex, reason: err.message || 'Unknown error' });
+        console.error(`bulkUploadProducts: failed row ${rowIndex + 1}:`, err.message);
+      }
+    }
+
+    // Process rows with a concurrency limit of 3
+    const CONCURRENCY = 3;
+    for (let i = 0; i < rows.length; i += CONCURRENCY) {
+      const batch = rows.slice(i, i + CONCURRENCY);
+      await Promise.all(batch.map((row, j) => processRow(row, i + j)));
+    }
+
+    console.log(`bulkUploadProducts: done. created=${created}, skipped=${skipped}, errors=${errors.length}`);
+    return { created, skipped, errors };
+  }
+);
+
 /**
  * processScheduledAnnouncements (onSchedule)
  *
