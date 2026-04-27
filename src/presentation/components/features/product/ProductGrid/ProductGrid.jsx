@@ -125,7 +125,7 @@ const DEFAULT_PRODUCTS = [
 
 const PAGE_SIZE = 12;
 
-export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter }) {
+export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter, sidebarVisible = false }) {
     const [products, setProducts] = useState(DEFAULT_PRODUCTS);
     const [filteredProducts, setFilteredProducts] = useState(DEFAULT_PRODUCTS);
     const [loading, setLoading] = useState(true);
@@ -218,9 +218,14 @@ export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter }) {
         return () => observer.disconnect();
     }, [loadMore, filteredProducts]);
 
+    // Reduce to 3 columns when the category sidebar is visible (sidebar takes ~224px)
+    const gridColsClass = sidebarVisible
+        ? 'grid-cols-1 sm:grid-cols-2 xl:grid-cols-3'
+        : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4';
+
     if (loading) {
         return (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className={`grid ${gridColsClass} gap-6`}>
                 {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
                     <div key={i} className="h-[420px] bg-[rgba(255,255,255,0.05)] rounded-[20px] animate-pulse" />
                 ))}
@@ -243,7 +248,7 @@ export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter }) {
 
     return (
         <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className={`grid ${gridColsClass} gap-6`}>
                 {visibleProducts.map((product) => (
                     <ProductCard key={product.id} product={product} categories={categories} />
                 ))}

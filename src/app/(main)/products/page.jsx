@@ -1,6 +1,7 @@
 'use client';
 
 import { ProductGrid } from '@/presentation/components/features/product/ProductGrid/ProductGrid';
+import { ProductCategorySidebar } from '@/presentation/components/features/product/ProductCategorySidebar/ProductCategorySidebar';
 import { SearchBar } from '@/presentation/components/common/SearchBar/SearchBar';
 import { useState, useEffect, Suspense, useCallback } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
@@ -30,6 +31,21 @@ function ProductsContent() {
             params.delete('search');
         }
 
+        const newUrl = params.toString() ? `${pathname}?${params.toString()}` : pathname;
+        router.replace(newUrl, { scroll: false });
+    }, [searchParams, pathname, router]);
+
+    // Handle sidebar category selection — updates URL with categoryId param
+    const handleCategorySelect = useCallback((categoryId) => {
+        const params = new URLSearchParams(searchParams.toString());
+        if (categoryId) {
+            params.set('categoryId', categoryId);
+            // Remove text-based category param if present
+            params.delete('category');
+        } else {
+            params.delete('categoryId');
+            params.delete('category');
+        }
         const newUrl = params.toString() ? `${pathname}?${params.toString()}` : pathname;
         router.replace(newUrl, { scroll: false });
     }, [searchParams, pathname, router]);
@@ -74,20 +90,33 @@ function ProductsContent() {
                 </div>
             </div>
 
-            {(initialCategory || initialCategoryId) && (
-                <div className="mb-6 flex items-center gap-2">
-                    <span className="text-[#A0A0A0]">Filtering by category:</span>
-                    <span className="bg-[#FFD700] text-[#0F1B2B] px-3 py-1 rounded-full text-sm font-bold capitalize">
-                        {displayName}
-                    </span>
-                </div>
-            )}
+            {/* Sidebar + Grid layout */}
+            <div className="flex gap-6 items-start">
+                {/* Category sidebar — hidden on mobile, visible on lg+ */}
+                <ProductCategorySidebar
+                    activeCategoryId={initialCategoryId}
+                    onCategorySelect={handleCategorySelect}
+                />
 
-            <ProductGrid
-                searchQuery={searchQuery}
-                categoryFilter={initialCategory}
-                categoryIdFilter={initialCategoryId}
-            />
+                {/* Product grid — takes remaining space */}
+                <div className="flex-1 min-w-0">
+                    {(initialCategory || initialCategoryId) && (
+                        <div className="mb-6 flex items-center gap-2">
+                            <span className="text-[#A0A0A0]">Filtering by category:</span>
+                            <span className="bg-[#FFD700] text-[#0F1B2B] px-3 py-1 rounded-full text-sm font-bold capitalize">
+                                {displayName}
+                            </span>
+                        </div>
+                    )}
+
+                    <ProductGrid
+                        searchQuery={searchQuery}
+                        categoryFilter={initialCategory}
+                        categoryIdFilter={initialCategoryId}
+                        sidebarVisible
+                    />
+                </div>
+            </div>
         </>
     );
 }
