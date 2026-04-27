@@ -11,7 +11,7 @@
  * @param {(dateStr: string) => void} props.onChange - Callback with ISO date string (YYYY-MM-DD)
  * @param {string} [props.minDate] - Minimum selectable date (ISO string)
  * @param {string} [props.placeholder] - Placeholder text
- * @param {string} [props.accentColor] - Tailwind color name: 'orange', 'green', 'blue', 'emerald'
+ * @param {string} [props.accentColor] - Tailwind color name: 'orange', 'green', 'blue', 'emerald', 'gold'
  * @param {boolean} [props.disabled]
  * @param {string} [props.error] - Error message
  */
@@ -53,6 +53,13 @@ const ACCENT_MAP = {
     focus: 'focus:border-emerald-500/50',
     icon: 'text-emerald-400',
     chevron: 'fill-emerald-400',
+  },
+  gold: {
+    selected: 'bg-[#FFD700] text-[#0F1C2E]',
+    today: 'border-[#FFD700]',
+    focus: 'focus:border-[#FFD700]/50',
+    icon: 'text-[#FFD700]',
+    chevron: 'fill-[#FFD700]',
   },
 };
 

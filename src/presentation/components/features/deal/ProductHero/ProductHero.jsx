@@ -10,7 +10,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { Package, ChevronRight } from 'lucide-react';
+import { Package, ChevronRight, Download } from 'lucide-react';
 
 /**
  * ProductHero
@@ -22,6 +22,8 @@ export function ProductHero({ deal }) {
   if (!deal) return null;
 
   const { productId, productName, productImage, productCategory } = deal;
+  const shortDealId = deal?.id ? deal.id.slice(0, 8).toUpperCase() : null;
+  const pdfUrl = deal?.productPdfUrl || deal?.product?.pdfUrl || null;
 
   return (
     <div className="bg-[#1A283B] border border-[#2A3B52] rounded-xl p-4 flex items-center gap-4">
@@ -45,6 +47,11 @@ export function ProductHero({ deal }) {
 
       {/* Product info */}
       <div className="flex-1 min-w-0">
+        {shortDealId && (
+          <p className="text-[10px] text-[#4A5B6E] mb-1">
+            Deal <span className="text-[#8899AA] font-mono">#{shortDealId}</span>
+          </p>
+        )}
         {productCategory && (
           <span className="inline-block text-xs text-[#FFD700] bg-[#FFD700]/10 border border-[#FFD700]/20 px-2 py-0.5 rounded-full mb-1">
             {productCategory}
@@ -56,7 +63,21 @@ export function ProductHero({ deal }) {
         >
           {productName || 'Product'}
         </Link>
-        <p className="text-xs text-[#8899AA] mt-0.5">Negotiating terms for this product</p>
+        <div className="flex items-center gap-3 mt-0.5">
+          <p className="text-xs text-[#8899AA]">Negotiating terms for this product</p>
+          {pdfUrl && (
+            <a
+              href={pdfUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-xs text-[#FFD700] hover:text-[#FFE44D] underline transition-colors"
+              title="Download product PDF"
+            >
+              <Download size={12} />
+              Product PDF
+            </a>
+          )}
+        </div>
       </div>
 
       {/* Link arrow */}

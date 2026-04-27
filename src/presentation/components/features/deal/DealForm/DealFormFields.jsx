@@ -228,6 +228,7 @@ export function DealFormFields({
                 onChange={(dateStr) => field.onChange(dateStr || '')}
                 minDate={getTodayISODate()}
                 placeholder="Select delivery deadline..."
+                accentColor="gold"
                 disabled={loading}
                 error={errors.deliveryDeadline?.message}
               />

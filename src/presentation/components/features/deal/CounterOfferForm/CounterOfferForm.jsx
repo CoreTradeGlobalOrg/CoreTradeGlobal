@@ -253,6 +253,7 @@ export function CounterOfferForm({
                 onChange={(dateStr) => field.onChange(dateStr || '')}
                 minDate={new Date().toISOString().split('T')[0]}
                 placeholder="Select delivery deadline..."
+                accentColor="gold"
                 error={errors.deliveryDeadline?.message}
               />
             )}
