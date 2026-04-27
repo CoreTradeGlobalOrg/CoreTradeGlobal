@@ -185,7 +185,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 (parallel with 3-4) -> 6 
 | 14. Insurance Quote System Overhaul | 5/5 | Planned | — |
 | 15. Deal and Trade Flow Enhancements | 4/4 | Complete    | 2026-04-27 |
 | 16. Product and RFQ Features | 4/4 | Complete    | 2026-04-27 |
-| 17. Registration, Onboarding and Misc | 0/0 | Not started | — |
+| 17. Registration, Onboarding and Misc | 0/4 | In progress | — |
 
 ### Phase 8: Live Currency and Freight Intelligence (INSERTED)
 **Goal**: Any visitor can see live currency rates on the homepage, and both deal parties can see multi-currency price conversions and a real-time freight cost estimate throughout the deal flow -- without CoreTradeGlobal being party to or responsible for any transaction
@@ -338,11 +338,14 @@ Plans:
 **Goal:** Add company type selection at registration (Trade/Logistics/Insurance), phone country code auto-fill, new member onboarding guide, fix register page Vercel crash, FAQ text updates, "upload my products" request button on profile, homepage chatbot (Zoho SalesIQ), cookies compliance, and accessibility audit
 **Requirements**: REG-01, REG-02, REG-03, REG-04, REG-05, REG-06, REG-07, REG-08, REG-09
 **Depends on:** Phase 16
-**Plans:** 0 plans
+**Plans:** 4 plans
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 17 to break down)
+- [ ] 17-01-PLAN.md — Registration form: company type dropdown, phone country code auto-fill, auto-role assignment, Vercel crash fix
+- [ ] 17-02-PLAN.md — Onboarding tour overlay (5 steps per role) + profile completion progress card
+- [ ] 17-03-PLAN.md — Zoho SalesIQ integration: Support tab in FAB widget + standalone button on public pages
+- [ ] 17-04-PLAN.md — Upload my products request button, cookie consent text update, WCAG 2.1 AA accessibility audit
 
 ---
 *Roadmap created: 2026-02-20*
-*Last updated: 2026-04-26*
+*Last updated: 2026-04-27*
