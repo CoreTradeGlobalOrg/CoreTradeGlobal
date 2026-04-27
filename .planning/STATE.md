@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-stopped_at: Phase 16 context gathered
-last_updated: "2026-04-26T21:00:45.111Z"
+stopped_at: Completed 15-03-PLAN.md
+last_updated: "2026-04-27T10:44:21.418Z"
 last_activity: "2026-04-02 - Completed quick task 5: Fix hero not fetching last verified user"
 progress:
   total_phases: 17
   completed_phases: 5
   total_plans: 24
-  completed_plans: 20
+  completed_plans: 21
   percent: 71
 ---
 
@@ -115,6 +115,7 @@ Progress: [█████████████] 71%
 | Phase 14 P02 | 3 | 2 tasks | 4 files |
 | Phase 14 P05 | 5 | 1 tasks | 1 files |
 | Phase 14 P04 | 2 | 2 tasks | 2 files |
+| Phase 15 P03 | 4 | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -331,6 +332,9 @@ Recent decisions affecting current work:
 - [Phase 14]: [14-04]: Submit button validates then shows modal; handleConfirmSubmit reuses onSubmit via handleSubmit(onSubmit)()
 - [Phase 14]: [14-04]: watchedValues = watch() called once at orchestrator level and passed as prop to QuoteSummaryModal — avoids duplicate watch subscriptions
 - [Phase 14]: [14-04]: Buyer/Seller InfoRow placed at TOP of deal fields (before Quantity) in QuoteDetailView — counterparty identity is primary context for provider pricing
+- [Phase 15]: [15-03]: skippedInsurance/skippedLogistics are client-side local state only — no Firestore writes; TradeSummary naturally handles partial provider selection
+- [Phase 15]: [15-03]: Provider chat buttons use deterministic ID providerquote_${dealId}_${providerId}; buyer/seller buttons always disabled per Research Pitfall 3
+- [Phase 15]: [15-03]: DealPage counterparty message button always disabled — visual affordance only; no deterministic direct conversation ID available
 
 ### Pending Todos
 
@@ -354,6 +358,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-26T21:00:45.106Z
-Stopped at: Phase 16 context gathered
-Resume file: .planning/phases/16-product-and-rfq-features/16-CONTEXT.md
+Last session: 2026-04-27T10:44:21.415Z
+Stopped at: Completed 15-03-PLAN.md
+Resume file: None

@@ -169,14 +169,23 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 (parallel with 3-4) -> 6 
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Role System and Infrastructure | 4/4 | Complete   | 2026-02-22 |
-| 2. Deal Creation and Negotiation (S1) | 7/7 | Complete   | 2026-02-23 |
-| 3. Contract Agreement (S2) | 2/2 | Complete   | 2026-03-01 |
-| 4. Provider Portals and Insurance/Logistics Quotes (S3) | 6/6 | Complete   | 2026-03-03 |
-| 5. Legal Consulting | 11/11 | Complete   | 2026-03-12 |
-| 6. Trade Summary and Shipment Tracking (S4) | 10/10 | Complete   | 2026-04-01 |
-| 7. Platform Hardening | 5/5 | Complete   | 2026-04-04 |
-| 8. Live Currency and Freight Intelligence | 3/3 | Complete   | 2026-04-02 |
+| 1. Role System and Infrastructure | 4/4 | Complete | 2026-02-22 |
+| 2. Deal Creation and Negotiation (S1) | 7/7 | Complete | 2026-02-23 |
+| 3. Contract Agreement (S2) | 2/2 | Complete | 2026-03-01 |
+| 4. Provider Portals and Insurance/Logistics Quotes (S3) | 6/6 | Complete | 2026-03-03 |
+| 5. Legal Consulting | 11/11 | Complete | 2026-03-12 |
+| 6. Trade Summary and Shipment Tracking (S4) | 10/10 | Complete | 2026-04-01 |
+| 7. Platform Hardening | 5/5 | Complete | 2026-04-04 |
+| 8. Live Currency and Freight Intelligence | 3/3 | Complete | 2026-04-02 |
+| 9. Cold Email Unsubscribe | 4/4 | Planned | — |
+| 10. Settings Page | 3/3 | Planned | — |
+| 11. UI/UX Polish and Visual Fixes | 3/3 | Planned | — |
+| 12. Notifications and Email System | 5/5 | Planned | — |
+| 13. Messaging and Communication Improvements | 4/4 | Planned | — |
+| 14. Insurance Quote System Overhaul | 5/5 | Planned | — |
+| 15. Deal and Trade Flow Enhancements | 1/4 | In Progress|  |
+| 16. Product and RFQ Features | 0/0 | Not started | — |
+| 17. Registration, Onboarding and Misc | 0/0 | Not started | — |
 
 ### Phase 8: Live Currency and Freight Intelligence (INSERTED)
 **Goal**: Any visitor can see live currency rates on the homepage, and both deal parties can see multi-currency price conversions and a real-time freight cost estimate throughout the deal flow -- without CoreTradeGlobal being party to or responsible for any transaction
@@ -279,20 +288,31 @@ Plans:
 
 ### Phase 14: Insurance Quote System Overhaul
 
-**Goal:** [To be planned]
-**Requirements**: TBD
+**Goal:** Expand the insurance quote system with 3 risk type sections (Cargo/Marine, Commercial Risk, Political Risk), enriched deal information panel with buyer/seller details, quote status (Indicative/Firm) with binding conditions, exclusions, conditions precedent, claims handling, premium additions, quote summary confirmation modal, and message to buyer field
+**Requirements**: INS-01, INS-02, INS-03, INS-04, INS-05, INS-06, INS-07, INS-08, INS-09, INS-10, INS-11, INS-12
 **Depends on:** Phase 13
-**Plans:** 5/5 plans complete
+**Success Criteria** (what must be TRUE):
+  1. Insurance providers can submit quotes with 3 risk type sections: Cargo/Marine (required), Commercial Risk (optional), and Political Risk (optional) — each with full coverage details
+  2. Deal info panel shows buyer/seller names + countries, insurance arrangement derived from Incoterm, and payment terms for both insurance and logistics providers
+  3. Provider can mark quote as Indicative or Firm — Firm quotes show binding conditions textarea
+  4. Quote form includes shared sections: Exclusions (checkboxes + free text), Conditions Precedent, Claims Handling (jurisdiction, response time, contact email), and Premium additions (rate %, payment terms)
+  5. A summary modal appears before final submit showing all filled sections for provider review
+  6. Buyer's quote comparison card shows expandable sections for Commercial and Political risk details, with Firm/Indicative badges
+**Plans**: 5 plans
 
 Plans:
-- [x] TBD (run /gsd:plan-phase 14 to break down) (completed 2026-04-26)
+- [x] 14-01-PLAN.md — Data foundation: extend Quote entity with nested risk type sub-objects, new constants, update broadcastQuoteRequests and submitQuote Cloud Functions (completed 2026-04-26)
+- [x] 14-02-PLAN.md — Risk type accordion sections in QuoteFormInsurance: Cargo/Marine (required), Commercial Risk (optional), Political Risk (optional) (completed 2026-04-26)
+- [x] 14-03-PLAN.md — Shared form sections: Exclusions, Conditions Precedent, Claims Handling, Premium Additions, Quote Status + Quote Summary Modal (completed 2026-04-26)
+- [x] 14-04-PLAN.md — Wire all sub-components into QuoteFormInsurance, extend Zod schema, enrich QuoteDetailView deal info panel (completed 2026-04-26)
+- [x] 14-05-PLAN.md — Extend InsuranceQuoteCard with expandable risk sections and Firm/Indicative badges (completed 2026-04-26)
 
 ### Phase 15: Deal and Trade Flow Enhancements
 
 **Goal:** Improve deal/trade pages with contract approval UX enhancements (always-expanded clauses, yellow/green highlighting, progress indicators, auto-advance), Hire a Lawyer card on all trade stages, flexible quote skipping, trade flow communication buttons, tooltip-based guidance, and form input polish (Deal ID, DatePicker gold accent, number auto-select, English validation messages)
 **Requirements**: DEAL-01, DEAL-02, DEAL-03, DEAL-04, DEAL-05, DEAL-06, DEAL-07, DEAL-08, DEAL-09, DEAL-10, DEAL-11, DEAL-12, DEAL-13, DEAL-14, DEAL-15, DEAL-16, DEAL-17, DEAL-18
 **Depends on:** Phase 14
-**Plans:** 4 plans
+**Plans:** 1/4 plans executed
 
 Plans:
 - [ ] 15-01-PLAN.md — Contract approval UX: always-expanded clauses with yellow/green visual states, dual progress indicators, auto-advance with toast
@@ -302,18 +322,18 @@ Plans:
 
 ### Phase 16: Product and RFQ Features
 
-**Goal:** [To be planned]
-**Requirements**: TBD
+**Goal:** Enhance product and RFQ pages with favorite products + share button, CSV bulk product upload, product category sidebar with search, product image zoom on hover, quote details on page, dedicated product request upload page, deal start button on product detail, RFQ member notifications, and target budget "0 = negotiable" option
+**Requirements**: PROD-01, PROD-02, PROD-03, PROD-04, PROD-05, PROD-06, PROD-07, PROD-08, PROD-09, PROD-10
 **Depends on:** Phase 15
 **Plans:** 0 plans
 
 Plans:
 - [ ] TBD (run /gsd:plan-phase 16 to break down)
 
-### Phase 17: Registration Onboarding and Misc
+### Phase 17: Registration, Onboarding and Misc
 
-**Goal:** [To be planned]
-**Requirements**: TBD
+**Goal:** Add company type selection at registration (Trade/Logistics/Insurance), phone country code auto-fill, new member onboarding guide, fix register page Vercel crash, FAQ text updates, "upload my products" request button on profile, homepage chatbot (Zoho SalesIQ), cookies compliance, and accessibility audit
+**Requirements**: REG-01, REG-02, REG-03, REG-04, REG-05, REG-06, REG-07, REG-08, REG-09
 **Depends on:** Phase 16
 **Plans:** 0 plans
 

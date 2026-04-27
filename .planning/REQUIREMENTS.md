@@ -109,6 +109,27 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **MSG-10**: Logistics provider dashboard shows "Logistics Requests" and "Active Shipments" tab labels
 - [x] **MSG-11**: Kanban columns show provider-type-specific labels (e.g., "New Inquiries" for insurance, "New Requests" for logistics)
 
+### Deal and Trade Flow Enhancements
+
+- [ ] **DEAL-01**: Contract clauses always expanded (no accordion collapse) with yellow highlight on unaccepted and green checkmark on accepted
+- [ ] **DEAL-02**: Progress indicator "X of Y clauses accepted" at top and sticky bottom of clause list
+- [ ] **DEAL-03**: Auto-advance with toast notification when both parties approve all contract clauses
+- [ ] **DEAL-04**: Parties can un-accept a clause anytime before both parties have fully approved
+- [ ] **DEAL-05**: Hire a Lawyer card appears on all trade stages (Negotiation, Contract, Quotes, Trade Summary) with per-page dismiss
+- [ ] **DEAL-06**: Dismissed Hire a Lawyer card collapses to slim gold-accented banner that re-expands on click
+- [ ] **DEAL-07**: When lawyer is hired, card transforms to show lawyer name, status, and channel link
+- [ ] **DEAL-08**: Tooltip icons on key trade page elements show brief domain explanations on hover/click
+- [x] **DEAL-09**: Insurance and logistics quote sections can be independently skipped with "Skip — I'll arrange my own"
+- [x] **DEAL-10**: Skipped quote sections show warning state with Undo skip option
+- [x] **DEAL-11**: Confirm button reads "Confirm Coverage & Shipment" (not "Quote Selected")
+- [x] **DEAL-12**: Trade Summary shows Chat buttons per party (buyer, seller, providers, lawyer) opening FAB widget
+- [x] **DEAL-13**: Deal/contract pages have message icon buttons that open FAB widget for counterparty
+- [ ] **DEAL-14**: Deal ID visible in page header as formatted short ID (Deal #XXXXXXXX)
+- [ ] **DEAL-15**: Product PDF download link with gold accent styling on deal pages
+- [ ] **DEAL-16**: DatePicker gold accent color for deal/product form contexts
+- [ ] **DEAL-17**: All number inputs across deal/trade pages auto-select content on focus
+- [ ] **DEAL-18**: All Zod validation messages across deal/trade schemas are in English with friendly date error messages
+
 ## v2 Requirements
 
 Deferred to future release. Tracked but not in current roadmap.
@@ -214,12 +235,30 @@ Which phases cover which requirements. Updated during roadmap creation.
 | MSG-09 | Phase 13 | Planned |
 | MSG-10 | Phase 13 | Planned |
 | MSG-11 | Phase 13 | Planned |
+| DEAL-01 | Phase 15 | Planned |
+| DEAL-02 | Phase 15 | Planned |
+| DEAL-03 | Phase 15 | Planned |
+| DEAL-04 | Phase 15 | Planned |
+| DEAL-05 | Phase 15 | Planned |
+| DEAL-06 | Phase 15 | Planned |
+| DEAL-07 | Phase 15 | Planned |
+| DEAL-08 | Phase 15 | Planned |
+| DEAL-09 | Phase 15 | Planned |
+| DEAL-10 | Phase 15 | Planned |
+| DEAL-11 | Phase 15 | Planned |
+| DEAL-12 | Phase 15 | Planned |
+| DEAL-13 | Phase 15 | Planned |
+| DEAL-14 | Phase 15 | Planned |
+| DEAL-15 | Phase 15 | Planned |
+| DEAL-16 | Phase 15 | Planned |
+| DEAL-17 | Phase 15 | Planned |
+| DEAL-18 | Phase 15 | Planned |
 
 **Coverage:**
-- v1 requirements: 64 total
-- Mapped to phases: 64
+- v1 requirements: 82 total
+- Mapped to phases: 82
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-20*
-*Last updated: 2026-04-25 after Phase 13 planning*
+*Last updated: 2026-04-26 after Phase 15 planning*
