@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-stopped_at: Completed 16-02-PLAN.md
-last_updated: "2026-04-27T17:08:58.682Z"
+stopped_at: Completed 16-04-PLAN.md
+last_updated: "2026-04-27T17:09:23.461Z"
 last_activity: "2026-04-02 - Completed quick task 5: Fix hero not fetching last verified user"
 progress:
   total_phases: 17
-  completed_phases: 6
+  completed_phases: 7
   total_plans: 28
-  completed_plans: 26
+  completed_plans: 28
   percent: 71
 ---
 
@@ -121,6 +121,7 @@ Progress: [█████████████] 71%
 | Phase 15 P02 | 5 | 2 tasks | 7 files |
 | Phase 16 P03 | 3 | 2 tasks | 3 files |
 | Phase 16 P02 | 8 | 2 tasks | 5 files |
+| Phase 16 P04 | 3 | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -353,6 +354,8 @@ Recent decisions affecting current work:
 - [Phase 16]: ProductCategorySidebar hidden on mobile (lg:hidden) — top SearchBar + category chip remain for mobile
 - [Phase 16]: isDirectPath = !conversationId && productId && sellerId in deals/new — clean flag for dual entry path without duplicate guards
 - [Phase 16]: Start Deal button condition: currentUser?.uid && !isOwnProduct — guards both unauthenticated and product owner cases
+- [Phase 16]: Node 20 built-in fetch used for image download in bulkUploadProducts CF — no node-fetch dependency needed
+- [Phase 16]: [16-04]: Category validation uses both value and label matching — flexible CSV authoring for admin
 
 ### Pending Todos
 
@@ -376,6 +379,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-27T17:08:58.678Z
-Stopped at: Completed 16-02-PLAN.md
+Last session: 2026-04-27T17:09:18.005Z
+Stopped at: Completed 16-04-PLAN.md
 Resume file: None

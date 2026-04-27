@@ -184,7 +184,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 (parallel with 3-4) -> 6 
 | 13. Messaging and Communication Improvements | 4/4 | Planned | — |
 | 14. Insurance Quote System Overhaul | 5/5 | Planned | — |
 | 15. Deal and Trade Flow Enhancements | 4/4 | Complete    | 2026-04-27 |
-| 16. Product and RFQ Features | 2/4 | In Progress|  |
+| 16. Product and RFQ Features | 4/4 | Complete   | 2026-04-27 |
 | 17. Registration, Onboarding and Misc | 0/0 | Not started | — |
 
 ### Phase 8: Live Currency and Freight Intelligence (INSERTED)
@@ -325,7 +325,7 @@ Plans:
 **Goal:** Enhance product and RFQ pages with favorite products + share button, CSV bulk product upload, product category sidebar with search, product image zoom on hover, quote details on page, dedicated product request upload page, deal start button on product detail, RFQ member notifications, and target budget "0 = negotiable" option
 **Requirements**: PROD-01, PROD-02, PROD-03, PROD-04, PROD-05, PROD-06, PROD-07, PROD-08, PROD-09, PROD-10
 **Depends on:** Phase 15
-**Plans:** 2/4 plans executed
+**Plans:** 4/4 plans complete
 
 Plans:
 - [ ] 16-01-PLAN.md — Favorites (star toggle, /favorites page), share button, product image hover zoom
