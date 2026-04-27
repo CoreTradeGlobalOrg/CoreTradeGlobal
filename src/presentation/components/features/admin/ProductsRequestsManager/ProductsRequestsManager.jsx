@@ -14,7 +14,8 @@ import { ProductForm } from '@/presentation/components/features/product/ProductF
 import { RequestForm } from '@/presentation/components/features/request/RequestForm/RequestForm';
 import { SearchableSelect } from '@/presentation/components/common/SearchableSelect/SearchableSelect';
 import { Modal } from '@/components/ui/Modal';
-import { Plus, Package, FileText, User, Building2, CheckCircle } from 'lucide-react';
+import { BulkProductUpload } from './BulkProductUpload';
+import { Plus, Package, FileText, User, Building2, CheckCircle, Rows3 } from 'lucide-react';
 
 export function ProductsRequestsManager({ users }) {
   const { user: adminUser } = useAuth();
@@ -25,6 +26,7 @@ export function ProductsRequestsManager({ users }) {
   const [modalType, setModalType] = useState(null); // 'product' or 'request'
   const [selectedUserId, setSelectedUserId] = useState('');
   const [recentActivity, setRecentActivity] = useState([]);
+  const [showBulkUpload, setShowBulkUpload] = useState(false);
 
   // Build user options for SearchableSelect
   const userOptions = (users || []).map((u) => ({
@@ -122,7 +124,27 @@ export function ProductsRequestsManager({ users }) {
           <FileText className="w-4 h-4 md:w-5 md:h-5" />
           Add Request
         </button>
+        <button
+          onClick={() => setShowBulkUpload((prev) => !prev)}
+          className={[
+            'flex items-center gap-2 px-4 py-2.5 md:px-6 md:py-3 rounded-lg font-semibold text-sm md:text-base transition-colors',
+            showBulkUpload
+              ? 'bg-[rgba(255,215,0,0.15)] border border-[rgba(255,215,0,0.4)] text-[#FFD700]'
+              : 'bg-[rgba(255,255,255,0.07)] hover:bg-[rgba(255,255,255,0.12)] text-white border border-[rgba(255,255,255,0.15)]',
+          ].join(' ')}
+        >
+          <Rows3 className="w-4 h-4 md:w-5 md:h-5" />
+          Bulk Upload
+        </button>
       </div>
+
+      {/* Bulk Upload inline section */}
+      {showBulkUpload && (
+        <BulkProductUpload
+          users={users}
+          onClose={() => setShowBulkUpload(false)}
+        />
+      )}
 
       {/* Recent Activity */}
       {recentActivity.length > 0 && (
