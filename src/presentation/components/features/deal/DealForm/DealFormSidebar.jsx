@@ -103,6 +103,7 @@ export function DealFormSidebar({
             min="1"
             max="720"
             {...register('expiryHours', { valueAsNumber: true })}
+            onFocus={e => e.target.select()}
             disabled={loading}
             className={`w-32 px-3 py-3 rounded-xl border text-white text-sm bg-[#0A1628]
               focus:outline-none focus:ring-2 transition-all duration-200

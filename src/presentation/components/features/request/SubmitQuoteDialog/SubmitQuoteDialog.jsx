@@ -221,6 +221,7 @@ export function SubmitQuoteDialog({ isOpen, onClose, request }) {
                   step="0.01"
                   placeholder="0.00"
                   {...register('unitPrice')}
+                  onFocus={e => e.target.select()}
                   className={`${inputClass} ${errors.unitPrice ? 'border-red-500' : 'border-[rgba(255,255,255,0.1)]'}`}
                 />
                 {errors.unitPrice && <p className="text-xs text-red-400 mt-1">{errors.unitPrice.message}</p>}
@@ -308,6 +309,7 @@ export function SubmitQuoteDialog({ isOpen, onClose, request }) {
                   type="number"
                   placeholder="Min amount"
                   {...register('moq')}
+                  onFocus={e => e.target.select()}
                   className={inputClass}
                 />
               </div>

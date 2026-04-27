@@ -200,6 +200,7 @@ export function QuoteFormLogistics({ requestId, existingQuote, actions, onSucces
               step="0.01"
               min="0"
               {...register('freightCost', { valueAsNumber: true })}
+              onFocus={e => e.target.select()}
               placeholder="0.00"
               className="w-full bg-[#0F1C2E] border border-[#2A3B52] rounded-lg px-3 py-2 text-sm text-white placeholder-[#4A5B6E] focus:outline-none focus:border-green-500/50 transition-colors"
             />
@@ -234,6 +235,7 @@ export function QuoteFormLogistics({ requestId, existingQuote, actions, onSucces
             step="1"
             min="1"
             {...register('estimatedTransitDays', { valueAsNumber: true })}
+            onFocus={e => e.target.select()}
             placeholder="e.g. 14"
             className="w-full bg-[#0F1C2E] border border-[#2A3B52] rounded-lg px-3 py-2 text-sm text-white placeholder-[#4A5B6E] focus:outline-none focus:border-green-500/50 transition-colors"
           />

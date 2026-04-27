@@ -243,6 +243,7 @@ export function FreightEstimatorWidget({ deal, latestOffer }) {
                 step="0.1"
                 value={weight}
                 onChange={handleFieldChange(setWeight)}
+                onFocus={e => e.target.select()}
                 placeholder="0"
                 className={`${inputCls} pr-8`}
               />
@@ -278,6 +279,7 @@ export function FreightEstimatorWidget({ deal, latestOffer }) {
                   step="1"
                   value={value}
                   onChange={handleFieldChange(setter)}
+                  onFocus={e => e.target.select()}
                   placeholder={placeholder}
                   className="bg-[#0F1C2E] border border-[#2A3B52] text-white text-xs rounded px-2 py-1.5 w-full text-center focus:outline-none focus:border-[#FFD700]/50 placeholder-[#4A5B6E]"
                 />

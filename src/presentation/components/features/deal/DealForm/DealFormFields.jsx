@@ -79,6 +79,7 @@ export function DealFormFields({
             step="0.01"
             min="0"
             {...register('price', { valueAsNumber: true })}
+            onFocus={e => e.target.select()}
             disabled={loading}
             placeholder="0.00"
             className={inputCls(errors.price, loading)}
@@ -113,6 +114,7 @@ export function DealFormFields({
             step="0.000001"
             min="0"
             {...register('conversionRate', { valueAsNumber: true })}
+            onFocus={e => e.target.select()}
             disabled={loading}
             placeholder="e.g. 1.08"
             className={`w-full md:w-1/2 ${inputCls(errors.conversionRate, loading)}`}
@@ -146,6 +148,7 @@ export function DealFormFields({
             min="0"
             step="any"
             {...register('quantity', { valueAsNumber: true })}
+            onFocus={e => e.target.select()}
             disabled={loading}
             placeholder="1"
             className={inputCls(errors.quantity, loading)}

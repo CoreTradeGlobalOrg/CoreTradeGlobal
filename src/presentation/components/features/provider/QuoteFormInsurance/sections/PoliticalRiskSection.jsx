@@ -33,6 +33,7 @@ export function PoliticalRiskSection({ register, errors, watch }) {
             step="0.01"
             min="0"
             {...register('politicalRisk.coverageLimit', { valueAsNumber: true })}
+            onFocus={e => e.target.select()}
             placeholder="0.00"
             className="w-full bg-[#0F1C2E] border border-[#2A3B52] rounded-lg px-3 py-2 text-sm text-white placeholder-[#4A5B6E] focus:outline-none focus:border-orange-500/50 transition-colors"
           />
@@ -69,6 +70,7 @@ export function PoliticalRiskSection({ register, errors, watch }) {
           min="0"
           max="100"
           {...register('politicalRisk.lossCoveredPct', { valueAsNumber: true })}
+          onFocus={e => e.target.select()}
           placeholder="90"
           className="w-full bg-[#0F1C2E] border border-[#2A3B52] rounded-lg px-3 py-2 text-sm text-white placeholder-[#4A5B6E] focus:outline-none focus:border-orange-500/50 transition-colors"
         />

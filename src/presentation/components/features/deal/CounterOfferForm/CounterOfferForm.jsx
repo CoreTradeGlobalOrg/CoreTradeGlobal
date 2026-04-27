@@ -165,6 +165,7 @@ export function CounterOfferForm({
               step="0.01"
               min="0"
               {...register('price', { valueAsNumber: true })}
+              onFocus={e => e.target.select()}
               className="w-full bg-[#0F1C2E] border border-[#2A3B52] rounded-lg px-3 py-2 text-sm text-white placeholder-[#4A5B6E] focus:outline-none focus:border-[#FFD700]/50 transition-colors"
             />
             {errors.price && <p className="text-xs text-red-400 mt-1">{errors.price.message}</p>}
@@ -195,6 +196,7 @@ export function CounterOfferForm({
               step="0.01"
               min="0"
               {...register('quantity', { valueAsNumber: true })}
+              onFocus={e => e.target.select()}
               className="w-full bg-[#0F1C2E] border border-[#2A3B52] rounded-lg px-3 py-2 text-sm text-white placeholder-[#4A5B6E] focus:outline-none focus:border-[#FFD700]/50 transition-colors"
             />
             {errors.quantity && <p className="text-xs text-red-400 mt-1">{errors.quantity.message}</p>}
@@ -310,6 +312,7 @@ export function CounterOfferForm({
             min="1"
             max="720"
             {...register('expiryHours', { valueAsNumber: true })}
+            onFocus={e => e.target.select()}
             className="w-full bg-[#0F1C2E] border border-[#2A3B52] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#FFD700]/50 transition-colors"
           />
           <p className="text-xs text-[#8899AA] mt-0.5">Default: 72 hours (3 days)</p>
