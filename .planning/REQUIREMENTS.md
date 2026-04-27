@@ -111,10 +111,10 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Deal and Trade Flow Enhancements
 
-- [ ] **DEAL-01**: Contract clauses always expanded (no accordion collapse) with yellow highlight on unaccepted and green checkmark on accepted
-- [ ] **DEAL-02**: Progress indicator "X of Y clauses accepted" at top and sticky bottom of clause list
-- [ ] **DEAL-03**: Auto-advance with toast notification when both parties approve all contract clauses
-- [ ] **DEAL-04**: Parties can un-accept a clause anytime before both parties have fully approved
+- [x] **DEAL-01**: Contract clauses always expanded (no accordion collapse) with yellow highlight on unaccepted and green checkmark on accepted
+- [x] **DEAL-02**: Progress indicator "X of Y clauses accepted" at top and sticky bottom of clause list
+- [x] **DEAL-03**: Auto-advance with toast notification when both parties approve all contract clauses
+- [x] **DEAL-04**: Parties can un-accept a clause anytime before both parties have fully approved
 - [ ] **DEAL-05**: Hire a Lawyer card appears on all trade stages (Negotiation, Contract, Quotes, Trade Summary) with per-page dismiss
 - [ ] **DEAL-06**: Dismissed Hire a Lawyer card collapses to slim gold-accented banner that re-expands on click
 - [ ] **DEAL-07**: When lawyer is hired, card transforms to show lawyer name, status, and channel link

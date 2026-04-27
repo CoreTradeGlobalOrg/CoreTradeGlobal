@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-stopped_at: Completed 15-03-PLAN.md
-last_updated: "2026-04-27T10:44:21.418Z"
+stopped_at: Completed 15-01-PLAN.md
+last_updated: "2026-04-27T10:45:10.479Z"
 last_activity: "2026-04-02 - Completed quick task 5: Fix hero not fetching last verified user"
 progress:
   total_phases: 17
   completed_phases: 5
   total_plans: 24
-  completed_plans: 21
+  completed_plans: 22
   percent: 71
 ---
 
@@ -116,6 +116,7 @@ Progress: [█████████████] 71%
 | Phase 14 P05 | 5 | 1 tasks | 1 files |
 | Phase 14 P04 | 2 | 2 tasks | 2 files |
 | Phase 15 P03 | 4 | 2 tasks | 5 files |
+| Phase 15 P01 | 5 | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -335,6 +336,9 @@ Recent decisions affecting current work:
 - [Phase 15]: [15-03]: skippedInsurance/skippedLogistics are client-side local state only — no Firestore writes; TradeSummary naturally handles partial provider selection
 - [Phase 15]: [15-03]: Provider chat buttons use deterministic ID providerquote_${dealId}_${providerId}; buyer/seller buttons always disabled per Research Pitfall 3
 - [Phase 15]: [15-03]: DealPage counterparty message button always disabled — visual affordance only; no deterministic direct conversation ID available
+- [Phase 15]: hasExpanded initialized to all section IDs on mount — cleanly decoupled from approval sync; removes expand-before-approve gate
+- [Phase 15]: Submit button moved inside sticky bottom bar alongside ClauseProgressBar — single action zone near viewport bottom
+- [Phase 15]: Auto-advance toast uses prevDealStatusRef — fires only on live transition to CONTRACT_APPROVED, not on initial page load
 
 ### Pending Todos
 
@@ -358,6 +362,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-27T10:44:21.415Z
-Stopped at: Completed 15-03-PLAN.md
+Last session: 2026-04-27T10:45:10.475Z
+Stopped at: Completed 15-01-PLAN.md
 Resume file: None
