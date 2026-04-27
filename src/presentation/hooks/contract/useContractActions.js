@@ -5,16 +5,13 @@
  * and the final approval submission flow.
  *
  * - localApprovedClauses: Set of clause IDs checked locally (synced to server via debounce)
- * - expandedSections: Set of currently expanded accordion section IDs
- * - hasExpanded: Set of section IDs ever expanded (persists across collapse — enables checkbox)
- * - toggleSection: Opens/closes a section; marks it as ever-opened
+ * - hasExpanded: Set of ALL section IDs (initialized on mount so all checkboxes are active)
  * - toggleClause: Checks/unchecks a clause; triggers debounced draft save
  * - submitApprovals: Calls submitContractApproval Cloud Function with toast feedback
- * - isCheckboxActive: Returns true if section was ever expanded and user hasn't submitted yet
  * - isClauseApproved: Returns true if clause ID is in local approved set
  *
  * Draft saves are silent (no toast) — only final submission shows feedback.
- * Must-expand-before-approve pattern is enforced via hasExpanded Set.
+ * All clauses are immediately interactable — no expand-before-approve gating.
  *
  * Usage:
  * const actions = useContractActions(dealId, contract, currentUid, deal);
@@ -37,10 +34,8 @@ export function useContractActions(dealId, contract, currentUid, deal) {
   // ── Local clause approval state ───────────────────────────────────────────
   const [localApprovedClauses, setLocalApprovedClauses] = useState(new Set());
 
-  // ── Accordion expand state ────────────────────────────────────────────────
-  const [expandedSections, setExpandedSections] = useState(new Set());
-
-  // ── Sections that have ever been expanded (enables checkboxes permanently) ─
+  // ── hasExpanded: initialized to ALL section IDs so all checkboxes are active ─
+  // All clauses are immediately interactable — no expand-before-approve gating.
   const [hasExpanded, setHasExpanded] = useState(new Set());
 
   // ── Submit loading state ───────────────────────────────────────────────────
@@ -52,6 +47,14 @@ export function useContractActions(dealId, contract, currentUid, deal) {
   // ── Guard: true while a debounced save is pending or in-flight ──────────
   const isSavingRef = useRef(false);
 
+  // ── Initialize hasExpanded with ALL section IDs when contract loads ────────
+  // This ensures all checkboxes are active immediately — no expand-before-approve gating.
+  useEffect(() => {
+    if (!contract || !contract.clauses) return;
+    const allSections = new Set(contract.clauses.map((c) => c.section).filter(Boolean));
+    setHasExpanded(allSections);
+  }, [contract]);
+
   // ── Sync local state from Firestore contract on load/change ──────────────
   useEffect(() => {
     if (!contract || !currentUid || !deal) return;
@@ -62,44 +65,14 @@ export function useContractActions(dealId, contract, currentUid, deal) {
 
     const myApproval = contract.getMyApproval(currentUid, deal);
 
-    // Restore approved clauses from server (only if not yet submitted)
     if (!myApproval.hasSubmitted) {
+      // Restore approved clauses from server
       setLocalApprovedClauses(new Set(myApproval.approvedClauses));
-
-      // Restore hasExpanded from approved clauses (Pitfall 6 fix):
-      // Any section that has approved clauses is treated as "ever expanded"
-      // so checkboxes remain active after page refresh.
-      if (myApproval.approvedClauses.length > 0) {
-        const sectionsWithApprovals = new Set();
-        myApproval.approvedClauses.forEach((clauseId) => {
-          const clause = contract.clauses.find((c) => c.id === clauseId);
-          if (clause) sectionsWithApprovals.add(clause.section);
-        });
-        setHasExpanded((prev) => {
-          const next = new Set([...prev, ...sectionsWithApprovals]);
-          return next;
-        });
-      }
     } else {
       // Read-only after submit — show final server state
       setLocalApprovedClauses(new Set(myApproval.approvedClauses));
     }
   }, [contract, currentUid, deal]);
-
-  // ── Toggle accordion section ──────────────────────────────────────────────
-  const toggleSection = useCallback((sectionId) => {
-    setExpandedSections((prev) => {
-      const next = new Set(prev);
-      if (next.has(sectionId)) {
-        next.delete(sectionId);
-      } else {
-        next.add(sectionId);
-      }
-      return next;
-    });
-    // Mark as ever-expanded (permanently enables checkboxes in this section)
-    setHasExpanded((prev) => new Set([...prev, sectionId]));
-  }, []);
 
   // ── Debounced save to Firestore ───────────────────────────────────────────
   const saveDraft = useCallback(async (approvedClauses) => {
@@ -152,16 +125,6 @@ export function useContractActions(dealId, contract, currentUid, deal) {
   // ── Derived helpers ───────────────────────────────────────────────────────
 
   /**
-   * Returns true if the checkbox for this clause should be active (clickable).
-   * Requires: section was ever expanded AND user has not yet submitted.
-   */
-  const isCheckboxActive = useCallback((clause) => {
-    if (!contract || !currentUid || !deal) return false;
-    const myApproval = contract.getMyApproval(currentUid, deal);
-    return hasExpanded.has(clause.section) && !myApproval.hasSubmitted;
-  }, [contract, currentUid, deal, hasExpanded]);
-
-  /**
    * Returns true if the clause is in the local approved set.
    */
   const isClauseApproved = useCallback((clauseId) => {
@@ -170,13 +133,10 @@ export function useContractActions(dealId, contract, currentUid, deal) {
 
   return {
     localApprovedClauses,
-    expandedSections,
     hasExpanded,
     loading,
-    toggleSection,
     toggleClause,
     submitApprovals,
-    isCheckboxActive,
     isClauseApproved,
   };
 }

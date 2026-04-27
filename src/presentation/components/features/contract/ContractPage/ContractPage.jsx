@@ -14,7 +14,7 @@
 
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { CheckCircle, ArrowRight } from 'lucide-react';
@@ -192,14 +192,14 @@ export function ContractPage({ deal, contract, currentUserUid, actions }) {
         {/* Main content + sticky sidebar */}
         <div className="flex flex-col lg:flex-row gap-4">
 
-          {/* Main column — clause accordions */}
+          {/* Main column — clause sections (always expanded) */}
           <div className="flex-1 min-w-0 space-y-3">
             {CLAUSE_SECTIONS.map((section) => {
               const sectionClauses = grouped[section.id] || [];
               if (sectionClauses.length === 0) return null;
 
-              const isExpanded = actions.expandedSections?.has(section.id) ?? false;
-              const hasEverExpanded = actions.hasExpanded?.has(section.id) ?? false;
+              // hasEverExpanded is always true — all sections are initialized on mount
+              const hasEverExpanded = actions.hasExpanded?.has(section.id) ?? true;
 
               return (
                 <ClauseAccordion
@@ -209,10 +209,8 @@ export function ContractPage({ deal, contract, currentUserUid, actions }) {
                   myApproval={myApproval}
                   otherApproval={otherApproval}
                   otherPartyLabel={otherPartyLabel}
-                  isReadOnly={hasISubmitted}
+                  isReadOnly={hasISubmitted || isFullyApproved}
                   onClauseToggle={actions.toggleClause}
-                  onSectionToggle={actions.toggleSection}
-                  isExpanded={isExpanded}
                   hasEverExpanded={hasEverExpanded}
                   isClauseApproved={actions.isClauseApproved}
                   isBuyer={isBuyer}

@@ -1,20 +1,22 @@
 /**
  * ClauseAccordion Component
  *
- * Expandable section displaying contract clauses grouped by section.
- * Implements the "must expand before approve" pattern:
- *   - Checkboxes are disabled (greyed, cursor-not-allowed) until section has
- *     been opened at least once (tracked via hasEverExpanded prop).
- *   - After first expansion, checkboxes remain active even when collapsed.
+ * Always-expanded section displaying contract clauses grouped by section.
+ * All clauses are always visible — no accordion expand/collapse behavior.
  *
- * Each clause row shows:
- *   - Left: clause title + value + source label
- *   - Right: "You" checkbox + "[Buyer/Seller]" read-only approval indicator
+ * Visual states per clause row:
+ *   - Unaccepted: yellow tint (bg-yellow-900/15) with instruction text
+ *   - Accepted:   green tint (bg-green-900/10) with check icon and muted text
+ *
+ * Checkboxes remain active for toggling as long as:
+ *   - The current user has not yet submitted final approvals
+ *   - The contract is not fully approved by both parties
+ *   (Both conditions are captured by the `isReadOnly` prop.)
  */
 
 'use client';
 
-import { ChevronDown, ChevronUp, Check } from 'lucide-react';
+import { Check } from 'lucide-react';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Clause Row
@@ -32,13 +34,47 @@ function ClauseRow({
   const canToggle = isCheckboxActive && !isReadOnly;
 
   return (
-    <div className="flex items-start gap-3 py-3 border-t border-white/5 first:border-t-0">
+    <div
+      className={[
+        'flex items-start gap-3 py-3 px-3 rounded-lg border-l-2 transition-all mb-2 last:mb-0',
+        isMyApproved
+          ? 'bg-green-900/10 border-green-500/40'
+          : 'bg-yellow-900/15 border-yellow-500/50',
+      ].join(' ')}
+    >
       {/* Clause info */}
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-white">{clause.title}</p>
-        <p className="text-sm text-[#8899AA] mt-0.5 break-words">{clause.value}</p>
+        <p
+          className={[
+            'text-sm font-medium',
+            isMyApproved ? 'text-[#8899AA]' : 'text-white',
+          ].join(' ')}
+        >
+          {isMyApproved && (
+            <Check
+              size={14}
+              className="text-green-400 inline mr-1.5 flex-shrink-0"
+              strokeWidth={2.5}
+              aria-hidden="true"
+            />
+          )}
+          {clause.title}
+        </p>
+        <p
+          className={[
+            'text-sm mt-0.5 break-words',
+            isMyApproved ? 'text-[#8899AA]' : 'text-[#8899AA]',
+          ].join(' ')}
+        >
+          {clause.value}
+        </p>
         {clause.sourceLabel && (
           <p className="text-[11px] text-[#4A5B6E] mt-1 italic">{clause.sourceLabel}</p>
+        )}
+        {!isMyApproved && !isReadOnly && (
+          <p className="text-xs text-yellow-500/80 mt-1">
+            Please review and accept this clause
+          </p>
         )}
       </div>
 
@@ -61,13 +97,11 @@ function ClauseRow({
                 : 'cursor-not-allowed opacity-40',
             ].join(' ')}
             title={
-              !isCheckboxActive
-                ? 'Expand this section to enable approval'
-                : isReadOnly
-                  ? 'Approvals already submitted'
-                  : isMyApproved
-                    ? 'Click to un-approve'
-                    : 'Click to approve'
+              isReadOnly
+                ? 'Approvals already submitted'
+                : isMyApproved
+                  ? 'Click to un-approve'
+                  : 'Click to approve'
             }
           >
             {isMyApproved && (
@@ -108,11 +142,9 @@ function ClauseRow({
  * @param {{ approvedClauses: string[], hasSubmitted: boolean }} props.myApproval
  * @param {{ approvedClauses: string[], hasSubmitted: boolean }} props.otherApproval
  * @param {string} props.otherPartyLabel - 'Buyer' or 'Seller'
- * @param {boolean} props.isReadOnly - True if current user has already submitted
+ * @param {boolean} props.isReadOnly - True if current user has already submitted or contract is fully approved
  * @param {Function} props.onClauseToggle - (clauseId) => void
- * @param {Function} props.onSectionToggle - (sectionId) => void
- * @param {boolean} props.isExpanded - Whether section is currently open
- * @param {boolean} props.hasEverExpanded - Whether section has ever been opened
+ * @param {boolean} props.hasEverExpanded - Always true (initialized to all sections on mount)
  * @param {Function} props.isClauseApproved - (clauseId) => boolean
  * @param {boolean} props.isBuyer
  */
@@ -124,8 +156,6 @@ export function ClauseAccordion({
   otherPartyLabel,
   isReadOnly,
   onClauseToggle,
-  onSectionToggle,
-  isExpanded,
   hasEverExpanded,
   isClauseApproved,
 }) {
@@ -135,35 +165,18 @@ export function ClauseAccordion({
 
   return (
     <div className="rounded-xl border border-white/5 bg-white/[0.02] overflow-hidden clause-section">
-      {/* Section header — always visible */}
-      <button
-        type="button"
-        onClick={() => onSectionToggle(section.id)}
-        className="w-full flex items-center justify-between px-4 py-3 hover:bg-white/[0.02] transition-colors text-left"
-      >
+      {/* Section header — always visible, no toggle behavior */}
+      <div className="w-full flex items-center justify-between px-4 py-3 text-left">
         <div className="flex items-center gap-3">
           <span className="text-sm font-semibold text-white">{section.title}</span>
           <span className="text-xs text-[#8899AA]">
             {approvedInSection}/{totalInSection} approved
           </span>
-          {!hasEverExpanded && (
-            <span className="text-[10px] text-[#FFD700]/70 italic">
-              Expand to enable approval
-            </span>
-          )}
         </div>
-        {isExpanded ? (
-          <ChevronUp size={16} className="text-[#8899AA] flex-shrink-0" />
-        ) : (
-          <ChevronDown size={16} className="text-[#8899AA] flex-shrink-0" />
-        )}
-      </button>
+      </div>
 
-      {/* Expandable content */}
-      <div
-        className="accordion-content overflow-hidden transition-all duration-200"
-        style={{ maxHeight: isExpanded ? `${clauses.length * 120}px` : '0px' }}
-      >
+      {/* Always-visible clause content */}
+      <div>
         {/* Column headers */}
         <div className="flex items-center px-4 pb-1">
           <div className="flex-1" />
