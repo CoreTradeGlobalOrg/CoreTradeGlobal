@@ -7,13 +7,34 @@
 
 'use client';
 
-import { Users, Shield, Truck, Clock } from 'lucide-react';
+import { Users, Shield, Truck, Clock, MessageCircle } from 'lucide-react';
+import { useMessages } from '@/presentation/contexts/MessagesContext';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Sub-components
 // ─────────────────────────────────────────────────────────────────────────────
 
-function PartyCard({ role, uid, label }) {
+/**
+ * ChatButton — opens the FAB messaging widget for a given conversation.
+ * Disabled (with tooltip) when no conversationId is available.
+ */
+function ChatButton({ conversationId, label }) {
+  const { openConversation } = useMessages();
+  return (
+    <button
+      type="button"
+      onClick={() => conversationId && openConversation(conversationId)}
+      disabled={!conversationId}
+      className="inline-flex items-center gap-1 text-xs text-[#8899AA] hover:text-[#FFD700] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+      title={conversationId ? `Message ${label}` : 'No conversation started yet'}
+    >
+      <MessageCircle size={12} />
+      Chat
+    </button>
+  );
+}
+
+function PartyCard({ role, uid, label, conversationId }) {
   return (
     <div className="flex items-center gap-3 py-2 border-b border-[#2A3B52]/50 last:border-0">
       <div className="w-8 h-8 rounded-full bg-[#2A3B52] flex items-center justify-center flex-shrink-0">
@@ -21,15 +42,16 @@ function PartyCard({ role, uid, label }) {
           {(label || role)?.[0]?.toUpperCase() || '?'}
         </span>
       </div>
-      <div className="min-w-0">
+      <div className="min-w-0 flex-1">
         <p className="text-xs font-medium text-white truncate">{label || 'Unknown'}</p>
         <p className="text-[10px] text-[#8899AA]">{role}</p>
       </div>
+      <ChatButton conversationId={conversationId ?? null} label={label || role} />
     </div>
   );
 }
 
-function ProviderCard({ icon: Icon, title, quote }) {
+function ProviderCard({ icon: Icon, title, quote, conversationId }) {
   if (!quote) {
     return (
       <div className="flex items-center gap-3 py-2 border-b border-[#2A3B52]/50 last:border-0">
@@ -52,7 +74,10 @@ function ProviderCard({ icon: Icon, title, quote }) {
         <Icon size={14} className="text-[#FFD700]" />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-xs font-semibold text-white">{title}</p>
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-xs font-semibold text-white">{title}</p>
+          <ChatButton conversationId={conversationId ?? null} label={title} />
+        </div>
 
         {/* Insurance-specific details */}
         {quote.providerType === 'insurance' && (
@@ -122,6 +147,15 @@ function ProviderCard({ icon: Icon, title, quote }) {
 export function PartiesProvidersSection({ deal, selectedInsuranceQuote, selectedLogisticsQuote, buyerName, sellerName }) {
   if (!deal) return null;
 
+  // Deterministic provider conversation IDs (providerquote_${dealId}_${providerId})
+  const insuranceConversationId = selectedInsuranceQuote?.providerUid
+    ? `providerquote_${deal.id}_${selectedInsuranceQuote.providerUid}`
+    : null;
+  const logisticsConversationId = selectedLogisticsQuote?.providerUid
+    ? `providerquote_${deal.id}_${selectedLogisticsQuote.providerUid}`
+    : null;
+
+  // Buyer/seller conversations are not deterministic — button is disabled (no conversation ID)
   return (
     <div className="bg-[#1A283B] border border-[#2A3B52] rounded-xl p-4">
       {/* Section header */}
@@ -135,8 +169,8 @@ export function PartiesProvidersSection({ deal, selectedInsuranceQuote, selected
         <p className="text-[10px] text-[#8899AA] uppercase tracking-wider font-medium mb-2">
           Trade Parties
         </p>
-        <PartyCard role="Buyer" uid={deal.buyerId} label={buyerName || 'Buyer'} />
-        <PartyCard role="Seller" uid={deal.sellerId} label={sellerName || 'Seller'} />
+        <PartyCard role="Buyer" uid={deal.buyerId} label={buyerName || 'Buyer'} conversationId={null} />
+        <PartyCard role="Seller" uid={deal.sellerId} label={sellerName || 'Seller'} conversationId={null} />
       </div>
 
       {/* Providers */}
@@ -148,11 +182,13 @@ export function PartiesProvidersSection({ deal, selectedInsuranceQuote, selected
           icon={Shield}
           title="Insurance Provider"
           quote={selectedInsuranceQuote}
+          conversationId={insuranceConversationId}
         />
         <ProviderCard
           icon={Truck}
           title="Logistics Provider"
           quote={selectedLogisticsQuote}
+          conversationId={logisticsConversationId}
         />
       </div>
     </div>

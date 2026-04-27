@@ -17,7 +17,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { FileText, Package } from 'lucide-react';
+import { FileText, Package, MessageCircle } from 'lucide-react';
+import { useMessages } from '@/presentation/contexts/MessagesContext';
 import { ProductHero } from '../ProductHero/ProductHero';
 import { OfferTimeline } from '../OfferTimeline/OfferTimeline';
 import { CounterOfferForm } from '../CounterOfferForm/CounterOfferForm';
@@ -98,6 +99,7 @@ function TerminalBanner({ status }) {
 export function DealPage({ deal, offers, currentUserUid, actions, otherPartyViewing }) {
   const router = useRouter();
   const prevStatusRef = useRef(null);
+  const { openConversation } = useMessages();
 
   // Tab state: 'negotiation' | 'summary'
   const [activeTab, setActiveTab] = useState('negotiation');
@@ -173,6 +175,20 @@ export function DealPage({ deal, offers, currentUserUid, actions, otherPartyView
 
         {/* Product Hero — full width */}
         <ProductHero deal={deal} />
+
+        {/* Counterparty message button */}
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={() => openConversation(null)}
+            disabled={true}
+            className="inline-flex items-center gap-1.5 text-xs text-[#8899AA] hover:text-[#FFD700] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            title="Message counterparty"
+          >
+            <MessageCircle size={14} />
+            Message counterparty
+          </button>
+        </div>
 
         {/* Countdown timer */}
         {latestOffer?.expiresAt && !isTerminal && deal.status !== DEAL_STATUS.ACCEPTED && (
