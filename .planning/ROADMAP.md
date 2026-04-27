@@ -183,7 +183,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 (parallel with 3-4) -> 6 
 | 12. Notifications and Email System | 5/5 | Planned | — |
 | 13. Messaging and Communication Improvements | 4/4 | Planned | — |
 | 14. Insurance Quote System Overhaul | 5/5 | Planned | — |
-| 15. Deal and Trade Flow Enhancements | 4/4 | Complete   | 2026-04-27 |
+| 15. Deal and Trade Flow Enhancements | 4/4 | Complete    | 2026-04-27 |
 | 16. Product and RFQ Features | 0/0 | Not started | — |
 | 17. Registration, Onboarding and Misc | 0/0 | Not started | — |
 
