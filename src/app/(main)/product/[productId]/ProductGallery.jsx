@@ -2,6 +2,7 @@
 
 import { memo, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ProductImageZoom } from './ProductImageZoom';
 
 const ThumbnailImage = memo(function ThumbnailImage({ src, alt }) {
   const [loading, setLoading] = useState(true);
@@ -34,10 +35,16 @@ export function ProductGallery({ images, currentImageIndex, imageLoading, onNext
                 <div className="w-12 h-12 border-4 border-[#FFD700] border-t-transparent rounded-full animate-spin"></div>
               </div>
             )}
+            <ProductImageZoom
+              imageSrc={images[currentImageIndex]}
+              alt={`${productName} - Image ${currentImageIndex + 1}`}
+              className={`transition-all duration-300 ${imageLoading ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}`}
+            />
+            {/* Hidden img to trigger onImageLoad callback */}
             <img
               src={images[currentImageIndex]}
-              alt={`${productName} - Image ${currentImageIndex + 1}`}
-              className={`w-full h-full object-contain p-4 transition-all duration-300 ${imageLoading ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}`}
+              alt=""
+              className="hidden"
               onLoad={onImageLoad}
             />
             {images.length > 1 && (
