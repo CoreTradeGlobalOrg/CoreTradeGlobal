@@ -10,6 +10,9 @@
  *   - If current user has submitted: shows waiting banner + read-only view
  *
  * Layout: two-column (clauses + sticky sidebar) on lg+, single column on mobile.
+ *
+ * Progress: ClauseProgressBar rendered at top (above clause list) and in a sticky
+ * bottom bar (below clause list, above the submit button).
  */
 
 'use client';
@@ -26,6 +29,35 @@ import { ClauseAccordion } from '../ClauseAccordion/ClauseAccordion';
 import { ContractSidebar } from '../ContractSidebar/ContractSidebar';
 import { GeneratingContractOverlay } from '../GeneratingContractOverlay/GeneratingContractOverlay';
 import { ConfirmDialog } from '@/presentation/components/common/ConfirmDialog/ConfirmDialog';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ClauseProgressBar
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Shows "X of Y clauses accepted" with a gold progress bar fill.
+ * @param {{ approved: number, total: number }} props
+ */
+function ClauseProgressBar({ approved, total }) {
+  const pct = total > 0 ? Math.round((approved / total) * 100) : 0;
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-1.5">
+        <span className="text-xs text-[#8899AA]">
+          {approved} of {total} clauses accepted
+        </span>
+        <span className="text-xs font-semibold text-[#FFD700]">{pct}%</span>
+      </div>
+      <div className="h-1.5 bg-[#2A3B52] rounded-full overflow-hidden">
+        <div
+          className="h-full bg-[#FFD700] rounded-full transition-all duration-300"
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+    </div>
+  );
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Submit Approvals Button
@@ -163,6 +195,10 @@ export function ContractPage({ deal, contract, currentUserUid, actions }) {
   const hasOtherSubmitted = otherApproval?.hasSubmitted ?? false;
   const isFullyApproved = contract.isFullyApproved();
 
+  // Progress data for ClauseProgressBar
+  const approvedCount = actions.localApprovedClauses?.size ?? 0;
+  const totalClauses = contract?.clauses?.length ?? 0;
+
   // Group clauses by section (ordered by CLAUSE_SECTIONS)
   const grouped = contract.getClausesBySection();
 
@@ -173,7 +209,7 @@ export function ContractPage({ deal, contract, currentUserUid, actions }) {
         {/* Context header */}
         <ContractHeader deal={deal} contract={contract} />
 
-        {/* Approval progress bars */}
+        {/* Approval progress bars (per-party submission progress) */}
         <ApprovalProgressBar
           contract={contract}
           currentUserUid={currentUserUid}
@@ -194,6 +230,14 @@ export function ContractPage({ deal, contract, currentUserUid, actions }) {
 
           {/* Main column — clause sections (always expanded) */}
           <div className="flex-1 min-w-0 space-y-3">
+
+            {/* Top clause progress bar */}
+            {!isFullyApproved && (
+              <div className="bg-[#1A283B] border border-[#2A3B52] rounded-xl px-4 py-3">
+                <ClauseProgressBar approved={approvedCount} total={totalClauses} />
+              </div>
+            )}
+
             {CLAUSE_SECTIONS.map((section) => {
               const sectionClauses = grouped[section.id] || [];
               if (sectionClauses.length === 0) return null;
@@ -218,14 +262,21 @@ export function ContractPage({ deal, contract, currentUserUid, actions }) {
               );
             })}
 
-            {/* Submit button — hidden after submission */}
+            {/* Sticky bottom bar: progress + submit button */}
             {!hasISubmitted && !isFullyApproved && (
-              <SubmitApprovalsButton
-                contract={contract}
-                localApprovedClauses={actions.localApprovedClauses}
-                onSubmit={actions.submitApprovals}
-                loading={actions.loading}
-              />
+              <div className="sticky bottom-4 z-10">
+                <div className="bg-[#1A283B] border border-[#2A3B52] rounded-xl p-3 shadow-lg shadow-black/40">
+                  <div className="mb-3">
+                    <ClauseProgressBar approved={approvedCount} total={totalClauses} />
+                  </div>
+                  <SubmitApprovalsButton
+                    contract={contract}
+                    localApprovedClauses={actions.localApprovedClauses}
+                    onSubmit={actions.submitApprovals}
+                    loading={actions.loading}
+                  />
+                </div>
+              </div>
             )}
           </div>
 

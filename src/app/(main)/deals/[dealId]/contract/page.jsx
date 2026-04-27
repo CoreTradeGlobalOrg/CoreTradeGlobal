@@ -12,7 +12,8 @@
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
-import { useEffect, Suspense } from 'react';
+import { useEffect, useRef, Suspense } from 'react';
+import toast from 'react-hot-toast';
 import { useAuth } from '@/presentation/contexts/AuthContext';
 import { useDeal } from '@/presentation/hooks/deal/useDeal';
 import { useContract } from '@/presentation/hooks/contract/useContract';
@@ -82,6 +83,31 @@ function ContractDetailPage() {
     ) {
       router.replace(`/deals/${dealId}`);
     }
+  }, [deal, dealId, router]);
+
+  // ── Auto-advance: toast + redirect when deal transitions to CONTRACT_APPROVED ─
+  // Tracks the previous status to detect a live transition (not initial load).
+  const prevDealStatusRef = useRef(null);
+  useEffect(() => {
+    if (!deal) return;
+    const prev = prevDealStatusRef.current;
+    const curr = deal.status;
+
+    // Only fire toast on a *transition* from a non-approved status — not on initial load
+    // where the deal may already be CONTRACT_APPROVED when user arrives mid-flow.
+    if (
+      prev !== null &&
+      prev !== DEAL_STATUS.CONTRACT_APPROVED &&
+      curr === DEAL_STATUS.CONTRACT_APPROVED
+    ) {
+      toast.success('Contract approved! Moving to provider quotes...');
+      const timer = setTimeout(() => {
+        router.push(`/deals/${dealId}/quotes`);
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+
+    prevDealStatusRef.current = curr;
   }, [deal, dealId, router]);
 
   // ── Loading states ─────────────────────────────────────────────────────────
