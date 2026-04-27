@@ -271,13 +271,15 @@ export class ConversationRepository {
    * @param {string} providerId
    * @returns {Promise<Object|null>}
    */
-  async findProviderQuoteConversation(dealId, providerId) {
+  async findProviderQuoteConversation(dealId, providerId, uid) {
+    const where = [
+      ['type', '==', 'provider_quote'],
+      ['metadata.dealId', '==', dealId],
+      ['metadata.providerId', '==', providerId],
+    ];
+    if (uid) where.push(['participants', 'array-contains', uid]);
     const results = await this.firestoreDataSource.query(COLLECTIONS.CONVERSATIONS, {
-      where: [
-        ['type', '==', 'provider_quote'],
-        ['metadata.dealId', '==', dealId],
-        ['metadata.providerId', '==', providerId],
-      ],
+      where,
       limit: 1,
     });
     return results[0] || null;
@@ -287,13 +289,15 @@ export class ConversationRepository {
    * Get all provider_quote conversations for a given deal
    * Powers the buyer's sidebar provider list
    * @param {string} dealId
+   * @param {string} uid - Current user's UID (required for Firestore rules compliance)
    * @returns {Promise<Array>}
    */
-  async getProviderQuoteConversationsForDeal(dealId) {
+  async getProviderQuoteConversationsForDeal(dealId, uid) {
     return await this.firestoreDataSource.query(COLLECTIONS.CONVERSATIONS, {
       where: [
         ['type', '==', 'provider_quote'],
         ['metadata.dealId', '==', dealId],
+        ['participants', 'array-contains', uid],
       ],
     });
   }

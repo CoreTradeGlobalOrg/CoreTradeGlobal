@@ -18,7 +18,7 @@ const TABS = [
 
 export function NotificationFilterTabs({ activeTab, onTabChange }) {
   return (
-    <div className="flex gap-1 border-b border-[rgba(255,255,255,0.08)] overflow-x-auto">
+    <div className="flex items-center border-b border-[rgba(255,255,255,0.08)] overflow-x-auto">
       {TABS.map((tab) => (
         <button
           key={tab.id}

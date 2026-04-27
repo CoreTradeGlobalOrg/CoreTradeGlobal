@@ -94,5 +94,15 @@ skipped: 1
   reason: "User reported: No 'View All' button in bell dropdown when there are notifications. No gap between navbar and header on /notifications page. Unknown button on the right side of filter tabs."
   severity: major
   test: 2
-  artifacts: []
-  missing: []
+  root_cause: "View All button styling too subtle; no top margin after navbar; bulk actions bar visually merged with filter tabs"
+  artifacts:
+    - path: "src/presentation/components/common/NotificationBell/NotificationBell.css"
+      issue: "View All link styling not prominent enough"
+    - path: "src/presentation/components/features/notifications/NotificationCenterPage/NotificationCenterPage.jsx"
+      issue: "Missing mt-8 on page title container"
+    - path: "src/presentation/components/features/notifications/NotificationCenterPage/NotificationBulkActions.jsx"
+      issue: "Bulk actions bar visually confusing next to filter tabs"
+  missing:
+    - "Make View All button more prominent with gradient and bold text"
+    - "Add mt-8 gap between navbar and page header"
+  fix_applied: true

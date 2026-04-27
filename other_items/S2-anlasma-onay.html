@@ -1,0 +1,1344 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CoreTradeGlobal — Anlaşma & Onay</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:          #0b1120;
+    --surface:     #111827;
+    --surface2:    #1a2540;
+    --border:      #1e2d47;
+    --border2:     #253353;
+    --gold:        #f5c518;
+    --gold-dim:    rgba(245,197,24,0.10);
+    --gold-border: rgba(245,197,24,0.30);
+    --blue:        #3b82f6;
+    --blue-dim:    rgba(59,130,246,0.10);
+    --green:       #22c55e;
+    --green-dim:   rgba(34,197,94,0.10);
+    --green-border:rgba(34,197,94,0.30);
+    --red:         #ef4444;
+    --red-dim:     rgba(239,68,68,0.10);
+    --text:        #f1f5f9;
+    --text2:       #94a3b8;
+    --text3:       #4b6080;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    min-height: 100vh;
+  }
+
+  /* ── NAVBAR ── */
+  nav {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 200;
+  }
+  .nav-logo { display:flex; align-items:center; gap:10px; text-decoration:none; }
+  .nav-logo-icon { width:34px; height:34px; background:var(--gold); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:16px; }
+  .nav-logo-text { font-size:16px; font-weight:700; color:var(--text); }
+  .nav-logo-text span { color:var(--gold); }
+
+  .nav-center { display:flex; align-items:center; gap:8px; }
+  .trade-id-badge {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 5px 14px;
+    font-size: 13px;
+    color: var(--text2);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .trade-id-badge strong { color: var(--gold); font-family: monospace; }
+
+  .step-trail {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .st-item {
+    padding: 6px 14px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text3);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    border-right: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  .st-item:last-child { border-right: none; }
+  .st-item.done { color: var(--green); }
+  .st-item.active { color: var(--gold); background: var(--gold-dim); }
+
+  .nav-right { display:flex; align-items:center; gap:10px; }
+  .btn { padding:8px 18px; border-radius:8px; font-family:'Inter',sans-serif; font-size:13px; font-weight:700; cursor:pointer; border:none; transition:all 0.2s; }
+  .btn-outline { background:transparent; color:var(--text2); border:1px solid var(--border2); }
+  .btn-outline:hover { border-color:var(--text2); color:var(--text); }
+
+  /* ── LAYOUT ── */
+  .page { max-width: 1280px; margin: 0 auto; padding: 32px 32px 60px; }
+
+  /* ── HERO STATUS ── */
+  .hero-status {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 28px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero-status::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--gold), var(--blue), var(--green));
+  }
+  .hero-left { display:flex; align-items:center; gap:18px; }
+  .hero-icon {
+    width: 56px; height: 56px;
+    background: var(--gold-dim);
+    border: 2px solid var(--gold-border);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+    flex-shrink: 0;
+  }
+  .hero-label { font-size: 11px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--gold); margin-bottom:4px; }
+  .hero-title { font-size: 22px; font-weight: 800; color: var(--text); margin-bottom: 4px; }
+  .hero-sub { font-size: 13px; color: var(--text2); }
+
+  .hero-right { display:flex; align-items:center; gap:12px; }
+  .countdown-box {
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 10px;
+    padding: 12px 20px;
+    text-align: center;
+  }
+  .countdown-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text3); margin-bottom: 4px; }
+  .countdown-val { font-size: 22px; font-weight: 800; font-family: monospace; color: var(--gold); }
+
+  .status-pill {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .status-pill.pending { background: var(--gold-dim); border: 1px solid var(--gold-border); color: var(--gold); }
+  .status-pill.agreed  { background: var(--green-dim); border: 1px solid var(--green-border); color: var(--green); }
+  .blink { width:8px; height:8px; border-radius:50%; animation: blink 1.6s infinite; }
+  .blink.gold  { background: var(--gold); }
+  .blink.green { background: var(--green); }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.25} }
+
+  /* ── GRID ── */
+  .grid-main {
+    display: grid;
+    grid-template-columns: 1fr 360px;
+    gap: 24px;
+    align-items: start;
+  }
+
+  .left-col { display:flex; flex-direction:column; gap:24px; }
+
+  /* ── CARD ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+  .card-header {
+    padding: 16px 22px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .card-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text3);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-title-icon { font-size: 14px; }
+  .card-body { padding: 22px; }
+
+  /* ── PRODUCT SUMMARY ── */
+  .product-row {
+    display: flex;
+    gap: 18px;
+    align-items: flex-start;
+    padding-bottom: 20px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .product-thumb {
+    width: 80px; height: 72px;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 30px; flex-shrink: 0;
+  }
+  .product-cat { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--gold); margin-bottom:4px; }
+  .product-name { font-size:17px; font-weight:800; color:var(--text); margin-bottom:6px; }
+  .product-tags { display:flex; flex-wrap:wrap; gap:5px; }
+  .tag { font-size:11px; color:var(--text3); background:var(--surface2); border:1px solid var(--border2); padding:2px 8px; border-radius:4px; font-weight:500; }
+
+  /* ── TERMS TABLE ── */
+  .terms-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+  }
+  .term-cell {
+    padding: 13px 16px;
+    border-bottom: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+  }
+  .term-cell:nth-child(even) { border-right: none; }
+  .term-cell:nth-last-child(-n+2) { border-bottom: none; }
+  .term-cell-label { font-size:10px; text-transform:uppercase; letter-spacing:0.07em; color:var(--text3); margin-bottom:4px; }
+  .term-cell-val { font-size:14px; font-weight:700; color:var(--text); font-family:monospace; }
+  .term-cell-val.gold { color: var(--gold); font-size:18px; }
+  .term-cell-val.green { color: var(--green); }
+
+  /* ── CHANGE LOG ── */
+  .changelog { display:flex; flex-direction:column; gap:0; }
+  .log-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .log-row:last-child { border-bottom: none; }
+  .log-num {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 700; color: var(--text3);
+    flex-shrink: 0; margin-top: 1px;
+  }
+  .log-num.gold { background:var(--gold-dim); border-color:var(--gold-border); color:var(--gold); }
+  .log-content { flex:1; }
+  .log-title { font-size:13px; font-weight:600; color:var(--text); margin-bottom:2px; }
+  .log-desc { font-size:12px; color:var(--text2); }
+  .log-time { font-size:11px; color:var(--text3); font-family:monospace; white-space:nowrap; margin-top:2px; }
+  .log-diff {
+    display: flex;
+    gap: 8px;
+    margin-top: 6px;
+  }
+  .diff-chip {
+    font-size: 11px;
+    font-family: monospace;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+  }
+  .diff-chip.from { background: var(--red-dim); color: var(--red); text-decoration: line-through; }
+  .diff-chip.to   { background: var(--green-dim); color: var(--green); }
+
+  /* ── APPROVAL SECTION ── */
+  .approval-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .approval-party {
+    border: 1px solid var(--border2);
+    border-radius: 12px;
+    padding: 20px;
+    background: var(--surface2);
+    transition: border-color 0.3s, background 0.3s;
+    position: relative;
+  }
+  .approval-party.approved {
+    border-color: var(--green-border);
+    background: var(--green-dim);
+  }
+  .approval-party.waiting {
+    border-color: var(--gold-border);
+    background: var(--gold-dim);
+  }
+
+  .ap-head { display:flex; align-items:center; gap:10px; margin-bottom:14px; }
+  .ap-ava {
+    width:38px; height:38px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size:13px; font-weight:800; flex-shrink:0;
+  }
+  .ap-ava.seller { background:var(--gold-dim); color:var(--gold); border:1px solid var(--gold-border); }
+  .ap-ava.buyer  { background:var(--green-dim); color:var(--green); border:1px solid var(--green-border); }
+  .ap-name { font-size:13px; font-weight:700; color:var(--text); }
+  .ap-role { font-size:11px; color:var(--text3); }
+
+  .ap-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 14px;
+    padding: 10px 14px;
+    border-radius: 8px;
+  }
+  .ap-status.approved { background: rgba(34,197,94,0.15); color: var(--green); border:1px solid var(--green-border); }
+  .ap-status.pending  { background: rgba(245,197,24,0.10); color: var(--gold);  border:1px solid var(--gold-border); }
+  .ap-status-icon { font-size:18px; }
+
+  .ap-timestamp { font-size:11px; color:var(--text3); font-family:monospace; }
+
+  .btn-approve {
+    width: 100%;
+    padding: 12px;
+    background: var(--gold);
+    color: #0b1120;
+    font-weight: 800;
+    font-size: 14px;
+    border: none;
+    border-radius: 9px;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .btn-approve:hover { background: #ffd740; transform: translateY(-1px); }
+  .btn-approve:disabled {
+    background: var(--surface2);
+    color: var(--text3);
+    border: 1px solid var(--border2);
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .btn-reject-party {
+    width: 100%;
+    padding: 10px;
+    background: transparent;
+    color: var(--red);
+    font-weight: 600;
+    font-size: 13px;
+    border: 1px solid rgba(239,68,68,0.3);
+    border-radius: 9px;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    transition: all 0.2s;
+    margin-top: 8px;
+  }
+  .btn-reject-party:hover { background: var(--red-dim); }
+
+  /* ── CLAUSE LIST ── */
+  .clause-list { display:flex; flex-direction:column; gap:10px; }
+  .clause {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    padding: 12px 14px;
+    transition: border-color 0.2s;
+  }
+  .clause:hover { border-color: var(--border); }
+  .clause-check {
+    width: 20px; height: 20px;
+    border-radius: 5px;
+    border: 2px solid var(--border2);
+    background: var(--bg);
+    flex-shrink: 0;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px;
+    color: transparent;
+    transition: all 0.2s;
+    margin-top: 1px;
+  }
+  .clause-check.checked { background: var(--green); border-color: var(--green); color: #fff; }
+  .clause-num { font-size:10px; font-weight:700; color:var(--text3); margin-bottom:2px; font-family:monospace; }
+  .clause-text { font-size:12px; color:var(--text2); line-height:1.5; }
+  .clause-text strong { color:var(--text); font-weight:600; }
+
+  /* ── RIGHT PANEL ── */
+  .right-col { display:flex; flex-direction:column; gap:20px; }
+
+  /* SUMMARY CARD */
+  .summary-total {
+    background: var(--gold-dim);
+    border: 1px solid var(--gold-border);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+  }
+  .summary-total-label { font-size:11px; text-transform:uppercase; letter-spacing:0.08em; color:var(--gold); margin-bottom:6px; font-weight:700; }
+  .summary-total-val { font-size:36px; font-weight:800; color:var(--gold); font-family:monospace; line-height:1; margin-bottom:4px; }
+  .summary-total-sub { font-size:12px; color:var(--text2); font-family:monospace; }
+
+  .summary-rows { margin-top:16px; }
+  .sr {
+    display:flex; justify-content:space-between; align-items:center;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .sr:last-child { border-bottom:none; }
+  .sr-k { color:var(--text3); }
+  .sr-v { font-weight:700; color:var(--text); font-family:monospace; font-size:12px; }
+  .sr-v.gold { color:var(--gold); }
+  .sr-v.green { color:var(--green); }
+
+  /* STEPS */
+  .steps { display:flex; flex-direction:column; gap:0; }
+  .step {
+    display:flex; gap:12px; padding-bottom:16px; position:relative;
+  }
+  .step:last-child { padding-bottom:0; }
+  .step::before {
+    content:''; position:absolute; left:14px; top:28px;
+    width:1px; height:calc(100% - 12px); background:var(--border);
+  }
+  .step:last-child::before { display:none; }
+  .step-ic {
+    width:28px; height:28px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size:11px; font-weight:700; flex-shrink:0; position:relative; z-index:1;
+    border:2px solid var(--border2); background:var(--bg); color:var(--text3);
+  }
+  .step-ic.done   { border-color:var(--green); color:var(--green); background:var(--green-dim); }
+  .step-ic.active { border-color:var(--gold);  color:var(--gold);  background:var(--gold-dim); animation: glow 2s infinite; }
+  @keyframes glow { 0%,100%{box-shadow:0 0 0 0 rgba(245,197,24,0)} 50%{box-shadow:0 0 0 5px rgba(245,197,24,0.15)} }
+  .step-body { padding-top:4px; }
+  .step-name { font-size:12px; font-weight:600; color:var(--text3); }
+  .step-name.done   { color:var(--text); }
+  .step-name.active { color:var(--gold); }
+  .step-desc { font-size:11px; color:var(--text3); margin-top:2px; }
+
+  /* DOCS */
+  .doc-list { display:flex; flex-direction:column; gap:8px; }
+  .doc-item {
+    display:flex; align-items:center; gap:10px;
+    background: var(--surface2);
+    border:1px solid var(--border2);
+    border-radius:8px;
+    padding:10px 14px;
+    font-size:12px;
+  }
+  .doc-icon { font-size:18px; flex-shrink:0; }
+  .doc-name { font-weight:600; color:var(--text); flex:1; }
+  .doc-status {
+    font-size:10px; font-weight:700;
+    padding:2px 8px; border-radius:10px;
+  }
+  .doc-status.ready    { background:var(--green-dim); color:var(--green); border:1px solid var(--green-border); }
+  .doc-status.pending  { background:var(--gold-dim);  color:var(--gold);  border:1px solid var(--gold-border); }
+  .doc-status.required { background:var(--red-dim);   color:var(--red);   border:1px solid rgba(239,68,68,0.3); }
+
+  /* FINAL APPROVE BAR */
+  .final-bar {
+    background: var(--surface);
+    border: 1px solid var(--green-border);
+    border-radius: 14px;
+    padding: 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    position: relative;
+    overflow: hidden;
+  }
+  .final-bar::before {
+    content: '';
+    position: absolute;
+    top:0; left:0; right:0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--green), var(--blue));
+  }
+  .final-bar-title { font-size:14px; font-weight:800; color:var(--text); display:flex; align-items:center; gap:8px; }
+  .final-bar-sub { font-size:12px; color:var(--text2); }
+
+  .btn-final {
+    width: 100%;
+    padding: 14px;
+    background: var(--green);
+    color: #0b1120;
+    font-weight: 800;
+    font-size: 15px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    letter-spacing: 0.02em;
+  }
+  .btn-final:hover { background: #4ade80; transform: translateY(-1px); box-shadow: 0 8px 24px rgba(34,197,94,0.2); }
+  .btn-final:disabled { background:var(--surface2); color:var(--text3); cursor:not-allowed; transform:none; box-shadow:none; }
+
+  .btn-back {
+    width: 100%;
+    padding: 11px;
+    background: transparent;
+    color: var(--text2);
+    font-weight: 600;
+    font-size: 13px;
+    border: 1px solid var(--border2);
+    border-radius: 10px;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    transition: all 0.2s;
+  }
+  .btn-back:hover { border-color:var(--text2); color:var(--text); }
+
+  /* WARN BOX */
+  .warn-box {
+    background: rgba(239,68,68,0.07);
+    border: 1px solid rgba(239,68,68,0.25);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size:12px;
+    color: var(--red);
+    display:flex; align-items:center; gap:8px;
+  }
+
+  /* MODAL */
+  .modal-overlay {
+    display: none;
+    position: fixed; inset:0;
+    background: rgba(0,0,0,0.75);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(4px);
+  }
+  .modal-overlay.show { display:flex; }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 18px;
+    padding: 32px;
+    max-width: 480px;
+    width: 90%;
+    text-align: center;
+    animation: popIn 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .modal::before {
+    content:'';
+    position:absolute; top:0; left:0; right:0; height:3px;
+    background: linear-gradient(90deg, var(--gold), var(--green));
+  }
+  @keyframes popIn { from{opacity:0;transform:scale(0.92)} to{opacity:1;transform:scale(1)} }
+  .modal-icon { font-size:52px; margin-bottom:16px; }
+  .modal-title { font-size:22px; font-weight:800; color:var(--text); margin-bottom:8px; }
+  .modal-sub { font-size:14px; color:var(--text2); margin-bottom:24px; line-height:1.5; }
+  .modal-id { font-family:monospace; font-size:13px; color:var(--gold); background:var(--gold-dim); border:1px solid var(--gold-border); padding:6px 16px; border-radius:6px; display:inline-block; margin-bottom:24px; }
+  .modal-actions { display:flex; flex-direction:column; gap:10px; }
+  .btn-modal-primary { background:var(--gold); color:#0b1120; font-weight:800; padding:13px; border:none; border-radius:9px; cursor:pointer; font-family:'Inter',sans-serif; font-size:14px; transition:all 0.2s; }
+  .btn-modal-primary:hover { background:#ffd740; }
+  .btn-modal-secondary { background:transparent; color:var(--text2); border:1px solid var(--border2); padding:11px; border-radius:9px; cursor:pointer; font-family:'Inter',sans-serif; font-size:13px; font-weight:600; transition:all 0.2s; }
+  .btn-modal-secondary:hover { border-color:var(--text2); color:var(--text); }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width:4px; }
+  ::-webkit-scrollbar-thumb { background:var(--border2); border-radius:2px; }
+
+  /* ── LEGAL CONSULTATION ── */
+  .legal-banner { position:relative;border-radius:18px;overflow:hidden; }
+  .legal-banner-bg {
+    background:linear-gradient(135deg,#0f1e3a 0%,#0d1829 40%,#1a1206 100%);
+    border:1.5px solid rgba(245,197,24,0.45);border-radius:18px;
+    padding:26px 28px;position:relative;overflow:hidden;
+    transition:border-color 0.3s,box-shadow 0.3s;
+  }
+  .legal-banner-bg:hover {
+    border-color:var(--gold);
+    box-shadow:0 0 48px rgba(245,197,24,0.14),0 0 0 1px rgba(245,197,24,0.18);
+  }
+  .legal-orb {
+    position:absolute;border-radius:50%;filter:blur(55px);
+    pointer-events:none;animation:orbFloat 6s ease-in-out infinite;
+  }
+  .legal-orb-1{width:200px;height:200px;background:rgba(245,197,24,0.09);top:-60px;right:80px;animation-delay:0s}
+  .legal-orb-2{width:140px;height:140px;background:rgba(59,130,246,0.07);bottom:-30px;right:30px;animation-delay:-3s}
+  .legal-orb-3{width:90px;height:90px;background:rgba(245,197,24,0.06);top:20px;left:180px;animation-delay:-1.5s}
+  @keyframes orbFloat{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-12px) scale(1.04)}}
+  .legal-grid-dec {
+    position:absolute;inset:0;pointer-events:none;
+    background-image:linear-gradient(rgba(245,197,24,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(245,197,24,0.04) 1px,transparent 1px);
+    background-size:30px 30px;
+  }
+  .legal-corner-glow {
+    position:absolute;top:0;right:0;width:130px;height:130px;
+    background:linear-gradient(225deg,rgba(245,197,24,0.13) 0%,transparent 60%);pointer-events:none;
+  }
+  .legal-content{position:relative;z-index:2;display:flex;align-items:center;gap:22px}
+  .legal-icon-wrap {
+    flex-shrink:0;width:68px;height:68px;
+    background:linear-gradient(135deg,rgba(245,197,24,0.22),rgba(245,197,24,0.08));
+    border:1.5px solid rgba(245,197,24,0.55);border-radius:16px;
+    display:flex;align-items:center;justify-content:center;font-size:30px;
+    box-shadow:0 0 24px rgba(245,197,24,0.18);animation:iconGlow 3s ease-in-out infinite;
+  }
+  @keyframes iconGlow{0%,100%{box-shadow:0 0 20px rgba(245,197,24,0.15)}50%{box-shadow:0 0 36px rgba(245,197,24,0.32)}}
+  .legal-text{flex:1;min-width:0}
+  .legal-badge {
+    display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:800;
+    letter-spacing:0.12em;text-transform:uppercase;color:var(--gold);
+    background:rgba(245,197,24,0.12);border:1px solid rgba(245,197,24,0.35);
+    padding:3px 10px;border-radius:20px;margin-bottom:7px;
+  }
+  .legal-badge-dot{width:5px;height:5px;background:var(--gold);border-radius:50%;animation:blink 1.5s infinite}
+  .legal-title{font-size:18px;font-weight:800;color:var(--text);margin-bottom:5px;line-height:1.2}
+  .legal-title span{color:var(--gold)}
+  .legal-desc{font-size:12px;color:var(--text2);line-height:1.55;margin-bottom:12px}
+  .legal-features{display:flex;flex-wrap:wrap;gap:7px}
+  .lf-chip{display:flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--text2);background:rgba(255,255,255,0.04);border:1px solid var(--border2);padding:3px 9px;border-radius:5px}
+  .lf-chip span{color:var(--green)}
+  .legal-cta{flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:8px}
+  .legal-price-label{font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text3);margin-bottom:1px;text-align:center}
+  .legal-price-val{font-size:34px;font-weight:800;color:var(--gold);font-family:monospace;line-height:1;text-align:center}
+  .legal-price-sub{font-size:11px;color:var(--text3);text-align:center;margin-top:1px}
+  .btn-legal {
+    width:152px;padding:12px 0;background:var(--gold);color:#0b1120;
+    font-weight:800;font-size:13px;border:none;border-radius:10px;cursor:pointer;
+    font-family:'Inter',sans-serif;transition:all 0.22s;
+    display:flex;align-items:center;justify-content:center;gap:6px;
+    box-shadow:0 4px 20px rgba(245,197,24,0.28);
+  }
+  .btn-legal:hover{background:#ffd740;transform:translateY(-2px);box-shadow:0 8px 30px rgba(245,197,24,0.38)}
+  .legal-no-thanks{font-size:11px;color:var(--text3);cursor:pointer;text-decoration:underline;text-underline-offset:3px;background:none;border:none;font-family:'Inter',sans-serif;transition:color 0.2s}
+  .legal-no-thanks:hover{color:var(--text2)}
+  .legal-trust-row{display:flex;align-items:center;gap:20px;margin-top:14px;padding-top:14px;border-top:1px solid rgba(245,197,24,0.12);position:relative;z-index:2;flex-wrap:wrap}
+  .trust-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text3)}
+  .trust-item strong{color:var(--text2);font-weight:600}
+  /* LEGAL MODAL */
+  .legal-modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.82);z-index:2000;align-items:center;justify-content:center;backdrop-filter:blur(6px);padding:20px}
+  .legal-modal-overlay.show{display:flex}
+  .legal-modal{background:var(--surface);border:1px solid rgba(245,197,24,0.3);border-radius:20px;width:100%;max-width:580px;overflow:hidden;animation:popIn 0.3s ease}
+  .lm-header{background:linear-gradient(135deg,#0f1e3a,#1a1206);border-bottom:1px solid rgba(245,197,24,0.2);padding:24px 28px;position:relative;overflow:hidden}
+  .lm-header-dec{position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(245,197,24,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(245,197,24,0.04) 1px,transparent 1px);background-size:26px 26px}
+  .lm-header-content{position:relative;z-index:1;display:flex;align-items:center;gap:14px}
+  .lm-icon{font-size:38px}
+  .lm-title{font-size:20px;font-weight:800;color:var(--text);margin-bottom:3px}
+  .lm-sub{font-size:12px;color:var(--text2)}
+  .lm-body{padding:24px 28px}
+  .lm-section-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--text3);margin-bottom:10px}
+  .lm-lawyers{display:flex;flex-direction:column;gap:10px;margin-bottom:20px}
+  .lawyer-card{display:flex;align-items:center;gap:12px;background:var(--surface2);border:2px solid var(--border2);border-radius:12px;padding:13px 15px;cursor:pointer;transition:all 0.2s}
+  .lawyer-card:hover{border-color:rgba(245,197,24,0.4)}
+  .lawyer-card.selected{border-color:var(--gold);background:var(--gold-dim)}
+  .lawyer-card.selected .lc-radio{background:var(--gold);border-color:var(--gold)}
+  .lawyer-card.selected .lc-radio::after{opacity:1}
+  .lc-radio{width:18px;height:18px;border-radius:50%;border:2px solid var(--border2);background:var(--bg);flex-shrink:0;position:relative;transition:all 0.2s}
+  .lc-radio::after{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:7px;height:7px;background:#0b1120;border-radius:50%;opacity:0;transition:opacity 0.2s}
+  .lc-avatar{width:44px;height:44px;border-radius:50%;background:var(--surface);border:2px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+  .lc-info{flex:1;min-width:0}
+  .lc-name{font-size:13px;font-weight:700;color:var(--text);margin-bottom:1px}
+  .lc-spec{font-size:11px;color:var(--text3);margin-bottom:4px}
+  .lc-tags{display:flex;gap:4px;flex-wrap:wrap}
+  .lc-tag{font-size:10px;background:var(--bg);border:1px solid var(--border2);color:var(--text3);padding:1px 6px;border-radius:3px}
+  .lc-right{text-align:right;flex-shrink:0}
+  .lc-rating{font-size:12px;color:var(--gold);font-weight:700}
+  .lc-exp{font-size:10px;color:var(--text3);margin-top:2px}
+  .lm-includes{background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:14px 16px;margin-bottom:20px}
+  .lm-inc-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:8px}
+  .lm-inc-item{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--text2)}
+  .lm-inc-item::before{content:'\2713';color:var(--green);font-weight:700;flex-shrink:0;font-size:11px}
+  .lm-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:18px;border-top:1px solid var(--border)}
+  .lm-total-label{font-size:11px;color:var(--text3);margin-bottom:1px}
+  .lm-total-val{font-size:26px;font-weight:800;color:var(--gold);font-family:monospace}
+  .btn-lm-confirm{flex:1;padding:13px;background:var(--gold);color:#0b1120;font-weight:800;font-size:14px;border:none;border-radius:10px;cursor:pointer;font-family:'Inter',sans-serif;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:7px;box-shadow:0 4px 20px rgba(245,197,24,0.22)}
+  .btn-lm-confirm:hover{background:#ffd740;transform:translateY(-1px)}
+  .btn-lm-cancel{padding:13px 18px;background:transparent;color:var(--text3);border:1px solid var(--border2);border-radius:10px;cursor:pointer;font-family:'Inter',sans-serif;font-size:13px;font-weight:600;transition:all 0.2s}
+  .btn-lm-cancel:hover{border-color:var(--text2);color:var(--text2)}
+  /* LEGAL SUCCESS */
+  .legal-success-state{display:none;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.3);border-radius:12px;padding:18px 22px;align-items:center;gap:14px;margin-bottom:16px;animation:fadeUp 0.4s ease}
+  .legal-success-state.show{display:flex}
+  .lss-icon{font-size:28px;flex-shrink:0}
+  .lss-title{font-size:14px;font-weight:800;color:var(--green);margin-bottom:2px}
+  .lss-sub{font-size:12px;color:var(--text2)}
+  .lss-lawyer{font-size:12px;color:var(--text2);margin-top:3px}
+  .lss-lawyer strong{color:var(--text)}
+
+</style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav>
+  <a href="#" class="nav-logo">
+    <div class="nav-logo-icon">🌐</div>
+    <span class="nav-logo-text">CoreTrade<span>Global</span></span>
+  </a>
+
+  <div class="nav-center">
+    <div class="trade-id-badge">Ticaret Oturumu <strong>#TRD-2025-08841</strong></div>
+    <div class="step-trail">
+      <div class="st-item done">✓ Teklif</div>
+      <div class="st-item done">✓ Müzakere</div>
+      <div class="st-item active">● Anlaşma & Onay</div>
+      <div class="st-item">4. İmza</div>
+      <div class="st-item">5. Ödeme</div>
+    </div>
+  </div>
+
+  <div class="nav-right">
+    <button class="btn btn-outline" style="font-size:12px;padding:7px 14px;">← Müzakereye Dön</button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="page">
+  <div class="hero-status">
+    <div class="hero-left">
+      <div class="hero-icon">🤝</div>
+      <div>
+        <div class="hero-label">Adım 3 / 5 — Anlaşma & Onay</div>
+        <div class="hero-title">Tarafların Mutabakat Onayı Bekleniyor</div>
+        <div class="hero-sub">Müzakere tamamlandı. Her iki taraf aşağıdaki şartları onaylamalıdır.</div>
+      </div>
+    </div>
+    <div class="hero-right">
+      <div class="countdown-box">
+        <div class="countdown-label">Onay İçin Kalan Süre</div>
+        <div class="countdown-val" id="timerDisp">47:32:09</div>
+      </div>
+      <div class="status-pill pending">
+        <div class="blink gold"></div>
+        Onay Bekleniyor
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN GRID -->
+  <div class="grid-main">
+    <div class="left-col">
+
+      <!-- PRODUCT & AGREED TERMS -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span class="card-title-icon">📋</span> Mutabık Kalınan Şartlar</div>
+          <span style="font-size:11px;color:var(--green);font-weight:700;background:var(--green-dim);border:1px solid var(--green-border);padding:3px 10px;border-radius:10px;">✓ Müzakere Tamamlandı</span>
+        </div>
+        <div class="card-body">
+          <div class="product-row">
+            <div class="product-thumb">📦</div>
+            <div>
+              <div class="product-cat">🏭 Tekstil · Ham Madde</div>
+              <div class="product-name">Organik Pamuk İplik — 30/1 Ne</div>
+              <div class="product-tags">
+                <span class="tag">HS: 5205.11</span>
+                <span class="tag">Ring İplik</span>
+                <span class="tag">GOTS Sertifikalı</span>
+                <span class="tag">ISO 9001</span>
+                <span class="tag">🇹🇷 Menşei: Türkiye</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="terms-grid">
+            <div class="term-cell">
+              <div class="term-cell-label">Birim Fiyat</div>
+              <div class="term-cell-val gold">$ 4.05 <span style="font-size:12px;color:var(--text2);font-weight:500">/ kg</span></div>
+            </div>
+            <div class="term-cell">
+              <div class="term-cell-label">Toplam Tutar</div>
+              <div class="term-cell-val gold">$ 60,750</div>
+            </div>
+            <div class="term-cell">
+              <div class="term-cell-label">Miktar</div>
+              <div class="term-cell-val">15.000 kg</div>
+            </div>
+            <div class="term-cell">
+              <div class="term-cell-label">Para Birimi</div>
+              <div class="term-cell-val">USD</div>
+            </div>
+            <div class="term-cell">
+              <div class="term-cell-label">Ödeme Koşulu</div>
+              <div class="term-cell-val">60 Gün Vadeli</div>
+            </div>
+            <div class="term-cell">
+              <div class="term-cell-label">Ödeme Yöntemi</div>
+              <div class="term-cell-val">Banka Transferi (TT)</div>
+            </div>
+            <div class="term-cell">
+              <div class="term-cell-label">Teslim Şartı</div>
+              <div class="term-cell-val">FOB İzmir</div>
+            </div>
+            <div class="term-cell">
+              <div class="term-cell-label">Teslim Tarihi</div>
+              <div class="term-cell-val">15 Mart 2025</div>
+            </div>
+            <div class="term-cell">
+              <div class="term-cell-label">Teslim Yeri</div>
+              <div class="term-cell-val">Alsancak Limanı, İzmir</div>
+            </div>
+            <div class="term-cell">
+              <div class="term-cell-label">Sigorta</div>
+              <div class="term-cell-val">Alıcı Sağlar</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- NEGOTIATION LOG -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span class="card-title-icon">🔄</span> Müzakere Özeti</div>
+          <span style="font-size:11px;color:var(--text3);font-family:monospace;">3 tur</span>
+        </div>
+        <div class="card-body" style="padding:0 22px;">
+          <div class="changelog">
+            <div class="log-row">
+              <div class="log-num">1</div>
+              <div class="log-content">
+                <div class="log-title">İlk Teklif — Sofra Tekstil A.Ş. (Satıcı)</div>
+                <div class="log-desc">Liste fiyatı üzerinden standart koşullarla teklif açıldı.</div>
+                <div class="log-diff">
+                  <span class="diff-chip to">$4.20/kg</span>
+                  <span class="diff-chip to">10.000 kg</span>
+                  <span class="diff-chip to">CIF İstanbul</span>
+                  <span class="diff-chip to">30 gün vade</span>
+                </div>
+              </div>
+              <div class="log-time">10:24</div>
+            </div>
+            <div class="log-row">
+              <div class="log-num">2</div>
+              <div class="log-content">
+                <div class="log-title">Karşı Teklif — Moda Kumaş Ltd. (Alıcı)</div>
+                <div class="log-desc">Hacim artışı karşılığında fiyat indirimi ve uzun vade talep edildi.</div>
+                <div class="log-diff">
+                  <span class="diff-chip from">$4.20</span>
+                  <span class="diff-chip to">$3.90/kg</span>
+                  <span class="diff-chip from">10.000 kg</span>
+                  <span class="diff-chip to">15.000 kg</span>
+                  <span class="diff-chip to">FOB İzmir</span>
+                  <span class="diff-chip to">60 gün vade</span>
+                </div>
+              </div>
+              <div class="log-time">10:41</div>
+            </div>
+            <div class="log-row" style="padding-bottom:0; border-bottom:none;">
+              <div class="log-num gold">✓</div>
+              <div class="log-content">
+                <div class="log-title">Nihai Anlaşma — Her İki Taraf Mutabık</div>
+                <div class="log-desc">Satıcı kısmen kabul; miktar ve vade alıcı isteğine göre, fiyat $4.05/kg olarak uzlaşıldı.</div>
+                <div class="log-diff">
+                  <span class="diff-chip to">$4.05/kg ✓</span>
+                  <span class="diff-chip to">15.000 kg ✓</span>
+                  <span class="diff-chip to">FOB İzmir ✓</span>
+                  <span class="diff-chip to">60 gün vade ✓</span>
+                </div>
+              </div>
+              <div class="log-time">11:18</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- LEGAL CONSULTATION BANNER -->
+      <div class="legal-banner">
+        <div class="legal-banner-bg">
+          <div class="legal-grid-dec"></div>
+          <div class="legal-corner-glow"></div>
+          <div class="legal-orb legal-orb-1"></div>
+          <div class="legal-orb legal-orb-2"></div>
+          <div class="legal-orb legal-orb-3"></div>
+
+          <div class="legal-success-state" id="legalSuccessState">
+            <div class="lss-icon">⚖️</div>
+            <div>
+              <div class="lss-title">Hukuk Danışmanlığı Aktif!</div>
+              <div class="lss-sub">Avukatınız 24 saat içinde sizinle iletişime geçecek.</div>
+              <div class="lss-lawyer">Atanan avukat: <strong id="assignedLawyer">—</strong></div>
+            </div>
+          </div>
+
+          <div class="legal-content" id="legalBannerContent">
+            <div class="legal-icon-wrap">⚖️</div>
+            <div class="legal-text">
+              <div class="legal-badge"><div class="legal-badge-dot"></div>Premium Hizmet</div>
+              <div class="legal-title">Bu Ticarette <span>Hukuki Güvence</span> Altında mısınız?</div>
+              <div class="legal-desc">Anlaşmalı avukatlarımızdan biri ticaret sürecinizi baştan sona takip eder, haklarınızı korur ve size özel <strong style="color:var(--text)">örnek sözleşme</strong> hazırlar.</div>
+              <div class="legal-features">
+                <div class="lf-chip"><span>✓</span> Haklarınızın korunması</div>
+                <div class="lf-chip"><span>✓</span> Özel sözleşme taslağı</div>
+                <div class="lf-chip"><span>✓</span> Uyuşmazlık desteği</div>
+                <div class="lf-chip"><span>✓</span> 48 saat içinde yanıt</div>
+              </div>
+            </div>
+            <div class="legal-cta">
+              <div>
+                <div class="legal-price-label">Tek Seferlik</div>
+                <div class="legal-price-val">$200</div>
+                <div class="legal-price-sub">Bu ticaret için</div>
+              </div>
+              <button class="btn-legal" onclick="openLegalModal()">🔒 Güvende Ol →</button>
+              <button class="legal-no-thanks" onclick="dismissLegal()">Hayır, teşekkürler</button>
+            </div>
+          </div>
+
+          <div class="legal-trust-row" id="legalTrustRow">
+            <div class="trust-item">🛡️ <strong>Lisanslı Avukatlar</strong></div>
+            <div class="trust-item">📋 <strong>Özel Sözleşme</strong> Hazırlanır</div>
+            <div class="trust-item">🔒 <strong>Gizlilik</strong> Garantili</div>
+            <div class="trust-item">⭐ <strong>4.9/5</strong> Müşteri Puanı</div>
+            <div class="trust-item">↩️ <strong>Para İade</strong> Garantisi</div>
+          </div>
+        </div>
+      </div>
+      <!-- /LEGAL BANNER -->
+
+      <!-- CLAUSES -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span class="card-title-icon">📜</span> Sözleşme Maddeleri</div>
+          <span style="font-size:11px;color:var(--text2);" id="clauseCounter">0 / 6 onaylandı</span>
+        </div>
+        <div class="card-body">
+          <p style="font-size:12px;color:var(--text2);margin-bottom:14px;">Devam etmeden önce lütfen tüm maddeleri okuyarak onaylayınız.</p>
+          <div class="clause-list" id="clauseList">
+            <div class="clause" onclick="toggleClause(this)">
+              <div class="clause-check">✓</div>
+              <div>
+                <div class="clause-num">MADDE 1 — FİYAT & MİKTAR</div>
+                <div class="clause-text">Birim fiyat <strong>$4.05/kg</strong> ve toplam miktar <strong>15.000 kg</strong> olarak kabul edilmiştir. Miktar ±%5 tolerans dahilinde teslim edilebilir.</div>
+              </div>
+            </div>
+            <div class="clause" onclick="toggleClause(this)">
+              <div class="clause-check">✓</div>
+              <div>
+                <div class="clause-num">MADDE 2 — ÖDEME KOŞULLARI</div>
+                <div class="clause-text">Ödeme <strong>60 gün vadeli</strong> olarak banka havalesi (T/T) ile yapılacaktır. Gecikme durumunda yıllık %12 gecikme faizi uygulanır.</div>
+              </div>
+            </div>
+            <div class="clause" onclick="toggleClause(this)">
+              <div class="clause-check">✓</div>
+              <div>
+                <div class="clause-num">MADDE 3 — TESLİMAT & INCOTERMS</div>
+                <div class="clause-text">Mallar <strong>FOB Alsancak Limanı, İzmir</strong> koşuluyla teslim edilecek olup teslim tarihi <strong>15 Mart 2025</strong>'tir. Gecikmeler için satıcı bildirim yükümlülüğündedir.</div>
+              </div>
+            </div>
+            <div class="clause" onclick="toggleClause(this)">
+              <div class="clause-check">✓</div>
+              <div>
+                <div class="clause-num">MADDE 4 — KALİTE & SERTİFİKA</div>
+                <div class="clause-text">Ürünler <strong>GOTS</strong> ve <strong>ISO 9001</strong> sertifika standartlarına uygun olacaktır. Sevkiyat öncesi numune ve test raporları alıcıya iletilecektir.</div>
+              </div>
+            </div>
+            <div class="clause" onclick="toggleClause(this)">
+              <div class="clause-check">✓</div>
+              <div>
+                <div class="clause-num">MADDE 5 — UYUŞMAZLIK ÇÖZÜMÜ</div>
+                <div class="clause-text">Taraflar arasındaki her türlü uyuşmazlık önce arabuluculukla çözülmeye çalışılacak; çözülemezse <strong>İstanbul Tahkim Merkezi (ISTAC)</strong> tahkimine başvurulacaktır.</div>
+              </div>
+            </div>
+            <div class="clause" onclick="toggleClause(this)">
+              <div class="clause-check">✓</div>
+              <div>
+                <div class="clause-num">MADDE 6 — MÜCBİR SEBEPLER</div>
+                <div class="clause-text">Doğal afet, savaş, salgın veya hükümet kararları nedeniyle doğacak gecikmelerden taraflar sorumlu tutulamaz. Bildirim yükümlülüğü 48 saat içindedir.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PARTY APPROVALS -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span class="card-title-icon">✍️</span> Taraf Onayları</div>
+        </div>
+        <div class="card-body">
+          <div class="approval-grid">
+
+            <!-- SELLER -->
+            <div class="approval-party approved" id="sellerCard">
+              <div class="ap-head">
+                <div class="ap-ava seller">ST</div>
+                <div>
+                  <div class="ap-name">Sofra Tekstil A.Ş.</div>
+                  <div class="ap-role">Satıcı Tarafı</div>
+                </div>
+              </div>
+              <div class="ap-status approved" id="sellerStatus">
+                <span class="ap-status-icon">✅</span>
+                Tüm şartları onayladım
+              </div>
+              <div class="ap-timestamp" id="sellerTime">✓ Onaylandı — 11:22, 14 Şubat 2025</div>
+            </div>
+
+            <!-- BUYER -->
+            <div class="approval-party waiting" id="buyerCard">
+              <div class="ap-head">
+                <div class="ap-ava buyer">MK</div>
+                <div>
+                  <div class="ap-name">Moda Kumaş Ltd.</div>
+                  <div class="ap-role">Alıcı Tarafı</div>
+                </div>
+              </div>
+              <div class="ap-status pending" id="buyerStatus">
+                <span class="ap-status-icon">⏳</span>
+                Onay bekleniyor
+              </div>
+              <div class="ap-timestamp" id="buyerTime" style="color:var(--text3)">Henüz onaylanmadı</div>
+              <button class="btn-approve" id="buyerApproveBtn" onclick="buyerApprove()">
+                ✓ Şartları Onaylıyorum
+              </button>
+              <button class="btn-reject-party" onclick="buyerReject()">✕ Reddet / Müzakereye Dön</button>
+            </div>
+
+          </div>
+
+          <div class="warn-box" style="margin-top:16px;" id="warnBox">
+            ⚠️ Her iki tarafın onayının ardından dijital imza sürecine geçilecektir.
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /left-col -->
+
+    <!-- RIGHT COL -->
+    <div class="right-col">
+
+      <!-- TOTAL SUMMARY -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span class="card-title-icon">💰</span> Finansal Özet</div>
+        </div>
+        <div class="card-body" style="padding:0">
+          <div style="padding:20px; border-bottom:1px solid var(--border)">
+            <div class="summary-total">
+              <div class="summary-total-label">Toplam İşlem Tutarı</div>
+              <div class="summary-total-val">$60,750</div>
+              <div class="summary-total-sub">15.000 kg × $4.05/kg</div>
+            </div>
+          </div>
+          <div style="padding:4px 20px 8px;">
+            <div class="summary-rows">
+              <div class="sr"><span class="sr-k">Mal Bedeli</span><span class="sr-v">$60,750.00</span></div>
+              <div class="sr"><span class="sr-k">Nakliye (Tahmini)</span><span class="sr-v">Alıcı üstlenir</span></div>
+              <div class="sr"><span class="sr-k">Sigorta</span><span class="sr-v">Alıcı sağlar</span></div>
+              <div class="sr"><span class="sr-k">Gümrük / KDV</span><span class="sr-v">Alıcı sorumluluğu</span></div>
+              <div class="sr"><span class="sr-k">Ödeme Vadesi</span><span class="sr-v">60 gün</span></div>
+              <div class="sr"><span class="sr-k">Son Ödeme Tarihi</span><span class="sr-v gold">14 May 2025</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PROGRESS -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span class="card-title-icon">🗺️</span> Ticaret Süreci</div>
+        </div>
+        <div class="card-body">
+          <div class="steps">
+            <div class="step"><div class="step-ic done">✓</div><div class="step-body"><div class="step-name done">Teklif Başlatıldı</div><div class="step-desc">14 Şub, 10:24</div></div></div>
+            <div class="step"><div class="step-ic done">✓</div><div class="step-body"><div class="step-name done">Fiyat Müzakeresi</div><div class="step-desc">3 tur — tamamlandı</div></div></div>
+            <div class="step"><div class="step-ic active">3</div><div class="step-body"><div class="step-name active">Anlaşma & Onay</div><div class="step-desc">Taraf onayları bekleniyor</div></div></div>
+            <div class="step"><div class="step-ic">4</div><div class="step-body"><div class="step-name">Dijital İmza</div><div class="step-desc">E-imza ile sözleşme onayı</div></div></div>
+            <div class="step"><div class="step-ic">5</div><div class="step-body"><div class="step-name">Ödeme & Sevkiyat</div><div class="step-desc">Escrow + lojistik takibi</div></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DOCUMENTS -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span class="card-title-icon">📁</span> Gerekli Belgeler</div>
+        </div>
+        <div class="card-body">
+          <div class="doc-list">
+            <div class="doc-item">
+              <span class="doc-icon">📄</span>
+              <span class="doc-name">Proforma Fatura</span>
+              <span class="doc-status ready">Hazır</span>
+            </div>
+            <div class="doc-item">
+              <span class="doc-icon">🏅</span>
+              <span class="doc-name">GOTS Sertifikası</span>
+              <span class="doc-status ready">Hazır</span>
+            </div>
+            <div class="doc-item">
+              <span class="doc-icon">🏅</span>
+              <span class="doc-name">ISO 9001 Belgesi</span>
+              <span class="doc-status ready">Hazır</span>
+            </div>
+            <div class="doc-item">
+              <span class="doc-icon">📊</span>
+              <span class="doc-name">Kalite Test Raporu</span>
+              <span class="doc-status pending">Hazırlanıyor</span>
+            </div>
+            <div class="doc-item">
+              <span class="doc-icon">📦</span>
+              <span class="doc-name">Ambalaj Listesi</span>
+              <span class="doc-status pending">Hazırlanıyor</span>
+            </div>
+            <div class="doc-item">
+              <span class="doc-icon">🚢</span>
+              <span class="doc-name">Konşimento (B/L)</span>
+              <span class="doc-status required">Sevkiyat Sonrası</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- FINAL ACTION -->
+      <div class="final-bar" id="finalBar">
+        <div class="final-bar-title">🔐 Sözleşmeye Geç</div>
+        <div class="final-bar-sub">Her iki tarafın onayı tamamlandıktan sonra dijital imza sürecine geçilebilir.</div>
+        <button class="btn-final" id="finalBtn" disabled onclick="goToContract()">
+          Her İki Tarafın Onayı Bekleniyor...
+        </button>
+        <button class="btn-back">← Müzakereye Geri Dön</button>
+      </div>
+
+    </div><!-- /right-col -->
+  </div>
+</div>
+
+<!-- SUCCESS MODAL -->
+<div class="modal-overlay" id="successModal">
+  <div class="modal">
+    <div class="modal-icon">🎉</div>
+    <div class="modal-title">Anlaşma Sağlandı!</div>
+    <div class="modal-sub">Her iki taraf şartları onayladı. Sözleşme imza aşamasına geçmeye hazır.</div>
+    <div class="modal-id">#TRD-2025-08841</div>
+    <div class="modal-actions">
+      <button class="btn-modal-primary" onclick="closeModal()">✍️ Sözleşmeyi İmzala →</button>
+      <button class="btn-modal-secondary" onclick="closeModal()">Daha Sonra İmzala</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ── CLAUSE TOGGLE ──
+  let checkedCount = 0;
+  const totalClauses = 6;
+
+  function toggleClause(el) {
+    const chk = el.querySelector('.clause-check');
+    const isChecked = chk.classList.contains('checked');
+    if (isChecked) {
+      chk.classList.remove('checked');
+      chk.textContent = '';
+      checkedCount = Math.max(0, checkedCount - 1);
+    } else {
+      chk.classList.add('checked');
+      chk.textContent = '✓';
+      checkedCount++;
+    }
+    document.getElementById('clauseCounter').textContent = `${checkedCount} / ${totalClauses} onaylandı`;
+  }
+
+  // ── BUYER APPROVE ──
+  let buyerApproved = false;
+
+  function buyerApprove() {
+    if (checkedCount < totalClauses) {
+      alert('Lütfen önce tüm sözleşme maddelerini okuyarak onaylayınız.');
+      document.getElementById('clauseCounter').style.color = 'var(--red)';
+      setTimeout(() => document.getElementById('clauseCounter').style.color = '', 2000);
+      return;
+    }
+    buyerApproved = true;
+
+    const card = document.getElementById('buyerCard');
+    const status = document.getElementById('buyerStatus');
+    const timeEl = document.getElementById('buyerTime');
+    const btn = document.getElementById('buyerApproveBtn');
+
+    card.classList.remove('waiting');
+    card.classList.add('approved');
+    status.classList.remove('pending');
+    status.classList.add('approved');
+    status.innerHTML = '<span class="ap-status-icon">✅</span> Tüm şartları onayladım';
+    const now = new Date().toLocaleTimeString('tr-TR', {hour:'2-digit', minute:'2-digit'});
+    timeEl.style.color = 'var(--green)';
+    timeEl.textContent = `✓ Onaylandı — ${now}, 14 Şubat 2025`;
+    btn.disabled = true;
+    btn.textContent = '✓ Onaylandı';
+    btn.nextElementSibling.style.display = 'none';
+
+    // Enable final
+    const finalBtn = document.getElementById('finalBtn');
+    finalBtn.disabled = false;
+    finalBtn.textContent = '✍️ Sözleşmeye Geç →';
+    document.getElementById('warnBox').style.display = 'none';
+
+    // Update status pill in hero
+    document.querySelector('.status-pill').className = 'status-pill agreed';
+    document.querySelector('.status-pill').innerHTML = '<div class="blink green"></div> Anlaşma Sağlandı';
+
+    // Show modal after short delay
+    setTimeout(() => {
+      document.getElementById('successModal').classList.add('show');
+    }, 800);
+  }
+
+  function buyerReject() {
+    if (confirm('Teklifi reddedip müzakereye dönmek istediğinizden emin misiniz?')) {
+      window.history.back();
+    }
+  }
+
+  function goToContract() {
+    document.getElementById('successModal').classList.add('show');
+  }
+
+  function closeModal() {
+    document.getElementById('successModal').classList.remove('show');
+  }
+
+  // ── COUNTDOWN ──
+  let secs = 171129; // ~47h 32m
+  function tick() {
+    const h = String(Math.floor(secs/3600)).padStart(2,'0');
+    const m = String(Math.floor((secs%3600)/60)).padStart(2,'0');
+    const s = String(secs%60).padStart(2,'0');
+    document.getElementById('timerDisp').textContent = `${h}:${m}:${s}`;
+    if (secs > 0) secs--;
+  }
+  setInterval(tick, 1000);
+  tick();
+
+  // ── LEGAL ──
+  let selectedLawyer = 'Av. Merve Kaya';
+  function openLegalModal() { document.getElementById('legalModal').classList.add('show'); }
+  function closeLegalModal() { document.getElementById('legalModal').classList.remove('show'); }
+  function selectLawyer(el, name) {
+    document.querySelectorAll('.lawyer-card').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+    selectedLawyer = name;
+  }
+  function confirmLegal() {
+    closeLegalModal();
+    document.getElementById('legalBannerContent').style.display = 'none';
+    document.getElementById('legalTrustRow').style.display = 'none';
+    document.getElementById('assignedLawyer').textContent = selectedLawyer;
+    document.getElementById('legalSuccessState').classList.add('show');
+  }
+  function dismissLegal() { document.querySelector('.legal-banner').style.display = 'none'; }
+
+</script>
+
+<!-- LEGAL MODAL -->
+<div class="legal-modal-overlay" id="legalModal">
+  <div class="legal-modal">
+    <div class="lm-header">
+      <div class="lm-header-dec"></div>
+      <div class="lm-header-content">
+        <div class="lm-icon">⚖️</div>
+        <div>
+          <div class="lm-title">Hukuk Danışmanlığı Al</div>
+          <div class="lm-sub">Bir avukat seçin — ticaret süreciniz boyunca yanınızda olsun.</div>
+        </div>
+      </div>
+    </div>
+    <div class="lm-body">
+      <div class="lm-section-label">Avukat Seçin</div>
+      <div class="lm-lawyers">
+        <div class="lawyer-card selected" onclick="selectLawyer(this,'Av. Merve Kaya')">
+          <div class="lc-radio"></div>
+          <div class="lc-avatar">👩‍⚖️</div>
+          <div class="lc-info">
+            <div class="lc-name">Av. Merve Kaya</div>
+            <div class="lc-spec">Ticaret Hukuku · İstanbul Barosu</div>
+            <div class="lc-tags"><span class="lc-tag">B2B Sözleşme</span><span class="lc-tag">İhracat</span><span class="lc-tag">Tahkim</span></div>
+          </div>
+          <div class="lc-right"><div class="lc-rating">★ 4.9</div><div class="lc-exp">12 yıl deneyim</div><div class="lc-exp">218 dava</div></div>
+        </div>
+        <div class="lawyer-card" onclick="selectLawyer(this,'Av. Kerem Arslan')">
+          <div class="lc-radio"></div>
+          <div class="lc-avatar">👨‍⚖️</div>
+          <div class="lc-info">
+            <div class="lc-name">Av. Kerem Arslan</div>
+            <div class="lc-spec">Uluslararası Ticaret · Ankara Barosu</div>
+            <div class="lc-tags"><span class="lc-tag">CISG</span><span class="lc-tag">İncoterms</span><span class="lc-tag">Akreditif</span></div>
+          </div>
+          <div class="lc-right"><div class="lc-rating">★ 4.8</div><div class="lc-exp">9 yıl deneyim</div><div class="lc-exp">174 dava</div></div>
+        </div>
+        <div class="lawyer-card" onclick="selectLawyer(this,'Av. Selin Doğan')">
+          <div class="lc-radio"></div>
+          <div class="lc-avatar">👩‍⚖️</div>
+          <div class="lc-info">
+            <div class="lc-name">Av. Selin Doğan</div>
+            <div class="lc-spec">Sözleşme & Uyuşmazlık · İzmir Barosu</div>
+            <div class="lc-tags"><span class="lc-tag">Tekstil</span><span class="lc-tag">Gümrük</span><span class="lc-tag">Arabuluculuk</span></div>
+          </div>
+          <div class="lc-right"><div class="lc-rating">★ 4.9</div><div class="lc-exp">7 yıl deneyim</div><div class="lc-exp">131 dava</div></div>
+        </div>
+      </div>
+      <div class="lm-includes">
+        <div class="lm-section-label">Hizmet Kapsamı</div>
+        <div class="lm-inc-grid">
+          <div class="lm-inc-item">Özel sözleşme taslağı hazırlanması</div>
+          <div class="lm-inc-item">Ticaret şartlarının hukuki incelemesi</div>
+          <div class="lm-inc-item">Haklarınızın korunması & risk analizi</div>
+          <div class="lm-inc-item">Uyuşmazlık halinde danışmanlık desteği</div>
+          <div class="lm-inc-item">48 saat içinde ilk yanıt garantisi</div>
+          <div class="lm-inc-item">Gizlilik sözleşmesi (NDA) ile güvence</div>
+        </div>
+      </div>
+      <div class="lm-footer">
+        <div><div class="lm-total-label">Ödenecek Tutar</div><div class="lm-total-val">$200</div></div>
+        <button class="btn-lm-cancel" onclick="closeLegalModal()">İptal</button>
+        <button class="btn-lm-confirm" onclick="confirmLegal()">🔒 Satın Al & Avukat Ata</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

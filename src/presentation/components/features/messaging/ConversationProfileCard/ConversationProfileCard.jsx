@@ -27,7 +27,14 @@ export function ConversationProfileCard({ otherUserId, participantDetails, onNav
 
   const formatRole = (role) => {
     if (!role) return null;
-    return role.charAt(0).toUpperCase() + role.slice(1).toLowerCase();
+    const labels = {
+      member: 'Member',
+      admin: 'Admin',
+      lawyer: 'Lawyer',
+      insurance_provider: 'Insurance Provider',
+      logistics_provider: 'Logistics Provider',
+    };
+    return labels[role] || role.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
   };
 
   return (

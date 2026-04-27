@@ -367,7 +367,8 @@
       "fields": [
         { "fieldPath": "type", "order": "ASCENDING" },
         { "fieldPath": "metadata.dealId", "order": "ASCENDING" },
-        { "fieldPath": "metadata.providerId", "order": "ASCENDING" }
+        { "fieldPath": "metadata.providerId", "order": "ASCENDING" },
+        { "fieldPath": "participants", "arrayConfig": "CONTAINS" }
       ]
     },
     {
@@ -375,7 +376,8 @@
       "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "type", "order": "ASCENDING" },
-        { "fieldPath": "metadata.dealId", "order": "ASCENDING" }
+        { "fieldPath": "metadata.dealId", "order": "ASCENDING" },
+        { "fieldPath": "participants", "arrayConfig": "CONTAINS" }
       ]
     }
   ],

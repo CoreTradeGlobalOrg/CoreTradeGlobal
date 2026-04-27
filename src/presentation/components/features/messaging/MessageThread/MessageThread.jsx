@@ -99,10 +99,11 @@ export function MessageThread({ conversationId, participantDetails = {} }) {
   const messagesEndRef = useRef(null);
   const hasMarkedAsRead = useRef(false);
 
-  // Scroll to bottom function
+  // Scroll to bottom — scrolls the direct parent container, not the whole page
   const scrollToBottom = () => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    const container = messagesEndRef.current?.parentElement;
+    if (container) {
+      container.scrollTop = container.scrollHeight;
     }
   };
 

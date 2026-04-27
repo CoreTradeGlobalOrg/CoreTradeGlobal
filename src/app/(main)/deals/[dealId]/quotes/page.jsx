@@ -188,6 +188,7 @@ function QuotesDetailPage() {
             sellerId={deal.sellerId}
             providerId={null}
             currentUserId={currentUid}
+            quotes={[...(insuranceQuotes || []), ...(logisticsQuotes || [])]}
           />
         </div>
       )}

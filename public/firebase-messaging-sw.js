@@ -20,7 +20,9 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 // Initialize messaging instance — required for getToken() to work from the client
-firebase.messaging();
+const messaging = firebase.messaging();
+// Suppress compat SDK's default notification — we handle push natively below
+messaging.onBackgroundMessage(() => {});
 
 // Handle push events natively (more reliable than onBackgroundMessage)
 self.addEventListener('push', (event) => {
@@ -44,18 +46,8 @@ self.addEventListener('push', (event) => {
   let clickUrl;
 
   if (dataType === 'deal_event') {
-    const eventType = data.eventType || 'update';
-    const eventLabels = {
-      new_deal: 'New Deal',
-      counter_offer: 'Counter-Offer Received',
-      accepted: 'Deal Accepted',
-      rejected: 'Deal Rejected',
-      withdrawn: 'Deal Withdrawn',
-      expired: 'Deal Expired',
-      renewed: 'Offer Renewed',
-    };
-    notificationTitle = eventLabels[eventType] || 'Deal Update';
-    notificationBody = 'You have a deal ' + eventType.replace('_', ' ') + ' notification';
+    notificationTitle = data.title || 'Deal Update';
+    notificationBody = data.body || 'You have a new deal update';
     tag = 'deal-' + (data.dealId || 'unknown');
     clickUrl = data.click_action || ('/deals/' + data.dealId);
   } else if (dataType === 'new_message') {

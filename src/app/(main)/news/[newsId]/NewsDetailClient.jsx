@@ -4,8 +4,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { container } from '@/core/di/container';
 import { Button } from '@/components/ui/Button';
-import { ArrowLeft, Calendar, Clock, Tag, User, Share2, BookOpen, Linkedin, Copy, Check } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { ArrowLeft, Calendar, Clock, Tag, User, Share2, BookOpen } from 'lucide-react';
 
 export default function NewsDetailClient() {
     const router = useRouter();
@@ -73,38 +72,30 @@ export default function NewsDetailClient() {
     };
 
     const handleShare = async () => {
+        const articleUrl = `https://coretradeglobal.com/news/${newsId}`;
         if (navigator.share) {
             try {
                 await navigator.share({
                     title: news.title,
                     text: news.excerpt,
-                    url: window.location.href,
+                    url: articleUrl,
                 });
             } catch (err) {
                 // Share was cancelled by user
             }
         } else {
-            navigator.clipboard.writeText(window.location.href);
+            navigator.clipboard.writeText(articleUrl);
             alert('Link copied to clipboard!');
         }
     };
 
-    const [copied, setCopied] = useState(false);
-
     const handleLinkedInShare = () => {
-        const articleUrl = `${window.location.origin}/news/${newsId}`;
-        const url = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(articleUrl)}`;
+        const articleUrl = `https://coretradeglobal.com/news/${newsId}`;
+        const content = news.excerpt || news.content || '';
+        const snippet = content.length > 200 ? content.slice(0, 200) + '...' : content;
+        const shareText = `${news.title}\n\n${snippet}\n\n${articleUrl}`;
+        const url = `https://www.linkedin.com/feed/?shareActive=true&text=${encodeURIComponent(shareText)}`;
         window.open(url, '_blank', 'noopener,noreferrer');
-    };
-
-    const handleCopyToClipboard = () => {
-        const articleUrl = `${window.location.origin}/news/${newsId}`;
-        const copyText = `${news.title}\n\n${news.content?.slice(0, 200)}...\n\n${articleUrl}`;
-        navigator.clipboard.writeText(copyText).then(() => {
-            toast.success('Copied to clipboard');
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
-        });
     };
 
     if (loading) {
@@ -185,30 +176,6 @@ export default function NewsDetailClient() {
                                             <span>{news.readTime} min read</span>
                                         </div>
                                     )}
-                                </div>
-
-                                {/* Share Buttons */}
-                                <div className="flex items-center gap-2 mt-4">
-                                    <button
-                                        onClick={handleLinkedInShare}
-                                        className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[rgba(255,255,255,0.05)] hover:bg-[#FFD700]/10 hover:text-[#FFD700] text-gray-400 transition-colors text-sm font-medium"
-                                        title="Share on LinkedIn"
-                                    >
-                                        <Linkedin className="w-[18px] h-[18px]" />
-                                        <span>LinkedIn</span>
-                                    </button>
-                                    <button
-                                        onClick={handleCopyToClipboard}
-                                        className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[rgba(255,255,255,0.05)] hover:bg-[#FFD700]/10 hover:text-[#FFD700] text-gray-400 transition-colors text-sm font-medium"
-                                        title="Copy to clipboard"
-                                    >
-                                        {copied ? (
-                                            <Check className="w-[18px] h-[18px] text-green-400" />
-                                        ) : (
-                                            <Copy className="w-[18px] h-[18px]" />
-                                        )}
-                                        <span>{copied ? 'Copied!' : 'Copy'}</span>
-                                    </button>
                                 </div>
                             </div>
                         </div>

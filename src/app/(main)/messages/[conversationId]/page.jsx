@@ -14,7 +14,6 @@ import { useAuth } from '@/presentation/contexts/AuthContext';
 import { useMessages } from '@/presentation/contexts/MessagesContext';
 import MessageThread from '@/presentation/components/features/messaging/MessageThread/MessageThread';
 import MessageInput from '@/presentation/components/features/messaging/MessageInput/MessageInput';
-import { ConversationProfileCard } from '@/presentation/components/features/messaging/ConversationProfileCard/ConversationProfileCard';
 import { Modal } from '@/components/ui/Modal';
 import { container } from '@/core/di/container';
 import { Conversation } from '@/domain/entities/Conversation';
@@ -204,18 +203,6 @@ export default function ConversationPage() {
 
           {/* Messages area with sticky banners */}
           <div className="conversation-messages">
-            {/* Profile Card — shown for direct and provider_quote conversations */}
-            {['direct', 'provider_quote'].includes(conversation.type) && user?.uid && (() => {
-              const otherUserId = conversation.participants?.find((id) => id !== user.uid);
-              return otherUserId ? (
-                <ConversationProfileCard
-                  otherUserId={otherUserId}
-                  participantDetails={conversation.participantDetails}
-                  onNavigate={null}
-                />
-              ) : null;
-            })()}
-
             {/* Subject banner for contact inquiries */}
             {conversation.type === 'contact' && conversation.metadata?.subject && (
               <div className="conversation-subject-banner">

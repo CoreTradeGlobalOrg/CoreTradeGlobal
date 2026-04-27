@@ -85,19 +85,8 @@ export function NotificationListener() {
           let tag;
 
           if (dataType === 'deal_event') {
-            // Deal event notifications
-            const eventType = payload.data?.eventType || 'update';
-            const eventLabels = {
-              new_deal: 'New Deal',
-              counter_offer: 'Counter-Offer Received',
-              accepted: 'Deal Accepted',
-              rejected: 'Deal Rejected',
-              withdrawn: 'Deal Withdrawn',
-              expired: 'Deal Expired',
-              renewed: 'Offer Renewed',
-            };
-            notificationTitle = eventLabels[eventType] || 'Deal Update';
-            notificationBody = `You have a deal ${eventType.replace('_', ' ')} notification`;
+            notificationTitle = payload.data?.title || 'Deal Update';
+            notificationBody = payload.data?.body || 'You have a new deal update';
             clickUrl = payload.data?.click_action || `/deals/${payload.data?.dealId}`;
             tag = `deal-${payload.data?.dealId || 'unknown'}`;
           } else if (dataType === 'new_message') {
@@ -148,16 +137,6 @@ export function NotificationListener() {
 
           } catch (err) {
             console.error('[FCM] Native notification failed:', err);
-
-            // Fallback to service worker
-            navigator.serviceWorker.ready.then((reg) => {
-              reg.showNotification(notificationTitle, {
-                body: notificationBody,
-                icon: '/icons/icon-192x192.png',
-                tag,
-                data: { ...payload.data, clickUrl },
-              });
-            });
           }
         });
 

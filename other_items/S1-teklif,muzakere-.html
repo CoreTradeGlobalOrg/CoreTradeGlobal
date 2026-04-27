@@ -1,0 +1,1155 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CoreTradeGlobal — Teklif Müzakeresi</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:       #0b1120;
+    --surface:  #111827;
+    --surface2: #1a2540;
+    --border:   #1e2d47;
+    --border2:  #253353;
+    --gold:     #f5c518;
+    --gold-dim: rgba(245,197,24,0.12);
+    --gold-border: rgba(245,197,24,0.35);
+    --blue:     #3b82f6;
+    --blue-dim: rgba(59,130,246,0.12);
+    --green:    #22c55e;
+    --green-dim:rgba(34,197,94,0.12);
+    --red:      #ef4444;
+    --red-dim:  rgba(239,68,68,0.12);
+    --text:     #f1f5f9;
+    --text2:    #94a3b8;
+    --text3:    #4b6080;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    font-size: 14px;
+  }
+
+  /* ─── NAVBAR ─── */
+  nav {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 200;
+  }
+
+  .nav-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+  }
+  .nav-logo-icon {
+    width: 34px;
+    height: 34px;
+    background: var(--gold);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+  }
+  .nav-logo-text {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .nav-logo-text span { color: var(--gold); }
+
+  .nav-center {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 14px;
+    font-size: 13px;
+    color: var(--text2);
+  }
+  .nav-center strong { color: var(--gold); font-family: monospace; }
+
+  .status-live {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--gold);
+    background: var(--gold-dim);
+    border: 1px solid var(--gold-border);
+    padding: 4px 12px;
+    border-radius: 20px;
+  }
+  .pulse {
+    width: 7px; height: 7px;
+    background: var(--gold);
+    border-radius: 50%;
+    animation: blink 1.8s infinite;
+  }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  .nav-right { display: flex; align-items: center; gap: 10px; }
+
+  .timer-box {
+    font-family: monospace;
+    font-size: 13px;
+    color: var(--text2);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: 5px 12px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .timer-box span { color: var(--gold); font-weight: 700; }
+
+  /* ─── LAYOUT ─── */
+  .layout {
+    display: grid;
+    grid-template-columns: 1fr 360px;
+    height: calc(100vh - 60px);
+    overflow: hidden;
+  }
+
+  .left { display: flex; flex-direction: column; overflow: hidden; }
+
+  /* ─── PRODUCT HERO ─── */
+  .product-hero {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 20px 28px;
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+    flex-shrink: 0;
+  }
+
+  .product-thumb {
+    width: 100px;
+    height: 90px;
+    border-radius: 10px;
+    border: 1px solid var(--border2);
+    background: var(--surface2);
+    object-fit: cover;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 36px;
+    flex-shrink: 0;
+  }
+
+  .product-info { flex: 1; min-width: 0; }
+
+  .product-cat {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .product-name {
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--text);
+    margin-bottom: 8px;
+    line-height: 1.2;
+  }
+
+  .product-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-bottom: 12px;
+  }
+  .tag {
+    font-size: 11px;
+    color: var(--text3);
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    padding: 3px 9px;
+    border-radius: 4px;
+    font-weight: 500;
+  }
+
+  .product-specs {
+    display: flex;
+    gap: 24px;
+  }
+  .spec { }
+  .spec-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text3); margin-bottom: 2px; }
+  .spec-val { font-size: 14px; font-weight: 700; color: var(--text); }
+  .spec-val.gold { color: var(--gold); font-size: 18px; }
+
+  /* ─── SCROLL AREA ─── */
+  .scroll-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  /* ─── SECTION HEADER ─── */
+  .sec-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .sec-header-line {
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+  .sec-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text3);
+    white-space: nowrap;
+  }
+
+  /* ─── TIMELINE ─── */
+  .timeline { display: flex; flex-direction: column; gap: 10px; }
+
+  .offer-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 18px;
+    animation: fadeUp 0.3s ease;
+  }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+
+  .offer-card.buyer  { border-left: 3px solid var(--green); }
+  .offer-card.seller { border-left: 3px solid var(--gold); }
+  .offer-card.system {
+    background: transparent;
+    border: 1px dashed var(--border2);
+    text-align: center;
+    font-size: 12px;
+    color: var(--text3);
+    padding: 10px;
+  }
+
+  .card-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+
+  .card-who {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .ava {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 800;
+  }
+  .ava.buyer  { background: var(--green-dim); color: var(--green); border: 1px solid rgba(34,197,94,0.3); }
+  .ava.seller { background: var(--gold-dim);  color: var(--gold);  border: 1px solid var(--gold-border); }
+
+  .card-who-name { font-weight: 700; font-size: 13px; }
+  .card-who-role { font-size: 11px; color: var(--text3); }
+  .card-time { font-family: monospace; font-size: 11px; color: var(--text3); }
+
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+  .cg-label { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 3px; }
+  .cg-val   { font-size: 14px; font-weight: 700; color: var(--text); font-family: monospace; }
+  .cg-val.gold { color: var(--gold); font-size: 17px; }
+
+  .card-note {
+    font-size: 12px;
+    color: var(--text2);
+    background: var(--surface2);
+    border-left: 2px solid var(--border2);
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-style: italic;
+  }
+
+  /* ─── OFFER FORM ─── */
+  .offer-form {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px;
+  }
+
+  .form-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  .form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+
+  .fg { display: flex; flex-direction: column; gap: 6px; }
+  .fg label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--text2);
+  }
+
+  .fi {
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.2s;
+    width: 100%;
+  }
+  .fi:focus { border-color: var(--gold); }
+  .fi::placeholder { color: var(--text3); }
+
+  select.fi {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%234b6080' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-color: var(--surface2);
+    padding-right: 32px;
+  }
+
+  .fi-wrap { position: relative; }
+  .fi-prefix {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--gold);
+    font-weight: 700;
+    font-size: 13px;
+    font-family: monospace;
+  }
+  .fi-wrap input { padding-left: 22px; }
+
+  textarea.fi { resize: vertical; min-height: 72px; }
+
+  /* INCOTERMS */
+  .inco-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 6px;
+  }
+  .inco-pill {
+    padding: 5px 14px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    font-family: monospace;
+    cursor: pointer;
+    border: 1px solid var(--border2);
+    background: var(--surface2);
+    color: var(--text3);
+    transition: all 0.15s;
+    letter-spacing: 0.04em;
+  }
+  .inco-pill:hover, .inco-pill.active {
+    border-color: var(--gold);
+    color: var(--gold);
+    background: var(--gold-dim);
+  }
+
+  /* TOTAL */
+  .total-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--gold-dim);
+    border: 1px solid var(--gold-border);
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin: 14px 0;
+  }
+  .total-label { font-size: 12px; color: var(--text2); font-weight: 600; }
+  .total-val { font-size: 26px; font-weight: 800; color: var(--gold); font-family: monospace; }
+  .total-sub { font-size: 11px; color: var(--text3); font-family: monospace; }
+
+  /* BUTTONS */
+  .form-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+  }
+
+  .btn {
+    padding: 10px 22px;
+    border-radius: 8px;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .btn-gold {
+    background: var(--gold);
+    color: #0b1120;
+  }
+  .btn-gold:hover { background: #ffd740; transform: translateY(-1px); }
+
+  .btn-blue {
+    background: var(--blue);
+    color: #fff;
+  }
+  .btn-blue:hover { background: #60a5fa; }
+
+  .btn-outline-red {
+    background: transparent;
+    color: var(--red);
+    border: 1px solid rgba(239,68,68,0.35);
+  }
+  .btn-outline-red:hover { background: var(--red-dim); }
+
+  .btn-outline {
+    background: transparent;
+    color: var(--text2);
+    border: 1px solid var(--border2);
+  }
+  .btn-outline:hover { border-color: var(--text2); color: var(--text); }
+
+  /* ─── RIGHT PANEL ─── */
+  .right {
+    background: var(--surface);
+    border-left: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+
+  .rp-section {
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .rp-title {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text3);
+    margin-bottom: 14px;
+  }
+
+  /* PARTY CARD */
+  .party-card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 8px;
+  }
+  .party-card:last-child { margin-bottom: 0; }
+
+  .party-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .party-ava {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+  .party-ava.seller { background: var(--gold-dim); color: var(--gold); border: 1px solid var(--gold-border); }
+  .party-ava.buyer  { background: var(--green-dim); color: var(--green); border: 1px solid rgba(34,197,94,0.3); }
+
+  .party-name { font-size: 13px; font-weight: 700; color: var(--text); line-height: 1.2; }
+  .party-sub  { font-size: 11px; color: var(--text3); }
+
+  .party-meta {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+  .pm-label { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.05em; }
+  .pm-val   { font-size: 12px; font-weight: 600; color: var(--text2); margin-top: 1px; }
+
+  .verified {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--green);
+    background: var(--green-dim);
+    border: 1px solid rgba(34,197,94,0.2);
+    padding: 2px 8px;
+    border-radius: 10px;
+    margin-top: 6px;
+  }
+
+  /* STEPS */
+  .steps { display: flex; flex-direction: column; gap: 0; }
+  .step {
+    display: flex;
+    gap: 12px;
+    padding-bottom: 16px;
+    position: relative;
+  }
+  .step:last-child { padding-bottom: 0; }
+  .step::before {
+    content: '';
+    position: absolute;
+    left: 14px;
+    top: 28px;
+    width: 1px;
+    height: calc(100% - 12px);
+    background: var(--border);
+  }
+  .step:last-child::before { display: none; }
+
+  .step-ic {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 1;
+    border: 2px solid var(--border2);
+    background: var(--bg);
+    color: var(--text3);
+  }
+  .step-ic.done   { border-color: var(--green); color: var(--green); background: var(--green-dim); }
+  .step-ic.active { border-color: var(--gold);  color: var(--gold);  background: var(--gold-dim); }
+
+  .step-body { padding-top: 4px; }
+  .step-name { font-size: 12px; font-weight: 600; color: var(--text3); }
+  .step-name.done   { color: var(--text); }
+  .step-name.active { color: var(--gold); }
+  .step-desc { font-size: 11px; color: var(--text3); margin-top: 2px; }
+
+  /* TERMS */
+  .terms-table { width: 100%; }
+  .term-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+  }
+  .term-row:last-child { border-bottom: none; }
+  .term-k { color: var(--text3); }
+  .term-v { font-weight: 700; color: var(--text); font-family: monospace; font-size: 11px; }
+
+  /* CHAT */
+  .chat-wrap {
+    display: flex;
+    flex-direction: column;
+    min-height: 280px;
+  }
+  .chat-head {
+    padding: 12px 20px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text3);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .chat-msgs {
+    padding: 14px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 140px;
+  }
+  .chat-msg {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 12px;
+  }
+  .chat-msg-h {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 4px;
+  }
+  .chat-sender { font-size: 11px; font-weight: 700; }
+  .chat-sender.seller { color: var(--gold); }
+  .chat-sender.buyer  { color: var(--green); }
+  .chat-t { font-size: 10px; color: var(--text3); font-family: monospace; }
+  .chat-text { font-size: 12px; color: var(--text2); line-height: 1.45; }
+
+  .chat-input-row {
+    padding: 10px 20px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .chat-input {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    padding: 8px 12px;
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    outline: none;
+  }
+  .chat-input:focus { border-color: var(--gold); }
+  .chat-input::placeholder { color: var(--text3); }
+  .chat-btn {
+    background: var(--gold);
+    border: none;
+    border-radius: 8px;
+    padding: 8px 16px;
+    color: #0b1120;
+    font-weight: 700;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .chat-btn:hover { background: #ffd740; }
+</style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav>
+  <a href="#" class="nav-logo">
+    <div class="nav-logo-icon">🌐</div>
+    <span class="nav-logo-text">CoreTrade<span>Global</span></span>
+  </a>
+
+  <div class="nav-center">
+    Teklif Oturumu&nbsp;
+    <strong>#TRD-2025-08841</strong>
+  </div>
+
+  <div class="nav-right">
+    <div class="status-live"><div class="pulse"></div> Müzakere Aktif</div>
+    <div class="timer-box">⏱ Kalan: <span id="timerDisp">23:47:12</span></div>
+    <button class="btn btn-outline" style="padding:7px 14px;font-size:12px">Çıkış</button>
+  </div>
+</nav>
+
+<div class="layout">
+
+  <!-- ── LEFT ── -->
+  <div class="left">
+
+    <!-- PRODUCT HERO -->
+    <div class="product-hero">
+      <div class="product-thumb">📦</div>
+      <div class="product-info">
+        <div class="product-cat">
+          🏗️ &nbsp;Construction & Public Works
+        </div>
+        <div class="product-name">Organik Pamuk İplik — 30/1 Ne</div>
+        <div class="product-tags">
+          <span class="tag">HS: 5205.11</span>
+          <span class="tag">Ring İplik</span>
+          <span class="tag">OE Sertifikalı</span>
+          <span class="tag">GOTS</span>
+          <span class="tag">ISO 9001</span>
+        </div>
+        <div class="product-specs">
+          <div class="spec">
+            <div class="spec-label">Birim Fiyat</div>
+            <div class="spec-val gold">$ 4.20 <span style="font-size:12px;color:var(--text2);font-weight:500">/ kg</span></div>
+          </div>
+          <div class="spec">
+            <div class="spec-label">Min. Sipariş</div>
+            <div class="spec-val">5.000 kg</div>
+          </div>
+          <div class="spec">
+            <div class="spec-label">Stok</div>
+            <div class="spec-val">120.000 kg</div>
+          </div>
+          <div class="spec">
+            <div class="spec-label">Teslim Süresi</div>
+            <div class="spec-val">21–30 gün</div>
+          </div>
+          <div class="spec">
+            <div class="spec-label">Menşei</div>
+            <div class="spec-val">🇹🇷 Türkiye</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCROLL -->
+    <div class="scroll-area">
+
+      <!-- TIMELINE -->
+      <div>
+        <div class="sec-header">
+          <span class="sec-label">Teklif Geçmişi</span>
+          <div class="sec-header-line"></div>
+        </div>
+        <div class="timeline" id="timeline">
+
+          <div class="offer-card system">
+            🔔 Müzakere oturumu başlatıldı — 14 Şubat 2025, 10:24
+          </div>
+
+          <div class="offer-card seller">
+            <div class="card-head">
+              <div class="card-who">
+                <div class="ava seller">ST</div>
+                <div>
+                  <div class="card-who-name">Sofra Tekstil A.Ş.</div>
+                  <div class="card-who-role">Satıcı · Liste fiyatı</div>
+                </div>
+              </div>
+              <span class="card-time">10:24</span>
+            </div>
+            <div class="card-grid">
+              <div>
+                <div class="cg-label">Birim Fiyat</div>
+                <div class="cg-val gold">$4.20<small style="font-size:11px;color:var(--text3)">/kg</small></div>
+              </div>
+              <div>
+                <div class="cg-label">Miktar</div>
+                <div class="cg-val">10.000 kg</div>
+              </div>
+              <div>
+                <div class="cg-label">Ödeme</div>
+                <div class="cg-val">30 gün</div>
+              </div>
+              <div>
+                <div class="cg-label">Teslim</div>
+                <div class="cg-val">CIF İstanbul</div>
+              </div>
+            </div>
+            <div class="card-note">Standart satış koşullarımız geçerlidir. Sertifikalar talep üzerine sunulur.</div>
+          </div>
+
+          <div class="offer-card buyer">
+            <div class="card-head">
+              <div class="card-who">
+                <div class="ava buyer">MK</div>
+                <div>
+                  <div class="card-who-name">Moda Kumaş Ltd.</div>
+                  <div class="card-who-role">Alıcı · Karşı teklif</div>
+                </div>
+              </div>
+              <span class="card-time">10:41</span>
+            </div>
+            <div class="card-grid">
+              <div>
+                <div class="cg-label">Birim Fiyat</div>
+                <div class="cg-val gold">$3.90<small style="font-size:11px;color:var(--text3)">/kg</small></div>
+              </div>
+              <div>
+                <div class="cg-label">Miktar</div>
+                <div class="cg-val">15.000 kg</div>
+              </div>
+              <div>
+                <div class="cg-label">Ödeme</div>
+                <div class="cg-val">60 gün</div>
+              </div>
+              <div>
+                <div class="cg-label">Teslim</div>
+                <div class="cg-val">FOB İzmir</div>
+              </div>
+            </div>
+            <div class="card-note">15 bin kg için hacim indirimi talep ediyoruz. 60 gün vade olmazsa olmaz.</div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- OFFER FORM -->
+      <div>
+        <div class="sec-header">
+          <span class="sec-label">Karşı Teklif Gönder</span>
+          <div class="sec-header-line"></div>
+        </div>
+
+        <div class="offer-form">
+          <div class="form-grid-3">
+            <div class="fg">
+              <label>Birim Fiyat</label>
+              <div class="fi-wrap">
+                <span class="fi-prefix">$</span>
+                <input class="fi" type="number" placeholder="0.00" id="priceInput" step="0.01">
+              </div>
+            </div>
+            <div class="fg">
+              <label>Miktar</label>
+              <input class="fi" type="number" placeholder="0" id="qtyInput">
+            </div>
+            <div class="fg">
+              <label>Birim</label>
+              <select class="fi">
+                <option>kg</option><option>ton</option><option>adet</option><option>metre</option><option>m²</option>
+              </select>
+            </div>
+            <div class="fg">
+              <label>Ödeme Koşulu</label>
+              <select class="fi">
+                <option>Peşin</option>
+                <option>30 gün vadeli</option>
+                <option>60 gün vadeli</option>
+                <option>90 gün vadeli</option>
+                <option>Akreditif (LC)</option>
+                <option>Vesaik mukabili</option>
+              </select>
+            </div>
+            <div class="fg">
+              <label>Teslim Tarihi</label>
+              <input class="fi" type="date">
+            </div>
+            <div class="fg">
+              <label>Para Birimi</label>
+              <select class="fi">
+                <option>USD</option><option>EUR</option><option>TRY</option><option>GBP</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="fg" style="margin-bottom:14px">
+            <label>Teslim Şartı (Incoterms 2020)</label>
+            <div class="inco-pills" id="incoPills">
+              <span class="inco-pill active" onclick="pickInco(this)">EXW</span>
+              <span class="inco-pill" onclick="pickInco(this)">FOB</span>
+              <span class="inco-pill" onclick="pickInco(this)">CIF</span>
+              <span class="inco-pill" onclick="pickInco(this)">CFR</span>
+              <span class="inco-pill" onclick="pickInco(this)">DAP</span>
+              <span class="inco-pill" onclick="pickInco(this)">DDP</span>
+              <span class="inco-pill" onclick="pickInco(this)">FCA</span>
+              <span class="inco-pill" onclick="pickInco(this)">CPT</span>
+            </div>
+          </div>
+
+          <div class="form-grid-2">
+            <div class="fg">
+              <label>Teslim Yeri / Limanı</label>
+              <input class="fi" type="text" placeholder="Örn: Haydarpaşa Limanı, İstanbul">
+            </div>
+            <div class="fg">
+              <label>Sigorta Tercihi</label>
+              <select class="fi">
+                <option>Satıcı sağlar</option>
+                <option>Alıcı sağlar</option>
+                <option>Sigorta yok</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="fg" style="margin-bottom:0">
+            <label>Ek Not / Özel Şartlar</label>
+            <textarea class="fi" placeholder="Ambalaj gereksinimleri, kalite standartları, numune talebi, özel koşullar..."></textarea>
+          </div>
+
+          <div class="total-row" id="totalRow" style="display:none">
+            <div>
+              <div class="total-label">Tahmini Toplam Tutar</div>
+              <div class="total-val" id="totalVal">—</div>
+            </div>
+            <div style="text-align:right">
+              <div class="total-sub" id="totalSub"></div>
+              <div style="font-size:11px;color:var(--text3);margin-top:4px">KDV hariç</div>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button class="btn btn-outline-red" onclick="doReject()">✕ Reddet</button>
+            <button class="btn btn-blue" onclick="doAccept()">✓ Teklifi Kabul Et</button>
+            <button class="btn btn-gold" onclick="doSend()">Teklif Gönder →</button>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /scroll-area -->
+  </div><!-- /left -->
+
+  <!-- ── RIGHT ── -->
+  <div class="right">
+
+    <!-- PARTIES -->
+    <div class="rp-section">
+      <div class="rp-title">Taraflar</div>
+
+      <div class="party-card">
+        <div class="party-head">
+          <div class="party-ava seller">ST</div>
+          <div>
+            <div class="party-name">Sofra Tekstil A.Ş.</div>
+            <div class="party-sub">Satıcı · 🇹🇷 Bursa, Türkiye</div>
+          </div>
+        </div>
+        <div class="party-meta">
+          <div><div class="pm-label">İletişim</div><div class="pm-val">Ali Kaya</div></div>
+          <div><div class="pm-label">Üye Since</div><div class="pm-val">2018</div></div>
+          <div><div class="pm-label">İşlem</div><div class="pm-val">247 adet</div></div>
+          <div><div class="pm-label">Puan</div><div class="pm-val" style="color:var(--gold)">★ 4.9</div></div>
+        </div>
+        <div><span class="verified">✓ Doğrulandı</span></div>
+      </div>
+
+      <div class="party-card">
+        <div class="party-head">
+          <div class="party-ava buyer">MK</div>
+          <div>
+            <div class="party-name">Moda Kumaş Ltd.</div>
+            <div class="party-sub">Alıcı · 🇹🇷 İstanbul, Türkiye</div>
+          </div>
+        </div>
+        <div class="party-meta">
+          <div><div class="pm-label">İletişim</div><div class="pm-val">Selin Demir</div></div>
+          <div><div class="pm-label">Üye Since</div><div class="pm-val">2021</div></div>
+          <div><div class="pm-label">İşlem</div><div class="pm-val">89 adet</div></div>
+          <div><div class="pm-label">Puan</div><div class="pm-val" style="color:var(--gold)">★ 4.7</div></div>
+        </div>
+        <div><span class="verified">✓ Doğrulandı</span></div>
+      </div>
+    </div>
+
+    <!-- STEPS -->
+    <div class="rp-section">
+      <div class="rp-title">Süreç Adımları</div>
+      <div class="steps">
+        <div class="step">
+          <div class="step-ic done">✓</div>
+          <div class="step-body"><div class="step-name done">Teklif Başlatıldı</div><div class="step-desc">Alıcı teklif isteği gönderdi</div></div>
+        </div>
+        <div class="step">
+          <div class="step-ic active">2</div>
+          <div class="step-body"><div class="step-name active">Fiyat Müzakeresi</div><div class="step-desc">Taraflar şartlar üzerinde görüşüyor</div></div>
+        </div>
+        <div class="step">
+          <div class="step-ic">3</div>
+          <div class="step-body"><div class="step-name">Anlaşma & Onay</div><div class="step-desc">Her iki taraf teklifi kabul eder</div></div>
+        </div>
+        <div class="step">
+          <div class="step-ic">4</div>
+          <div class="step-body"><div class="step-name">Sözleşme İmzası</div><div class="step-desc">Dijital imza ile onaylama</div></div>
+        </div>
+        <div class="step">
+          <div class="step-ic">5</div>
+          <div class="step-body"><div class="step-name">Ödeme & Sevkiyat</div><div class="step-desc">Escrow ödemesi, lojistik takibi</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TERMS SUMMARY -->
+    <div class="rp-section" style="padding-bottom:16px">
+      <div class="rp-title">Güncel Teklif Özeti</div>
+      <div class="terms-table">
+        <div class="term-row"><span class="term-k">Son Fiyat</span><span class="term-v">$3.90/kg (alıcı)</span></div>
+        <div class="term-row"><span class="term-k">Miktar</span><span class="term-v">15.000 kg</span></div>
+        <div class="term-row"><span class="term-k">Ödeme</span><span class="term-v">60 gün vadeli</span></div>
+        <div class="term-row"><span class="term-k">Teslim Şartı</span><span class="term-v">FOB İzmir</span></div>
+        <div class="term-row"><span class="term-k">Teklif Turu</span><span class="term-v">#2</span></div>
+        <div class="term-row"><span class="term-k">Tahmini Tutar</span><span class="term-v" style="color:var(--gold)">$58,500</span></div>
+      </div>
+    </div>
+
+    <!-- CHAT -->
+    <div class="chat-wrap">
+      <div class="chat-head">💬 Hızlı Mesajlaşma</div>
+      <div class="chat-msgs" id="chatMsgs">
+        <div class="chat-msg">
+          <div class="chat-msg-h">
+            <span class="chat-sender seller">Ali K. (Satıcı)</span>
+            <span class="chat-t">10:26</span>
+          </div>
+          <div class="chat-text">Merhaba, teklifinizi değerlendiriyoruz. Sertifikalar için belge talebiniz var mı?</div>
+        </div>
+        <div class="chat-msg">
+          <div class="chat-msg-h">
+            <span class="chat-sender buyer">Selin D. (Alıcı)</span>
+            <span class="chat-t">10:38</span>
+          </div>
+          <div class="chat-text">GOTS ve ISO belgelerini görmek isteriz. Ambalaj şekli nedir?</div>
+        </div>
+      </div>
+      <div class="chat-input-row">
+        <input class="chat-input" type="text" placeholder="Mesaj yaz..." id="chatInput" onkeydown="if(event.key==='Enter')doChat()">
+        <button class="chat-btn" onclick="doChat()">Gönder</button>
+      </div>
+    </div>
+
+  </div><!-- /right -->
+</div>
+
+<script>
+// INCOTERM
+function pickInco(el) {
+  document.querySelectorAll('.inco-pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// TOTAL CALC
+const pi = document.getElementById('priceInput');
+const qi = document.getElementById('qtyInput');
+function calc() {
+  const p = parseFloat(pi.value), q = parseFloat(qi.value);
+  const row = document.getElementById('totalRow');
+  if (p > 0 && q > 0) {
+    const t = p * q;
+    document.getElementById('totalVal').textContent = '$' + t.toLocaleString('tr-TR', {minimumFractionDigits: 2});
+    document.getElementById('totalSub').textContent = q.toLocaleString() + ' kg × $' + p.toFixed(2);
+    row.style.display = 'flex';
+  } else {
+    row.style.display = 'none';
+  }
+}
+pi.addEventListener('input', calc);
+qi.addEventListener('input', calc);
+
+// SEND OFFER
+function doSend() {
+  const p = pi.value, q = qi.value;
+  if (!p || !q) { alert('Lütfen fiyat ve miktar giriniz.'); return; }
+  const inco = document.querySelector('.inco-pill.active')?.textContent || 'EXW';
+  const now  = new Date().toLocaleTimeString('tr-TR', {hour:'2-digit', minute:'2-digit'});
+  const tl   = document.getElementById('timeline');
+  const el   = document.createElement('div');
+  el.className = 'offer-card buyer';
+  el.innerHTML = `
+    <div class="card-head">
+      <div class="card-who">
+        <div class="ava buyer">MK</div>
+        <div>
+          <div class="card-who-name">Moda Kumaş Ltd.</div>
+          <div class="card-who-role">Alıcı · Yeni karşı teklif</div>
+        </div>
+      </div>
+      <span class="card-time">${now}</span>
+    </div>
+    <div class="card-grid">
+      <div><div class="cg-label">Birim Fiyat</div><div class="cg-val gold">$${parseFloat(p).toFixed(2)}<small style="font-size:11px;color:var(--text3)">/kg</small></div></div>
+      <div><div class="cg-label">Miktar</div><div class="cg-val">${parseInt(q).toLocaleString()} kg</div></div>
+      <div><div class="cg-label">Teslim</div><div class="cg-val">${inco}</div></div>
+      <div><div class="cg-label">Toplam</div><div class="cg-val">$${(p*q).toLocaleString('tr-TR',{minimumFractionDigits:2})}</div></div>
+    </div>
+  `;
+  tl.appendChild(el);
+  el.scrollIntoView({behavior:'smooth'});
+  pi.value = ''; qi.value = '';
+  document.getElementById('totalRow').style.display = 'none';
+}
+
+// ACCEPT
+function doAccept() {
+  if (!confirm('Mevcut teklifi kabul etmek istediğinizden emin misiniz?')) return;
+  const tl  = document.getElementById('timeline');
+  const now = new Date().toLocaleTimeString('tr-TR', {hour:'2-digit',minute:'2-digit'});
+  const el  = document.createElement('div');
+  el.className = 'offer-card system';
+  el.style.color = '#22c55e';
+  el.style.fontWeight = '700';
+  el.textContent = `✅ Teklif kabul edildi — ${now}. Sözleşme hazırlanıyor...`;
+  tl.appendChild(el);
+  el.scrollIntoView({behavior:'smooth'});
+  document.querySelector('.status-live').innerHTML = '<div style="background:#22c55e;width:7px;height:7px;border-radius:50%;display:inline-block"></div> Anlaşma Sağlandı';
+  document.querySelector('.status-live').style.cssText = 'display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:#22c55e;background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.3);padding:4px 12px;border-radius:20px;';
+}
+
+// REJECT
+function doReject() {
+  if (!confirm('Teklifi reddetmek istediğinizden emin misiniz?')) return;
+  const tl  = document.getElementById('timeline');
+  const now = new Date().toLocaleTimeString('tr-TR', {hour:'2-digit',minute:'2-digit'});
+  const el  = document.createElement('div');
+  el.className = 'offer-card system';
+  el.style.color = '#ef4444';
+  el.style.fontWeight = '700';
+  el.textContent = `✕ Teklif reddedildi — ${now}`;
+  tl.appendChild(el);
+  el.scrollIntoView({behavior:'smooth'});
+}
+
+// CHAT
+function doChat() {
+  const inp = document.getElementById('chatInput');
+  const txt = inp.value.trim(); if (!txt) return;
+  const now = new Date().toLocaleTimeString('tr-TR', {hour:'2-digit',minute:'2-digit'});
+  const box = document.getElementById('chatMsgs');
+  const el  = document.createElement('div');
+  el.className = 'chat-msg';
+  el.innerHTML = `
+    <div class="chat-msg-h">
+      <span class="chat-sender buyer">Selin D. (Alıcı)</span>
+      <span class="chat-t">${now}</span>
+    </div>
+    <div class="chat-text">${txt}</div>
+  `;
+  box.appendChild(el);
+  box.scrollTop = box.scrollHeight;
+  inp.value = '';
+}
+
+// COUNTDOWN
+let secs = 85632;
+function tick() {
+  const h = String(Math.floor(secs/3600)).padStart(2,'0');
+  const m = String(Math.floor((secs%3600)/60)).padStart(2,'0');
+  const s = String(secs%60).padStart(2,'0');
+  document.getElementById('timerDisp').textContent = `${h}:${m}:${s}`;
+  if (secs > 0) secs--;
+}
+setInterval(tick, 1000); tick();
+</script>
+
+</body>
+</html>

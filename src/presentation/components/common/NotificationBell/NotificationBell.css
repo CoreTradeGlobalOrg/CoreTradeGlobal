@@ -47,7 +47,9 @@
   top: calc(100% + 8px);
   right: 0;
   width: 320px;
-  max-height: 400px;
+  max-height: 480px;
+  display: flex;
+  flex-direction: column;
   background: linear-gradient(180deg, #1a1c20 0%, #0f1b2b 100%);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 16px;
@@ -103,7 +105,8 @@
 }
 
 .notification-content {
-  max-height: 280px;
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
 }
 
@@ -266,6 +269,7 @@
 }
 
 .notification-footer {
+  flex-shrink: 0;
   padding: 12px 16px;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
@@ -311,21 +315,28 @@
 }
 
 .notification-view-all {
-  display: block;
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   margin-top: 10px;
-  padding: 8px;
+  padding: 10px 8px;
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(253, 185, 49, 0.15));
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 10px;
   color: #FFD700;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 700;
   text-decoration: none;
-  border-radius: 8px;
-  transition: background 0.2s ease;
+  transition: all 0.2s ease;
+  letter-spacing: 0.02em;
 }
 
 .notification-view-all:hover {
-  background: rgba(255, 215, 0, 0.1);
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.25), rgba(253, 185, 49, 0.25));
+  border-color: rgba(255, 215, 0, 0.5);
   color: #FFD700;
+  box-shadow: 0 0 12px rgba(255, 215, 0, 0.15);
 }
 
 /* Mobile responsiveness */

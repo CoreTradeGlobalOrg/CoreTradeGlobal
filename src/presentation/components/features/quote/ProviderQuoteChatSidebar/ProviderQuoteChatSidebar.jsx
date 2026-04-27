@@ -222,12 +222,45 @@ function InlineMessageInput({ conversationId, onConversationCreated, dealId, buy
 // Provider Selector (buyer view — list of providers to choose from)
 // ─────────────────────────────────────────────────────────────────────────────
 
-function ProviderSelector({ providerConversations, selectedProviderId, onSelect }) {
-  if (providerConversations.length === 0) {
+function ProviderSelector({ providerConversations, quoteProviders, selectedProviderId, onSelect, onStartChat }) {
+  // Build a merged list: providers from quotes + any existing conversations
+  const providerMap = new Map();
+
+  // Add providers from quotes (these always show even without conversations)
+  if (quoteProviders?.length > 0) {
+    quoteProviders.forEach((provider) => {
+      if (provider.providerId && !providerMap.has(provider.providerId)) {
+        providerMap.set(provider.providerId, {
+          ...provider,
+          conversation: null,
+        });
+      }
+    });
+  }
+
+  // Overlay with conversation data (richer details + existing conversation)
+  providerConversations.forEach((conv) => {
+    const pid = conv.metadata?.providerId;
+    if (!pid) return;
+    const details = conv.participantDetails?.[pid] || {};
+    const existing = providerMap.get(pid) || {};
+    providerMap.set(pid, {
+      ...existing,
+      providerId: pid,
+      displayName: details.displayName || existing.displayName || 'Provider',
+      companyName: details.companyName || existing.companyName || '',
+      photoURL: details.photoURL || existing.photoURL || null,
+      conversation: conv,
+    });
+  });
+
+  const providers = Array.from(providerMap.values());
+
+  if (providers.length === 0) {
     return (
       <div className="flex-1 flex items-center justify-center p-4">
         <p className="text-sm text-[#4A5B6E] text-center">
-          No provider conversations yet. Provider chats will appear here when providers submit quotes.
+          No providers have submitted quotes yet.
         </p>
       </div>
     );
@@ -235,34 +268,40 @@ function ProviderSelector({ providerConversations, selectedProviderId, onSelect 
 
   return (
     <div className="flex-1 overflow-y-auto">
-      {providerConversations.map((conv) => {
-        const providerId = conv.metadata?.providerId;
-        const providerDetails = conv.participantDetails?.[providerId] || {};
-        const displayName = providerDetails.displayName || 'Provider';
-        const initial = displayName.charAt(0).toUpperCase();
-        const isSelected = selectedProviderId === providerId;
+      {providers.map((provider) => {
+        const initial = (provider.displayName || '?').charAt(0).toUpperCase();
+        const isSelected = selectedProviderId === provider.providerId;
 
         return (
           <button
-            key={conv.id}
-            onClick={() => onSelect(conv)}
+            key={provider.providerId}
+            onClick={() => {
+              if (provider.conversation) {
+                onSelect(provider.conversation);
+              } else {
+                onStartChat(provider);
+              }
+            }}
             className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-[rgba(255,255,255,0.04)] transition-colors text-left border-b border-[rgba(255,255,255,0.05)] ${
               isSelected ? 'bg-[rgba(255,215,0,0.05)] border-l-2 border-l-[#FFD700]' : ''
             }`}
           >
             <div className="flex-shrink-0 w-9 h-9 rounded-full bg-[#1E2D3D] flex items-center justify-center overflow-hidden">
-              {providerDetails.photoURL ? (
-                <img src={providerDetails.photoURL} alt={displayName} className="w-full h-full object-cover" />
+              {provider.photoURL ? (
+                <img src={provider.photoURL} alt={provider.displayName} className="w-full h-full object-cover" />
               ) : (
                 <span className="text-white text-sm font-semibold">{initial}</span>
               )}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-white truncate">{displayName}</p>
-              {providerDetails.companyName && (
-                <p className="text-xs text-[#6B7A8D] truncate">{providerDetails.companyName}</p>
+              <p className="text-sm font-medium text-white truncate">{provider.displayName}</p>
+              {provider.companyName && (
+                <p className="text-xs text-[#6B7A8D] truncate">{provider.companyName}</p>
               )}
             </div>
+            {provider.conversation && (
+              <div className="flex-shrink-0 w-2 h-2 rounded-full bg-[#FFD700]" title="Active chat" />
+            )}
             {isSelected && (
               <div className="flex-shrink-0 w-2 h-2 rounded-full bg-[#FFD700]" />
             )}
@@ -286,13 +325,16 @@ function ProviderSelector({ providerConversations, selectedProviderId, onSelect 
  * @param {string} [props.providerType] - 'insurance' | 'logistics'
  * @param {string} props.currentUserId - Currently authenticated user's UID
  */
-export function ProviderQuoteChatSidebar({ dealId, buyerId, sellerId, providerId, providerType, currentUserId }) {
+export function ProviderQuoteChatSidebar({ dealId, buyerId, sellerId, providerId, providerType, currentUserId, quotes }) {
   const isProviderView = !!providerId && currentUserId === providerId;
   const isBuyerView = !isProviderView;
 
   // For buyer view: list of all provider conversations for this deal
   const [providerConversations, setProviderConversations] = useState([]);
   const [providerConvsLoading, setProviderConvsLoading] = useState(isBuyerView);
+
+  // For buyer view: provider user details fetched from quotes
+  const [quoteProviders, setQuoteProviders] = useState([]);
 
   // Active conversation being viewed
   const [activeConversation, setActiveConversation] = useState(null);
@@ -321,8 +363,8 @@ export function ProviderQuoteChatSidebar({ dealId, buyerId, sellerId, providerId
         setActiveConversation(Conversation.fromFirestore ? Conversation.fromFirestore(conv) : conv);
       }
       setActiveConversationLoading(false);
-    }).catch((err) => {
-      console.error('Error loading provider conversation:', err);
+    }).catch(() => {
+      // Permission error expected when conversation doesn't exist yet — no participants to check
       setActiveConversationLoading(false);
     });
   }, [isProviderView, dealId, providerId]);
@@ -332,14 +374,40 @@ export function ProviderQuoteChatSidebar({ dealId, buyerId, sellerId, providerId
     if (!isBuyerView || !dealId) return;
 
     setProviderConvsLoading(true);
-    conversationRepository.getProviderQuoteConversationsForDeal(dealId).then((convs) => {
+    conversationRepository.getProviderQuoteConversationsForDeal(dealId, currentUserId).then((convs) => {
       setProviderConversations(convs);
       setProviderConvsLoading(false);
-    }).catch((err) => {
-      console.error('Error loading provider conversations:', err);
+    }).catch(() => {
+      // Permission error expected when no conversations exist yet
       setProviderConvsLoading(false);
     });
   }, [isBuyerView, dealId]);
+
+  // ── Buyer view: fetch provider user details from quotes ────────────────────
+  useEffect(() => {
+    if (!isBuyerView || !quotes?.length) return;
+
+    const uniqueProviderUids = [...new Set(quotes.map((q) => q.providerUid).filter(Boolean))];
+    if (uniqueProviderUids.length === 0) return;
+
+    const userRepository = container.getUserRepository();
+    Promise.all(
+      uniqueProviderUids.map(async (uid) => {
+        try {
+          const user = await userRepository.getById(uid);
+          return user ? {
+            providerId: uid,
+            displayName: user.displayName || user.email || 'Provider',
+            companyName: user.companyName || '',
+            photoURL: user.photoURL || null,
+            providerType: user.providerType || null,
+          } : { providerId: uid, displayName: 'Provider', companyName: '', photoURL: null, providerType: null };
+        } catch {
+          return { providerId: uid, displayName: 'Provider', companyName: '', photoURL: null, providerType: null };
+        }
+      })
+    ).then(setQuoteProviders);
+  }, [isBuyerView, quotes]);
 
   // ── Subscribe to messages when active conversation changes ────────────────
   useEffect(() => {
@@ -398,6 +466,38 @@ export function ProviderQuoteChatSidebar({ dealId, buyerId, sellerId, providerId
       });
     }
   }, [isBuyerView]);
+
+  // ── Start chat with a provider — check for existing conversation first ────
+  const handleStartChat = useCallback(async (provider) => {
+    // Try to load the existing conversation by deterministic ID
+    const deterministicId = `providerquote_${dealId}_${provider.providerId}`;
+    try {
+      const existing = await conversationRepository.getById(deterministicId);
+      if (existing) {
+        const conv = Conversation.fromFirestore ? Conversation.fromFirestore(existing) : existing;
+        setActiveConversation(conv);
+        // Add to provider conversations list for future reference
+        setProviderConversations((prev) => {
+          if (prev.find((c) => c.id === conv.id)) return prev;
+          return [...prev, conv];
+        });
+        setShowProviderList(false);
+        return;
+      }
+    } catch (err) {
+      // Conversation doesn't exist yet — that's fine
+    }
+
+    // No existing conversation — open thread view with stub, conversation created on first message
+    setActiveConversation({
+      id: null,
+      type: 'provider_quote',
+      participants: [buyerId, sellerId, provider.providerId],
+      participantDetails: { [provider.providerId]: { displayName: provider.displayName, companyName: provider.companyName, photoURL: provider.photoURL } },
+      metadata: { dealId, providerId: provider.providerId, providerType: provider.providerType },
+    });
+    setShowProviderList(false);
+  }, [buyerId, sellerId, dealId, conversationRepository]);
 
   // ── Derive active provider ID (for profile card in buyer view) ────────────
   const activeProviderId = activeConversation?.metadata?.providerId || providerId;
@@ -501,8 +601,10 @@ export function ProviderQuoteChatSidebar({ dealId, buyerId, sellerId, providerId
       return (
         <ProviderSelector
           providerConversations={providerConversations}
+          quoteProviders={quoteProviders}
           selectedProviderId={activeConversation?.metadata?.providerId}
           onSelect={handleSelectProvider}
+          onStartChat={handleStartChat}
         />
       );
     }

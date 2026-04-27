@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CoreTradeGlobal — Sigorta & Taşıma</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:           #0b1120;
+    --surface:      #111827;
+    --surface2:     #1a2540;
+    --border:       #1e2d47;
+    --border2:      #253353;
+    --gold:         #f5c518;
+    --gold-dim:     rgba(245,197,24,0.10);
+    --gold-border:  rgba(245,197,24,0.30);
+    --blue:         #3b82f6;
+    --blue-dim:     rgba(59,130,246,0.10);
+    --blue-border:  rgba(59,130,246,0.30);
+    --green:        #22c55e;
+    --green-dim:    rgba(34,197,94,0.10);
+    --green-border: rgba(34,197,94,0.30);
+    --orange:       #f97316;
+    --orange-dim:   rgba(249,115,22,0.10);
+    --orange-border:rgba(249,115,22,0.30);
+    --purple:       #a855f7;
+    --purple-dim:   rgba(168,85,247,0.10);
+    --purple-border:rgba(168,85,247,0.30);
+    --red:          #ef4444;
+    --red-dim:      rgba(239,68,68,0.10);
+    --text:         #f1f5f9;
+    --text2:        #94a3b8;
+    --text3:        #4b6080;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; font-size:14px; min-height:100vh; }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width:4px; }
+  ::-webkit-scrollbar-thumb { background:var(--border2); border-radius:2px; }
+
+  /* ── NAVBAR ── */
+  nav {
+    background:var(--surface); border-bottom:1px solid var(--border);
+    padding:0 32px; height:60px; display:flex; align-items:center;
+    justify-content:space-between; position:sticky; top:0; z-index:200;
+  }
+  .nav-logo { display:flex; align-items:center; gap:10px; text-decoration:none; }
+  .nav-logo-icon { width:34px; height:34px; background:var(--gold); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:16px; }
+  .nav-logo-text { font-size:16px; font-weight:700; color:var(--text); }
+  .nav-logo-text span { color:var(--gold); }
+
+  .nav-center { display:flex; align-items:center; gap:8px; }
+  .trade-badge { background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:5px 14px; font-size:13px; color:var(--text2); display:flex; align-items:center; gap:6px; }
+  .trade-badge strong { color:var(--gold); font-family:monospace; }
+
+  .step-trail { display:flex; align-items:center; background:var(--surface2); border:1px solid var(--border); border-radius:8px; overflow:hidden; }
+  .st { padding:6px 14px; font-size:11px; font-weight:600; color:var(--text3); display:flex; align-items:center; gap:5px; border-right:1px solid var(--border); white-space:nowrap; }
+  .st:last-child { border-right:none; }
+  .st.done { color:var(--green); }
+  .st.active { color:var(--gold); background:var(--gold-dim); }
+
+  .nav-right { display:flex; align-items:center; gap:10px; }
+  .btn-nav { padding:7px 16px; border-radius:8px; font-family:'Inter',sans-serif; font-size:12px; font-weight:700; cursor:pointer; transition:all 0.2s; }
+  .btn-nav-ghost { background:transparent; color:var(--text2); border:1px solid var(--border2); }
+  .btn-nav-ghost:hover { border-color:var(--text2); color:var(--text); }
+
+  /* ── PAGE ── */
+  .page { max-width:1360px; margin:0 auto; padding:28px 32px 60px; }
+
+  /* ── HERO ── */
+  .hero {
+    background:var(--surface); border:1px solid var(--border); border-radius:16px;
+    padding:24px 28px; display:flex; align-items:center; justify-content:space-between;
+    margin-bottom:24px; position:relative; overflow:hidden;
+  }
+  .hero::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:linear-gradient(90deg,var(--blue),var(--gold),var(--green)); }
+  .hero-left { display:flex; align-items:center; gap:16px; }
+  .hero-icon { width:52px; height:52px; background:var(--blue-dim); border:2px solid var(--blue-border); border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:24px; flex-shrink:0; }
+  .hero-label { font-size:11px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--blue); margin-bottom:4px; }
+  .hero-title { font-size:21px; font-weight:800; color:var(--text); margin-bottom:3px; }
+  .hero-sub { font-size:12px; color:var(--text2); }
+
+  .hero-right { display:flex; align-items:center; gap:10px; }
+  .live-pill { display:flex; align-items:center; gap:7px; padding:7px 16px; border-radius:20px; font-size:12px; font-weight:700; background:var(--green-dim); border:1px solid var(--green-border); color:var(--green); }
+  .pulse-dot { width:8px; height:8px; border-radius:50%; background:var(--green); animation:blink 1.5s infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.25} }
+
+  .refresh-btn { display:flex; align-items:center; gap:6px; padding:7px 14px; background:var(--surface2); border:1px solid var(--border2); border-radius:8px; font-size:12px; font-weight:600; color:var(--text2); cursor:pointer; transition:all 0.2s; font-family:'Inter',sans-serif; }
+  .refresh-btn:hover { border-color:var(--blue); color:var(--blue); }
+  .spin { display:inline-block; animation:spin 2s linear infinite; }
+  @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+
+  /* ── TRADE INFO BAR ── */
+  .trade-info-bar {
+    background:var(--surface); border:1px solid var(--border); border-radius:12px;
+    padding:16px 22px; display:flex; gap:0; margin-bottom:24px; overflow:hidden;
+  }
+  .tib-item { flex:1; padding:0 18px; border-right:1px solid var(--border); }
+  .tib-item:first-child { padding-left:0; }
+  .tib-item:last-child { border-right:none; }
+  .tib-label { font-size:10px; text-transform:uppercase; letter-spacing:0.08em; color:var(--text3); margin-bottom:4px; font-weight:600; }
+  .tib-val { font-size:14px; font-weight:700; color:var(--text); }
+  .tib-val.gold { color:var(--gold); }
+  .tib-val.blue { color:var(--blue); }
+
+  /* ── GRID ── */
+  .main-grid { display:grid; grid-template-columns:1fr 1fr; gap:24px; margin-bottom:24px; }
+
+  /* ── SECTION HEADER ── */
+  .sec-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+  .sec-title { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; color:var(--text3); display:flex; align-items:center; gap:8px; }
+  .sec-count { font-size:11px; color:var(--text3); background:var(--surface2); border:1px solid var(--border2); padding:2px 10px; border-radius:10px; }
+
+  /* ── QUOTE CARDS ── */
+  .quote-list { display:flex; flex-direction:column; gap:10px; }
+
+  .quote-card {
+    background:var(--surface); border:2px solid var(--border);
+    border-radius:14px; padding:18px 20px; cursor:pointer;
+    transition:all 0.22s; position:relative; overflow:hidden;
+  }
+  .quote-card:hover { border-color:var(--border2); transform:translateY(-1px); }
+  .quote-card.selected-logistics { border-color:var(--blue); background:var(--blue-dim); }
+  .quote-card.selected-insurance { border-color:var(--green); background:var(--green-dim); }
+
+  /* Animated arrival */
+  .quote-card { animation:cardIn 0.4s ease both; }
+  .quote-card:nth-child(1) { animation-delay:0.05s; }
+  .quote-card:nth-child(2) { animation-delay:0.12s; }
+  .quote-card:nth-child(3) { animation-delay:0.19s; }
+  .quote-card:nth-child(4) { animation-delay:0.26s; }
+  @keyframes cardIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+
+  /* Best value ribbon */
+  .ribbon {
+    position:absolute; top:12px; right:-1px;
+    font-size:9px; font-weight:800; letter-spacing:0.08em; text-transform:uppercase;
+    padding:3px 12px; border-radius:4px 0 0 4px;
+  }
+  .ribbon.best { background:var(--gold); color:#0b1120; }
+  .ribbon.fast { background:var(--orange); color:#fff; }
+  .ribbon.cheap { background:var(--green); color:#0b1120; }
+
+  .qc-top { display:flex; align-items:center; gap:12px; margin-bottom:14px; }
+
+  .company-logo {
+    width:44px; height:44px; border-radius:10px; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    font-size:22px; font-weight:800; border:1px solid var(--border2);
+    background:var(--surface2);
+  }
+
+  .company-info { flex:1; min-width:0; }
+  .company-name { font-size:14px; font-weight:700; color:var(--text); margin-bottom:2px; }
+  .company-meta { font-size:11px; color:var(--text3); display:flex; align-items:center; gap:8px; }
+  .company-rating { color:var(--gold); font-weight:700; }
+
+  .qc-price { text-align:right; flex-shrink:0; }
+  .qc-price-val { font-size:22px; font-weight:800; font-family:monospace; }
+  .qc-price-val.blue { color:var(--blue); }
+  .qc-price-val.green { color:var(--green); }
+  .qc-price-sub { font-size:11px; color:var(--text3); }
+
+  .qc-details { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:12px; }
+  .qcd-item { }
+  .qcd-label { font-size:10px; text-transform:uppercase; letter-spacing:0.06em; color:var(--text3); margin-bottom:3px; }
+  .qcd-val { font-size:12px; font-weight:700; color:var(--text); }
+
+  .qc-tags { display:flex; flex-wrap:wrap; gap:5px; margin-bottom:12px; }
+  .qc-tag { font-size:10px; font-weight:600; padding:2px 8px; border-radius:4px; }
+  .qc-tag.blue { background:var(--blue-dim); color:var(--blue); border:1px solid var(--blue-border); }
+  .qc-tag.green { background:var(--green-dim); color:var(--green); border:1px solid var(--green-border); }
+  .qc-tag.orange { background:var(--orange-dim); color:var(--orange); border:1px solid var(--orange-border); }
+  .qc-tag.purple { background:var(--purple-dim); color:var(--purple); border:1px solid var(--purple-border); }
+  .qc-tag.gold { background:var(--gold-dim); color:var(--gold); border:1px solid var(--gold-border); }
+
+  .qc-footer { display:flex; align-items:center; justify-content:space-between; padding-top:12px; border-top:1px solid var(--border); }
+  .qc-validity { font-size:11px; color:var(--text3); display:flex; align-items:center; gap:5px; }
+  .validity-timer { font-family:monospace; color:var(--orange); font-weight:700; }
+
+  .btn-select {
+    padding:8px 20px; border-radius:8px; font-family:'Inter',sans-serif;
+    font-size:12px; font-weight:700; cursor:pointer; transition:all 0.2s; border:none;
+  }
+  .btn-select-logistics { background:var(--blue); color:#fff; }
+  .btn-select-logistics:hover { background:#60a5fa; }
+  .btn-select-logistics.selected { background:var(--surface2); color:var(--blue); border:1px solid var(--blue-border); }
+
+  .btn-select-insurance { background:var(--green); color:#0b1120; }
+  .btn-select-insurance:hover { background:#4ade80; }
+  .btn-select-insurance.selected { background:var(--surface2); color:var(--green); border:1px solid var(--green-border); }
+
+  /* ── FILTERS ── */
+  .filter-row { display:flex; gap:6px; margin-bottom:14px; flex-wrap:wrap; }
+  .filter-pill { padding:5px 14px; border-radius:20px; font-size:11px; font-weight:600; cursor:pointer; border:1px solid var(--border2); background:var(--surface2); color:var(--text3); transition:all 0.15s; font-family:'Inter',sans-serif; }
+  .filter-pill:hover { border-color:var(--text2); color:var(--text2); }
+  .filter-pill.active-l { border-color:var(--blue); color:var(--blue); background:var(--blue-dim); }
+  .filter-pill.active-i { border-color:var(--green); color:var(--green); background:var(--green-dim); }
+
+  /* ── SUMMARY SIDEBAR ── */
+  .sidebar { display:flex; flex-direction:column; gap:20px; }
+
+  .card { background:var(--surface); border:1px solid var(--border); border-radius:14px; overflow:hidden; }
+  .card-header { padding:14px 20px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+  .card-title { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; color:var(--text3); display:flex; align-items:center; gap:7px; }
+  .card-body { padding:18px 20px; }
+
+  /* SELECTED SUMMARY */
+  .selected-box {
+    border-radius:10px; padding:14px 16px; margin-bottom:10px;
+    display:flex; align-items:center; gap:12px;
+  }
+  .selected-box.logistics-sel { background:var(--blue-dim); border:1px solid var(--blue-border); }
+  .selected-box.insurance-sel { background:var(--green-dim); border:1px solid var(--green-border); }
+  .selected-box.empty { background:var(--surface2); border:1px dashed var(--border2); }
+  .sel-icon { font-size:24px; flex-shrink:0; }
+  .sel-name { font-size:13px; font-weight:700; color:var(--text); margin-bottom:1px; }
+  .sel-price { font-size:18px; font-weight:800; font-family:monospace; }
+  .sel-price.blue { color:var(--blue); }
+  .sel-price.green { color:var(--green); }
+  .sel-empty-text { font-size:12px; color:var(--text3); }
+
+  /* COST TABLE */
+  .cost-table { margin-top:4px; }
+  .cr { display:flex; justify-content:space-between; align-items:center; padding:9px 0; border-bottom:1px solid var(--border); font-size:13px; }
+  .cr:last-child { border-bottom:none; }
+  .cr-k { color:var(--text3); }
+  .cr-v { font-weight:700; color:var(--text); font-family:monospace; font-size:12px; }
+  .cr-v.gold { color:var(--gold); font-size:16px; }
+  .cr-v.blue { color:var(--blue); }
+  .cr-v.green { color:var(--green); }
+  .cr.total { background:var(--gold-dim); border:1px solid var(--gold-border); border-radius:8px; padding:10px 14px; margin-top:8px; }
+
+  /* STEPS */
+  .steps { display:flex; flex-direction:column; gap:0; }
+  .step { display:flex; gap:12px; padding-bottom:14px; position:relative; }
+  .step:last-child { padding-bottom:0; }
+  .step::before { content:''; position:absolute; left:14px; top:28px; width:1px; height:calc(100% - 12px); background:var(--border); }
+  .step:last-child::before { display:none; }
+  .step-ic { width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; flex-shrink:0; position:relative; z-index:1; border:2px solid var(--border2); background:var(--bg); color:var(--text3); }
+  .step-ic.done { border-color:var(--green); color:var(--green); background:var(--green-dim); }
+  .step-ic.active { border-color:var(--gold); color:var(--gold); background:var(--gold-dim); animation:stepGlow 2s infinite; }
+  @keyframes stepGlow { 0%,100%{box-shadow:none} 50%{box-shadow:0 0 0 4px rgba(245,197,24,0.15)} }
+  .step-body { padding-top:4px; }
+  .step-name { font-size:12px; font-weight:600; color:var(--text3); }
+  .step-name.done { color:var(--text); }
+  .step-name.active { color:var(--gold); }
+  .step-desc { font-size:11px; color:var(--text3); margin-top:1px; }
+
+  /* CTA */
+  .cta-card { background:var(--surface); border:1px solid var(--green-border); border-radius:14px; padding:20px; position:relative; overflow:hidden; }
+  .cta-card::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg,var(--blue),var(--green)); }
+  .cta-title { font-size:14px; font-weight:800; color:var(--text); margin-bottom:5px; display:flex; align-items:center; gap:8px; }
+  .cta-sub { font-size:12px; color:var(--text2); margin-bottom:16px; line-height:1.5; }
+
+  .btn-cta {
+    width:100%; padding:13px; background:var(--gold); color:#0b1120;
+    font-weight:800; font-size:14px; border:none; border-radius:10px; cursor:pointer;
+    font-family:'Inter',sans-serif; transition:all 0.2s;
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    box-shadow:0 4px 20px rgba(245,197,24,0.22);
+  }
+  .btn-cta:hover { background:#ffd740; transform:translateY(-1px); box-shadow:0 8px 28px rgba(245,197,24,0.32); }
+  .btn-cta:disabled { background:var(--surface2); color:var(--text3); cursor:not-allowed; transform:none; box-shadow:none; }
+
+  .btn-back-cta { width:100%; padding:10px; background:transparent; color:var(--text3); border:1px solid var(--border2); border-radius:10px; cursor:pointer; font-family:'Inter',sans-serif; font-size:13px; font-weight:600; transition:all 0.2s; margin-top:8px; }
+  .btn-back-cta:hover { border-color:var(--text2); color:var(--text2); }
+
+  .require-note { display:flex; align-items:center; gap:6px; font-size:11px; color:var(--text3); background:var(--surface2); border:1px solid var(--border2); border-radius:6px; padding:8px 12px; margin-top:10px; }
+  .require-dot { width:6px; height:6px; border-radius:50%; flex-shrink:0; }
+  .require-dot.blue { background:var(--blue); }
+  .require-dot.green { background:var(--green); }
+
+  /* ── MODAL ── */
+  .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:1000; align-items:center; justify-content:center; backdrop-filter:blur(5px); padding:20px; }
+  .modal-overlay.show { display:flex; }
+  .modal { background:var(--surface); border:1px solid var(--border2); border-radius:20px; padding:32px; max-width:480px; width:100%; text-align:center; animation:popIn 0.3s ease; position:relative; overflow:hidden; }
+  .modal::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:linear-gradient(90deg,var(--blue),var(--gold),var(--green)); }
+  @keyframes popIn { from{opacity:0;transform:scale(0.92)} to{opacity:1;transform:scale(1)} }
+  .modal-icon { font-size:52px; margin-bottom:14px; }
+  .modal-title { font-size:22px; font-weight:800; color:var(--text); margin-bottom:8px; }
+  .modal-sub { font-size:14px; color:var(--text2); margin-bottom:20px; line-height:1.5; }
+  .modal-summary { background:var(--surface2); border:1px solid var(--border2); border-radius:10px; padding:14px 16px; margin-bottom:20px; text-align:left; display:flex; flex-direction:column; gap:8px; }
+  .ms-row { display:flex; justify-content:space-between; font-size:13px; }
+  .ms-k { color:var(--text3); }
+  .ms-v { font-weight:700; color:var(--text); font-family:monospace; font-size:12px; }
+  .ms-v.gold { color:var(--gold); }
+  .btn-modal-p { width:100%; background:var(--gold); color:#0b1120; font-weight:800; padding:13px; border:none; border-radius:9px; cursor:pointer; font-family:'Inter',sans-serif; font-size:14px; transition:all 0.2s; margin-bottom:8px; }
+  .btn-modal-p:hover { background:#ffd740; }
+  .btn-modal-s { width:100%; background:transparent; color:var(--text3); border:1px solid var(--border2); padding:11px; border-radius:9px; cursor:pointer; font-family:'Inter',sans-serif; font-size:13px; font-weight:600; transition:all 0.2s; }
+  .btn-modal-s:hover { border-color:var(--text2); color:var(--text2); }
+
+  /* ── LOADING ANIMATION ── */
+  .loading-bar {
+    height:3px; background:var(--border); border-radius:2px; overflow:hidden; margin-bottom:20px;
+  }
+  .loading-fill {
+    height:100%; background:linear-gradient(90deg, var(--blue), var(--green));
+    border-radius:2px; animation:loadFill 2s ease forwards;
+  }
+  @keyframes loadFill { from{width:0} to{width:100%} }
+
+  .live-badge { display:inline-flex; align-items:center; gap:5px; font-size:10px; font-weight:700; color:var(--green); background:var(--green-dim); border:1px solid var(--green-border); padding:2px 8px; border-radius:10px; }
+
+  /* comparison highlight */
+  .cheapest-tag { position:absolute; top:12px; left:12px; font-size:9px; font-weight:800; text-transform:uppercase; letter-spacing:0.08em; color:#0b1120; background:var(--gold); padding:2px 8px; border-radius:4px; }
+
+</style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav>
+  <a href="#" class="nav-logo">
+    <div class="nav-logo-icon">🌐</div>
+    <span class="nav-logo-text">CoreTrade<span>Global</span></span>
+  </a>
+  <div class="nav-center">
+    <div class="trade-badge">Ticaret <strong>#TRD-2025-08841</strong></div>
+    <div class="step-trail">
+      <div class="st done">✓ Teklif</div>
+      <div class="st done">✓ Müzakere</div>
+      <div class="st done">✓ Anlaşma</div>
+      <div class="st active">● Sigorta & Taşıma</div>
+      <div class="st">5. Ödeme</div>
+    </div>
+  </div>
+  <div class="nav-right">
+    <button class="btn-nav btn-nav-ghost">← Geri</button>
+  </div>
+</nav>
+
+<div class="page">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-left">
+      <div class="hero-icon">🚢</div>
+      <div>
+        <div class="hero-label">Adım 4 / 5 — Sigorta & Taşıma</div>
+        <div class="hero-title">Canlı Teklif Eşleştirmesi</div>
+        <div class="hero-sub">Ticaret koşullarınıza göre lojistik ve sigorta firmaları gerçek zamanlı teklif sunuyor.</div>
+      </div>
+    </div>
+    <div class="hero-right">
+      <div class="live-pill"><div class="pulse-dot"></div> Canlı Teklifler</div>
+      <button class="refresh-btn" onclick="refreshQuotes()"><span class="spin" id="spinIcon">↻</span> Yenile</button>
+    </div>
+  </div>
+
+  <!-- LOADING BAR (shown on first load) -->
+  <div class="loading-bar" id="loadingBar">
+    <div class="loading-fill"></div>
+  </div>
+
+  <!-- TRADE INFO BAR -->
+  <div class="trade-info-bar">
+    <div class="tib-item">
+      <div class="tib-label">Ürün</div>
+      <div class="tib-val">Organik Pamuk İplik 30/1 Ne</div>
+    </div>
+    <div class="tib-item">
+      <div class="tib-label">Ağırlık / Hacim</div>
+      <div class="tib-val">15.000 kg · ~42 m³</div>
+    </div>
+    <div class="tib-item">
+      <div class="tib-label">Kalkış</div>
+      <div class="tib-val blue">📍 Alsancak, İzmir</div>
+    </div>
+    <div class="tib-item">
+      <div class="tib-label">Varış</div>
+      <div class="tib-val blue">📍 Haydarpaşa, İstanbul</div>
+    </div>
+    <div class="tib-item">
+      <div class="tib-label">Teslim Şartı</div>
+      <div class="tib-val">FOB İzmir</div>
+    </div>
+    <div class="tib-item">
+      <div class="tib-label">Mal Değeri</div>
+      <div class="tib-val gold">$60,750</div>
+    </div>
+  </div>
+
+  <!-- MAIN GRID -->
+  <div style="display:grid; grid-template-columns:1fr 1fr 340px; gap:24px; align-items:start;">
+
+    <!-- ── LOJİSTİK TEKLİFLER ── -->
+    <div>
+      <div class="sec-head">
+        <div class="sec-title">🚛 Lojistik Teklifleri <span class="live-badge">● Canlı</span></div>
+        <span class="sec-count" id="logCount">4 teklif</span>
+      </div>
+
+      <div class="filter-row">
+        <button class="filter-pill active-l" onclick="filterLog(this,'all')">Tümü</button>
+        <button class="filter-pill" onclick="filterLog(this,'sea')">⛵ Deniz</button>
+        <button class="filter-pill" onclick="filterLog(this,'road')">🚛 Kara</button>
+        <button class="filter-pill" onclick="filterLog(this,'air')">✈️ Hava</button>
+        <button class="filter-pill" onclick="filterLog(this,'rail')">🚂 Demir</button>
+      </div>
+
+      <div class="quote-list" id="logisticsList">
+
+        <!-- KARGO 1 — Best Value -->
+        <div class="quote-card" id="log-1" onclick="selectLogistics(1, 'TransAnadolu Lojistik', '$1,240', this)">
+          <div class="ribbon best">En İyi Değer</div>
+          <div class="qc-top">
+            <div class="company-logo" style="background:linear-gradient(135deg,#1e3a5f,#0d2137)">🚢</div>
+            <div class="company-info">
+              <div class="company-name">TransAnadolu Lojistik A.Ş.</div>
+              <div class="company-meta">
+                <span class="company-rating">★ 4.8</span>
+                <span>·</span>
+                <span>187 tamamlanan sefer</span>
+                <span>·</span>
+                <span>🇹🇷 İzmir</span>
+              </div>
+            </div>
+            <div class="qc-price">
+              <div class="qc-price-val blue">$1,240</div>
+              <div class="qc-price-sub">toplam nakliye</div>
+            </div>
+          </div>
+          <div class="qc-details">
+            <div class="qcd-item"><div class="qcd-label">Taşıma Tipi</div><div class="qcd-val">⛵ Ro-Ro Deniz</div></div>
+            <div class="qcd-item"><div class="qcd-label">Süre</div><div class="qcd-val">2–3 gün</div></div>
+            <div class="qcd-item"><div class="qcd-label">Kap Tipi</div><div class="qcd-val">20' FCL</div></div>
+            <div class="qcd-item"><div class="qcd-label">Yükleme</div><div class="qcd-val">14 Mar 2025</div></div>
+            <div class="qcd-item"><div class="qcd-label">Tahmini Varış</div><div class="qcd-val">17 Mar 2025</div></div>
+            <div class="qcd-item"><div class="qcd-label">Takip</div><div class="qcd-val">Gerçek Zamanlı</div></div>
+          </div>
+          <div class="qc-tags">
+            <span class="qc-tag blue">GPS Takip</span>
+            <span class="qc-tag blue">Soğuk Zincir</span>
+            <span class="qc-tag orange">Gümrük Desteği</span>
+            <span class="qc-tag purple">e-CMR</span>
+          </div>
+          <div class="qc-footer">
+            <div class="qc-validity">⏱ Teklif geçerlilik: <span class="validity-timer" data-sec="5400">01:30:00</span></div>
+            <button class="btn-select btn-select-logistics" id="btn-log-1">Seç →</button>
+          </div>
+        </div>
+
+        <!-- KARGO 2 -->
+        <div class="quote-card" id="log-2" onclick="selectLogistics(2, 'Hızlı Kargo Express', '$980', this)">
+          <div class="ribbon fast">En Hızlı</div>
+          <div class="qc-top">
+            <div class="company-logo" style="background:linear-gradient(135deg,#3f1f06,#5c2e08)">🚛</div>
+            <div class="company-info">
+              <div class="company-name">Hızlı Kargo Express Ltd.</div>
+              <div class="company-meta">
+                <span class="company-rating">★ 4.6</span>
+                <span>·</span>
+                <span>312 tamamlanan sefer</span>
+                <span>·</span>
+                <span>🇹🇷 İstanbul</span>
+              </div>
+            </div>
+            <div class="qc-price">
+              <div class="qc-price-val blue">$980</div>
+              <div class="qc-price-sub">toplam nakliye</div>
+            </div>
+          </div>
+          <div class="qc-details">
+            <div class="qcd-item"><div class="qcd-label">Taşıma Tipi</div><div class="qcd-val">🚛 TIR Kara</div></div>
+            <div class="qcd-item"><div class="qcd-label">Süre</div><div class="qcd-val">1 gün</div></div>
+            <div class="qcd-item"><div class="qcd-label">Araç</div><div class="qcd-val">Tenteli TIR</div></div>
+            <div class="qcd-item"><div class="qcd-label">Yükleme</div><div class="qcd-val">13 Mar 2025</div></div>
+            <div class="qcd-item"><div class="qcd-label">Tahmini Varış</div><div class="qcd-val">14 Mar 2025</div></div>
+            <div class="qcd-item"><div class="qcd-label">Takip</div><div class="qcd-val">Anlık SMS</div></div>
+          </div>
+          <div class="qc-tags">
+            <span class="qc-tag orange">Express</span>
+            <span class="qc-tag blue">GPS Takip</span>
+            <span class="qc-tag purple">Kapıdan Kapıya</span>
+          </div>
+          <div class="qc-footer">
+            <div class="qc-validity">⏱ Teklif geçerlilik: <span class="validity-timer" data-sec="7200">02:00:00</span></div>
+            <button class="btn-select btn-select-logistics" id="btn-log-2">Seç →</button>
+          </div>
+        </div>
+
+        <!-- KARGO 3 -->
+        <div class="quote-card" id="log-3" onclick="selectLogistics(3, 'Ege Denizyolları', '$1,480', this)">
+          <div class="qc-top">
+            <div class="company-logo" style="background:linear-gradient(135deg,#0d3340,#082030)">🛳️</div>
+            <div class="company-info">
+              <div class="company-name">Ege Denizyolları A.Ş.</div>
+              <div class="company-meta">
+                <span class="company-rating">★ 4.9</span>
+                <span>·</span>
+                <span>94 tamamlanan sefer</span>
+                <span>·</span>
+                <span>🇹🇷 İzmir</span>
+              </div>
+            </div>
+            <div class="qc-price">
+              <div class="qc-price-val blue">$1,480</div>
+              <div class="qc-price-sub">toplam nakliye</div>
+            </div>
+          </div>
+          <div class="qc-details">
+            <div class="qcd-item"><div class="qcd-label">Taşıma Tipi</div><div class="qcd-val">⛵ Konteyner</div></div>
+            <div class="qcd-item"><div class="qcd-label">Süre</div><div class="qcd-val">3–4 gün</div></div>
+            <div class="qcd-item"><div class="qcd-label">Kap Tipi</div><div class="qcd-val">40' HC FCL</div></div>
+            <div class="qcd-item"><div class="qcd-label">Yükleme</div><div class="qcd-val">15 Mar 2025</div></div>
+            <div class="qcd-item"><div class="qcd-label">Tahmini Varış</div><div class="qcd-val">19 Mar 2025</div></div>
+            <div class="qcd-item"><div class="qcd-label">Takip</div><div class="qcd-val">Port Portal</div></div>
+          </div>
+          <div class="qc-tags">
+            <span class="qc-tag blue">40' HC Konteyner</span>
+            <span class="qc-tag gold">Sigortalı Sefer</span>
+            <span class="qc-tag green">Çevre Dostu</span>
+          </div>
+          <div class="qc-footer">
+            <div class="qc-validity">⏱ Teklif geçerlilik: <span class="validity-timer" data-sec="3600">01:00:00</span></div>
+            <button class="btn-select btn-select-logistics" id="btn-log-3">Seç →</button>
+          </div>
+        </div>
+
+        <!-- KARGO 4 -->
+        <div class="quote-card" id="log-4" onclick="selectLogistics(4, 'Anadolu Rail Freight', '$1,050', this)">
+          <div class="ribbon cheap">Ekonomik</div>
+          <div class="qc-top">
+            <div class="company-logo" style="background:linear-gradient(135deg,#1f1040,#0d0820)">🚂</div>
+            <div class="company-info">
+              <div class="company-name">Anadolu Rail Freight Co.</div>
+              <div class="company-meta">
+                <span class="company-rating">★ 4.5</span>
+                <span>·</span>
+                <span>58 tamamlanan sefer</span>
+                <span>·</span>
+                <span>🇹🇷 Ankara</span>
+              </div>
+            </div>
+            <div class="qc-price">
+              <div class="qc-price-val blue">$1,050</div>
+              <div class="qc-price-sub">toplam nakliye</div>
+            </div>
+          </div>
+          <div class="qc-details">
+            <div class="qcd-item"><div class="qcd-label">Taşıma Tipi</div><div class="qcd-val">🚂 Demiryolu</div></div>
+            <div class="qcd-item"><div class="qcd-label">Süre</div><div class="qcd-val">2 gün</div></div>
+            <div class="qcd-item"><div class="qcd-label">Vagon</div><div class="qcd-val">Kapalı Vagon</div></div>
+            <div class="qcd-item"><div class="qcd-label">Yükleme</div><div class="qcd-val">14 Mar 2025</div></div>
+            <div class="qcd-item"><div class="qcd-label">Tahmini Varış</div><div class="qcd-val">16 Mar 2025</div></div>
+            <div class="qcd-item"><div class="qcd-label">Takip</div><div class="qcd-val">TCDD Portal</div></div>
+          </div>
+          <div class="qc-tags">
+            <span class="qc-tag green">Düşük Karbon</span>
+            <span class="qc-tag purple">İzleme</span>
+            <span class="qc-tag gold">TCDD Anlaşmalı</span>
+          </div>
+          <div class="qc-footer">
+            <div class="qc-validity">⏱ Teklif geçerlilik: <span class="validity-timer" data-sec="9000">02:30:00</span></div>
+            <button class="btn-select btn-select-logistics" id="btn-log-4">Seç →</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── SİGORTA TEKLİFLER ── -->
+    <div>
+      <div class="sec-head">
+        <div class="sec-title">🛡️ Sigorta Teklifleri <span class="live-badge">● Canlı</span></div>
+        <span class="sec-count" id="insCount">4 teklif</span>
+      </div>
+
+      <div class="filter-row">
+        <button class="filter-pill active-i" onclick="filterIns(this,'all')">Tümü</button>
+        <button class="filter-pill" onclick="filterIns(this,'full')">Tam Teminat</button>
+        <button class="filter-pill" onclick="filterIns(this,'basic')">Temel</button>
+        <button class="filter-pill" onclick="filterIns(this,'icc')">ICC A/B/C</button>
+      </div>
+
+      <div class="quote-list" id="insuranceList">
+
+        <!-- SİGORTA 1 -->
+        <div class="quote-card" id="ins-1" onclick="selectInsurance(1, 'Güven Sigorta A.Ş.', '$485', this)">
+          <div class="ribbon best">En Kapsamlı</div>
+          <div class="qc-top">
+            <div class="company-logo" style="background:linear-gradient(135deg,#0d3320,#062015)">🛡️</div>
+            <div class="company-info">
+              <div class="company-name">Güven Sigorta A.Ş.</div>
+              <div class="company-meta">
+                <span class="company-rating">★ 4.9</span>
+                <span>·</span>
+                <span>2.400+ poliçe</span>
+                <span>·</span>
+                <span>🇹🇷 İstanbul</span>
+              </div>
+            </div>
+            <div class="qc-price">
+              <div class="qc-price-val green">$485</div>
+              <div class="qc-price-sub">prim tutarı</div>
+            </div>
+          </div>
+          <div class="qc-details">
+            <div class="qcd-item"><div class="qcd-label">Kapsam</div><div class="qcd-val">ICC (A) Tam</div></div>
+            <div class="qcd-item"><div class="qcd-label">Teminat</div><div class="qcd-val">$75,000</div></div>
+            <div class="qcd-item"><div class="qcd-label">Franchise</div><div class="qcd-val">%0 (yok)</div></div>
+            <div class="qcd-item"><div class="qcd-label">Geçerlilik</div><div class="qcd-val">Port-Port</div></div>
+            <div class="qcd-item"><div class="qcd-label">Hasar Ödeme</div><div class="qcd-val">5 iş günü</div></div>
+            <div class="qcd-item"><div class="qcd-label">Sertifika</div><div class="qcd-val">Dijital</div></div>
+          </div>
+          <div class="qc-tags">
+            <span class="qc-tag green">Tüm Riskler</span>
+            <span class="qc-tag green">Su Hasarı</span>
+            <span class="qc-tag green">Hırsızlık</span>
+            <span class="qc-tag green">Yangın</span>
+            <span class="qc-tag orange">Grev Kapsar</span>
+          </div>
+          <div class="qc-footer">
+            <div class="qc-validity">⏱ Teklif geçerlilik: <span class="validity-timer" data-sec="6300">01:45:00</span></div>
+            <button class="btn-select btn-select-insurance" id="btn-ins-1">Seç →</button>
+          </div>
+        </div>
+
+        <!-- SİGORTA 2 -->
+        <div class="quote-card" id="ins-2" onclick="selectInsurance(2, 'Allianz Türkiye', '$620', this)">
+          <div class="ribbon fast">Uluslararası</div>
+          <div class="qc-top">
+            <div class="company-logo" style="background:linear-gradient(135deg,#002060,#001240)">🌍</div>
+            <div class="company-info">
+              <div class="company-name">Allianz Türkiye Sigorta</div>
+              <div class="company-meta">
+                <span class="company-rating">★ 4.8</span>
+                <span>·</span>
+                <span>Global ağ</span>
+                <span>·</span>
+                <span>🇩🇪 Alman sermayeli</span>
+              </div>
+            </div>
+            <div class="qc-price">
+              <div class="qc-price-val green">$620</div>
+              <div class="qc-price-sub">prim tutarı</div>
+            </div>
+          </div>
+          <div class="qc-details">
+            <div class="qcd-item"><div class="qcd-label">Kapsam</div><div class="qcd-val">ICC (A) Premium</div></div>
+            <div class="qcd-item"><div class="qcd-label">Teminat</div><div class="qcd-val">$80,000</div></div>
+            <div class="qcd-item"><div class="qcd-label">Franchise</div><div class="qcd-val">%0 (yok)</div></div>
+            <div class="qcd-item"><div class="qcd-label">Geçerlilik</div><div class="qcd-val">Kapıdan Kapı</div></div>
+            <div class="qcd-item"><div class="qcd-label">Hasar Ödeme</div><div class="qcd-val">3 iş günü</div></div>
+            <div class="qcd-item"><div class="qcd-label">Sertifika</div><div class="qcd-val">Uluslararası</div></div>
+          </div>
+          <div class="qc-tags">
+            <span class="qc-tag green">Tüm Riskler</span>
+            <span class="qc-tag blue">Siyasi Risk</span>
+            <span class="qc-tag orange">Savaş & Grev</span>
+            <span class="qc-tag purple">Global Hasar</span>
+          </div>
+          <div class="qc-footer">
+            <div class="qc-validity">⏱ Teklif geçerlilik: <span class="validity-timer" data-sec="8100">02:15:00</span></div>
+            <button class="btn-select btn-select-insurance" id="btn-ins-2">Seç →</button>
+          </div>
+        </div>
+
+        <!-- SİGORTA 3 -->
+        <div class="quote-card" id="ins-3" onclick="selectInsurance(3, 'Mapfre Sigorta', '$310', this)">
+          <div class="ribbon cheap">En Uygun</div>
+          <div class="qc-top">
+            <div class="company-logo" style="background:linear-gradient(135deg,#3d0a0a,#200505)">🔰</div>
+            <div class="company-info">
+              <div class="company-name">Mapfre Sigorta A.Ş.</div>
+              <div class="company-meta">
+                <span class="company-rating">★ 4.6</span>
+                <span>·</span>
+                <span>1.800+ poliçe</span>
+                <span>·</span>
+                <span>🇪🇸 İspanyol sermayeli</span>
+              </div>
+            </div>
+            <div class="qc-price">
+              <div class="qc-price-val green">$310</div>
+              <div class="qc-price-sub">prim tutarı</div>
+            </div>
+          </div>
+          <div class="qc-details">
+            <div class="qcd-item"><div class="qcd-label">Kapsam</div><div class="qcd-val">ICC (B) Standart</div></div>
+            <div class="qcd-item"><div class="qcd-label">Teminat</div><div class="qcd-val">$65,000</div></div>
+            <div class="qcd-item"><div class="qcd-label">Franchise</div><div class="qcd-val">%1</div></div>
+            <div class="qcd-item"><div class="qcd-label">Geçerlilik</div><div class="qcd-val">Port-Port</div></div>
+            <div class="qcd-item"><div class="qcd-label">Hasar Ödeme</div><div class="qcd-val">7 iş günü</div></div>
+            <div class="qcd-item"><div class="qcd-label">Sertifika</div><div class="qcd-val">Dijital</div></div>
+          </div>
+          <div class="qc-tags">
+            <span class="qc-tag green">Yangın & Batma</span>
+            <span class="qc-tag green">Su Hasarı</span>
+            <span class="qc-tag gold">Ekonomik Prim</span>
+          </div>
+          <div class="qc-footer">
+            <div class="qc-validity">⏱ Teklif geçerlilik: <span class="validity-timer" data-sec="4500">01:15:00</span></div>
+            <button class="btn-select btn-select-insurance" id="btn-ins-3">Seç →</button>
+          </div>
+        </div>
+
+        <!-- SİGORTA 4 -->
+        <div class="quote-card" id="ins-4" onclick="selectInsurance(4, 'AXA Sigorta', '$540', this)">
+          <div class="qc-top">
+            <div class="company-logo" style="background:linear-gradient(135deg,#00216b,#001040)">💎</div>
+            <div class="company-info">
+              <div class="company-name">AXA Sigorta A.Ş.</div>
+              <div class="company-meta">
+                <span class="company-rating">★ 4.7</span>
+                <span>·</span>
+                <span>3.100+ poliçe</span>
+                <span>·</span>
+                <span>🇫🇷 Fransız sermayeli</span>
+              </div>
+            </div>
+            <div class="qc-price">
+              <div class="qc-price-val green">$540</div>
+              <div class="qc-price-sub">prim tutarı</div>
+            </div>
+          </div>
+          <div class="qc-details">
+            <div class="qcd-item"><div class="qcd-label">Kapsam</div><div class="qcd-val">ICC (A) Geniş</div></div>
+            <div class="qcd-item"><div class="qcd-label">Teminat</div><div class="qcd-val">$72,000</div></div>
+            <div class="qcd-item"><div class="qcd-label">Franchise</div><div class="qcd-val">%0 (yok)</div></div>
+            <div class="qcd-item"><div class="qcd-label">Geçerlilik</div><div class="qcd-val">Depo-Depo</div></div>
+            <div class="qcd-item"><div class="qcd-label">Hasar Ödeme</div><div class="qcd-val">4 iş günü</div></div>
+            <div class="qcd-item"><div class="qcd-label">Sertifika</div><div class="qcd-val">Uluslararası</div></div>
+          </div>
+          <div class="qc-tags">
+            <span class="qc-tag green">Tüm Riskler</span>
+            <span class="qc-tag blue">Depo Kapsar</span>
+            <span class="qc-tag orange">Grev & Kargaşa</span>
+            <span class="qc-tag purple">7/24 Destek</span>
+          </div>
+          <div class="qc-footer">
+            <div class="qc-validity">⏱ Teklif geçerlilik: <span class="validity-timer" data-sec="10800">03:00:00</span></div>
+            <button class="btn-select btn-select-insurance" id="btn-ins-4">Seç →</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── SIDEBAR ── -->
+    <div class="sidebar">
+
+      <!-- SELECTED SUMMARY -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">🗂️ Seçimleriniz</div>
+        </div>
+        <div class="card-body">
+          <div class="selected-box logistics-sel" id="selLogBox" style="display:none">
+            <div class="sel-icon">🚛</div>
+            <div>
+              <div class="sel-name" id="selLogName">—</div>
+              <div class="sel-price blue" id="selLogPrice">—</div>
+            </div>
+          </div>
+          <div class="selected-box empty" id="emptyLogBox">
+            <div class="sel-icon" style="opacity:0.3">🚛</div>
+            <div class="sel-empty-text">Lojistik firma seçilmedi</div>
+          </div>
+
+          <div class="selected-box insurance-sel" id="selInsBox" style="display:none;margin-top:10px">
+            <div class="sel-icon">🛡️</div>
+            <div>
+              <div class="sel-name" id="selInsName">—</div>
+              <div class="sel-price green" id="selInsPrice">—</div>
+            </div>
+          </div>
+          <div class="selected-box empty" id="emptyInsBox" style="margin-top:10px">
+            <div class="sel-icon" style="opacity:0.3">🛡️</div>
+            <div class="sel-empty-text">Sigorta firması seçilmedi</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- COST BREAKDOWN -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">💰 Maliyet Özeti</div>
+        </div>
+        <div class="card-body">
+          <div class="cost-table">
+            <div class="cr"><span class="cr-k">Mal Bedeli</span><span class="cr-v">$60,750</span></div>
+            <div class="cr"><span class="cr-k">Nakliye Ücreti</span><span class="cr-v blue" id="costLog">— seçilmedi</span></div>
+            <div class="cr"><span class="cr-k">Sigorta Primi</span><span class="cr-v green" id="costIns">— seçilmedi</span></div>
+            <div class="cr"><span class="cr-k">Platform Hizmet</span><span class="cr-v">$120</span></div>
+            <div class="cr total">
+              <span class="cr-k" style="font-weight:700;color:var(--text)">Toplam</span>
+              <span class="cr-v gold" id="costTotal">$60,870+</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PROGRESS -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">🗺️ Ticaret Süreci</div>
+        </div>
+        <div class="card-body">
+          <div class="steps">
+            <div class="step"><div class="step-ic done">✓</div><div class="step-body"><div class="step-name done">Teklif Başlatıldı</div><div class="step-desc">14 Şub, 10:24</div></div></div>
+            <div class="step"><div class="step-ic done">✓</div><div class="step-body"><div class="step-name done">Müzakere</div><div class="step-desc">3 tur — tamamlandı</div></div></div>
+            <div class="step"><div class="step-ic done">✓</div><div class="step-body"><div class="step-name done">Anlaşma & Onay</div><div class="step-desc">Her iki taraf onayladı</div></div></div>
+            <div class="step"><div class="step-ic active">4</div><div class="step-body"><div class="step-name active">Sigorta & Taşıma</div><div class="step-desc">Firma seçimi bekleniyor</div></div></div>
+            <div class="step"><div class="step-ic">5</div><div class="step-body"><div class="step-name">Ödeme & Kapanış</div><div class="step-desc">Escrow + belge teslimi</div></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CTA -->
+      <div class="cta-card">
+        <div class="cta-title">🚀 Devam Et</div>
+        <div class="cta-sub">Lojistik ve sigorta firmalarını seçerek ödeme adımına geçin.</div>
+
+        <button class="btn-cta" id="ctaBtn" disabled onclick="openConfirmModal()">
+          Seçimleri Onayla & Devam Et →
+        </button>
+        <button class="btn-back-cta">← Anlaşmaya Dön</button>
+
+        <div class="require-note">
+          <div class="require-dot blue"></div>
+          Lojistik: <span id="reqLog" style="margin-left:4px;font-weight:600">Seçilmedi</span>
+        </div>
+        <div class="require-note" style="margin-top:6px">
+          <div class="require-dot green"></div>
+          Sigorta: <span id="reqIns" style="margin-left:4px;font-weight:600">Seçilmedi</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM MODAL -->
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal">
+    <div class="modal-icon">✅</div>
+    <div class="modal-title">Seçimleri Onayla</div>
+    <div class="modal-sub">Aşağıdaki hizmet sağlayıcılarla ticaret operasyonunuzu başlatmak üzeresiniz.</div>
+    <div class="modal-summary">
+      <div class="ms-row"><span class="ms-k">🚛 Lojistik</span><span class="ms-v" id="mLogName">—</span></div>
+      <div class="ms-row"><span class="ms-k">Nakliye ücreti</span><span class="ms-v blue" id="mLogPrice">—</span></div>
+      <div class="ms-row"><span class="ms-k">🛡️ Sigorta</span><span class="ms-v" id="mInsName">—</span></div>
+      <div class="ms-row"><span class="ms-k">Prim tutarı</span><span class="ms-v green" id="mInsPrice">—</span></div>
+      <div class="ms-row" style="margin-top:4px;padding-top:10px;border-top:1px solid var(--border)">
+        <span class="ms-k" style="font-weight:700;color:var(--text)">Toplam Ek Maliyet</span>
+        <span class="ms-v gold" id="mTotal">—</span>
+      </div>
+    </div>
+    <button class="btn-modal-p" onclick="confirmSelection()">🚀 Onayla & Ödemeye Geç</button>
+    <button class="btn-modal-s" onclick="closeModal()">Geri Dön, Değiştir</button>
+  </div>
+</div>
+
+<script>
+  // STATE
+  let selLog = null; // {id, name, price, num}
+  let selIns = null; // {id, name, price, num}
+
+  // ── LOGISTICS SELECT ──
+  function selectLogistics(id, name, price, cardEl) {
+    // Deselect all
+    document.querySelectorAll('#logisticsList .quote-card').forEach(c => {
+      c.classList.remove('selected-logistics');
+    });
+    document.querySelectorAll('[id^="btn-log-"]').forEach(b => {
+      b.textContent = 'Seç →';
+      b.classList.remove('selected');
+    });
+
+    // Select this
+    cardEl.classList.add('selected-logistics');
+    const btn = document.getElementById('btn-log-' + id);
+    btn.textContent = '✓ Seçildi';
+    btn.classList.add('selected');
+
+    selLog = {id, name, price};
+
+    // Update sidebar
+    document.getElementById('emptyLogBox').style.display = 'none';
+    document.getElementById('selLogBox').style.display = 'flex';
+    document.getElementById('selLogName').textContent = name;
+    document.getElementById('selLogPrice').textContent = price;
+
+    // Update cost
+    document.getElementById('costLog').textContent = price;
+    document.getElementById('reqLog').textContent = name;
+    document.getElementById('reqLog').style.color = 'var(--blue)';
+
+    updateTotal();
+    checkCTA();
+  }
+
+  // ── INSURANCE SELECT ──
+  function selectInsurance(id, name, price, cardEl) {
+    document.querySelectorAll('#insuranceList .quote-card').forEach(c => {
+      c.classList.remove('selected-insurance');
+    });
+    document.querySelectorAll('[id^="btn-ins-"]').forEach(b => {
+      b.textContent = 'Seç →';
+      b.classList.remove('selected');
+    });
+
+    cardEl.classList.add('selected-insurance');
+    const btn = document.getElementById('btn-ins-' + id);
+    btn.textContent = '✓ Seçildi';
+    btn.classList.add('selected');
+
+    selIns = {id, name, price};
+
+    document.getElementById('emptyInsBox').style.display = 'none';
+    document.getElementById('selInsBox').style.display = 'flex';
+    document.getElementById('selInsName').textContent = name;
+    document.getElementById('selInsPrice').textContent = price;
+
+    document.getElementById('costIns').textContent = price;
+    document.getElementById('reqIns').textContent = name;
+    document.getElementById('reqIns').style.color = 'var(--green)';
+
+    updateTotal();
+    checkCTA();
+  }
+
+  function parsePrice(str) {
+    return parseFloat(str.replace(/[$,]/g,'')) || 0;
+  }
+
+  function updateTotal() {
+    const base = 60750;
+    const platform = 120;
+    const log = selLog ? parsePrice(selLog.price) : 0;
+    const ins = selIns ? parsePrice(selIns.price) : 0;
+    const total = base + platform + log + ins;
+    const formatted = '$' + total.toLocaleString('en-US', {minimumFractionDigits:2});
+    document.getElementById('costTotal').textContent = formatted;
+  }
+
+  function checkCTA() {
+    const btn = document.getElementById('ctaBtn');
+    if (selLog && selIns) {
+      btn.disabled = false;
+      btn.textContent = 'Seçimleri Onayla & Devam Et →';
+    } else {
+      btn.disabled = true;
+      btn.textContent = selLog ? 'Sigorta Seçin...' : selIns ? 'Lojistik Seçin...' : 'Her İki Hizmeti Seçin';
+    }
+  }
+
+  // ── MODAL ──
+  function openConfirmModal() {
+    if (!selLog || !selIns) return;
+    document.getElementById('mLogName').textContent = selLog.name;
+    document.getElementById('mLogPrice').textContent = selLog.price;
+    document.getElementById('mInsName').textContent = selIns.name;
+    document.getElementById('mInsPrice').textContent = selIns.price;
+    const total = parsePrice(selLog.price) + parsePrice(selIns.price) + 120;
+    document.getElementById('mTotal').textContent = '$' + total.toLocaleString('en-US', {minimumFractionDigits:2});
+    document.getElementById('confirmModal').classList.add('show');
+  }
+
+  function closeModal() {
+    document.getElementById('confirmModal').classList.remove('show');
+  }
+
+  function confirmSelection() {
+    closeModal();
+    // Simulate going to next step
+    document.getElementById('ctaBtn').textContent = '✓ Onaylandı — Yönlendiriliyor...';
+    document.getElementById('ctaBtn').style.background = 'var(--green)';
+    document.getElementById('ctaBtn').disabled = true;
+  }
+
+  // ── TIMERS ──
+  function startTimers() {
+    document.querySelectorAll('.validity-timer').forEach(el => {
+      let secs = parseInt(el.dataset.sec);
+      setInterval(() => {
+        if (secs <= 0) { el.textContent = 'Süresi Doldu'; el.style.color = 'var(--red)'; return; }
+        secs--;
+        const h = Math.floor(secs / 3600);
+        const m = Math.floor((secs % 3600) / 60);
+        const s = secs % 60;
+        if (h > 0) el.textContent = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+        else el.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+        if (secs < 600) el.style.color = 'var(--red)';
+      }, 1000);
+    });
+  }
+  startTimers();
+
+  // ── REFRESH ──
+  function refreshQuotes() {
+    const spin = document.getElementById('spinIcon');
+    spin.style.animationPlayState = 'running';
+    const bar = document.getElementById('loadingBar');
+    bar.style.display = 'block';
+    bar.innerHTML = '<div class="loading-fill"></div>';
+    setTimeout(() => {
+      bar.style.display = 'none';
+      spin.style.animationPlayState = 'paused';
+    }, 2100);
+  }
+
+  // ── FILTER STUBS ──
+  function filterLog(el, type) {
+    document.querySelectorAll('.filter-row')[0].querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active-l'));
+    el.classList.add('active-l');
+  }
+  function filterIns(el, type) {
+    document.querySelectorAll('.filter-row')[1].querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active-i'));
+    el.classList.add('active-i');
+  }
+
+  // Hide loading bar after initial load
+  setTimeout(() => { document.getElementById('loadingBar').style.display = 'none'; }, 2100);
+</script>
+
+</body>
+</html>
