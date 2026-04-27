@@ -1,8 +1,8 @@
 /**
  * FAQSection Component
  *
- * Homepage section displaying frequently asked questions
- * Matches design exactly from index.html
+ * Displays frequently asked questions with expandable answers.
+ * Used on both the homepage and the standalone /faq page.
  */
 
 'use client';
@@ -13,39 +13,93 @@ import { ChevronDown } from 'lucide-react';
 const FAQ_ITEMS = [
   {
     id: 1,
-    question: 'What is CoreTradeGlobal?',
+    question: 'What exactly is an "Integrated Transaction"?',
     answer:
-      'CoreTradeGlobal is a B2B trading platform designed to connect verified suppliers with buyers worldwide. We facilitate international trade by providing tools for product listing, RFQ management, and direct communication between businesses.',
+      'An Integrated Transaction is the end-to-end cycle of a single trade: buyer/seller quote negotiation, agreement in principle, logistics RFQ, insurance RFQ, and trade tracking. All these steps count as one "transaction."',
   },
   {
     id: 2,
-    question: 'Is membership free?',
+    question: 'Is it mandatory to get transport and insurance quotes?',
     answer:
-      'Yes, creating an account on CoreTradeGlobal is completely free. With a free membership, you can list products, create RFQs, and connect with suppliers. We also offer premium plans with additional features for businesses looking to expand their reach.',
+      'No, it is completely optional. Logistics and insurance RFQ features are provided integrated into the platform, but using them is entirely up to you.',
   },
   {
     id: 3,
-    question: 'How do I create an RFQ (Request for Quote)?',
+    question: 'Does the platform take a commission on trades?',
     answer:
-      'After logging in, click on the "Create RFQ" button in your dashboard. Fill in the product details, quantity, budget, and delivery requirements. Once published, verified suppliers will be able to see your request and send you quotes.',
+      'No. CoreTradeGlobal generates revenue solely through the subscription model. No commission is charged on the trade amount, freight cost, or insurance premium.',
   },
   {
     id: 4,
-    question: 'How are suppliers verified?',
+    question: 'Is the Founder Member price permanent?',
     answer:
-      'Our verification process includes checking company documents, trade licenses, and banking information. Verified suppliers are marked with a special badge on their profile. We also encourage users to leave reviews after transactions.',
+      'Yes. The discounted annual rates offered to the first 100 members remain permanent as long as your account stays active. New members starting from August 2026 will pay standard rates.',
   },
   {
     id: 5,
-    question: 'How does payment work?',
+    question: 'Who can join the platform?',
     answer:
-      'CoreTradeGlobal currently does not process payments directly. Buyers and suppliers negotiate and arrange payment terms between themselves after connecting on the platform. A secure payment system is coming soon.',
+      'Exporters, importers, logistics service providers (forwarders/shipping), insurance agencies, and trade lawyers can all participate in the platform\'s ecosystem.',
   },
   {
     id: 6,
-    question: 'Which countries do you support?',
+    question: 'How do I get the "Verified" badge?',
     answer:
-      'We have suppliers and buyers from over 45 countries including Turkey, China, India, Germany, Italy, USA, and many more. Our platform supports international trade across all continents.',
+      'Every company joining the platform is manually reviewed by the CoreTradeGlobal team. Companies that complete the necessary documentation and verification steps will display a "Verified" badge on their profile.',
+  },
+  {
+    id: 7,
+    question: 'What does legal support cover?',
+    answer:
+      'Consultants within the platform provide guidance on export documentation, trade compliance, and potential contract disputes.',
+  },
+  {
+    id: 8,
+    question: 'What are AI-powered news summaries?',
+    answer:
+      'Our AI system scans global trade news, selects the ones relevant to your sector, and presents you with a summary of the most important points.',
+  },
+  {
+    id: 9,
+    question: 'How does the Trade Fair feature work?',
+    answer:
+      'International trade fairs relevant to your sector are listed chronologically, helping you stay informed about global events and expand your network.',
+  },
+  {
+    id: 10,
+    question: 'Is the messaging system secure?',
+    answer:
+      'Yes. You can share files, photos, and documents through our encrypted messaging channel. You can safely conduct trade on the platform without sharing personal contact information.',
+  },
+  {
+    id: 11,
+    question: 'How can I list my products?',
+    answer:
+      'You can make your products available to global buyers by entering photos, descriptions, and categories in the "Add Product" section of your panel.',
+  },
+  {
+    id: 12,
+    question: 'How does the RFQ (Request for Quote) process work?',
+    answer:
+      'When you need a product or service, you create a request. The system automatically notifies relevant suppliers or service providers, allowing you to receive live quotes.',
+  },
+  {
+    id: 13,
+    question: 'What are the payment methods?',
+    answer:
+      'You can make your membership payments via credit card or bank transfer through our secure payment infrastructure.',
+  },
+  {
+    id: 14,
+    question: 'Can I cancel my subscription at any time?',
+    answer:
+      'Yes. For our non-commitment plans, you can cancel your subscription at any time via the panel.',
+  },
+  {
+    id: 15,
+    question: 'Who can I contact for technical support?',
+    answer:
+      'For any questions, you can reach us at contact@coretradeglobal.com or through the live support chat within the platform.',
   },
 ];
 
