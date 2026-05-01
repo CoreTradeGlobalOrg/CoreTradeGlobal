@@ -10,7 +10,7 @@
 import { useState, useEffect, useRef, memo } from 'react';
 import Link from 'next/link';
 import { container } from '@/core/di/container';
-import { ChevronLeft, ChevronRight, Package } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Package, Star } from 'lucide-react';
 import { useCategories } from '@/presentation/hooks/category/useCategories';
 import { useResponsiveLimit, useScrollLoadMore } from '@/presentation/hooks/useResponsiveLimit';
 
@@ -167,7 +167,7 @@ const ProductCardImage = memo(function ProductCardImage({ src, alt }) {
   );
 });
 
-export function ProductCard({ product, categories }) {
+export function ProductCard({ product, categories, isFavorited, onToggleFavorite }) {
   // Get first image from images array
   const imageUrl = product.images?.[0] || product.imageUrl;
 
@@ -185,6 +185,18 @@ export function ProductCard({ product, categories }) {
       {/* Product Image */}
       <div className="product-card-image relative">
         <ProductCardImage src={imageUrl} alt={product.name} />
+        {onToggleFavorite && (
+          <button
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleFavorite(product.id); }}
+            className="absolute top-2 right-2 z-10 bg-black/40 hover:bg-black/60 rounded-full p-1.5 transition-colors"
+            aria-label={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
+          >
+            <Star
+              className="w-4 h-4 transition-colors"
+              style={isFavorited ? { fill: '#FFD700', color: '#FFD700' } : { color: 'white' }}
+            />
+          </button>
+        )}
       </div>
 
       {/* Product Content */}

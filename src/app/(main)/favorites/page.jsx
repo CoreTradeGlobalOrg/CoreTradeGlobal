@@ -5,14 +5,16 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/presentation/contexts/AuthContext';
 import { useFavoriteProduct } from '@/presentation/hooks/product/useFavoriteProduct';
+import { useCategories } from '@/presentation/hooks/category/useCategories';
 import { container } from '@/core/di/container';
-import { ProductCard } from '@/presentation/components/features/product/ProductCard/ProductCard';
+import { ProductCard } from '@/presentation/components/homepage/Products/FeaturedProducts';
 import { Heart } from 'lucide-react';
 
 export default function FavoritesPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const { favoriteIds, isFavorited, toggleFavorite } = useFavoriteProduct();
+  const { categories } = useCategories();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -111,6 +113,7 @@ export default function FavoritesPage() {
               <ProductCard
                 key={product.id}
                 product={product}
+                categories={categories}
                 isFavorited={isFavorited(product.id)}
                 onToggleFavorite={toggleFavorite}
               />
