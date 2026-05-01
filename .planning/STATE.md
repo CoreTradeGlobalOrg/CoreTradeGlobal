@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-stopped_at: Completed 16-06-PLAN.md
-last_updated: "2026-05-01T17:06:17.614Z"
+stopped_at: Completed 16-07-PLAN.md
+last_updated: "2026-05-01T17:07:33.870Z"
 last_activity: "2026-04-02 - Completed quick task 5: Fix hero not fetching last verified user"
 progress:
   total_phases: 17
-  completed_phases: 6
+  completed_phases: 7
   total_plans: 35
-  completed_plans: 30
+  completed_plans: 31
   percent: 71
 ---
 
@@ -125,6 +125,7 @@ Progress: [█████████████] 71%
 | Phase 16 P01 | 4 | 2 tasks | 7 files |
 | Phase 16 P06 | 5 | 2 tasks | 5 files |
 | Phase 16 P05 | 7 | 2 tasks | 3 files |
+| Phase 16 P07 | 4 | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -366,6 +367,8 @@ Recent decisions affecting current work:
 - [Phase 16-06]: ProductsRequestsManager uses conditional onClose (no-op for request, closeModal for product) — preserves backdrop close on product form while blocking it on RFQ form
 - [Phase 16-05]: Dark-themed ProductCard star button is opt-in via onToggleFavorite prop presence — homepage cards unchanged, favorites cards get star toggle
 - [Phase 16-05]: Homepage FeaturedProducts falls back to DEFAULT_PRODUCTS on both empty fetch and zero active products — always shows cards
+- [Phase 16]: Category maps built via useMemo from Firestore categories prop — reactive, no module-level global state
+- [Phase 16]: Both quantity and stockQuantity stored on bulk-created products — ProductCard reads stockQuantity; quantity retained for backward compat
 
 ### Pending Todos
 
@@ -389,6 +392,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-01T17:06:17.610Z
-Stopped at: Completed 16-06-PLAN.md
+Last session: 2026-05-01T17:07:33.866Z
+Stopped at: Completed 16-07-PLAN.md
 Resume file: None
