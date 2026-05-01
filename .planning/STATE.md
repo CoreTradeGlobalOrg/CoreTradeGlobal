@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-stopped_at: Completed 16-01-PLAN.md
-last_updated: "2026-04-27T17:14:02.997Z"
+stopped_at: Completed 16-06-PLAN.md
+last_updated: "2026-05-01T17:06:17.614Z"
 last_activity: "2026-04-02 - Completed quick task 5: Fix hero not fetching last verified user"
 progress:
   total_phases: 17
-  completed_phases: 7
-  total_plans: 28
-  completed_plans: 28
+  completed_phases: 6
+  total_plans: 35
+  completed_plans: 30
   percent: 71
 ---
 
@@ -123,6 +123,8 @@ Progress: [█████████████] 71%
 | Phase 16 P02 | 8 | 2 tasks | 5 files |
 | Phase 16 P04 | 3 | 2 tasks | 4 files |
 | Phase 16 P01 | 4 | 2 tasks | 7 files |
+| Phase 16 P06 | 5 | 2 tasks | 5 files |
+| Phase 16 P05 | 7 | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -360,6 +362,10 @@ Recent decisions affecting current work:
 - [Phase 16]: useFavoriteProduct uses optimistic update + revert on error to avoid Firestore latency impacting UX
 - [Phase 16]: ProductImageZoom uses CSS background-image zoom panel; hidden img tag triggers existing onImageLoad callback in ProductGallery
 - [Phase 16]: Star button in ProductGrid uses e.preventDefault + e.stopPropagation to prevent Link navigation
+- [Phase 16-06]: ProductGallery restructured with outer overflow-visible wrapper + inner overflow-hidden glass-card — zoom panel escapes clip without affecting image presentation
+- [Phase 16-06]: ProductsRequestsManager uses conditional onClose (no-op for request, closeModal for product) — preserves backdrop close on product form while blocking it on RFQ form
+- [Phase 16-05]: Dark-themed ProductCard star button is opt-in via onToggleFavorite prop presence — homepage cards unchanged, favorites cards get star toggle
+- [Phase 16-05]: Homepage FeaturedProducts falls back to DEFAULT_PRODUCTS on both empty fetch and zero active products — always shows cards
 
 ### Pending Todos
 
@@ -383,6 +389,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-27T17:09:36.973Z
-Stopped at: Completed 16-01-PLAN.md
+Last session: 2026-05-01T17:06:17.610Z
+Stopped at: Completed 16-06-PLAN.md
 Resume file: None
