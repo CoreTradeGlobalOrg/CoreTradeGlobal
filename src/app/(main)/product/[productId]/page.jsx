@@ -155,6 +155,18 @@ export default function ProductDetailPage() {
             {seller && currentUser?.uid !== product?.userId && (
               <ProductSellerCard seller={seller} sendingMessage={sendingMessage} onSendMessage={handleSendMessage} />
             )}
+            {/* Start Deal button — gold, positioned below Contact Seller / View Profile (GAP-5) */}
+            {currentUser?.uid && !isOwnProduct && (
+              <div className="pt-2">
+                <Button
+                  onClick={() => router.push(`/deals/new?productId=${product.id}&sellerId=${product.userId}`)}
+                  className="w-full h-14 rounded-xl bg-[#FFD700] hover:brightness-110 !text-black font-semibold flex items-center justify-center gap-3 transition-all hover:shadow-[0_0_20px_rgba(255,215,0,0.3)]"
+                >
+                  <Handshake className="w-5 h-5" />
+                  Start Deal
+                </Button>
+              </div>
+            )}
           </div>
 
           {/* Right Column - Details */}
@@ -230,19 +242,6 @@ export default function ProductDetailPage() {
                 </button>
               )}
             </div>
-
-            {/* Start Deal button — shown to authenticated non-owners only */}
-            {currentUser?.uid && !isOwnProduct && (
-              <div className="pt-2">
-                <Button
-                  onClick={() => router.push(`/deals/new?productId=${product.id}&sellerId=${product.userId}`)}
-                  className="w-full h-14 rounded-xl bg-[#FFD700] hover:brightness-110 !text-black font-semibold flex items-center justify-center gap-3 transition-all hover:shadow-[0_0_20px_rgba(255,215,0,0.3)]"
-                >
-                  <Handshake className="w-5 h-5" />
-                  Start Deal
-                </Button>
-              </div>
-            )}
 
             {isOwnProduct && (
               <div className="pt-4 space-y-4">
