@@ -12,7 +12,7 @@ import { useAuth } from '@/presentation/contexts/AuthContext';
 import { useLogout } from '@/presentation/hooks/auth/useLogout';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
-import { Settings } from 'lucide-react';
+import { Settings, Heart } from 'lucide-react';
 import { ProfileStickyHeader } from './ProfileStickyHeader';
 import { ProfileCard } from './ProfileCard';
 import { useProfilePage } from './useProfilePage';
@@ -80,7 +80,13 @@ function ProfileContent() {
         />
 
         {page.isOwnProfile && (
-          <div className="flex justify-end">
+          <div className="flex justify-end gap-4">
+            <Link
+              href="/favorites"
+              className="text-sm text-[#A0A0A0] hover:text-[#FFD700] flex items-center gap-1 transition-colors"
+            >
+              <Heart className="w-4 h-4" /> My Favorites
+            </Link>
             <Link
               href="/settings"
               className="text-sm text-[#A0A0A0] hover:text-white flex items-center gap-1 transition-colors"

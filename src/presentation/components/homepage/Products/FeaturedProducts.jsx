@@ -291,13 +291,23 @@ export function FeaturedProducts() {
         if (fetchedProducts && fetchedProducts.length > 0) {
           // Filter active products and sort by createdAt client-side
           const active = fetchedProducts.filter(p => p.status === 'active');
-          const sorted = active.sort((a, b) => {
-            const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
-            const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
-            return dateB - dateA;
-          });
-          setAllProducts(sorted);
-          setProducts(sorted.slice(0, displayCount));
+          if (active.length > 0) {
+            const sorted = active.sort((a, b) => {
+              const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
+              const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
+              return dateB - dateA;
+            });
+            setAllProducts(sorted);
+            setProducts(sorted.slice(0, displayCount));
+          } else {
+            // No active products — fall back to defaults so homepage always shows cards
+            setAllProducts([]);
+            setProducts(DEFAULT_PRODUCTS);
+          }
+        } else {
+          // Subscription returned empty — fall back to defaults
+          setAllProducts([]);
+          setProducts(DEFAULT_PRODUCTS);
         }
         setLoading(false);
       },
