@@ -10,19 +10,17 @@
 
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useMemo } from 'react';
 import Papa from 'papaparse';
 import {
   Upload,
   X,
   CheckCircle,
   AlertCircle,
-  ChevronDown,
   User,
   FileText,
   Loader2,
 } from 'lucide-react';
-import { COMPANY_CATEGORIES } from '@/core/constants/categories';
 import { CURRENCIES } from '@/core/constants/currencies';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { SearchableSelect } from '@/presentation/components/common/SearchableSelect/SearchableSelect';
@@ -30,21 +28,48 @@ import { SearchableSelect } from '@/presentation/components/common/SearchableSel
 // Valid currency codes for validation
 const VALID_CURRENCY_CODES = new Set(CURRENCIES.map((c) => c.value));
 
-// Valid category values for validation
-const VALID_CATEGORY_VALUES = new Set(COMPANY_CATEGORIES.map((c) => c.value));
-const CATEGORY_LABEL_TO_VALUE = {};
-COMPANY_CATEGORIES.forEach((c) => {
-  CATEGORY_LABEL_TO_VALUE[c.label.toLowerCase()] = c.value;
-  CATEGORY_LABEL_TO_VALUE[c.value.toLowerCase()] = c.value;
-});
-
-function resolveCategory(raw) {
-  if (!raw) return null;
-  const lower = raw.trim().toLowerCase();
-  return CATEGORY_LABEL_TO_VALUE[lower] || null;
+/**
+ * Build category lookup maps from Firestore product categories.
+ * Accepts the array returned by useCategories() which has shape:
+ *   { value: cat.id, label: '...' (may include icon prefix), name: cat.name }
+ */
+function buildCategoryMaps(categories) {
+  const validValues = new Set();
+  const labelToValue = {};
+  (categories || []).forEach((c) => {
+    const catValue = c.value;
+    if (!catValue) return;
+    validValues.add(catValue);
+    // Match by value (e.g. "electronics")
+    labelToValue[catValue.toLowerCase()] = catValue;
+    // Match by plain name (e.g. "Electronics")
+    const name = c.name || '';
+    if (name) {
+      labelToValue[name.toLowerCase()] = catValue;
+    }
+    // Match by full label (which may include icon prefix e.g. "🔌 Electronics")
+    const label = c.label || '';
+    if (label) {
+      labelToValue[label.toLowerCase()] = catValue;
+      // Also try stripping leading emoji/icon characters from label
+      const stripped = label.replace(/^\S+\s+/, '').trim();
+      if (stripped && stripped.toLowerCase() !== label.toLowerCase()) {
+        labelToValue[stripped.toLowerCase()] = catValue;
+      }
+    }
+  });
+  return { validValues, labelToValue };
 }
 
-function validateRow(row, index) {
+function makeResolveCategory(labelToValue) {
+  return function resolveCategory(raw) {
+    if (!raw) return null;
+    const lower = raw.trim().toLowerCase();
+    return labelToValue[lower] || null;
+  };
+}
+
+function validateRow(row, index, resolveCategory, validValues) {
   const errors = [];
 
   // Required: Product Name
@@ -99,7 +124,7 @@ function validateRow(row, index) {
 
 const REQUIRED_COLUMNS = ['Product Name', 'Category', 'Price', 'Currency', 'Quantity', 'Unit'];
 
-export function BulkProductUpload({ users, onClose }) {
+export function BulkProductUpload({ users, categories, onClose }) {
   const [selectedMemberId, setSelectedMemberId] = useState('');
   const [isDragging, setIsDragging] = useState(false);
   const [parsedRows, setParsedRows] = useState(null);
@@ -108,6 +133,16 @@ export function BulkProductUpload({ users, onClose }) {
   const [uploadResult, setUploadResult] = useState(null);
   const [uploadProgress, setUploadProgress] = useState({ created: 0, total: 0 });
   const fileInputRef = useRef(null);
+
+  // Derive category lookup maps from the Firestore product categories prop
+  const { validValues: categoryValidValues, labelToValue: categoryLabelToValue } = useMemo(
+    () => buildCategoryMaps(categories),
+    [categories]
+  );
+  const resolveCategory = useMemo(
+    () => makeResolveCategory(categoryLabelToValue),
+    [categoryLabelToValue]
+  );
 
   // Build member options from the users list (all users passed from admin panel)
   const memberOptions = (users || []).map((u) => ({
@@ -151,14 +186,16 @@ export function BulkProductUpload({ users, onClose }) {
           return;
         }
 
-        const validated = results.data.map((row, i) => validateRow(row, i));
+        const validated = results.data.map((row, i) =>
+          validateRow(row, i, resolveCategory, categoryValidValues)
+        );
         setParsedRows(validated);
       },
       error: (err) => {
         setParseError(`Failed to parse CSV: ${err.message}`);
       },
     });
-  }, []);
+  }, [resolveCategory, categoryValidValues]);
 
   const handleFileInputChange = (e) => {
     const file = e.target.files?.[0];
@@ -385,7 +422,7 @@ export function BulkProductUpload({ users, onClose }) {
                     <td className="px-3 py-2 text-white max-w-[140px] truncate">{row.name || <span className="text-red-400 italic">missing</span>}</td>
                     <td className="px-3 py-2 text-[#A0A0A0] max-w-[120px] truncate">
                       {row.category
-                        ? COMPANY_CATEGORIES.find((c) => c.value === row.category)?.label || row.category
+                        ? (categories || []).find((c) => c.value === row.category)?.name || row.category
                         : <span className="text-red-400 italic">{row.original['Category'] || 'missing'}</span>}
                     </td>
                     <td className="px-3 py-2 text-[#A0A0A0] whitespace-nowrap">
