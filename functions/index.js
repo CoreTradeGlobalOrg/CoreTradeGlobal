@@ -5198,10 +5198,12 @@ exports.bulkUploadProducts = onCall(
           price: row.price,
           currency: row.currency,
           quantity: row.quantity,
+          stockQuantity: row.quantity, // ProductCard reads stockQuantity; store both for consistency
           unit: row.unit,
           description: row.description || '',
           images: [],
           userId,
+          createdByAdmin: true,
           status: 'active',
           createdAt: now,
           updatedAt: now,
