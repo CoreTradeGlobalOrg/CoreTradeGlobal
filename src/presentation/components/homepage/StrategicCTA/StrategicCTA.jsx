@@ -126,10 +126,10 @@ export function StrategicCTA() {
         />
       </Modal>
 
-      {/* Request Creation Modal */}
+      {/* Request Creation Modal — backdrop click disabled; use Cancel button to close (GAP-6) */}
       <Modal
         isOpen={requestModalOpen}
-        onClose={() => setRequestModalOpen(false)}
+        onClose={() => {}}
         title="Create New RFQ"
         variant="blue"
       >

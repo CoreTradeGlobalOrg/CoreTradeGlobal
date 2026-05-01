@@ -10,6 +10,7 @@ import { useState } from 'react';
 import { useAuth } from '@/presentation/contexts/AuthContext';
 import { useCreateProduct } from '@/presentation/hooks/product/useCreateProduct';
 import { useCreateRequest } from '@/presentation/hooks/request/useCreateRequest';
+import { useCategories } from '@/presentation/hooks/category/useCategories';
 import { ProductForm } from '@/presentation/components/features/product/ProductForm/ProductForm';
 import { RequestForm } from '@/presentation/components/features/request/RequestForm/RequestForm';
 import { SearchableSelect } from '@/presentation/components/common/SearchableSelect/SearchableSelect';
@@ -21,6 +22,7 @@ export function ProductsRequestsManager({ users }) {
   const { user: adminUser } = useAuth();
   const { createProduct } = useCreateProduct();
   const { createRequest } = useCreateRequest();
+  const { categories } = useCategories();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [modalType, setModalType] = useState(null); // 'product' or 'request'
@@ -142,6 +144,7 @@ export function ProductsRequestsManager({ users }) {
       {showBulkUpload && (
         <BulkProductUpload
           users={users}
+          categories={categories}
           onClose={() => setShowBulkUpload(false)}
         />
       )}
@@ -189,10 +192,10 @@ export function ProductsRequestsManager({ users }) {
         </div>
       )}
 
-      {/* Modal */}
+      {/* Modal — request form: backdrop click disabled; product form: backdrop click closes (GAP-6) */}
       <Modal
         isOpen={modalOpen}
-        onClose={closeModal}
+        onClose={modalType === 'request' ? () => {} : closeModal}
         title={modalTitle}
         variant={modalVariant}
         className="!max-w-[95vw] !max-h-[92vh] !rounded-xl md:!max-w-4xl md:!rounded-2xl"
