@@ -122,7 +122,7 @@ export function CookieConsent() {
                   We value your privacy
                 </h3>
                 <p className="text-gray-400 text-sm leading-relaxed">
-                  We use cookies to enhance your browsing experience, provide personalized content, and analyze our traffic. Please select your preference.{' '}
+                  We use cookies to improve your experience and analyze site traffic.{' '}
                   <Link href="/cookie-policy" className="text-[#FFD700] hover:underline">
                     Learn more
                   </Link>
@@ -135,7 +135,7 @@ export function CookieConsent() {
                   onClick={handleRejectAll}
                   className="px-5 py-2.5 rounded-xl border border-[rgba(255,255,255,0.2)] text-white font-medium hover:bg-[rgba(255,255,255,0.05)] transition-colors text-sm"
                 >
-                  Reject All
+                  Decline
                 </button>
                 <button
                   onClick={() => setShowSettings(true)}
@@ -171,7 +171,8 @@ export function CookieConsent() {
             {/* Close Button */}
             <button
               onClick={() => setShowSettings(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+              aria-label="Close cookie preferences dialog"
+              className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FFD700] rounded"
             >
               <X className="w-5 h-5" />
             </button>
@@ -250,7 +251,7 @@ export function CookieConsent() {
                 onClick={handleRejectAll}
                 className="flex-1 px-5 py-2.5 rounded-xl border border-[rgba(255,255,255,0.2)] text-white font-medium hover:bg-[rgba(255,255,255,0.05)] transition-colors text-sm"
               >
-                Reject All
+                Decline
               </button>
               <button
                 onClick={handleSavePreferences}

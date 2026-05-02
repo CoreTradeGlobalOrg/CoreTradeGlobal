@@ -82,7 +82,8 @@ service cloud.firestore {
             request.resource.data.type in ['message', 'quote', 'system', 'admin',
               'new_message', 'conversation_created', 'quote_received',
               'quote_accepted', 'quote_rejected', 'new_user_approval',
-              'deal', 'legal', 'announcement', 'rfq_created'] &&
+              'deal', 'legal', 'announcement', 'rfq_created',
+              'product_upload_request'] &&
             request.resource.data.keys().hasAll(['type', 'title', 'isRead']) &&
             request.resource.data.isRead == false &&
             request.auth.uid != userId
@@ -373,6 +374,19 @@ service cloud.firestore {
     match /unsubscribes/{docId} {
       allow read: if isAdmin();
       allow write: if false;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Product Upload Requests collection (Plan 17-04)
+    //
+    // Users submit a request for admin-assisted product upload.
+    // Authenticated user can create their own request (uid must match).
+    // Admin can read and update all requests.
+    // ─────────────────────────────────────────────────────────────────────────
+
+    match /productUploadRequests/{requestId} {
+      allow create: if isAuthenticated() && request.resource.data.uid == request.auth.uid;
+      allow read, update: if isAdmin();
     }
 
     // ─────────────────────────────────────────────────────────────────────────

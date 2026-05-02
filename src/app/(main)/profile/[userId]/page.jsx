@@ -16,6 +16,7 @@ import { Settings, Heart } from 'lucide-react';
 import { ProfileStickyHeader } from './ProfileStickyHeader';
 import { ProfileCard } from './ProfileCard';
 import { useProfilePage } from './useProfilePage';
+import { ProductUploadRequestButton } from '@/presentation/components/features/profile/ProductUploadRequestButton/ProductUploadRequestButton';
 
 // Heavy sub-components loaded lazily to reduce initial bundle
 const CompanyDocuments = dynamic(
@@ -78,6 +79,12 @@ function ProfileContent() {
           onProfileUpdate={page.handleProfileUpdate}
           onCancelEdit={page.handleCancelEdit}
         />
+
+        {page.isOwnProfile && (
+          <div className="flex justify-start">
+            <ProductUploadRequestButton user={currentUser} />
+          </div>
+        )}
 
         {page.isOwnProfile && (
           <div className="flex justify-end gap-4">
