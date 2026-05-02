@@ -72,6 +72,7 @@ export function RegisterForm() {
       email: '',
       phone: '',
       position: '',
+      companyType: '',
       companyName: '',
       companyCategory: '',
       country: '',
