@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-stopped_at: Completed 16-07-PLAN.md
-last_updated: "2026-05-01T17:13:47.501Z"
+stopped_at: Completed 17-03-PLAN.md
+last_updated: "2026-05-02T09:21:22.636Z"
 last_activity: "2026-04-02 - Completed quick task 5: Fix hero not fetching last verified user"
 progress:
   total_phases: 17
   completed_phases: 7
   total_plans: 35
-  completed_plans: 31
+  completed_plans: 32
   percent: 71
 ---
 
@@ -126,6 +126,7 @@ Progress: [█████████████] 71%
 | Phase 16 P06 | 5 | 2 tasks | 5 files |
 | Phase 16 P05 | 7 | 2 tasks | 3 files |
 | Phase 16 P07 | 4 | 2 tasks | 3 files |
+| Phase 17 P03 | 8 | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -369,6 +370,10 @@ Recent decisions affecting current work:
 - [Phase 16-05]: Homepage FeaturedProducts falls back to DEFAULT_PRODUCTS on both empty fetch and zero active products — always shows cards
 - [Phase 16]: Category maps built via useMemo from Firestore categories prop — reactive, no module-level global state
 - [Phase 16]: Both quantity and stockQuantity stored on bulk-created products — ProductCard reads stockQuantity; quantity retained for backward compat
+- [Phase 17]: NEXT_PUBLIC_ZOHO_WIDGET_KEY absence = single-tab Messages mode (no Support tab, no standalone button)
+- [Phase 17]: Zoho default float button suppressed globally via floatbutton.visible('hide') in ready callback
+- [Phase 17]: Tab bar only shown on conversation list view (not inside active conversation thread)
+- [Phase 17]: ZohoSalesIQButton loaded via next/dynamic ssr:false to avoid window access during SSR
 
 ### Pending Todos
 
@@ -392,6 +397,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-01T17:07:33.866Z
-Stopped at: Completed 16-07-PLAN.md
+Last session: 2026-05-02T09:21:22.633Z
+Stopped at: Completed 17-03-PLAN.md
 Resume file: None
