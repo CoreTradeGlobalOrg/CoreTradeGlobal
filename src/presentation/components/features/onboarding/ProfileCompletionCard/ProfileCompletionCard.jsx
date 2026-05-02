@@ -1,0 +1,147 @@
+/**
+ * ProfileCompletionCard Component
+ *
+ * Shows a profile completion progress bar and field checklist to encourage
+ * users to fill out their profile. Renders on the dashboard and profile pages.
+ *
+ * Behaviour:
+ * - Hidden permanently at 100% completion (returns null)
+ * - Dismissable per browser session via sessionStorage (comes back on next visit)
+ * - "Complete Profile" button links to /profile/[uid]?edit=true
+ *
+ * Props:
+ *   user {object} — user object from AuthContext (includes uid, role, and profile fields)
+ */
+
+'use client';
+
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { CheckCircle, Circle, X } from 'lucide-react';
+
+/**
+ * Fields checked for profile completion.
+ * Each field is weighted equally (1 / total).
+ */
+const COMPLETION_FIELDS = [
+  { key: 'companyName', label: 'Company name' },
+  { key: 'companyLogo', label: 'Company logo' },
+  { key: 'country', label: 'Country' },
+  { key: 'phone', label: 'Phone number' },
+  { key: 'about', label: 'Company description' },
+  { key: 'companyWebsite', label: 'Website' },
+];
+
+export function ProfileCompletionCard({ user }) {
+  const [dismissed, setDismissed] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
+
+  // Read sessionStorage after mount to avoid SSR hydration mismatch
+  useEffect(() => {
+    if (user?.uid) {
+      const key = `profileCardDismissed_${user.uid}`;
+      if (sessionStorage.getItem(key) === '1') {
+        setDismissed(true);
+      }
+    }
+    setHydrated(true);
+  }, [user?.uid]);
+
+  if (!user) return null;
+
+  // Calculate completion percentage
+  const completedCount = COMPLETION_FIELDS.filter(
+    (f) => !!user[f.key]
+  ).length;
+  const total = COMPLETION_FIELDS.length;
+  const percent = Math.round((completedCount / total) * 100);
+
+  // Hide permanently at 100%
+  if (percent === 100) return null;
+
+  // Hide during SSR and before hydration check (avoids flash)
+  if (!hydrated) return null;
+
+  // Hide for current session if dismissed
+  if (dismissed) return null;
+
+  const handleDismiss = () => {
+    if (user?.uid) {
+      sessionStorage.setItem(`profileCardDismissed_${user.uid}`, '1');
+    }
+    setDismissed(true);
+  };
+
+  const profileHref = user?.uid ? `/profile/${user.uid}` : '/profile';
+
+  return (
+    <div className="glass-card p-5 border border-[#2A3B52] rounded-xl relative">
+      {/* Dismiss button */}
+      <button
+        onClick={handleDismiss}
+        aria-label="Dismiss profile completion card"
+        className="absolute top-3 right-3 text-gray-500 hover:text-gray-300 transition-colors p-1 rounded-md hover:bg-white/5"
+      >
+        <X className="w-4 h-4" />
+      </button>
+
+      {/* Header */}
+      <div className="flex items-center gap-3 mb-4 pr-8">
+        <div className="flex-1">
+          <h2 className="text-white font-semibold text-sm leading-tight">
+            Complete Your Profile
+          </h2>
+        </div>
+        {/* Percent badge */}
+        <span
+          className={`text-xs font-bold px-2 py-0.5 rounded-full shrink-0 ${
+            percent >= 50
+              ? 'bg-[#FFD700]/15 text-[#FFD700]'
+              : 'bg-white/10 text-gray-400'
+          }`}
+        >
+          {percent}% complete
+        </span>
+      </div>
+
+      {/* Gold progress bar */}
+      <div className="bg-[#2A3B52] rounded-full h-2 mb-5" role="progressbar" aria-valuenow={percent} aria-valuemin={0} aria-valuemax={100}>
+        <div
+          className="bg-gradient-to-r from-[#FFD700] to-[#FDB931] rounded-full h-2 transition-all duration-500"
+          style={{ width: `${percent}%` }}
+        />
+      </div>
+
+      {/* Field checklist */}
+      <ul className="space-y-2 mb-5">
+        {COMPLETION_FIELDS.map((field) => {
+          const done = !!user[field.key];
+          return (
+            <li key={field.key} className="flex items-center gap-2.5">
+              {done ? (
+                <CheckCircle className="w-4 h-4 text-green-400 shrink-0" aria-hidden="true" />
+              ) : (
+                <Circle className="w-4 h-4 text-gray-600 shrink-0" aria-hidden="true" />
+              )}
+              <span
+                className={`text-sm ${done ? 'text-gray-400 line-through' : 'text-gray-300'}`}
+              >
+                {field.label}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+
+      {/* CTA */}
+      <Link
+        href={profileHref}
+        className="inline-flex items-center justify-center w-full px-4 py-2 rounded-lg text-sm font-semibold !text-black bg-gradient-to-r from-[#FFD700] to-[#FDB931] hover:opacity-90 transition-opacity"
+      >
+        Complete Profile
+      </Link>
+    </div>
+  );
+}
+
+export default ProfileCompletionCard;

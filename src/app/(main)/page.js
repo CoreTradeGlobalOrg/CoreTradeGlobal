@@ -32,6 +32,15 @@ const OnboardingTour = dynamic(
   { ssr: false }
 );
 
+// Loaded client-side only — reads sessionStorage
+const ProfileCompletionCard = dynamic(
+  () =>
+    import(
+      '@/presentation/components/features/onboarding/ProfileCompletionCard/ProfileCompletionCard'
+    ).then((m) => ({ default: m.ProfileCompletionCard })),
+  { ssr: false }
+);
+
 export default function Home() {
   const { user, loading } = useAuth();
 
@@ -54,6 +63,13 @@ export default function Home() {
             // and the flag will be set — no local state needed
           }}
         />
+      )}
+
+      {/* Profile completion card — shown above main content for authenticated users */}
+      {!loading && user && (
+        <div className="max-w-sm mx-auto px-4 pt-4">
+          <ProfileCompletionCard user={user} />
+        </div>
       )}
 
       {/* Hero Section with 3D Globe */}

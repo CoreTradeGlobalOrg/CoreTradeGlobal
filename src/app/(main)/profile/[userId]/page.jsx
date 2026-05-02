@@ -18,6 +18,15 @@ import { ProfileCard } from './ProfileCard';
 import { useProfilePage } from './useProfilePage';
 import { ProductUploadRequestButton } from '@/presentation/components/features/profile/ProductUploadRequestButton/ProductUploadRequestButton';
 
+// ProfileCompletionCard reads sessionStorage — must be client-side only
+const ProfileCompletionCard = dynamic(
+  () =>
+    import(
+      '@/presentation/components/features/onboarding/ProfileCompletionCard/ProfileCompletionCard'
+    ).then((m) => ({ default: m.ProfileCompletionCard })),
+  { ssr: false }
+);
+
 // Heavy sub-components loaded lazily to reduce initial bundle
 const CompanyDocuments = dynamic(
   () => import('@/presentation/components/features/profile/CompanyDocuments/CompanyDocuments').then(m => ({ default: m.CompanyDocuments })),
@@ -79,6 +88,11 @@ function ProfileContent() {
           onProfileUpdate={page.handleProfileUpdate}
           onCancelEdit={page.handleCancelEdit}
         />
+
+        {/* Profile completion card — own profile only, hides at 100% */}
+        {page.isOwnProfile && currentUser && (
+          <ProfileCompletionCard user={currentUser} />
+        )}
 
         {page.isOwnProfile && (
           <div className="flex justify-start">
