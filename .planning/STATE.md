@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-stopped_at: Completed 17-03-PLAN.md
-last_updated: "2026-05-02T09:21:22.636Z"
+stopped_at: Completed 17-01-PLAN.md
+last_updated: "2026-05-02T09:23:23.979Z"
 last_activity: "2026-04-02 - Completed quick task 5: Fix hero not fetching last verified user"
 progress:
   total_phases: 17
   completed_phases: 7
   total_plans: 35
-  completed_plans: 32
+  completed_plans: 33
   percent: 71
 ---
 
@@ -127,6 +127,7 @@ Progress: [█████████████] 71%
 | Phase 16 P05 | 7 | 2 tasks | 3 files |
 | Phase 16 P07 | 4 | 2 tasks | 3 files |
 | Phase 17 P03 | 8 | 2 tasks | 4 files |
+| Phase 17 P01 | 9 | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -374,6 +375,9 @@ Recent decisions affecting current work:
 - [Phase 17]: Zoho default float button suppressed globally via floatbutton.visible('hide') in ready callback
 - [Phase 17]: Tab bar only shown on conversation list view (not inside active conversation thread)
 - [Phase 17]: ZohoSalesIQButton loaded via next/dynamic ssr:false to avoid window access during SSR
+- [Phase 17]: register/page.jsx uses 'use client' + next/dynamic ssr:false — Turbopack 16.2 does not allow dynamic() with JSX loading prop in Server Components with metadata
+- [Phase 17]: setRoleClaimOnRegistration CF: self-callable by registering user (not admin-only); Firestore doc verification prevents claim escalation; CF failure is non-blocking
+- [Phase 17]: COMPANY_TYPE_TO_ROLE map decouples company type UI selection from role string — single point of mapping for provider self-registration
 
 ### Pending Todos
 
@@ -397,6 +401,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-02T09:21:22.633Z
-Stopped at: Completed 17-03-PLAN.md
+Last session: 2026-05-02T09:23:23.975Z
+Stopped at: Completed 17-01-PLAN.md
 Resume file: None
