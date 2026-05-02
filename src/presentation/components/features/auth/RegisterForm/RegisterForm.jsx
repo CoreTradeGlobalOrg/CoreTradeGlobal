@@ -15,10 +15,13 @@ import toast from 'react-hot-toast';
 import ReCAPTCHA from 'react-google-recaptcha';
 import Link from 'next/link';
 
+import { httpsCallable } from 'firebase/functions';
 import { registerSchema } from '@/core/validation/registerSchema';
 import { useRegister } from '@/presentation/hooks/auth/useRegister';
 import { useCategories } from '@/presentation/hooks/category/useCategories';
 import { useTrackEvent } from '@/presentation/hooks/analytics';
+import { auth, functions } from '@/core/config/firebase.config';
+import { COMPANY_TYPE_TO_ROLE } from '@/core/constants/companyTypes';
 import { RegisterFormFields } from './RegisterFormFields';
 
 // SECURITY: Google's test reCAPTCHA key - should NEVER be used in production
@@ -108,6 +111,10 @@ export function RegisterForm() {
 
     try {
       const displayName = `${data.firstName} ${data.lastName}`.trim();
+
+      // Derive platform role from company type selection
+      const role = COMPANY_TYPE_TO_ROLE[data.companyType] || 'member';
+
       const registerData = {
         email: data.email,
         password: data.password,
@@ -119,13 +126,32 @@ export function RegisterForm() {
         phone: data.phone,
         position: data.position,
         companyCategory: data.companyCategory,
+        companyType: data.companyType,
         country: data.country,
+        role,
         companyLogoFile: logoFile,
         recaptchaToken: recaptchaValue,
       };
 
       await registerUser(registerData);
       trackSignUp('email');
+
+      // For provider self-registration, set custom claims via Cloud Function
+      // so the role is enforced before they access any protected route.
+      if (role !== 'member') {
+        try {
+          const setRoleClaim = httpsCallable(functions, 'setRoleClaimOnRegistration');
+          await setRoleClaim({ role });
+          // Force token refresh so the new claim is included in the next request
+          if (auth.currentUser) {
+            await auth.currentUser.getIdToken(true);
+          }
+        } catch (claimErr) {
+          // Non-blocking: user is created, admin can set claims manually
+          console.error('setRoleClaimOnRegistration failed (non-critical):', claimErr);
+        }
+      }
+
       toast.success(
         'Account created! Please check your email to verify your account.',
         { duration: 6000 }

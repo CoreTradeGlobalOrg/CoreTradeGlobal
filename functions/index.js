@@ -401,6 +401,64 @@ exports.setUserRole = onCall(
 );
 
 /**
+ * Set Role Claim on Registration (Self-registration for providers)
+ *
+ * Callable by the newly-registered user themselves.
+ * Only logistics_provider and insurance_provider roles are allowed — members
+ * do not need a custom claim set at registration time.
+ *
+ * Security: verifies the requested role matches the role field on the Firestore
+ * user doc (written server-side during registration) to prevent claim escalation.
+ *
+ * @param {Object} data - { role: 'logistics_provider' | 'insurance_provider' }
+ * @returns {{ success: true }}
+ */
+exports.setRoleClaimOnRegistration = onCall(
+  async (request) => {
+    const { role } = request.data;
+    const auth = request.auth;
+
+    if (!auth) {
+      throw new HttpsError('unauthenticated', 'You must be logged in.');
+    }
+
+    const uid = auth.uid;
+
+    // Only provider roles are eligible — members get 'member' as default
+    const PROVIDER_ROLES = [ROLES.LOGISTICS_PROVIDER, ROLES.INSURANCE_PROVIDER];
+    if (!PROVIDER_ROLES.includes(role)) {
+      throw new HttpsError(
+        'invalid-argument',
+        `Invalid role for self-registration. Must be one of: ${PROVIDER_ROLES.join(', ')}`
+      );
+    }
+
+    // Verify the Firestore user doc has the matching role (prevents claim escalation)
+    const userDoc = await db.collection('users').doc(uid).get();
+    if (!userDoc.exists) {
+      throw new HttpsError('not-found', 'User document not found.');
+    }
+
+    const firestoreRole = userDoc.data().role;
+    if (firestoreRole !== role) {
+      throw new HttpsError(
+        'permission-denied',
+        'Requested role does not match the registered user role.'
+      );
+    }
+
+    try {
+      await admin.auth().setCustomUserClaims(uid, { role });
+      console.log(`setRoleClaimOnRegistration: set claim ${role} for user ${uid}`);
+      return { success: true };
+    } catch (error) {
+      console.error(`setRoleClaimOnRegistration: failed for user ${uid}:`, error);
+      throw new HttpsError('internal', `Failed to set role claim: ${error.message}`);
+    }
+  }
+);
+
+/**
  * Migrate Existing Users (Admin only)
  *
  * One-time migration function for bootstrapping existing accounts.

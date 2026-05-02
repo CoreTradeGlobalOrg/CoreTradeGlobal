@@ -10,7 +10,8 @@
 'use client';
 
 import { SearchableSelect } from '@/presentation/components/common/SearchableSelect/SearchableSelect';
-import { COUNTRIES } from '@/core/constants/countries';
+import { COUNTRIES, COUNTRY_PHONE_CODES } from '@/core/constants/countries';
+import { COMPANY_TYPES } from '@/core/constants/companyTypes';
 import { Eye, EyeOff } from 'lucide-react';
 import { useState } from 'react';
 
@@ -27,8 +28,33 @@ import { useState } from 'react';
 export function RegisterFormFields({ register, errors, loading, setValue, watch, categories, categoriesLoading }) {
   const country = watch('country');
   const companyCategory = watch('companyCategory');
+  const companyType = watch('companyType');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [localPhone, setLocalPhone] = useState('');
+
+  // Derive the dial code prefix from the selected country
+  const phonePrefix = country ? (COUNTRY_PHONE_CODES[country] || '') : '';
+
+  const handlePhoneChange = (e) => {
+    const raw = e.target.value;
+    setLocalPhone(raw);
+
+    if (!raw) {
+      setValue('phone', '', { shouldValidate: false });
+      return;
+    }
+
+    // If user manually types a full E.164 number (starts with +), use it directly
+    if (raw.startsWith('+')) {
+      setValue('phone', raw, { shouldValidate: false });
+    } else if (phonePrefix) {
+      // Combine prefix + space + local number
+      setValue('phone', `${phonePrefix} ${raw}`, { shouldValidate: false });
+    } else {
+      setValue('phone', raw, { shouldValidate: false });
+    }
+  };
 
   return (
     <>
@@ -97,14 +123,22 @@ export function RegisterFormFields({ register, errors, loading, setValue, watch,
               <label htmlFor="phone" className="block text-xs text-[#A0A0A0] font-semibold tracking-wider uppercase mb-1.5">
                 Phone <span className="text-red-400">*</span>
               </label>
-              <input
-                id="phone"
-                type="tel"
-                {...register('phone')}
-                className="form-input-anasyf text-sm"
-                placeholder="+1 234 567 8900"
-                disabled={loading}
-              />
+              <div className="flex">
+                {phonePrefix && (
+                  <span className="bg-[#1A283B] border border-[#2A3B52] border-r-0 rounded-l-xl px-3 text-gray-400 text-sm flex items-center flex-shrink-0 select-none">
+                    {phonePrefix}
+                  </span>
+                )}
+                <input
+                  id="phone"
+                  type="tel"
+                  value={localPhone}
+                  onChange={handlePhoneChange}
+                  className={`form-input-anasyf text-sm flex-1 ${phonePrefix ? 'rounded-l-none' : ''}`}
+                  placeholder={phonePrefix ? '555 123 4567' : '+1 234 567 8900'}
+                  disabled={loading}
+                />
+              </div>
               {errors.phone && (
                 <p className="mt-1 text-xs text-red-400">{errors.phone.message}</p>
               )}
@@ -135,6 +169,24 @@ export function RegisterFormFields({ register, errors, loading, setValue, watch,
             Company Information
           </h3>
           <div className="space-y-4">
+            <div>
+              <label htmlFor="companyType" className="block text-xs text-[#A0A0A0] font-semibold tracking-wider uppercase mb-1.5">
+                Company Type <span className="text-red-400">*</span>
+              </label>
+              <SearchableSelect
+                options={COMPANY_TYPES}
+                value={companyType}
+                onChange={(value) => setValue('companyType', value, { shouldValidate: true })}
+                placeholder="Select company type"
+                disabled={loading}
+                error={!!errors.companyType}
+                className="dark-select"
+              />
+              {errors.companyType && (
+                <p className="mt-1 text-xs text-red-400">{errors.companyType.message}</p>
+              )}
+            </div>
+
             <div>
               <label htmlFor="companyName" className="block text-xs text-[#A0A0A0] font-semibold tracking-wider uppercase mb-1.5">
                 Company Name <span className="text-red-400">*</span>
