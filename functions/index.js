@@ -5165,7 +5165,7 @@ exports.bulkUploadProducts = onCall(
         }
 
         const buffer = Buffer.from(await response.arrayBuffer());
-        const storagePath = `${userId}/products/${productId}/image_${index}.${ext}`;
+        const storagePath = `users/${userId}/products/${productId}/image_${index}.${ext}`;
         const fileRef = bucket.file(storagePath);
 
         await fileRef.save(buffer, {
@@ -5227,6 +5227,11 @@ exports.bulkUploadProducts = onCall(
             await productRef.update({ images: downloadedUrls, updatedAt: FieldValue.serverTimestamp() });
           }
         }
+
+        // Add product ID to the user's productIds array so it shows on their profile
+        await db.collection('users').doc(userId).update({
+          productIds: FieldValue.arrayUnion(productId),
+        });
 
         created++;
         console.log(`bulkUploadProducts: created product ${productId} (row ${rowIndex + 1})`);

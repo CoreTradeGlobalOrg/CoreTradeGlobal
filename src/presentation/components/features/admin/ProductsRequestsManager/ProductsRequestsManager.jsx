@@ -195,7 +195,8 @@ export function ProductsRequestsManager({ users }) {
       {/* Modal — request form: backdrop click disabled; product form: backdrop click closes (GAP-6) */}
       <Modal
         isOpen={modalOpen}
-        onClose={modalType === 'request' ? () => {} : closeModal}
+        onClose={closeModal}
+        preventBackdropClose={modalType === 'request'}
         title={modalTitle}
         variant={modalVariant}
         className="!max-w-[95vw] !max-h-[92vh] !rounded-xl md:!max-w-4xl md:!rounded-2xl"

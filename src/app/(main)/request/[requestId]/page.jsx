@@ -393,11 +393,12 @@ export default function RequestDetailsPage() {
         request={request}
       />
 
-      {/* Edit Request Modal - onClose is no-op to prevent accidental close on backdrop click.
-          Use the Cancel button inside RequestForm to dismiss. */}
+      {/* Edit Request Modal - backdrop click disabled to prevent accidental close.
+          Use the X button or Cancel button inside RequestForm to dismiss. */}
       <Modal
         isOpen={editModalOpen}
-        onClose={() => {}}
+        onClose={() => setEditModalOpen(false)}
+        preventBackdropClose
         title="Edit Request"
         variant="blue"
       >

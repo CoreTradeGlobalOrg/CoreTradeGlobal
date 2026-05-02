@@ -21,6 +21,7 @@ export function Modal({
     className = '',
     hideHeader = false,
     transparentBackdrop = false,
+    preventBackdropClose = false,
     variant = 'gold' // 'gold' or 'blue'
 }) {
     // Handle Scroll Lock
@@ -45,7 +46,7 @@ export function Modal({
     return (
         <div
             className={`fixed inset-0 z-[1000] flex items-center justify-center p-2 md:p-4 backdrop-blur-sm ${transparentBackdrop ? 'bg-black/60' : 'bg-black/80'}`}
-            onClick={onClose}
+            onClick={preventBackdropClose ? undefined : onClose}
         >
             <div
                 className={`bg-[#0F1B2B] rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-[rgba(255,255,255,0.1)] shadow-2xl ${className}`}

@@ -231,7 +231,7 @@ export class ProductRepository {
   async uploadProductImage(userId, productId, file, index = 0) {
     const fileExtension = file.name.split('.').pop();
     const fileName = `image-${index}.${fileExtension}`;
-    const storagePath = `${userId}/products/${productId}/${fileName}`;
+    const storagePath = `users/${userId}/products/${productId}/${fileName}`;
 
     return await this.storageDataSource.uploadFile(storagePath, file, {
       userId,
@@ -264,13 +264,22 @@ export class ProductRepository {
    * @returns {Promise<void>}
    */
   async deleteProductImage(userId, productId, index, extension = 'jpg') {
-    const storagePath = `${userId}/products/${productId}/image-${index}.${extension}`;
-    try {
-      await this.storageDataSource.deleteFile(storagePath);
-    } catch (error) {
-      // Ignore if file doesn't exist
-      console.error(`Failed to delete image at ${storagePath}:`, error.message);
+    // Try both naming conventions (image-0 and image_0) since bulk upload uses underscore
+    const paths = [
+      `users/${userId}/products/${productId}/image-${index}.${extension}`,
+      `users/${userId}/products/${productId}/image_${index}.${extension}`,
+      `${userId}/products/${productId}/image-${index}.${extension}`,
+      `${userId}/products/${productId}/image_${index}.${extension}`,
+    ];
+    for (const storagePath of paths) {
+      try {
+        await this.storageDataSource.deleteFile(storagePath);
+        return; // Deleted successfully
+      } catch {
+        // Try next path
+      }
     }
+    // Neither path existed — file may have been deleted already or stored differently
   }
 
   /**

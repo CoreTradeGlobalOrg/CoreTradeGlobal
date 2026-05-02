@@ -136,7 +136,7 @@ export function useProfilePage({ userId, currentUser, authLoading, isAuthenticat
       if (logoRemoved) logoUrl = null;
       else if (logoFile) {
         const ext = logoFile.name.split('.').pop();
-        logoUrl = await container.getFirebaseStorageDataSource().uploadFile(`${userId}/company-logo/image.${ext}`, logoFile);
+        logoUrl = await container.getFirebaseStorageDataSource().uploadFile(`users/${userId}/company-logo/image.${ext}`, logoFile);
       }
       await repo.update(userId, { phone, about, linkedinProfile, companyWebsite, companyLogo: logoUrl, updatedAt: new Date() });
       const updated = await repo.getById(userId);

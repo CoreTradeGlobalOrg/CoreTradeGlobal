@@ -5,7 +5,10 @@
  * Parses client-side with papaparse, shows a validation preview table,
  * requires a member selection, then calls the bulkUploadProducts Cloud Function.
  *
- * CSV columns: Product Name, Category, Price, Currency, Quantity, Unit, Description, Image URLs
+ * CSV columns: Product Name, Category (optional), Price, Currency, Quantity, Unit, Description, Image URLs
+ *
+ * Category matching: tries exact match on category value/name/label.
+ * If no match, shows a dropdown picker in the preview row so admin can select manually.
  */
 
 'use client';
@@ -29,79 +32,58 @@ import { SearchableSelect } from '@/presentation/components/common/SearchableSel
 const VALID_CURRENCY_CODES = new Set(CURRENCIES.map((c) => c.value));
 
 /**
- * Build category lookup maps from Firestore product categories.
- * Accepts the array returned by useCategories() which has shape:
- *   { value: cat.id, label: '...' (may include icon prefix), name: cat.name }
+ * Build a simple category lookup map from Firestore product categories.
+ * Matches by: value (doc ID), name, label (with/without icon prefix).
  */
-function buildCategoryMaps(categories) {
-  const validValues = new Set();
-  const labelToValue = {};
+function buildCategoryMap(categories) {
+  const map = {};
   (categories || []).forEach((c) => {
-    const catValue = c.value;
-    if (!catValue) return;
-    validValues.add(catValue);
-    // Match by value (e.g. "electronics")
-    labelToValue[catValue.toLowerCase()] = catValue;
-    // Match by plain name (e.g. "Electronics")
-    const name = c.name || '';
-    if (name) {
-      labelToValue[name.toLowerCase()] = catValue;
-    }
-    // Match by full label (which may include icon prefix e.g. "🔌 Electronics")
-    const label = c.label || '';
-    if (label) {
-      labelToValue[label.toLowerCase()] = catValue;
-      // Also try stripping leading emoji/icon characters from label
-      const stripped = label.replace(/^\S+\s+/, '').trim();
-      if (stripped && stripped.toLowerCase() !== label.toLowerCase()) {
-        labelToValue[stripped.toLowerCase()] = catValue;
-      }
+    if (!c.value) return;
+    // Match by value
+    map[c.value.toLowerCase()] = c.value;
+    // Match by name
+    if (c.name) map[c.name.toLowerCase()] = c.value;
+    // Match by label (may include emoji prefix)
+    if (c.label) {
+      map[c.label.toLowerCase()] = c.value;
+      // Strip leading emoji/icon
+      const stripped = c.label.replace(/^\S+\s+/, '').trim();
+      if (stripped) map[stripped.toLowerCase()] = c.value;
     }
   });
-  return { validValues, labelToValue };
+  return map;
 }
 
-function makeResolveCategory(labelToValue) {
-  return function resolveCategory(raw) {
-    if (!raw) return null;
-    const lower = raw.trim().toLowerCase();
-    return labelToValue[lower] || null;
-  };
+function resolveCategory(raw, categoryMap) {
+  if (!raw) return null;
+  return categoryMap[raw.trim().toLowerCase()] || null;
 }
 
-function validateRow(row, index, resolveCategory, validValues) {
+function validateRow(row, index, categoryMap) {
   const errors = [];
 
-  // Required: Product Name
   if (!row['Product Name']?.trim()) {
     errors.push('Product Name is required');
   }
 
-  // Required: Category
-  const resolvedCategory = resolveCategory(row['Category']);
-  if (!resolvedCategory) {
-    errors.push(`Category "${row['Category'] || ''}" is not valid. Use a category value or label.`);
-  }
+  // Category: try to resolve, but don't fail — admin can pick from dropdown
+  const resolvedCategory = resolveCategory(row['Category'], categoryMap);
 
-  // Required: Price (positive number)
   const price = parseFloat(row['Price']);
   if (!row['Price'] || isNaN(price) || price <= 0) {
     errors.push('Price must be a positive number');
   }
 
-  // Required: Currency (valid code)
   const currency = row['Currency']?.trim().toUpperCase();
   if (!currency || !VALID_CURRENCY_CODES.has(currency)) {
     errors.push(`Currency "${row['Currency'] || ''}" is not valid. Use a 3-letter code like USD, EUR.`);
   }
 
-  // Required: Quantity (positive number)
   const quantity = parseFloat(row['Quantity']);
   if (!row['Quantity'] || isNaN(quantity) || quantity <= 0) {
     errors.push('Quantity must be a positive number');
   }
 
-  // Required: Unit (non-empty)
   if (!row['Unit']?.trim()) {
     errors.push('Unit is required');
   }
@@ -110,7 +92,7 @@ function validateRow(row, index, resolveCategory, validValues) {
     rowIndex: index,
     original: row,
     name: row['Product Name']?.trim() || '',
-    category: resolvedCategory,
+    category: resolvedCategory, // null if unresolved — admin picks from dropdown
     price: isNaN(price) ? null : price,
     currency: VALID_CURRENCY_CODES.has(currency) ? currency : null,
     quantity: isNaN(quantity) ? null : quantity,
@@ -118,11 +100,13 @@ function validateRow(row, index, resolveCategory, validValues) {
     description: row['Description']?.trim() || '',
     imageUrls: row['Image URLs']?.trim() || '',
     errors,
+    // Valid if no field errors — category can be null (will be picked manually)
     isValid: errors.length === 0,
+    needsCategoryPick: !resolvedCategory && errors.length === 0,
   };
 }
 
-const REQUIRED_COLUMNS = ['Product Name', 'Category', 'Price', 'Currency', 'Quantity', 'Unit'];
+const REQUIRED_COLUMNS = ['Product Name', 'Price', 'Currency', 'Quantity', 'Unit'];
 
 export function BulkProductUpload({ users, categories, onClose }) {
   const [selectedMemberId, setSelectedMemberId] = useState('');
@@ -131,20 +115,18 @@ export function BulkProductUpload({ users, categories, onClose }) {
   const [parseError, setParseError] = useState(null);
   const [uploadState, setUploadState] = useState(null); // null | 'uploading' | 'done'
   const [uploadResult, setUploadResult] = useState(null);
-  const [uploadProgress, setUploadProgress] = useState({ created: 0, total: 0 });
   const fileInputRef = useRef(null);
 
-  // Derive category lookup maps from the Firestore product categories prop
-  const { validValues: categoryValidValues, labelToValue: categoryLabelToValue } = useMemo(
-    () => buildCategoryMaps(categories),
+  // Build simple category lookup map
+  const categoryMap = useMemo(() => buildCategoryMap(categories), [categories]);
+
+  // Category options for the dropdown picker
+  const categoryOptions = useMemo(
+    () => (categories || []).map((c) => ({ value: c.value, label: c.name || c.label || c.value })),
     [categories]
   );
-  const resolveCategory = useMemo(
-    () => makeResolveCategory(categoryLabelToValue),
-    [categoryLabelToValue]
-  );
 
-  // Build member options from the users list (all users passed from admin panel)
+  // Build member options
   const memberOptions = (users || []).map((u) => ({
     value: u.uid || u.id,
     label: `${u.displayName || u.email || 'Unknown'} ${u.companyName ? `(${u.companyName})` : ''}`.trim(),
@@ -175,19 +157,18 @@ export function BulkProductUpload({ users, categories, onClose }) {
           return;
         }
 
-        // Check for required columns
         const headers = results.meta.fields || [];
         const missingCols = REQUIRED_COLUMNS.filter((col) => !headers.includes(col));
         if (missingCols.length > 0) {
           setParseError(
             `Missing required columns: ${missingCols.join(', ')}. ` +
-            `Expected: Product Name, Category, Price, Currency, Quantity, Unit, Description (optional), Image URLs (optional).`
+            `Expected: Product Name, Category (optional), Price, Currency, Quantity, Unit, Description (optional), Image URLs (optional).`
           );
           return;
         }
 
         const validated = results.data.map((row, i) =>
-          validateRow(row, i, resolveCategory, categoryValidValues)
+          validateRow(row, i, categoryMap)
         );
         setParsedRows(validated);
       },
@@ -195,7 +176,7 @@ export function BulkProductUpload({ users, categories, onClose }) {
         setParseError(`Failed to parse CSV: ${err.message}`);
       },
     });
-  }, [resolveCategory, categoryValidValues]);
+  }, [categoryMap]);
 
   const handleFileInputChange = (e) => {
     const file = e.target.files?.[0];
@@ -216,16 +197,34 @@ export function BulkProductUpload({ users, categories, onClose }) {
 
   const handleDragLeave = () => setIsDragging(false);
 
-  const validRows = parsedRows ? parsedRows.filter((r) => r.isValid) : [];
-  const invalidCount = parsedRows ? parsedRows.length - validRows.length : 0;
-  const canUpload = validRows.length > 0 && !!selectedMemberId && uploadState !== 'uploading';
+  // Update a row's category when admin picks from dropdown
+  const handleCategoryChange = (rowIndex, categoryValue) => {
+    setParsedRows((prev) =>
+      prev.map((r) =>
+        r.rowIndex === rowIndex
+          ? { ...r, category: categoryValue, needsCategoryPick: !categoryValue }
+          : r
+      )
+    );
+  };
+
+  // Rows ready for upload: valid + has category assigned
+  const uploadableRows = parsedRows
+    ? parsedRows.filter((r) => r.isValid && r.category)
+    : [];
+  const needsCategoryCount = parsedRows
+    ? parsedRows.filter((r) => r.needsCategoryPick && !r.category).length
+    : 0;
+  const invalidCount = parsedRows
+    ? parsedRows.filter((r) => !r.isValid).length
+    : 0;
+  const canUpload = uploadableRows.length > 0 && !!selectedMemberId && uploadState !== 'uploading';
 
   const handleConfirmUpload = async () => {
     if (!canUpload) return;
     setUploadState('uploading');
-    setUploadProgress({ created: 0, total: validRows.length });
 
-    const rows = validRows.map((r) => ({
+    const rows = uploadableRows.map((r) => ({
       name: r.name,
       categoryId: r.category,
       price: r.price,
@@ -256,7 +255,6 @@ export function BulkProductUpload({ users, categories, onClose }) {
     setParseError(null);
     setUploadState(null);
     setUploadResult(null);
-    setUploadProgress({ created: 0, total: 0 });
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
@@ -310,7 +308,7 @@ export function BulkProductUpload({ users, categories, onClose }) {
           CSV File
           <span className="text-[#FFD700]"> *</span>
           <span className="text-xs text-[#606060] ml-2">
-            Columns: Product Name, Category, Price, Currency, Quantity, Unit, Description, Image URLs
+            Columns: Product Name, Category (optional), Price, Currency, Quantity, Unit, Description, Image URLs
           </span>
         </label>
 
@@ -355,20 +353,23 @@ export function BulkProductUpload({ users, categories, onClose }) {
       {parsedRows && parsedRows.length > 0 && uploadState !== 'done' && (
         <div className="mb-5">
           {/* Summary bar */}
-          <div className="flex items-center gap-3 mb-3">
+          <div className="flex items-center gap-3 mb-3 flex-wrap">
             <div className="flex items-center gap-1.5 text-sm">
               <CheckCircle className="w-4 h-4 text-green-400" />
-              <span className="text-green-400 font-medium">{validRows.length} valid</span>
+              <span className="text-green-400 font-medium">{uploadableRows.length} ready</span>
             </div>
+            {needsCategoryCount > 0 && (
+              <div className="flex items-center gap-1.5 text-sm">
+                <AlertCircle className="w-4 h-4 text-amber-400" />
+                <span className="text-amber-400 font-medium">{needsCategoryCount} need category</span>
+              </div>
+            )}
             {invalidCount > 0 && (
               <div className="flex items-center gap-1.5 text-sm">
                 <AlertCircle className="w-4 h-4 text-red-400" />
                 <span className="text-red-400 font-medium">{invalidCount} errors</span>
               </div>
             )}
-            <span className="text-[#606060] text-xs">
-              {validRows.length} of {parsedRows.length} rows valid
-            </span>
             <button
               onClick={handleReset}
               className="ml-auto text-xs text-[#A0A0A0] hover:text-white underline transition-colors"
@@ -385,7 +386,7 @@ export function BulkProductUpload({ users, categories, onClose }) {
                   <th className="px-3 py-2 text-left text-[#A0A0A0] font-medium w-8">#</th>
                   <th className="px-3 py-2 text-left text-[#A0A0A0] font-medium">Status</th>
                   <th className="px-3 py-2 text-left text-[#A0A0A0] font-medium">Product Name</th>
-                  <th className="px-3 py-2 text-left text-[#A0A0A0] font-medium">Category</th>
+                  <th className="px-3 py-2 text-left text-[#A0A0A0] font-medium min-w-[180px]">Category</th>
                   <th className="px-3 py-2 text-left text-[#A0A0A0] font-medium">Price</th>
                   <th className="px-3 py-2 text-left text-[#A0A0A0] font-medium">Qty / Unit</th>
                   <th className="px-3 py-2 text-left text-[#A0A0A0] font-medium">Images</th>
@@ -397,16 +398,16 @@ export function BulkProductUpload({ users, categories, onClose }) {
                     key={row.rowIndex}
                     className={[
                       'border-b border-[rgba(255,255,255,0.05)] transition-colors',
-                      row.isValid
-                        ? 'hover:bg-[rgba(255,255,255,0.02)]'
-                        : 'bg-[rgba(239,68,68,0.06)] hover:bg-[rgba(239,68,68,0.09)]',
+                      !row.isValid
+                        ? 'bg-[rgba(239,68,68,0.06)] hover:bg-[rgba(239,68,68,0.09)]'
+                        : row.needsCategoryPick && !row.category
+                          ? 'bg-[rgba(255,215,0,0.04)] hover:bg-[rgba(255,215,0,0.07)]'
+                          : 'hover:bg-[rgba(255,255,255,0.02)]',
                     ].join(' ')}
                   >
                     <td className="px-3 py-2 text-[#606060]">{row.rowIndex + 1}</td>
                     <td className="px-3 py-2">
-                      {row.isValid ? (
-                        <CheckCircle className="w-3.5 h-3.5 text-green-400" />
-                      ) : (
+                      {!row.isValid ? (
                         <div className="group relative inline-block">
                           <AlertCircle className="w-3.5 h-3.5 text-red-400 cursor-help" />
                           <div className="absolute z-10 left-5 top-0 hidden group-hover:block bg-[#1a2a3a] border border-[rgba(239,68,68,0.4)] rounded-lg p-2 w-64 shadow-xl">
@@ -417,19 +418,47 @@ export function BulkProductUpload({ users, categories, onClose }) {
                             </ul>
                           </div>
                         </div>
+                      ) : row.category ? (
+                        <CheckCircle className="w-3.5 h-3.5 text-green-400" />
+                      ) : (
+                        <AlertCircle className="w-3.5 h-3.5 text-amber-400" />
                       )}
                     </td>
-                    <td className="px-3 py-2 text-white max-w-[140px] truncate">{row.name || <span className="text-red-400 italic">missing</span>}</td>
-                    <td className="px-3 py-2 text-[#A0A0A0] max-w-[120px] truncate">
-                      {row.category
-                        ? (categories || []).find((c) => c.value === row.category)?.name || row.category
-                        : <span className="text-red-400 italic">{row.original['Category'] || 'missing'}</span>}
+                    <td className="px-3 py-2 text-white max-w-[140px] truncate">
+                      {row.name || <span className="text-red-400 italic">missing</span>}
+                    </td>
+                    <td className="px-3 py-2">
+                      {row.isValid && !row.category ? (
+                        // Show dropdown picker for unresolved categories
+                        <select
+                          value={row.category || ''}
+                          onChange={(e) => handleCategoryChange(row.rowIndex, e.target.value)}
+                          className="w-full bg-[#1a2a3a] border border-[rgba(255,215,0,0.3)] text-white text-xs rounded px-2 py-1.5 focus:outline-none focus:border-[#FFD700]"
+                        >
+                          <option value="">Select category...</option>
+                          {categoryOptions.map((opt) => (
+                            <option key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </option>
+                          ))}
+                        </select>
+                      ) : row.category ? (
+                        <span className="text-[#A0A0A0]">
+                          {(categories || []).find((c) => c.value === row.category)?.name || row.category}
+                        </span>
+                      ) : (
+                        <span className="text-red-400 italic">{row.original['Category'] || 'missing'}</span>
+                      )}
                     </td>
                     <td className="px-3 py-2 text-[#A0A0A0] whitespace-nowrap">
-                      {row.price != null ? `${row.price} ${row.currency || row.original['Currency'] || ''}` : <span className="text-red-400 italic">invalid</span>}
+                      {row.price != null
+                        ? `${row.price} ${row.currency || row.original['Currency'] || ''}`
+                        : <span className="text-red-400 italic">invalid</span>}
                     </td>
                     <td className="px-3 py-2 text-[#A0A0A0] whitespace-nowrap">
-                      {row.quantity != null ? `${row.quantity} ${row.unit || '—'}` : <span className="text-red-400 italic">invalid</span>}
+                      {row.quantity != null
+                        ? `${row.quantity} ${row.unit || '—'}`
+                        : <span className="text-red-400 italic">invalid</span>}
                     </td>
                     <td className="px-3 py-2 text-[#606060]">
                       {row.imageUrls ? (
@@ -456,7 +485,7 @@ export function BulkProductUpload({ users, categories, onClose }) {
             <div>
               <p className="text-[#FFD700] font-medium text-sm">Uploading products...</p>
               <p className="text-[#A0A0A0] text-xs mt-0.5">
-                Processing {validRows.length} row(s). Images are being downloaded and stored. This may take a moment.
+                Processing {uploadableRows.length} row(s). This may take a moment.
               </p>
             </div>
           </div>
@@ -489,6 +518,11 @@ export function BulkProductUpload({ users, categories, onClose }) {
                 {uploadResult.skipped > 0 && (
                   <p className="text-[#A0A0A0] text-xs mt-0.5">
                     {uploadResult.skipped} row(s) skipped due to errors.
+                  </p>
+                )}
+                {uploadResult.imagesFailed > 0 && (
+                  <p className="text-amber-400 text-xs mt-0.5">
+                    {uploadResult.imagesFailed} image(s) could not be downloaded — products created without those images.
                   </p>
                 )}
                 {uploadResult.errors?.length > 0 && (
@@ -525,7 +559,7 @@ export function BulkProductUpload({ users, categories, onClose }) {
             ) : (
               <>
                 <Upload className="w-4 h-4" />
-                Upload {validRows.length > 0 ? `${validRows.length} ` : ''}Product{validRows.length !== 1 ? 's' : ''}
+                Upload {uploadableRows.length > 0 ? `${uploadableRows.length} ` : ''}Product{uploadableRows.length !== 1 ? 's' : ''}
               </>
             )}
           </button>
@@ -535,7 +569,12 @@ export function BulkProductUpload({ users, categories, onClose }) {
           >
             Cancel
           </button>
-          {!selectedMemberId && parsedRows && validRows.length > 0 && (
+          {needsCategoryCount > 0 && (
+            <p className="text-amber-400 text-xs">
+              {needsCategoryCount} row(s) need a category selected before upload.
+            </p>
+          )}
+          {!selectedMemberId && parsedRows && uploadableRows.length > 0 && (
             <p className="text-amber-400 text-xs">Select a member above to enable upload.</p>
           )}
         </div>

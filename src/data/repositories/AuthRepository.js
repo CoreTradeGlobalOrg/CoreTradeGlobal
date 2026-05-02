@@ -310,7 +310,7 @@ export class AuthRepository {
     // Create storage path: {userId}/company-logo/logo.{ext}
     const fileExtension = file.name.split('.').pop();
     const fileName = `logo.${fileExtension}`;
-    const storagePath = `${userId}/company-logo/${fileName}`;
+    const storagePath = `users/${userId}/company-logo/${fileName}`;
 
     try {
       // Upload file and get download URL

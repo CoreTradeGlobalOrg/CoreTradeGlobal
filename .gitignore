@@ -47,3 +47,4 @@ next-env.d.ts
 # Firebase local files
 .firebase/
 firestore-debug.log
+.env*.local

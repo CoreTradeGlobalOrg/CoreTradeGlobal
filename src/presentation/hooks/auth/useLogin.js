@@ -57,6 +57,12 @@ export function useLogin() {
    * @returns {Promise<Object>} User data
    */
   const completeMfaLogin = async (totpCode) => {
+    if (!mfaResolverRef.current) {
+      setError('MFA session expired. Please log in again.');
+      setMfaRequired(false);
+      throw new Error('MFA session expired. Please log in again.');
+    }
+
     setLoading(true);
     setError(null);
 
@@ -64,7 +70,8 @@ export function useLogin() {
       const authRepository = container.getAuthRepository();
       const user = await authRepository.completeMfaLogin(mfaResolverRef.current, totpCode);
       // Don't reset mfaRequired here — let the caller navigate first to avoid form flash
-      mfaResolverRef.current = null;
+      // Don't null the resolver here — only null it after navigation succeeds,
+      // so the user can retry if handleLoginSuccess fails
       return user;
     } catch (err) {
       if (err.code === 'auth/invalid-verification-code') {

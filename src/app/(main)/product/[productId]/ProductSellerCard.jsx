@@ -2,7 +2,7 @@
 
 import { memo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { User, MessageCircle } from 'lucide-react';
+import { User, MessageCircle, Handshake } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { RestrictedCard } from '@/presentation/components/common/RestrictedCard/RestrictedCard';
 
@@ -32,7 +32,7 @@ const SellerAvatar = memo(function SellerAvatar({ src, alt }) {
 /**
  * ProductSellerCard - Seller info with contact/profile buttons.
  */
-export function ProductSellerCard({ seller, sendingMessage, onSendMessage }) {
+export function ProductSellerCard({ seller, sendingMessage, onSendMessage, dealHref }) {
   const router = useRouter();
 
   if (!seller) return null;
@@ -73,6 +73,17 @@ export function ProductSellerCard({ seller, sendingMessage, onSendMessage }) {
               View Profile
             </Button>
           </div>
+
+          {dealHref && (
+            <Button
+              variant="gold"
+              onClick={() => router.push(dealHref)}
+              className="w-full h-14 rounded-xl flex items-center justify-center gap-3"
+            >
+              <Handshake className="w-5 h-5" />
+              Start Deal
+            </Button>
+          )}
         </div>
       </div>
     </RestrictedCard>

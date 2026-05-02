@@ -247,10 +247,11 @@ export function HeroSection({ fetchData = false }) {
         />
       </Modal>
 
-      {/* Request Creation Modal — backdrop click disabled; use Cancel button to close (GAP-6) */}
+      {/* Request Creation Modal — backdrop click disabled; use X or Cancel button to close (GAP-6) */}
       <Modal
         isOpen={requestModalOpen}
-        onClose={() => {}}
+        onClose={() => setRequestModalOpen(false)}
+        preventBackdropClose
         title="Create New RFQ"
         variant="blue"
       >

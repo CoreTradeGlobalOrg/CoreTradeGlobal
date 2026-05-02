@@ -28,6 +28,7 @@ export function LoginForm() {
   const [totpCode, setTotpCode] = useState('');
   const [useBackupCode, setUseBackupCode] = useState(false);
   const [backupCode, setBackupCode] = useState('');
+  const [mfaLoading, setMfaLoading] = useState(false);
   const { login, completeMfaLogin, loginWithBackupCode, clearError, loading, error, mfaRequired } = useLogin();
   const { trackLogin } = useTrackEvent();
   const router = useRouter();
@@ -43,19 +44,21 @@ export function LoginForm() {
       return;
     }
 
-    // Set session cookie BEFORE navigating so middleware can read it
+    // Fire session cookie POST without blocking navigation — middleware will
+    // pick it up on the next request, and AuthContext handles client-side auth
     try {
       const firebaseUser = authRepo.getCurrentUser();
       if (firebaseUser) {
         const idToken = await firebaseUser.getIdToken();
-        await fetch('/api/auth/session', {
+        // Don't await — let it complete in the background
+        fetch('/api/auth/session', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ idToken, role: user.role }),
-        });
+        }).catch((err) => console.error('Session cookie error:', err));
       }
     } catch (cookieError) {
-      console.error('Failed to set session cookie:', cookieError);
+      console.error('Failed to get ID token:', cookieError);
     }
 
     trackLogin('email');
@@ -86,6 +89,7 @@ export function LoginForm() {
 
   const handleMfaSubmit = async (e) => {
     e.preventDefault();
+    setMfaLoading(true);
 
     try {
       if (useBackupCode) {
@@ -100,7 +104,8 @@ export function LoginForm() {
       }
     } catch (err) {
       console.error('MFA verification failed:', err);
-      toast.error(error || (useBackupCode ? 'Invalid backup code.' : 'Invalid authenticator code.'));
+      toast.error(err.message || (useBackupCode ? 'Invalid backup code.' : 'Invalid authenticator code.'));
+      setMfaLoading(false);
     }
   };
 
@@ -112,9 +117,10 @@ export function LoginForm() {
 
   // MFA step — show TOTP code or backup code input
   if (mfaRequired) {
+    const isBusy = loading || mfaLoading;
     const isSubmitDisabled = useBackupCode
-      ? loading || backupCode.trim().length === 0
-      : loading || totpCode.length !== 6;
+      ? isBusy || backupCode.trim().length === 0
+      : isBusy || totpCode.length !== 6;
 
     return (
       <div className="login-card w-full max-w-[440px] p-10 text-center relative z-10">
@@ -150,7 +156,7 @@ export function LoginForm() {
                 className="form-input-anasyf text-center text-xl tracking-widest font-mono"
                 required
                 autoFocus
-                disabled={loading}
+                disabled={isBusy}
               />
             </div>
           ) : (
@@ -168,7 +174,7 @@ export function LoginForm() {
                 className="form-input-anasyf text-center text-2xl tracking-[0.5em] font-mono"
                 required
                 autoFocus
-                disabled={loading}
+                disabled={isBusy}
               />
             </div>
           )}
@@ -184,7 +190,7 @@ export function LoginForm() {
             disabled={isSubmitDisabled}
             className="w-full p-4 bg-gradient-to-br from-[#FFD700] to-[#FDB931] text-[#0F1B2B] font-bold text-base rounded-full shadow-[0_4px_20px_rgba(255,215,0,0.2)] hover:-translate-y-0.5 hover:bg-white hover:shadow-[0_6px_30px_rgba(255,215,0,0.4)] active:scale-[0.98] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? 'Verifying...' : 'Verify & Log In'}
+            {isBusy ? 'Verifying...' : 'Verify & Log In'}
           </button>
 
           <button

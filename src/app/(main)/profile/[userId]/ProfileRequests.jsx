@@ -86,11 +86,12 @@ export function ProfileRequests({
         </div>
       )}
 
-      {/* Request Modal - onClose is no-op to prevent accidental close on backdrop click.
-          Use the Cancel button inside RequestForm to dismiss. */}
+      {/* Request Modal - backdrop click disabled to prevent accidental close.
+          Use the X button or Cancel button inside RequestForm to dismiss. */}
       <Modal
         isOpen={requestModalOpen}
-        onClose={() => {}}
+        onClose={onCloseModal}
+        preventBackdropClose
         title={editingRequest ? 'Edit Request' : 'Create New Request'}
         variant="blue"
       >

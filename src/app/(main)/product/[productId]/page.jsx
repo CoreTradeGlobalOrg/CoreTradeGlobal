@@ -16,7 +16,7 @@ import { useDeleteProduct } from '@/presentation/hooks/product/useDeleteProduct'
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { ProductForm } from '@/presentation/components/features/product/ProductForm/ProductForm';
-import { ArrowLeft, Pencil, Trash2, Power, Star, Share2, Handshake } from 'lucide-react';
+import { ArrowLeft, Pencil, Trash2, Power, Star, Share2 } from 'lucide-react';
 import { container } from '@/core/di/container';
 import { useConversations } from '@/presentation/hooks/messaging/useConversations';
 import { useRecommendedProducts } from '@/presentation/hooks/product/useRecommendedProducts';
@@ -153,19 +153,12 @@ export default function ProductDetailPage() {
               onImageLoad={() => setImageLoading(false)}
             />
             {seller && currentUser?.uid !== product?.userId && (
-              <ProductSellerCard seller={seller} sendingMessage={sendingMessage} onSendMessage={handleSendMessage} />
-            )}
-            {/* Start Deal button — gold, positioned below Contact Seller / View Profile (GAP-5) */}
-            {currentUser?.uid && !isOwnProduct && (
-              <div className="pt-2">
-                <Button
-                  onClick={() => router.push(`/deals/new?productId=${product.id}&sellerId=${product.userId}`)}
-                  className="w-full h-14 rounded-xl bg-[#FFD700] hover:brightness-110 !text-black font-semibold flex items-center justify-center gap-3 transition-all hover:shadow-[0_0_20px_rgba(255,215,0,0.3)]"
-                >
-                  <Handshake className="w-5 h-5" />
-                  Start Deal
-                </Button>
-              </div>
+              <ProductSellerCard
+                seller={seller}
+                sendingMessage={sendingMessage}
+                onSendMessage={handleSendMessage}
+                dealHref={currentUser?.uid && !isOwnProduct ? `/deals/new?productId=${product.id}&sellerId=${product.userId}` : null}
+              />
             )}
           </div>
 
