@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-stopped_at: Completed 17-04-PLAN.md
-last_updated: "2026-05-02T09:27:16.960Z"
+stopped_at: Completed 17-02-PLAN.md
+last_updated: "2026-05-02T09:34:26.145Z"
 last_activity: "2026-04-02 - Completed quick task 5: Fix hero not fetching last verified user"
 progress:
   total_phases: 17
-  completed_phases: 7
+  completed_phases: 8
   total_plans: 35
-  completed_plans: 34
+  completed_plans: 35
   percent: 71
 ---
 
@@ -129,6 +129,7 @@ Progress: [█████████████] 71%
 | Phase 17 P03 | 8 | 2 tasks | 4 files |
 | Phase 17 P01 | 9 | 2 tasks | 7 files |
 | Phase 17 P04 | 13 | 2 tasks | 10 files |
+| Phase 17-registration-onboarding-and-misc P02 | 4 | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -381,6 +382,9 @@ Recent decisions affecting current work:
 - [Phase 17]: COMPANY_TYPE_TO_ROLE map decouples company type UI selection from role string — single point of mapping for provider self-registration
 - [Phase 17]: ProductUploadRequestButton queries Firestore on mount for existing pending request — prevents duplicate submissions, degrades gracefully on permission error
 - [Phase 17]: Section component h1 elements converted to h2 on homepage — HeroSection owns the single h1; CSS class section-title preserves visual styling
+- [Phase 17-02]: OnboardingTour uses createPortal to document.body for z-index supremacy over all existing glass-card layers
+- [Phase 17-02]: ProfileCompletionCard uses sessionStorage for dismiss so card reappears on next visit per spec (comes back until 100%)
+- [Phase 17-02]: hydrated flag prevents sessionStorage reads during SSR to avoid Next.js hydration mismatch
 
 ### Pending Todos
 
@@ -404,6 +408,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-02T09:27:16.956Z
-Stopped at: Completed 17-04-PLAN.md
+Last session: 2026-05-02T09:34:26.142Z
+Stopped at: Completed 17-02-PLAN.md
 Resume file: None
