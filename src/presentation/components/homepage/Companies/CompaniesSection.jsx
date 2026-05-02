@@ -288,7 +288,7 @@ export function CompaniesSection() {
           <section className="featured-products-section">
             <div className="mobile-card-stack-container">
               <div className="section-header" style={{ marginTop: 0, marginBottom: '1.5rem' }}>
-                <h1 className="section-title">Featured Companies</h1>
+                <h2 className="section-title">Featured Companies</h2>
                 <Link
                   href="/contact?subject=advertising"
                   className="link-hero-blue"
