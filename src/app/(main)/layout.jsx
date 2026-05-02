@@ -1,6 +1,7 @@
 'use client';
 
 import Script from 'next/script';
+import dynamic from 'next/dynamic';
 import { Navbar } from '@/presentation/components/homepage/Navbar/Navbar';
 import { Footer } from '@/presentation/components/homepage/Footer/Footer';
 import { MessagesWidget } from '@/presentation/components/common/MessagesWidget/MessagesWidget';
@@ -10,11 +11,19 @@ import { InstallPrompt } from '@/presentation/components/common/InstallPrompt/In
 import { CookieConsent } from '@/presentation/components/common/CookieConsent/CookieConsent';
 import { ScrollToTop } from '@/presentation/components/common/ScrollToTop/ScrollToTop';
 import { ErrorBoundary } from '@/presentation/components/common/ErrorBoundary/ErrorBoundary';
+import { useAuth } from '@/presentation/contexts/AuthContext';
 import './homepage.css';
+
+const ZohoSalesIQButton = dynamic(
+  () => import('@/presentation/components/common/ZohoSalesIQ/ZohoSalesIQButton').then(m => ({ default: m.ZohoSalesIQButton })),
+  { ssr: false }
+);
 
 const ZOHO_WIDGET_KEY = process.env.NEXT_PUBLIC_ZOHO_WIDGET_KEY;
 
 export default function MainLayout({ children }) {
+  const { isAuthenticated } = useAuth();
+
   return (
     <>
       <ScrollToTop />
@@ -24,6 +33,9 @@ export default function MainLayout({ children }) {
       </ErrorBoundary>
       <Footer />
       <MessagesWidget />
+      {/* Standalone Zoho chat button for unauthenticated visitors on public pages.
+          Authenticated users get the Support tab inside the FAB MessagesWidget instead. */}
+      {!isAuthenticated && <ZohoSalesIQButton />}
       <NotificationPrompt />
       <NotificationListener />
       <InstallPrompt />
