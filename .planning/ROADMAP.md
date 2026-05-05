@@ -185,7 +185,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 (parallel with 3-4) -> 6 
 | 14. Insurance Quote System Overhaul | 5/5 | Planned | — |
 | 15. Deal and Trade Flow Enhancements | 4/4 | Complete    | 2026-04-27 |
 | 16. Product and RFQ Features | 7/7 | Complete    | 2026-05-01 |
-| 17. Registration, Onboarding and Misc | 8/8 | Complete   | 2026-05-05 |
+| 17. Registration, Onboarding and Misc | 8/8 | Complete    | 2026-05-05 |
 
 ### Phase 8: Live Currency and Freight Intelligence (INSERTED)
 **Goal**: Any visitor can see live currency rates on the homepage, and both deal parties can see multi-currency price conversions and a real-time freight cost estimate throughout the deal flow -- without CoreTradeGlobal being party to or responsible for any transaction
