@@ -6,12 +6,14 @@
  * highlights the target element while darkening everything else.
  */
 
-/* Full-screen fixed overlay — pointer-events: none so clicks on target pass through */
+/* Full-screen fixed overlay — pointer-events: none so clicks on target pass through.
+   For intro/transition modal screens the panel itself captures clicks. */
 .onboarding-overlay {
   position: fixed;
   inset: 0;
   z-index: 9990;
   pointer-events: none;
+  background: rgba(0, 0, 0, 0.6);
 }
 
 /* Spotlight div — absolutely positioned at the target element's bounding rect.
