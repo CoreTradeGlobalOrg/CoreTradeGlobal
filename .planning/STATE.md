@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-stopped_at: Completed 17-06-PLAN.md
-last_updated: "2026-05-05T12:53:48.314Z"
+stopped_at: Completed 17-05-PLAN.md
+last_updated: "2026-05-05T12:55:29.167Z"
 last_activity: "2026-04-02 - Completed quick task 5: Fix hero not fetching last verified user"
 progress:
   total_phases: 17
   completed_phases: 7
   total_plans: 39
-  completed_plans: 37
+  completed_plans: 38
   percent: 71
 ---
 
@@ -132,6 +132,7 @@ Progress: [█████████████] 71%
 | Phase 17-registration-onboarding-and-misc P02 | 4 | 2 tasks | 5 files |
 | Phase 17 P07 | 1 | 1 tasks | 2 files |
 | Phase 17 P06 | 2 | 1 tasks | 2 files |
+| Phase 17 P05 | 3 | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -390,6 +391,7 @@ Recent decisions affecting current work:
 - [Phase 17]: top-[116px] hardcoded for ProfileCompletionCard position (ticker ~40px + navbar ~64px + 12px gap) — layout heights are stable
 - [Phase 17]: hidden lg:block on ProfileCompletionCard overlay — desktop-only floating card hides on mobile to avoid blocking content
 - [Phase 17]: PHONE_CODE_OPTIONS built at module level from existing COUNTRIES + COUNTRY_PHONE_CODES; compact display via pointer-events-none overlay span; useEffect empty-guard pre-fills phone code from company country once without locking it
+- [Phase 17]: Zoho SalesIQ removed entirely (not feature-flagged) — user wants custom AI chatbot in a future phase
 
 ### Pending Todos
 
@@ -413,6 +415,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-05T12:53:48.221Z
-Stopped at: Completed 17-06-PLAN.md
+Last session: 2026-05-05T12:55:29.113Z
+Stopped at: Completed 17-05-PLAN.md
 Resume file: None
