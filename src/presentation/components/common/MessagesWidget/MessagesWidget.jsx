@@ -5,13 +5,12 @@
  * Shows chat button with unread badge when minimized
  * Expands to show full conversation interface
  * Supports product and RFQ context banners
- * Two tabs: Messages and Support (Support shown when NEXT_PUBLIC_ZOHO_WIDGET_KEY is set)
  */
 
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { MessageCircle, X, ArrowLeft, Minimize2, FileText, Package, MapPin, DollarSign, Handshake, Headphones, Loader2 } from 'lucide-react';
+import { MessageCircle, X, ArrowLeft, Minimize2, FileText, Package, MapPin, DollarSign, Handshake } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useMessages } from '@/presentation/contexts/MessagesContext';
@@ -21,8 +20,6 @@ import ConversationList from '@/presentation/components/features/messaging/Conve
 import MessageThread from '@/presentation/components/features/messaging/MessageThread/MessageThread';
 import MessageInput from '@/presentation/components/features/messaging/MessageInput/MessageInput';
 import './MessagesWidget.css';
-
-const ZOHO_WIDGET_KEY = process.env.NEXT_PUBLIC_ZOHO_WIDGET_KEY;
 
 export function MessagesWidget() {
   const { user, isAuthenticated } = useAuth();
@@ -39,11 +36,7 @@ export function MessagesWidget() {
 
   const [isMobile, setIsMobile] = useState(false);
   const [rfqDialogOpen, setRfqDialogOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('messages');
-  const [zohoReady, setZohoReady] = useState(false);
-  const [zohoFailed, setZohoFailed] = useState(false);
   const widgetRef = useRef(null);
-  const zohoCheckRef = useRef(null);
 
   // Check for mobile viewport
   useEffect(() => {
@@ -93,57 +86,6 @@ export function MessagesWidget() {
     };
   }, [isMobile, isWidgetOpen]);
 
-  // Poll for Zoho readiness when Support tab is configured
-  useEffect(() => {
-    if (!ZOHO_WIDGET_KEY) return;
-
-    let attempts = 0;
-    const maxAttempts = 10; // 10 * 500ms = 5s
-
-    const checkZoho = () => {
-      if (window.$zoho?.salesiq) {
-        setZohoReady(true);
-        return;
-      }
-      attempts += 1;
-      if (attempts >= maxAttempts) {
-        setZohoFailed(true);
-        return;
-      }
-      zohoCheckRef.current = setTimeout(checkZoho, 500);
-    };
-
-    zohoCheckRef.current = setTimeout(checkZoho, 500);
-
-    return () => {
-      if (zohoCheckRef.current) {
-        clearTimeout(zohoCheckRef.current);
-      }
-    };
-  }, []);
-
-  // Handle Zoho chat panel visibility when tab changes
-  useEffect(() => {
-    if (!ZOHO_WIDGET_KEY || !zohoReady) return;
-
-    if (activeTab === 'support' && isWidgetOpen) {
-      if (window.$zoho?.salesiq) {
-        window.$zoho.salesiq.floatwindow.visible('show');
-      }
-    } else {
-      if (window.$zoho?.salesiq) {
-        window.$zoho.salesiq.floatwindow.visible('hide');
-      }
-    }
-  }, [activeTab, isWidgetOpen, zohoReady]);
-
-  // Hide Zoho chat when widget closes
-  useEffect(() => {
-    if (!isWidgetOpen && window.$zoho?.salesiq) {
-      window.$zoho.salesiq.floatwindow.visible('hide');
-    }
-  }, [isWidgetOpen]);
-
   // Don't render for non-authenticated users
   if (!isAuthenticated) {
     return null;
@@ -158,10 +100,6 @@ export function MessagesWidget() {
 
   const handleBack = () => {
     closeConversation();
-  };
-
-  const handleTabChange = (tab) => {
-    setActiveTab(tab);
   };
 
   const getConversationInfo = () => {
@@ -314,121 +252,81 @@ export function MessagesWidget() {
             </div>
           </div>
 
-          {/* Tab Bar — only shown when Zoho widget key is configured */}
-          {ZOHO_WIDGET_KEY && !activeConversationId && (
-            <div className="messages-widget-tabs">
-              <button
-                className={`messages-widget-tab ${activeTab === 'messages' ? 'active' : ''}`}
-                onClick={() => handleTabChange('messages')}
-              >
-                Messages
-              </button>
-              <button
-                className={`messages-widget-tab ${activeTab === 'support' ? 'active' : ''}`}
-                onClick={() => handleTabChange('support')}
-              >
-                <Headphones className="w-3.5 h-3.5" />
-                Support
-              </button>
-            </div>
-          )}
-
           {/* Content */}
           <div className="messages-widget-content">
-            {/* Support Tab Content */}
-            {ZOHO_WIDGET_KEY && activeTab === 'support' && !activeConversationId ? (
-              <div className="messages-widget-support">
-                {zohoFailed ? (
-                  <p className="messages-widget-support-unavailable">
-                    Support chat is currently unavailable. Please try again later.
-                  </p>
-                ) : !zohoReady ? (
-                  <div className="messages-widget-support-loading">
-                    <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
-                    <span className="text-gray-400 text-sm mt-2">Connecting to support...</span>
-                  </div>
-                ) : (
-                  <p className="messages-widget-support-hint">
-                    The support chat window will open automatically.
-                  </p>
+            {activeConversationId ? (
+              <>
+                {/* Product Banner */}
+                {activeConversation?.metadata?.productId && (
+                  <Link
+                    href={`/product/${activeConversation.metadata.productId}`}
+                    className="messages-widget-product-banner"
+                    onClick={() => setIsWidgetOpen(false)}
+                  >
+                    {activeConversation.metadata.productImage && (
+                      <img
+                        src={activeConversation.metadata.productImage}
+                        alt={activeConversation.metadata.productName}
+                        className="messages-widget-product-image"
+                      />
+                    )}
+                    <div className="messages-widget-product-info">
+                      <span className="messages-widget-product-label">About product</span>
+                      <span className="messages-widget-product-name">{activeConversation.metadata.productName}</span>
+                    </div>
+                  </Link>
                 )}
-              </div>
+
+                {/* RFQ Banner */}
+                {activeConversation?.metadata?.requestId && (
+                  <button
+                    className="messages-widget-rfq-banner"
+                    onClick={() => setRfqDialogOpen(true)}
+                  >
+                    <div className="messages-widget-rfq-icon">
+                      <FileText className="w-5 h-5" />
+                    </div>
+                    <div className="messages-widget-rfq-info">
+                      <span className="messages-widget-rfq-label">About RFQ</span>
+                      <span className="messages-widget-rfq-name">{activeConversation.metadata.requestName || 'View RFQ Details'}</span>
+                    </div>
+                  </button>
+                )}
+
+                {/* Deal Banner */}
+                {activeConversation?.metadata?.dealId && (
+                  <Link
+                    href={`/deals/${activeConversation.metadata.dealId}`}
+                    className="messages-widget-deal-banner"
+                    onClick={() => setIsWidgetOpen(false)}
+                  >
+                    <div className="messages-widget-deal-icon">
+                      <Handshake className="w-4 h-4" />
+                    </div>
+                    <div className="messages-widget-deal-info">
+                      <span className="messages-widget-deal-label">Active Deal</span>
+                      <span className="messages-widget-deal-status">
+                        {activeConversation.metadata.dealStatus === 'negotiating' ? 'Negotiating' :
+                         activeConversation.metadata.dealStatus === 'accepted' ? 'Accepted' :
+                         activeConversation.metadata.dealStatus === 'rejected' ? 'Rejected' :
+                         activeConversation.metadata.dealStatus === 'withdrawn' ? 'Withdrawn' :
+                         activeConversation.metadata.dealStatus === 'expired' ? 'Expired' : 'View Deal'}
+                      </span>
+                    </div>
+                    <span className="text-[#FFD700] text-xs">→</span>
+                  </Link>
+                )}
+
+                <div className="messages-widget-messages">
+                  <MessageThread
+                    conversationId={activeConversationId}
+                    participantDetails={activeConversation?.participantDetails}
+                  />
+                </div>
+                <MessageInput conversationId={activeConversationId} />
+              </>
             ) : (
-              /* Messages Tab Content */
-              activeConversationId ? (
-                <>
-                  {/* Product Banner */}
-                  {activeConversation?.metadata?.productId && (
-                    <Link
-                      href={`/product/${activeConversation.metadata.productId}`}
-                      className="messages-widget-product-banner"
-                      onClick={() => setIsWidgetOpen(false)}
-                    >
-                      {activeConversation.metadata.productImage && (
-                        <img
-                          src={activeConversation.metadata.productImage}
-                          alt={activeConversation.metadata.productName}
-                          className="messages-widget-product-image"
-                        />
-                      )}
-                      <div className="messages-widget-product-info">
-                        <span className="messages-widget-product-label">About product</span>
-                        <span className="messages-widget-product-name">{activeConversation.metadata.productName}</span>
-                      </div>
-                    </Link>
-                  )}
-
-                  {/* RFQ Banner */}
-                  {activeConversation?.metadata?.requestId && (
-                    <button
-                      className="messages-widget-rfq-banner"
-                      onClick={() => setRfqDialogOpen(true)}
-                    >
-                      <div className="messages-widget-rfq-icon">
-                        <FileText className="w-5 h-5" />
-                      </div>
-                      <div className="messages-widget-rfq-info">
-                        <span className="messages-widget-rfq-label">About RFQ</span>
-                        <span className="messages-widget-rfq-name">{activeConversation.metadata.requestName || 'View RFQ Details'}</span>
-                      </div>
-                    </button>
-                  )}
-
-                  {/* Deal Banner */}
-                  {activeConversation?.metadata?.dealId && (
-                    <Link
-                      href={`/deals/${activeConversation.metadata.dealId}`}
-                      className="messages-widget-deal-banner"
-                      onClick={() => setIsWidgetOpen(false)}
-                    >
-                      <div className="messages-widget-deal-icon">
-                        <Handshake className="w-4 h-4" />
-                      </div>
-                      <div className="messages-widget-deal-info">
-                        <span className="messages-widget-deal-label">Active Deal</span>
-                        <span className="messages-widget-deal-status">
-                          {activeConversation.metadata.dealStatus === 'negotiating' ? 'Negotiating' :
-                           activeConversation.metadata.dealStatus === 'accepted' ? 'Accepted' :
-                           activeConversation.metadata.dealStatus === 'rejected' ? 'Rejected' :
-                           activeConversation.metadata.dealStatus === 'withdrawn' ? 'Withdrawn' :
-                           activeConversation.metadata.dealStatus === 'expired' ? 'Expired' : 'View Deal'}
-                        </span>
-                      </div>
-                      <span className="text-[#FFD700] text-xs">→</span>
-                    </Link>
-                  )}
-
-                  <div className="messages-widget-messages">
-                    <MessageThread
-                      conversationId={activeConversationId}
-                      participantDetails={activeConversation?.participantDetails}
-                    />
-                  </div>
-                  <MessageInput conversationId={activeConversationId} />
-                </>
-              ) : (
-                <ConversationList />
-              )
+              <ConversationList />
             )}
           </div>
         </div>

@@ -10,7 +10,7 @@
  */
 
 export const COMPANY_TYPES = [
-  { value: 'trade', label: 'Trade Company' },
+  { value: 'trade', label: 'Supplier' },
   { value: 'logistics', label: 'Logistics Company' },
   { value: 'insurance', label: 'Insurance Company' },
 ];
