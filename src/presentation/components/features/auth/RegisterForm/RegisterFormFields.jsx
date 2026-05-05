@@ -10,10 +10,10 @@
 'use client';
 
 import { SearchableSelect } from '@/presentation/components/common/SearchableSelect/SearchableSelect';
-import { COUNTRIES, COUNTRY_PHONE_CODES } from '@/core/constants/countries';
+import { COUNTRIES, COUNTRY_PHONE_CODES, PHONE_CODE_OPTIONS } from '@/core/constants/countries';
 import { COMPANY_TYPES } from '@/core/constants/companyTypes';
 import { Eye, EyeOff } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 /**
  * @param {Object} props
@@ -32,9 +32,20 @@ export function RegisterFormFields({ register, errors, loading, setValue, watch,
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [localPhone, setLocalPhone] = useState('');
+  const [selectedPhoneCountry, setSelectedPhoneCountry] = useState('');
 
-  // Derive the dial code prefix from the selected country
-  const phonePrefix = country ? (COUNTRY_PHONE_CODES[country] || '') : '';
+  // Pre-fill phone country from company country on first selection only
+  useEffect(() => {
+    if (country && !selectedPhoneCountry) {
+      setSelectedPhoneCountry(country);
+    }
+  }, [country, selectedPhoneCountry]);
+
+  // Get the compact display label for the collapsed phone code trigger
+  const selectedPhoneOption = PHONE_CODE_OPTIONS.find((opt) => opt.value === selectedPhoneCountry);
+  const compactPhoneLabel = selectedPhoneOption
+    ? `${selectedPhoneOption.label.split(' ')[0]} ${selectedPhoneOption.dialCode}`
+    : '';
 
   const handlePhoneChange = (e) => {
     const raw = e.target.value;
@@ -45,12 +56,14 @@ export function RegisterFormFields({ register, errors, loading, setValue, watch,
       return;
     }
 
+    const dialCode = COUNTRY_PHONE_CODES[selectedPhoneCountry] || '';
+
     // If user manually types a full E.164 number (starts with +), use it directly
     if (raw.startsWith('+')) {
       setValue('phone', raw, { shouldValidate: false });
-    } else if (phonePrefix) {
-      // Combine prefix + space + local number
-      setValue('phone', `${phonePrefix} ${raw}`, { shouldValidate: false });
+    } else if (dialCode) {
+      // Combine dial code + space + local number
+      setValue('phone', `${dialCode} ${raw}`, { shouldValidate: false });
     } else {
       setValue('phone', raw, { shouldValidate: false });
     }
@@ -124,18 +137,34 @@ export function RegisterFormFields({ register, errors, loading, setValue, watch,
                 Phone <span className="text-red-400">*</span>
               </label>
               <div className="flex">
-                {phonePrefix && (
-                  <span className="bg-[#1A283B] border border-[#2A3B52] border-r-0 rounded-l-xl px-3 text-gray-400 text-sm flex items-center flex-shrink-0 select-none">
-                    {phonePrefix}
-                  </span>
-                )}
+                {/* Independent phone country code dropdown */}
+                <div className="relative flex-shrink-0" style={{ width: '120px' }}>
+                  <SearchableSelect
+                    options={PHONE_CODE_OPTIONS}
+                    value={selectedPhoneCountry}
+                    onChange={(val) => setSelectedPhoneCountry(val)}
+                    placeholder="Code"
+                    disabled={loading}
+                    className="dark-select phone-code-select"
+                    searchPlaceholder="Search country..."
+                  />
+                  {/* Compact overlay showing flag + dial code when a value is selected */}
+                  {selectedPhoneOption && (
+                    <span
+                      className="pointer-events-none absolute inset-0 flex items-center px-3 text-white text-sm bg-[#0F1B2B] rounded-lg border border-[rgba(255,255,255,0.1)] pr-8"
+                      aria-hidden="true"
+                    >
+                      {compactPhoneLabel}
+                    </span>
+                  )}
+                </div>
                 <input
                   id="phone"
                   type="tel"
                   value={localPhone}
                   onChange={handlePhoneChange}
-                  className={`form-input-anasyf text-sm flex-1 ${phonePrefix ? 'rounded-l-none' : ''}`}
-                  placeholder={phonePrefix ? '555 123 4567' : '+1 234 567 8900'}
+                  className="form-input-anasyf text-sm flex-1 rounded-l-none border-l-0"
+                  placeholder={selectedPhoneOption ? '555 123 4567' : '+1 234 567 8900'}
                   disabled={loading}
                 />
               </div>

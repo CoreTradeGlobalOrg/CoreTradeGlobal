@@ -407,4 +407,29 @@ export const COUNTRY_PHONE_CODES = {
   ZW: '+263',
 };
 
+/**
+ * Convert ISO2 country code to flag emoji
+ * Each letter maps to a regional indicator symbol (Unicode U+1F1E6 + offset)
+ */
+function isoToFlagEmoji(iso2) {
+  if (!iso2 || iso2.length !== 2) return '';
+  return [...iso2.toUpperCase()]
+    .map((char) => String.fromCodePoint(0x1f1e6 + char.charCodeAt(0) - 65))
+    .join('');
+}
+
+/**
+ * Pre-built phone code options for the phone country code dropdown.
+ * Each entry: { value: ISO2, label: 'FLAG Country (+CODE)', dialCode: '+CODE' }
+ * Sorted alphabetically by country name.
+ */
+export const PHONE_CODE_OPTIONS = COUNTRIES.map(({ value, label }) => {
+  const dialCode = COUNTRY_PHONE_CODES[value] || '';
+  return {
+    value,
+    label: `${isoToFlagEmoji(value)} ${label} (${dialCode})`,
+    dialCode,
+  };
+}).filter((opt) => opt.dialCode);
+
 export default COUNTRIES;
