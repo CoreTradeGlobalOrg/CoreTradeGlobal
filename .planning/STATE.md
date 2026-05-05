@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-stopped_at: Completed 17-02-PLAN.md
-last_updated: "2026-05-02T09:39:54.766Z"
+stopped_at: Completed 17-06-PLAN.md
+last_updated: "2026-05-05T12:53:48.314Z"
 last_activity: "2026-04-02 - Completed quick task 5: Fix hero not fetching last verified user"
 progress:
   total_phases: 17
-  completed_phases: 8
-  total_plans: 35
-  completed_plans: 35
+  completed_phases: 7
+  total_plans: 39
+  completed_plans: 37
   percent: 71
 ---
 
@@ -130,6 +130,8 @@ Progress: [█████████████] 71%
 | Phase 17 P01 | 9 | 2 tasks | 7 files |
 | Phase 17 P04 | 13 | 2 tasks | 10 files |
 | Phase 17-registration-onboarding-and-misc P02 | 4 | 2 tasks | 5 files |
+| Phase 17 P07 | 1 | 1 tasks | 2 files |
+| Phase 17 P06 | 2 | 1 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -385,6 +387,9 @@ Recent decisions affecting current work:
 - [Phase 17-02]: OnboardingTour uses createPortal to document.body for z-index supremacy over all existing glass-card layers
 - [Phase 17-02]: ProfileCompletionCard uses sessionStorage for dismiss so card reappears on next visit per spec (comes back until 100%)
 - [Phase 17-02]: hydrated flag prevents sessionStorage reads during SSR to avoid Next.js hydration mismatch
+- [Phase 17]: top-[116px] hardcoded for ProfileCompletionCard position (ticker ~40px + navbar ~64px + 12px gap) — layout heights are stable
+- [Phase 17]: hidden lg:block on ProfileCompletionCard overlay — desktop-only floating card hides on mobile to avoid blocking content
+- [Phase 17]: PHONE_CODE_OPTIONS built at module level from existing COUNTRIES + COUNTRY_PHONE_CODES; compact display via pointer-events-none overlay span; useEffect empty-guard pre-fills phone code from company country once without locking it
 
 ### Pending Todos
 
@@ -408,6 +413,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-02T09:34:26.142Z
-Stopped at: Completed 17-02-PLAN.md
+Last session: 2026-05-05T12:53:48.221Z
+Stopped at: Completed 17-06-PLAN.md
 Resume file: None
