@@ -2,12 +2,14 @@
  * ProfileCompletionCard Component
  *
  * Shows a profile completion progress bar and field checklist to encourage
- * users to fill out their profile. Renders on the dashboard and profile pages.
+ * users to fill out their profile. Renders fixed in the top-right corner of
+ * the homepage below the ticker and navbar.
  *
  * Behaviour:
- * - Hidden permanently at 100% completion (returns null)
- * - Dismissable per browser session via sessionStorage (comes back on next visit)
- * - "Complete Profile" button links to /profile/[uid]?edit=true
+ * - Always visible regardless of completion percentage (never auto-hides at 100%)
+ * - Dismissable per browser session via sessionStorage (comes back on next login/visit)
+ * - "Complete Profile" button links to /profile/[uid] (< 100%)
+ * - "View Profile" button links to /profile/[uid] (= 100%)
  *
  * Props:
  *   user {object} — user object from AuthContext (includes uid, role, and profile fields)
@@ -56,9 +58,6 @@ export function ProfileCompletionCard({ user }) {
   const total = COMPLETION_FIELDS.length;
   const percent = Math.round((completedCount / total) * 100);
 
-  // Hide permanently at 100%
-  if (percent === 100) return null;
-
   // Hide during SSR and before hydration check (avoids flash)
   if (!hydrated) return null;
 
@@ -79,10 +78,11 @@ export function ProfileCompletionCard({ user }) {
       {/* Dismiss button */}
       <button
         onClick={handleDismiss}
-        aria-label="Dismiss profile completion card"
-        className="absolute top-3 right-3 text-gray-500 hover:text-gray-300 transition-colors p-1 rounded-md hover:bg-white/5"
+        aria-label="Skip profile completion card for this session"
+        className="absolute top-3 right-3 flex items-center gap-1 text-xs text-gray-500 hover:text-gray-300 transition-colors px-1.5 py-1 rounded-md hover:bg-white/5"
       >
-        <X className="w-4 h-4" />
+        <span>Skip</span>
+        <X className="w-3.5 h-3.5" />
       </button>
 
       {/* Header */}
@@ -138,7 +138,7 @@ export function ProfileCompletionCard({ user }) {
         href={profileHref}
         className="inline-flex items-center justify-center w-full px-4 py-2 rounded-lg text-sm font-semibold !text-black bg-gradient-to-r from-[#FFD700] to-[#FDB931] hover:opacity-90 transition-opacity"
       >
-        Complete Profile
+        {percent === 100 ? 'View Profile' : 'Complete Profile'}
       </Link>
     </div>
   );

@@ -65,9 +65,9 @@ export default function Home() {
         />
       )}
 
-      {/* Profile completion card — shown above main content for authenticated users */}
+      {/* Profile completion card — fixed top-right corner below ticker + navbar, desktop only */}
       {!loading && user && (
-        <div className="max-w-sm mx-auto px-4 pt-4">
+        <div className="hidden lg:block fixed top-[116px] right-4 z-[50] w-[320px]">
           <ProfileCompletionCard user={user} />
         </div>
       )}
