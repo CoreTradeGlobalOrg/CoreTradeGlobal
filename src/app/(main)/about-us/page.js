@@ -1,5 +1,6 @@
 import React from 'react';
 import { Package, Truck, Shield, Scale, BadgeCheck, Search, MessageSquare, CalendarDays, Newspaper } from 'lucide-react';
+import { TourLauncher } from './TourLauncher';
 
 export const metadata = {
     title: 'About Us | CoreTradeGlobal',
@@ -57,6 +58,8 @@ const OFFERINGS = [
 export default function AboutUsPage() {
     return (
         <main className="pt-[var(--navbar-height)] pb-20 bg-radial-navy">
+            {/* "?" FAB + tour launcher — client component for authenticated users */}
+            <TourLauncher />
             {/* Hero Section */}
             <section className="relative w-full flex flex-col justify-center items-center text-center px-5 py-20 overflow-hidden">
                 <h1

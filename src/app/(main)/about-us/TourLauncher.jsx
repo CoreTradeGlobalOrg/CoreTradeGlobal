@@ -1,8 +1,9 @@
 /**
- * FAQ Page
+ * TourLauncher — client component wrapper for About Us page
  *
- * Standalone page for Frequently Asked Questions
- * URL: /faq
+ * Renders the TourHelpButton FAB and OnboardingTour for authenticated users.
+ * Extracted as a client component so the parent server page can keep its
+ * metadata export (metadata exports are incompatible with 'use client').
  */
 
 'use client';
@@ -10,7 +11,6 @@
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useAuth } from '@/presentation/contexts/AuthContext';
-import { FAQSection } from '@/presentation/components/homepage/FAQ/FAQSection';
 
 const OnboardingTour = dynamic(
   () =>
@@ -28,23 +28,20 @@ const TourHelpButton = dynamic(
   { ssr: false }
 );
 
-export default function FAQPage() {
+export function TourLauncher() {
   const { user } = useAuth();
   const [showTour, setShowTour] = useState(false);
 
+  if (!user) return null;
+
   return (
-    <main className="min-h-screen pt-[var(--navbar-height)] bg-radial-navy">
-      {/* Onboarding tour — launched via "?" FAB */}
+    <>
       {showTour && (
         <OnboardingTour user={user} onComplete={() => setShowTour(false)} />
       )}
-
-      {/* "?" FAB — relaunch tour, authenticated users only */}
-      {user && !showTour && (
+      {!showTour && (
         <TourHelpButton onLaunch={() => setShowTour(true)} />
       )}
-
-      <FAQSection />
-    </main>
+    </>
   );
 }

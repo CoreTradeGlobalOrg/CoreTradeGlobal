@@ -11,6 +11,7 @@
 
 'use client';
 
+import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useAuth } from '@/presentation/contexts/AuthContext';
 import { HeroSection } from '@/presentation/components/homepage/Hero/HeroSection';
@@ -32,6 +33,15 @@ const OnboardingTour = dynamic(
   { ssr: false }
 );
 
+// "?" FAB to relaunch the tour manually — client-side only
+const TourHelpButton = dynamic(
+  () =>
+    import(
+      '@/presentation/components/features/onboarding/OnboardingTour/OnboardingTour'
+    ).then((m) => ({ default: m.TourHelpButton })),
+  { ssr: false }
+);
+
 // Loaded client-side only — reads sessionStorage
 const ProfileCompletionCard = dynamic(
   () =>
@@ -43,26 +53,34 @@ const ProfileCompletionCard = dynamic(
 
 export default function Home() {
   const { user, loading } = useAuth();
+  const [showTourManual, setShowTourManual] = useState(false);
 
   // Toggle this to test performance:
   // false = fast (no API calls in hero)
   // true = slow (4 extra API calls in hero)
   const HERO_FETCH_DATA = true;
 
-  // Show the tour when: auth resolved, user is logged in, and flag is not set
-  const showTour = !loading && user && !user.onboardingTourCompleted;
+  // Auto-start: show tour on first login (flag not set yet)
+  const showTourAuto = !loading && user && !user.onboardingTourCompleted;
+  // Show tour when auto-triggered OR manually relaunched via "?" button
+  const showTour = showTourAuto || showTourManual;
 
   return (
     <div className="homepage">
-      {/* Onboarding tour overlay for first-time users */}
+      {/* Onboarding tour overlay — auto on first login, or manual via "?" FAB */}
       {showTour && (
         <OnboardingTour
           user={user}
           onComplete={() => {
             // Tour completion updates Firestore; auth listener will refresh user doc
-            // and the flag will be set — no local state needed
+            setShowTourManual(false);
           }}
         />
+      )}
+
+      {/* "?" FAB — relaunch tour anytime, authenticated users only */}
+      {!loading && user && !showTour && (
+        <TourHelpButton onLaunch={() => setShowTourManual(true)} />
       )}
 
       {/* Profile completion card — fixed top-right corner below ticker + navbar, desktop only */}
