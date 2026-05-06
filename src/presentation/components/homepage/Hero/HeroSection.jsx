@@ -80,55 +80,43 @@ export function HeroSection({ fetchData = false }) {
       const firestoreDS = container.getFirestoreDataSource();
 
       const [productsRes, requestsRes, fairsRes, usersRes] = await Promise.allSettled([
-        firestoreDS.query('products', { limit: 20 }),
-        firestoreDS.query('requests', { limit: 20 }),
-        firestoreDS.query('fairs', { limit: 20 }),
-        firestoreDS.query('users', { limit: 50 }),
+        firestoreDS.query('products', {
+          where: [['status', '==', 'active']],
+          orderBy: [['createdAt', 'desc']],
+          limit: 1,
+        }),
+        firestoreDS.query('requests', {
+          where: [['status', '==', 'active']],
+          orderBy: [['createdAt', 'desc']],
+          limit: 1,
+        }),
+        firestoreDS.query('fairs', {
+          where: [['status', '==', 'upcoming']],
+          orderBy: [['startDate', 'asc']],
+          limit: 1,
+        }),
+        firestoreDS.query('users', {
+          where: [['emailVerified', '==', true], ['adminApproved', '==', true]],
+          orderBy: [['approvedAt', 'desc']],
+          limit: 5,
+        }),
       ]);
 
       if (productsRes.status === 'fulfilled' && productsRes.value?.length > 0) {
-        const active = productsRes.value.filter(p => p.status === 'active');
-        const sorted = active.sort((a, b) => {
-          const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
-          const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
-          return dateB - dateA;
-        });
-        if (sorted.length > 0) setLatestProduct(sorted[0]);
+        setLatestProduct(productsRes.value[0]);
       }
 
       if (requestsRes.status === 'fulfilled' && requestsRes.value?.length > 0) {
-        const active = requestsRes.value.filter(r => r.status === 'active');
-        const sorted = active.sort((a, b) => {
-          const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
-          const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
-          return dateB - dateA;
-        });
-        if (sorted.length > 0) setLatestRequest(sorted[0]);
+        setLatestRequest(requestsRes.value[0]);
       }
 
       if (fairsRes.status === 'fulfilled' && fairsRes.value?.length > 0) {
-        const upcoming = fairsRes.value.filter(f => f.status === 'upcoming');
-        const sorted = upcoming.sort((a, b) => {
-          const dateA = a.startDate?.toDate ? a.startDate.toDate() : new Date(a.startDate || 0);
-          const dateB = b.startDate?.toDate ? b.startDate.toDate() : new Date(b.startDate || 0);
-          return dateA - dateB;
-        });
-        if (sorted.length > 0) setLatestFair(sorted[0]);
+        setLatestFair(fairsRes.value[0]);
       }
 
       if (usersRes.status === 'fulfilled' && usersRes.value?.length > 0) {
-        const verified = usersRes.value.filter(u =>
-          u.emailVerified === true &&
-          u.adminApproved === true &&
-          u.companyName &&
-          !u.isSuspended
-        );
-        const sorted = verified.sort((a, b) => {
-          const dateA = a.approvedAt?.toDate ? a.approvedAt.toDate() : a.createdAt?.toDate ? a.createdAt.toDate() : new Date(0);
-          const dateB = b.approvedAt?.toDate ? b.approvedAt.toDate() : b.createdAt?.toDate ? b.createdAt.toDate() : new Date(0);
-          return dateB - dateA;
-        });
-        if (sorted.length > 0) setLatestSupplier(sorted[0]);
+        const supplier = usersRes.value.find(u => u.companyName && !u.isSuspended);
+        if (supplier) setLatestSupplier(supplier);
       }
     };
 
