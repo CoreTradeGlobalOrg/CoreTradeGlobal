@@ -10,12 +10,22 @@ import { Suspense } from 'react';
 import dynamic from 'next/dynamic';
 import { useAuth } from '@/presentation/contexts/AuthContext';
 import { useLogout } from '@/presentation/hooks/auth/useLogout';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Settings, Heart } from 'lucide-react';
 import { ProfileStickyHeader } from './ProfileStickyHeader';
 import { ProfileCard } from './ProfileCard';
 import { useProfilePage } from './useProfilePage';
+import { ProductUploadRequestButton } from '@/presentation/components/features/profile/ProductUploadRequestButton/ProductUploadRequestButton';
+
+// ProfileCompletionCard reads sessionStorage — must be client-side only
+const ProfileCompletionCard = dynamic(
+  () =>
+    import(
+      '@/presentation/components/features/onboarding/ProfileCompletionCard/ProfileCompletionCard'
+    ).then((m) => ({ default: m.ProfileCompletionCard })),
+  { ssr: false }
+);
 
 // Heavy sub-components loaded lazily to reduce initial bundle
 const CompanyDocuments = dynamic(
@@ -49,11 +59,33 @@ function ProfileContent() {
   const { logout } = useLogout();
   const router = useRouter();
   const { userId } = useParams();
+  const searchParams = useSearchParams();
+  const highlightIncomplete = searchParams.get('highlight') === 'incomplete';
 
   const page = useProfilePage({ userId, currentUser, authLoading, isAuthenticated, logout });
 
   if (authLoading || page.loading) return SPINNER;
   if (!isAuthenticated || !page.profileUser) return null;
+
+  // Compute incomplete fields for highlight mode
+  const incompleteFields = highlightIncomplete && page.isOwnProfile
+    ? new Set(
+        [
+          { key: 'companyName' },
+          { key: 'companyLogo' },
+          { key: 'country' },
+          { key: 'phone' },
+          { key: 'about' },
+          { key: 'companyWebsite' },
+          { key: 'companyDocuments' },
+        ]
+          .filter((f) => {
+            const val = page.profileUser[f.key];
+            return Array.isArray(val) ? val.length === 0 : !val;
+          })
+          .map((f) => f.key)
+      )
+    : new Set();
 
   return (
     <div className="min-h-screen bg-radial-navy pb-20">
@@ -77,7 +109,19 @@ function ProfileContent() {
           onRemoveLogo={page.handleRemoveLogo}
           onProfileUpdate={page.handleProfileUpdate}
           onCancelEdit={page.handleCancelEdit}
+          highlightFields={incompleteFields}
         />
+
+        {/* Profile completion card — own profile only, hides at 100% */}
+        {page.isOwnProfile && currentUser && (
+          <ProfileCompletionCard user={currentUser} />
+        )}
+
+        {page.isOwnProfile && (
+          <div className="flex justify-start">
+            <ProductUploadRequestButton user={currentUser} />
+          </div>
+        )}
 
         {page.isOwnProfile && (
           <div className="flex justify-end gap-4">
@@ -102,7 +146,7 @@ function ProfileContent() {
 
         {page.profileUser?.role !== 'lawyer' && (
           <>
-            <div className="glass-card p-6">
+            <div className={`glass-card p-6${incompleteFields.has('companyDocuments') ? ' animate-highlight-incomplete border-2' : ''}`}>
               <CompanyDocuments userId={userId} documents={page.profileUser?.companyDocuments || []}
                 isOwnProfile={page.isOwnProfile}
                 onDocumentsChange={(docs) => page.setProfileUser((p) => ({ ...p, companyDocuments: docs }))} />

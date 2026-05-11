@@ -64,18 +64,20 @@ export function ProfileProducts({
           <button
             onClick={() => setProductPage((p) => Math.max(1, p - 1))}
             disabled={productPage === 1}
-            className="px-4 py-2 rounded-lg bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] text-white text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[rgba(255,255,255,0.1)] transition-all"
+            aria-label="Previous products page"
+            className="px-4 py-2 rounded-lg bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] text-white text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[rgba(255,255,255,0.1)] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FFD700]"
           >
             ← Previous
           </button>
-          <span className="text-sm text-[#A0A0A0]">
+          <span className="text-sm text-[#A0A0A0]" aria-live="polite" aria-atomic="true">
             Page <span className="text-white font-medium">{productPage}</span> of{' '}
             <span className="text-white font-medium">{Math.ceil(products.length / itemsPerPage)}</span>
           </span>
           <button
             onClick={() => setProductPage((p) => Math.min(Math.ceil(products.length / itemsPerPage), p + 1))}
             disabled={productPage >= Math.ceil(products.length / itemsPerPage)}
-            className="px-4 py-2 rounded-lg bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] text-white text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[rgba(255,255,255,0.1)] transition-all"
+            aria-label="Next products page"
+            className="px-4 py-2 rounded-lg bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] text-white text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[rgba(255,255,255,0.1)] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FFD700]"
           >
             Next →
           </button>

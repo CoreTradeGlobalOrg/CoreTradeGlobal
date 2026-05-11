@@ -215,6 +215,7 @@ export function Navbar() {
               className={`nav-link ${isActive(link.href) ? 'font-bold opacity-100' : ''}`}
               style={{ color: isActive(link.href) ? '#FFD700' : undefined }}
               onClick={(e) => handleNavClick(link.href, e)}
+              aria-current={isActive(link.href) ? 'page' : undefined}
             >
               {link.label}
             </Link>
@@ -236,8 +237,11 @@ export function Navbar() {
             <NotificationBell />
             <div className="relative" ref={dropdownRef}>
               <button
-                className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-[rgba(255,255,255,0.08)] transition-colors"
+                className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-[rgba(255,255,255,0.08)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FFD700]"
                 onClick={() => setShowUserMenu(!showUserMenu)}
+                aria-expanded={showUserMenu}
+                aria-haspopup="menu"
+                aria-label={`Account menu for ${user.companyName || user.displayName || 'Account'}`}
               >
                 {user.companyLogo || user.photoURL ? (
                   <img
@@ -330,7 +334,10 @@ export function Navbar() {
         )}
         <button
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="w-10 h-10 flex items-center justify-center text-white hover:bg-[rgba(255,255,255,0.1)] rounded-lg transition-colors"
+          className="w-10 h-10 flex items-center justify-center text-white hover:bg-[rgba(255,255,255,0.1)] rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FFD700]"
+          aria-expanded={isMobileMenuOpen}
+          aria-controls="mobile-menu"
+          aria-label={isMobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
         >
           {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
         </button>
@@ -340,7 +347,7 @@ export function Navbar() {
 
       {/* Mobile Menu */}
       {isMobileMenuOpen && (
-        <div className="md:hidden absolute top-full left-0 right-0 bg-[#0F1B2B] border-t border-[rgba(255,255,255,0.1)] shadow-lg">
+        <div id="mobile-menu" className="md:hidden absolute top-full left-0 right-0 bg-[#0F1B2B] border-t border-[rgba(255,255,255,0.1)] shadow-lg">
           <div className="px-6 py-4 space-y-1">
             {roleLoading ? (
               <div className="space-y-3">
@@ -356,6 +363,7 @@ export function Navbar() {
                   className="block py-3 transition-colors hover:text-[#FFD700]"
                   style={{ color: isActive(link.href) ? '#FFD700' : '#FFFFFF', fontWeight: isActive(link.href) ? 600 : 400 }}
                   onClick={(e) => handleNavClick(link.href, e)}
+                  aria-current={isActive(link.href) ? 'page' : undefined}
                 >
                   {link.label}
                 </Link>

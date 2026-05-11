@@ -3,15 +3,20 @@
  *
  * URL: /register
  * Public page - no authentication required
+ *
+ * Uses next/dynamic with ssr:false to prevent SSR crash caused by
+ * useSearchParams and browser-only APIs (reCAPTCHA, libphonenumber-js) inside RegisterForm.
  */
 
-import { Suspense } from 'react';
-import { RegisterForm } from '@/presentation/components/features/auth/RegisterForm/RegisterForm';
+'use client';
 
-export const metadata = {
-  title: 'Register | CoreTradeGlobal',
-  description: 'Create your CoreTradeGlobal B2B account',
-};
+import { Suspense } from 'react';
+import dynamic from 'next/dynamic';
+
+const RegisterForm = dynamic(
+  () => import('@/presentation/components/features/auth/RegisterForm/RegisterForm').then(m => ({ default: m.RegisterForm })),
+  { ssr: false }
+);
 
 export default function RegisterPage() {
   return (

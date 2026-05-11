@@ -4,6 +4,9 @@
  * Public landing page for CoreTradeGlobal
  * Dark themed with 3D globe, featured products/RFQs, and more
  * Matches design exactly from main_screen/index.html
+ *
+ * Also serves as the first-login landing point for authenticated users.
+ * Renders the OnboardingTour overlay for users who haven't completed it yet.
  */
 
 'use client';
@@ -19,15 +22,14 @@ import { FairsSection } from '@/presentation/components/homepage/Fairs/FairsSect
 import { NewsSection } from '@/presentation/components/homepage/News/NewsSection';
 
 export default function Home() {
-  // Toggle this to test performance:
-  // false = fast (no API calls in hero)
-  // true = slow (4 extra API calls in hero)
   const HERO_FETCH_DATA = true;
 
   return (
     <div className="homepage">
       {/* Hero Section with 3D Globe */}
       <HeroSection fetchData={HERO_FETCH_DATA} />
+
+
 
       {/* Featured Products */}
       <FeaturedProducts />

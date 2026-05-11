@@ -44,14 +44,17 @@ export function ProfileCard({
   onRemoveLogo,
   onProfileUpdate,
   onCancelEdit,
+  highlightFields = new Set(),
 }) {
+  const hl = (field) =>
+    highlightFields.has(field) ? ' animate-highlight-incomplete border-2' : '';
   return (
     <div className="glass-card p-6">
       <form onSubmit={onProfileUpdate}>
         {/* Header Row: Logo + Name + Edit Button */}
         <div className="flex flex-col sm:flex-row items-start gap-6 mb-6">
           {/* Logo Section */}
-          <div className="flex-shrink-0">
+          <div className={`flex-shrink-0 rounded-2xl${hl('companyLogo')}`}>
             {logoLoading ? (
               <div className="w-24 h-24 rounded-2xl border-2 border-dashed border-[#FFD700] bg-[rgba(255,215,0,0.1)] flex items-center justify-center">
                 <div className="w-6 h-6 border-2 border-[#FFD700] border-t-transparent rounded-full animate-spin"></div>
@@ -133,7 +136,7 @@ export function ProfileCard({
             </div>
 
             {/* Bio */}
-            <div className="mt-4">
+            <div className={`mt-4 rounded-xl${hl('about')}`}>
               {isEditing ? (
                 <textarea
                   value={about}
@@ -162,7 +165,7 @@ export function ProfileCard({
 
         {/* Details Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-6 border-t border-[rgba(255,255,255,0.1)]">
-          <div className="bg-[rgba(255,255,255,0.04)] rounded-2xl p-5 border border-[rgba(255,255,255,0.05)]">
+          <div className={`bg-[rgba(255,255,255,0.04)] rounded-2xl p-5 border border-[rgba(255,255,255,0.05)]${hl('companyName')}`}>
             <p className="text-sm font-semibold uppercase tracking-wider mb-2 bg-gradient-to-r from-[#C0C0C0] via-[#FFFFFF] to-[#C0C0C0] bg-clip-text text-transparent">Company</p>
             <p className="text-white font-semibold text-lg truncate">{profileUser?.companyName || 'Not set'}</p>
           </div>
@@ -177,7 +180,7 @@ export function ProfileCard({
             <RoleBadge role={profileUser?.role} size="md" />
           </div>
 
-          <div className="bg-[rgba(255,255,255,0.04)] rounded-2xl p-5 border border-[rgba(255,255,255,0.05)]">
+          <div className={`bg-[rgba(255,255,255,0.04)] rounded-2xl p-5 border border-[rgba(255,255,255,0.05)]${hl('country')}`}>
             <p className="text-sm font-semibold uppercase tracking-wider mb-2 bg-gradient-to-r from-[#C0C0C0] via-[#FFFFFF] to-[#C0C0C0] bg-clip-text text-transparent">Country</p>
             <p className="text-white font-semibold text-lg truncate">{getCountryLabel(profileUser?.country)}</p>
           </div>
@@ -193,7 +196,7 @@ export function ProfileCard({
           )}
 
           {canEdit && (
-            <div className="bg-[rgba(255,255,255,0.04)] rounded-2xl p-5 border border-[rgba(255,255,255,0.05)]">
+            <div className={`bg-[rgba(255,255,255,0.04)] rounded-2xl p-5 border border-[rgba(255,255,255,0.05)]${hl('phone')}`}>
               <div className="flex items-center gap-2 mb-2">
                 <p className="text-sm font-semibold uppercase tracking-wider bg-gradient-to-r from-[#C0C0C0] via-[#FFFFFF] to-[#C0C0C0] bg-clip-text text-transparent">Phone</p>
                 <span className="text-[10px] text-[#A0A0A0]/60">(Private)</span>
@@ -236,7 +239,7 @@ export function ProfileCard({
             )}
           </div>
 
-          <div className="bg-[rgba(255,255,255,0.04)] rounded-2xl p-5 border border-[rgba(255,255,255,0.05)]">
+          <div className={`bg-[rgba(255,255,255,0.04)] rounded-2xl p-5 border border-[rgba(255,255,255,0.05)]${hl('companyWebsite')}`}>
             <p className="text-sm font-semibold uppercase tracking-wider mb-2 bg-gradient-to-r from-[#C0C0C0] via-[#FFFFFF] to-[#C0C0C0] bg-clip-text text-transparent">Website</p>
             {canEdit && isEditing ? (
               <input

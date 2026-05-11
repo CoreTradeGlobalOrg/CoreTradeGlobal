@@ -10,9 +10,10 @@
 'use client';
 
 import { SearchableSelect } from '@/presentation/components/common/SearchableSelect/SearchableSelect';
-import { COUNTRIES } from '@/core/constants/countries';
+import { COUNTRIES, COUNTRY_PHONE_CODES, PHONE_CODE_OPTIONS } from '@/core/constants/countries';
+import { COMPANY_TYPES } from '@/core/constants/companyTypes';
 import { Eye, EyeOff } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 /**
  * @param {Object} props
@@ -27,8 +28,51 @@ import { useState } from 'react';
 export function RegisterFormFields({ register, errors, loading, setValue, watch, categories, categoriesLoading }) {
   const country = watch('country');
   const companyCategory = watch('companyCategory');
+  const companyType = watch('companyType');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [localPhone, setLocalPhone] = useState('');
+  const [selectedPhoneCountry, setSelectedPhoneCountry] = useState('');
+
+  // Pre-fill phone country from company country on first selection only
+  useEffect(() => {
+    if (country && !selectedPhoneCountry) {
+      setSelectedPhoneCountry(country);
+    }
+  }, [country, selectedPhoneCountry]);
+
+  const selectedPhoneOption = PHONE_CODE_OPTIONS.find((opt) => opt.value === selectedPhoneCountry);
+
+  // Re-compute form phone value when phone country code changes
+  useEffect(() => {
+    if (!localPhone || localPhone.startsWith('+')) return;
+    const dialCode = COUNTRY_PHONE_CODES[selectedPhoneCountry] || '';
+    if (dialCode) {
+      setValue('phone', `${dialCode}${localPhone}`, { shouldValidate: false });
+    }
+  }, [selectedPhoneCountry, localPhone, setValue]);
+
+  const handlePhoneChange = (e) => {
+    const raw = e.target.value;
+    setLocalPhone(raw);
+
+    if (!raw) {
+      setValue('phone', '', { shouldValidate: false });
+      return;
+    }
+
+    const dialCode = COUNTRY_PHONE_CODES[selectedPhoneCountry] || '';
+
+    // If user manually types a full E.164 number (starts with +), use it directly
+    if (raw.startsWith('+')) {
+      setValue('phone', raw, { shouldValidate: false });
+    } else if (dialCode) {
+      // Combine dial code + local number (no space — libphonenumber-js expects +905551234567)
+      setValue('phone', `${dialCode}${raw}`, { shouldValidate: false });
+    } else {
+      setValue('phone', raw, { shouldValidate: false });
+    }
+  };
 
   return (
     <>
@@ -97,14 +141,31 @@ export function RegisterFormFields({ register, errors, loading, setValue, watch,
               <label htmlFor="phone" className="block text-xs text-[#A0A0A0] font-semibold tracking-wider uppercase mb-1.5">
                 Phone <span className="text-red-400">*</span>
               </label>
-              <input
-                id="phone"
-                type="tel"
-                {...register('phone')}
-                className="form-input-anasyf text-sm"
-                placeholder="+1 234 567 8900"
-                disabled={loading}
-              />
+              <div className="flex">
+                {/* Independent phone country code dropdown */}
+                <div className="relative flex-shrink-0" style={{ width: '130px' }}>
+                  <SearchableSelect
+                    options={PHONE_CODE_OPTIONS}
+                    value={selectedPhoneCountry}
+                    onChange={(val) => setSelectedPhoneCountry(val)}
+                    placeholder="Code"
+                    disabled={loading}
+                    className="dark-select phone-code-select [&_button]:!py-[14px] [&_button]:!rounded-r-none [&_button]:!border-r-0"
+                    searchPlaceholder="Search country..."
+                    dropdownClassName="!min-w-[280px]"
+                    renderSelectedLabel={(opt) => `${opt.label.split(' ')[0]} ${opt.dialCode}`}
+                  />
+                </div>
+                <input
+                  id="phone"
+                  type="tel"
+                  value={localPhone}
+                  onChange={handlePhoneChange}
+                  className="form-input-anasyf text-sm flex-1 rounded-l-none border-l-0"
+                  placeholder={selectedPhoneOption ? '555 123 4567' : '+1 234 567 8900'}
+                  disabled={loading}
+                />
+              </div>
               {errors.phone && (
                 <p className="mt-1 text-xs text-red-400">{errors.phone.message}</p>
               )}
@@ -135,6 +196,24 @@ export function RegisterFormFields({ register, errors, loading, setValue, watch,
             Company Information
           </h3>
           <div className="space-y-4">
+            <div>
+              <label htmlFor="companyType" className="block text-xs text-[#A0A0A0] font-semibold tracking-wider uppercase mb-1.5">
+                Company Type <span className="text-red-400">*</span>
+              </label>
+              <SearchableSelect
+                options={COMPANY_TYPES}
+                value={companyType}
+                onChange={(value) => setValue('companyType', value, { shouldValidate: true })}
+                placeholder="Select company type"
+                disabled={loading}
+                error={!!errors.companyType}
+                className="dark-select"
+              />
+              {errors.companyType && (
+                <p className="mt-1 text-xs text-red-400">{errors.companyType.message}</p>
+              )}
+            </div>
+
             <div>
               <label htmlFor="companyName" className="block text-xs text-[#A0A0A0] font-semibold tracking-wider uppercase mb-1.5">
                 Company Name <span className="text-red-400">*</span>

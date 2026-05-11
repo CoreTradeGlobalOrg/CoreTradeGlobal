@@ -62,6 +62,10 @@ export const registerSchema = z
       .max(100, 'Position is too long'),
 
     // Company Information
+    companyType: z.enum(['trade', 'logistics', 'insurance'], {
+      required_error: 'Please select a company type',
+    }),
+
     companyName: z
       .string()
       .min(2, 'Company name must be at least 2 characters')

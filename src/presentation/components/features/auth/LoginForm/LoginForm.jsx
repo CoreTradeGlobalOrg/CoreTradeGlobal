@@ -224,8 +224,9 @@ export function LoginForm() {
 
       <form onSubmit={handleSubmit} className="text-left">
         <div className="mb-5">
-          <label className="block text-xs text-[#A0A0A0] font-semibold tracking-wider uppercase mb-2">Email Address</label>
+          <label htmlFor="login-email" className="block text-xs text-[#A0A0A0] font-semibold tracking-wider uppercase mb-2">Email Address</label>
           <input
+            id="login-email"
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -233,13 +234,15 @@ export function LoginForm() {
             className="form-input-anasyf"
             required
             disabled={loading}
+            autoComplete="email"
           />
         </div>
 
         <div className="mb-5">
-          <label className="block text-xs text-[#A0A0A0] font-semibold tracking-wider uppercase mb-2">Password</label>
+          <label htmlFor="login-password" className="block text-xs text-[#A0A0A0] font-semibold tracking-wider uppercase mb-2">Password</label>
           <div className="relative">
             <input
+              id="login-password"
               type={showPassword ? 'text' : 'password'}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -247,11 +250,13 @@ export function LoginForm() {
               className="form-input-anasyf pr-12"
               required
               disabled={loading}
+              autoComplete="current-password"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-[#A0A0A0] hover:text-white transition-colors"
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-[#A0A0A0] hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FFD700] rounded"
               tabIndex={-1}
             >
               {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}

@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-stopped_at: Completed 16-07-PLAN.md
-last_updated: "2026-05-01T17:13:47.501Z"
+stopped_at: Completed 17-08-PLAN.md
+last_updated: "2026-05-05T13:16:26.080Z"
 last_activity: "2026-04-02 - Completed quick task 5: Fix hero not fetching last verified user"
 progress:
   total_phases: 17
-  completed_phases: 7
-  total_plans: 35
-  completed_plans: 31
+  completed_phases: 8
+  total_plans: 39
+  completed_plans: 39
   percent: 71
 ---
 
@@ -126,6 +126,14 @@ Progress: [█████████████] 71%
 | Phase 16 P06 | 5 | 2 tasks | 5 files |
 | Phase 16 P05 | 7 | 2 tasks | 3 files |
 | Phase 16 P07 | 4 | 2 tasks | 3 files |
+| Phase 17 P03 | 8 | 2 tasks | 4 files |
+| Phase 17 P01 | 9 | 2 tasks | 7 files |
+| Phase 17 P04 | 13 | 2 tasks | 10 files |
+| Phase 17-registration-onboarding-and-misc P02 | 4 | 2 tasks | 5 files |
+| Phase 17 P07 | 1 | 1 tasks | 2 files |
+| Phase 17 P06 | 2 | 1 tasks | 2 files |
+| Phase 17 P05 | 3 | 2 tasks | 4 files |
+| Phase 17 P08 | 10 | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -369,6 +377,24 @@ Recent decisions affecting current work:
 - [Phase 16-05]: Homepage FeaturedProducts falls back to DEFAULT_PRODUCTS on both empty fetch and zero active products — always shows cards
 - [Phase 16]: Category maps built via useMemo from Firestore categories prop — reactive, no module-level global state
 - [Phase 16]: Both quantity and stockQuantity stored on bulk-created products — ProductCard reads stockQuantity; quantity retained for backward compat
+- [Phase 17]: NEXT_PUBLIC_ZOHO_WIDGET_KEY absence = single-tab Messages mode (no Support tab, no standalone button)
+- [Phase 17]: Zoho default float button suppressed globally via floatbutton.visible('hide') in ready callback
+- [Phase 17]: Tab bar only shown on conversation list view (not inside active conversation thread)
+- [Phase 17]: ZohoSalesIQButton loaded via next/dynamic ssr:false to avoid window access during SSR
+- [Phase 17]: register/page.jsx uses 'use client' + next/dynamic ssr:false — Turbopack 16.2 does not allow dynamic() with JSX loading prop in Server Components with metadata
+- [Phase 17]: setRoleClaimOnRegistration CF: self-callable by registering user (not admin-only); Firestore doc verification prevents claim escalation; CF failure is non-blocking
+- [Phase 17]: COMPANY_TYPE_TO_ROLE map decouples company type UI selection from role string — single point of mapping for provider self-registration
+- [Phase 17]: ProductUploadRequestButton queries Firestore on mount for existing pending request — prevents duplicate submissions, degrades gracefully on permission error
+- [Phase 17]: Section component h1 elements converted to h2 on homepage — HeroSection owns the single h1; CSS class section-title preserves visual styling
+- [Phase 17-02]: OnboardingTour uses createPortal to document.body for z-index supremacy over all existing glass-card layers
+- [Phase 17-02]: ProfileCompletionCard uses sessionStorage for dismiss so card reappears on next visit per spec (comes back until 100%)
+- [Phase 17-02]: hydrated flag prevents sessionStorage reads during SSR to avoid Next.js hydration mismatch
+- [Phase 17]: top-[116px] hardcoded for ProfileCompletionCard position (ticker ~40px + navbar ~64px + 12px gap) — layout heights are stable
+- [Phase 17]: hidden lg:block on ProfileCompletionCard overlay — desktop-only floating card hides on mobile to avoid blocking content
+- [Phase 17]: PHONE_CODE_OPTIONS built at module level from existing COUNTRIES + COUNTRY_PHONE_CODES; compact display via pointer-events-none overlay span; useEffect empty-guard pre-fills phone code from company country once without locking it
+- [Phase 17]: Zoho SalesIQ removed entirely (not feature-flagged) — user wants custom AI chatbot in a future phase
+- [Phase 17]: Flat TOUR_SEQUENCE array with type/part/partStep fields — single index navigation, no nested state machine
+- [Phase 17]: TourLauncher client wrapper for About Us — server page keeps metadata export; client component owns useAuth + tour state
 
 ### Pending Todos
 
@@ -392,6 +418,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-01T17:07:33.866Z
-Stopped at: Completed 16-07-PLAN.md
+Last session: 2026-05-05T13:09:39.728Z
+Stopped at: Completed 17-08-PLAN.md
 Resume file: None

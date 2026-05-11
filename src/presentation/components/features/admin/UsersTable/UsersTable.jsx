@@ -3,7 +3,7 @@
  * Orchestrates: UsersTab (user list + filters), InvitesTab (invite list).
  */
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { UserPlus } from 'lucide-react';
 import { useGetInvites } from '@/presentation/hooks/admin/useGetInvites';
 import { useResendInvite } from '@/presentation/hooks/admin/useResendInvite';
@@ -24,6 +24,10 @@ export function UsersTable({ users = [], onRefresh }) {
     actionLoading, banReasonInput, setBanReasonInput, confirmDialog,
     openDialog, closeDialog, handleConfirmAction, handleDirectAction, getDialogConfig,
   } = useUserActions({ onRefresh });
+
+  const wrappedDirectAction = useCallback((action, user) => {
+    handleDirectAction(action, user);
+  }, [handleDirectAction]);
 
   return (
     <div className="bg-[rgba(255,255,255,0.03)] rounded-xl border border-[#FFD700]/20 backdrop-blur-md shadow-2xl">
@@ -64,7 +68,7 @@ export function UsersTable({ users = [], onRefresh }) {
 
       {/* Tab Content */}
       {activeTab === 'users' && (
-        <UsersTab users={users} onAction={handleDirectAction} onOpenDialog={openDialog} actionLoading={actionLoading} />
+        <UsersTab users={users} onAction={wrappedDirectAction} onOpenDialog={openDialog} actionLoading={actionLoading} />
       )}
 
       {activeTab === 'invites' && (

@@ -86,7 +86,6 @@ export function MessagesWidget() {
     };
   }, [isMobile, isWidgetOpen]);
 
-
   // Don't render for non-authenticated users
   if (!isAuthenticated) {
     return null;

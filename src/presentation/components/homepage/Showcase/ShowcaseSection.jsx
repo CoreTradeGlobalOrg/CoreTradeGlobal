@@ -297,7 +297,7 @@ export function ShowcaseSection() {
     <section className="showcase-section" id="showcase-section">
       {/* Section Header */}
       <div className="section-header">
-        <h1 className="section-title">Featured Companies</h1>
+        <h2 className="section-title">Featured Companies</h2>
         <Link
           href="/contact?subject=advertising"
           className="link-hero-blue"

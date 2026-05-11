@@ -185,7 +185,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 (parallel with 3-4) -> 6 
 | 14. Insurance Quote System Overhaul | 5/5 | Planned | — |
 | 15. Deal and Trade Flow Enhancements | 4/4 | Complete    | 2026-04-27 |
 | 16. Product and RFQ Features | 7/7 | Complete    | 2026-05-01 |
-| 17. Registration, Onboarding and Misc | 0/4 | In progress | — |
+| 17. Registration, Onboarding and Misc | 8/8 | Complete    | 2026-05-05 |
 
 ### Phase 8: Live Currency and Freight Intelligence (INSERTED)
 **Goal**: Any visitor can see live currency rates on the homepage, and both deal parties can see multi-currency price conversions and a real-time freight cost estimate throughout the deal flow -- without CoreTradeGlobal being party to or responsible for any transaction
@@ -312,7 +312,7 @@ Plans:
 **Goal:** Improve deal/trade pages with contract approval UX enhancements (always-expanded clauses, yellow/green highlighting, progress indicators, auto-advance), Hire a Lawyer card on all trade stages, flexible quote skipping, trade flow communication buttons, tooltip-based guidance, and form input polish (Deal ID, DatePicker gold accent, number auto-select, English validation messages)
 **Requirements**: DEAL-01, DEAL-02, DEAL-03, DEAL-04, DEAL-05, DEAL-06, DEAL-07, DEAL-08, DEAL-09, DEAL-10, DEAL-11, DEAL-12, DEAL-13, DEAL-14, DEAL-15, DEAL-16, DEAL-17, DEAL-18
 **Depends on:** Phase 14
-**Plans:** 4/4 plans complete
+**Plans:** 8 plans (4 complete + 4 gap closure)
 
 Plans:
 - [ ] 15-01-PLAN.md — Contract approval UX: always-expanded clauses with yellow/green visual states, dual progress indicators, auto-advance with toast
@@ -341,14 +341,18 @@ Plans:
 **Goal:** Add company type selection at registration (Trade/Logistics/Insurance), phone country code auto-fill, new member onboarding guide, fix register page Vercel crash, FAQ text updates, "upload my products" request button on profile, homepage chatbot (Zoho SalesIQ), cookies compliance, and accessibility audit
 **Requirements**: REG-01, REG-02, REG-03, REG-04, REG-05, REG-06, REG-07, REG-08, REG-09
 **Depends on:** Phase 16
-**Plans:** 4 plans
+**Plans:** 8/8 plans complete
 
 Plans:
 - [ ] 17-01-PLAN.md — Registration form: company type dropdown, phone country code auto-fill, auto-role assignment, Vercel crash fix
 - [ ] 17-02-PLAN.md — Onboarding tour overlay (5 steps per role) + profile completion progress card
 - [ ] 17-03-PLAN.md — Zoho SalesIQ integration: Support tab in FAB widget + standalone button on public pages
 - [ ] 17-04-PLAN.md — Upload my products request button, cookie consent text update, WCAG 2.1 AA accessibility audit
+- [ ] 17-05-PLAN.md — UAT gap closure: Rename Trade Company to Supplier, remove Zoho SalesIQ code, deploy Firestore rules
+- [ ] 17-06-PLAN.md — UAT gap closure: Independent phone country code dropdown (not auto-filled from company country)
+- [ ] 17-07-PLAN.md — UAT gap closure: Reposition profile completion card to right top corner, fix hide behavior
+- [ ] 17-08-PLAN.md — UAT gap closure: Onboarding tour complete redesign with 3-part Turkish content and ? FAB button
 
 ---
 *Roadmap created: 2026-02-20*
-*Last updated: 2026-04-27*
+*Last updated: 2026-05-01*

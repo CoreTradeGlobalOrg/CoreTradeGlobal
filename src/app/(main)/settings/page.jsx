@@ -30,12 +30,10 @@ function SettingsLoadingFallback() {
   );
 }
 
-function SettingsPageContent() {
+export default function SettingsPageRoute() {
   return (
     <Suspense fallback={<SettingsLoadingFallback />}>
       <SettingsPage />
     </Suspense>
   );
 }
-
-export default SettingsPageContent;

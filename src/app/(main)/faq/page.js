@@ -7,11 +7,6 @@
 
 import { FAQSection } from '@/presentation/components/homepage/FAQ/FAQSection';
 
-export const metadata = {
-  title: 'FAQ - CoreTradeGlobal',
-  description: 'Frequently asked questions about CoreTradeGlobal B2B trading platform',
-};
-
 export default function FAQPage() {
   return (
     <main className="min-h-screen pt-[var(--navbar-height)] bg-radial-navy">

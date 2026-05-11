@@ -230,7 +230,7 @@ export class CreateConversationUseCase {
    * @param {string} creatorId
    */
   validateInputs(type, participantIds, creatorId) {
-    const validTypes = ['direct', 'contact', 'system', 'provider_quote'];
+    const validTypes = ['direct', 'contact', 'system', 'provider_quote', 'product_upload'];
     if (!validTypes.includes(type)) {
       throw new Error('Invalid conversation type');
     }
