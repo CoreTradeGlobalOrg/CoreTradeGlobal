@@ -25,9 +25,9 @@ import {
   Loader2,
 } from 'lucide-react';
 import { CURRENCIES } from '@/core/constants/currencies';
-import { getFunctions, httpsCallable } from 'firebase/functions';
+import { httpsCallable } from 'firebase/functions';
 import { ref, getDownloadURL } from 'firebase/storage';
-import { storage } from '@/core/config/firebase.config';
+import { getStorageInstance, getFunctionsInstance } from '@/core/config/firebase.config';
 import { SearchableSelect } from '@/presentation/components/common/SearchableSelect/SearchableSelect';
 
 // Valid currency codes for validation
@@ -186,7 +186,7 @@ export function BulkProductUpload({ users, categories, onClose, initialMemberId,
         let fetchUrl = initialCsvUrl;
         if (match) {
           const storagePath = decodeURIComponent(match[1]);
-          const fileRef = ref(storage, storagePath);
+          const fileRef = ref(getStorageInstance(), storagePath);
           fetchUrl = await getDownloadURL(fileRef);
         }
         const res = await fetch(fetchUrl);
@@ -301,8 +301,7 @@ export function BulkProductUpload({ users, categories, onClose, initialMemberId,
     }));
 
     try {
-      const functions = getFunctions();
-      const bulkUploadProducts = httpsCallable(functions, 'bulkUploadProducts');
+      const bulkUploadProducts = httpsCallable(getFunctionsInstance(), 'bulkUploadProducts');
       const result = await bulkUploadProducts({
         userId: selectedMemberId,
         rows,

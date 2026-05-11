@@ -10,7 +10,7 @@
 
 import { useState } from 'react';
 import { httpsCallable } from 'firebase/functions';
-import { functions } from '@/core/config/firebase.config';
+import { getFunctionsInstance } from '@/core/config/firebase.config';
 import toast from 'react-hot-toast';
 
 export function useResendInvite() {
@@ -26,7 +26,7 @@ export function useResendInvite() {
     setError(null);
 
     try {
-      const resendInviteFn = httpsCallable(functions, 'resendInvite');
+      const resendInviteFn = httpsCallable(getFunctionsInstance(), 'resendInvite');
       const result = await resendInviteFn({ email, role, name, company });
 
       toast.success(`Invite resent to ${email}`);

@@ -10,7 +10,7 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/presentation/contexts/AuthContext';
 import { container } from '@/core/di/container';
@@ -24,6 +24,25 @@ import { HeroStats } from './HeroStats';
 import { HeroDataCards } from './HeroDataCards';
 import { HeroSearchBar } from './HeroSearchBar';
 import toast from 'react-hot-toast';
+
+/**
+ * Schedule a callback after the browser is idle, with a setTimeout fallback
+ * for browsers that don't support requestIdleCallback.
+ */
+const scheduleIdle = (cb) => {
+  if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+    return window.requestIdleCallback(cb);
+  }
+  return setTimeout(cb, 0);
+};
+
+const cancelIdle = (id) => {
+  if (typeof window !== 'undefined' && 'cancelIdleCallback' in window) {
+    window.cancelIdleCallback(id);
+  } else {
+    clearTimeout(id);
+  }
+};
 
 // Daily slogans - changes based on day of week
 const DAILY_SLOGANS = {
@@ -59,68 +78,83 @@ export function HeroSection({ fetchData = false }) {
   const [latestRequest, setLatestRequest] = useState(null);
   const [latestFair, setLatestFair] = useState(null);
   const [latestSupplier, setLatestSupplier] = useState(null);
+  const [dataLoading, setDataLoading] = useState(false);
+
+  // Callback for GlobeCanvas to signal readiness (replaces the old 1500ms timer)
+  const handleGlobeReady = useCallback(() => {
+    setGlobeLoaded(true);
+  }, []);
 
   useEffect(() => {
     setMounted(true);
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
     checkMobile();
     window.addEventListener('resize', checkMobile);
-    const timer = setTimeout(() => setGlobeLoaded(true), 1500);
     return () => {
       window.removeEventListener('resize', checkMobile);
-      clearTimeout(timer);
     };
   }, []);
 
-  // Fetch data only if fetchData prop is true
+  // Defer Firestore queries until after first paint using requestIdleCallback.
+  // This ensures the hero text, buttons, and skeleton cards render immediately.
   useEffect(() => {
     if (!fetchData || !mounted) return;
 
-    const fetchLatestData = async () => {
-      const firestoreDS = container.getFirestoreDataSource();
+    setDataLoading(true);
 
-      const [productsRes, requestsRes, fairsRes, usersRes] = await Promise.allSettled([
-        firestoreDS.query('products', {
-          where: [['status', '==', 'active']],
-          orderBy: [['createdAt', 'desc']],
-          limit: 1,
-        }),
-        firestoreDS.query('requests', {
-          where: [['status', '==', 'active']],
-          orderBy: [['createdAt', 'desc']],
-          limit: 1,
-        }),
-        firestoreDS.query('fairs', {
-          where: [['status', '==', 'upcoming']],
-          orderBy: [['startDate', 'asc']],
-          limit: 1,
-        }),
-        firestoreDS.query('users', {
-          where: [['emailVerified', '==', true], ['adminApproved', '==', true]],
-          orderBy: [['approvedAt', 'desc']],
-          limit: 5,
-        }),
-      ]);
+    const idleId = scheduleIdle(() => {
+      const fetchLatestData = async () => {
+        try {
+          const firestoreDS = container.getFirestoreDataSource();
 
-      if (productsRes.status === 'fulfilled' && productsRes.value?.length > 0) {
-        setLatestProduct(productsRes.value[0]);
-      }
+          const [productsRes, requestsRes, fairsRes, usersRes] = await Promise.allSettled([
+            firestoreDS.query('products', {
+              where: [['status', '==', 'active']],
+              orderBy: [['createdAt', 'desc']],
+              limit: 1,
+            }),
+            firestoreDS.query('requests', {
+              where: [['status', '==', 'active']],
+              orderBy: [['createdAt', 'desc']],
+              limit: 1,
+            }),
+            firestoreDS.query('fairs', {
+              where: [['status', '==', 'upcoming']],
+              orderBy: [['startDate', 'asc']],
+              limit: 1,
+            }),
+            firestoreDS.query('users', {
+              where: [['emailVerified', '==', true], ['adminApproved', '==', true]],
+              orderBy: [['approvedAt', 'desc']],
+              limit: 5,
+            }),
+          ]);
 
-      if (requestsRes.status === 'fulfilled' && requestsRes.value?.length > 0) {
-        setLatestRequest(requestsRes.value[0]);
-      }
+          if (productsRes.status === 'fulfilled' && productsRes.value?.length > 0) {
+            setLatestProduct(productsRes.value[0]);
+          }
 
-      if (fairsRes.status === 'fulfilled' && fairsRes.value?.length > 0) {
-        setLatestFair(fairsRes.value[0]);
-      }
+          if (requestsRes.status === 'fulfilled' && requestsRes.value?.length > 0) {
+            setLatestRequest(requestsRes.value[0]);
+          }
 
-      if (usersRes.status === 'fulfilled' && usersRes.value?.length > 0) {
-        const supplier = usersRes.value.find(u => u.companyName && !u.isSuspended);
-        if (supplier) setLatestSupplier(supplier);
-      }
-    };
+          if (fairsRes.status === 'fulfilled' && fairsRes.value?.length > 0) {
+            setLatestFair(fairsRes.value[0]);
+          }
 
-    fetchLatestData();
+          if (usersRes.status === 'fulfilled' && usersRes.value?.length > 0) {
+            const supplier = usersRes.value.find(u => u.companyName && !u.isSuspended);
+            if (supplier) setLatestSupplier(supplier);
+          }
+        } finally {
+          setDataLoading(false);
+        }
+      };
+
+      fetchLatestData();
+    });
+
+    return () => cancelIdle(idleId);
   }, [fetchData, mounted]);
 
   const handleSearch = (e) => {
@@ -161,7 +195,7 @@ export function HeroSection({ fetchData = false }) {
 
       {/* Hero Section */}
       <section id="hero-section">
-        <HeroGlobe mounted={mounted} globeLoaded={globeLoaded} />
+        <HeroGlobe mounted={mounted} globeLoaded={globeLoaded} onGlobeReady={handleGlobeReady} />
 
         {/* Hero Overlay with Slogan and Search */}
         <div className="hero-overlay">
@@ -215,6 +249,7 @@ export function HeroSection({ fetchData = false }) {
 
         <HeroDataCards
           fetchData={fetchData}
+          dataLoading={dataLoading}
           latestProduct={latestProduct}
           latestRequest={latestRequest}
           latestFair={latestFair}

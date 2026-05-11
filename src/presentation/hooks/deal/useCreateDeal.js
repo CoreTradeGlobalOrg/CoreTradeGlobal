@@ -12,7 +12,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { httpsCallable } from 'firebase/functions';
-import { functions } from '@/core/config/firebase.config';
+import { getFunctionsInstance } from '@/core/config/firebase.config';
 
 export function useCreateDeal() {
   const [loading, setLoading] = useState(false);
@@ -31,7 +31,7 @@ export function useCreateDeal() {
     setError(null);
 
     try {
-      const createDealFn = httpsCallable(functions, 'createDeal');
+      const createDealFn = httpsCallable(getFunctionsInstance(), 'createDeal');
       const result = await createDealFn({ conversationId, productId, initialOffer });
 
       const { dealId } = result.data;

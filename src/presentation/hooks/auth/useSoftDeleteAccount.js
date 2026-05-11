@@ -9,7 +9,7 @@
 
 import { useState } from 'react';
 import { httpsCallable } from 'firebase/functions';
-import { functions } from '@/core/config/firebase.config';
+import { getFunctionsInstance } from '@/core/config/firebase.config';
 
 export function useSoftDeleteAccount() {
   const [loading, setLoading] = useState(false);
@@ -20,7 +20,7 @@ export function useSoftDeleteAccount() {
     setError(null);
 
     try {
-      const softDeleteUserFn = httpsCallable(functions, 'softDeleteUser');
+      const softDeleteUserFn = httpsCallable(getFunctionsInstance(), 'softDeleteUser');
       const result = await softDeleteUserFn({ userId });
 
       if (!result.data.success) {

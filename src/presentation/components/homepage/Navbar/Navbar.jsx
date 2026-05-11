@@ -8,16 +8,32 @@
 
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import dynamic from 'next/dynamic';
 import { useAuth } from '@/presentation/contexts/AuthContext';
 import { useLogout } from '@/presentation/hooks/auth/useLogout';
 import { Menu, X, User, LogOut, Settings as SettingsIcon } from 'lucide-react';
-import { NotificationBell } from '@/presentation/components/common/NotificationBell/NotificationBell';
-import { CurrencyTicker } from '@/presentation/components/homepage/CurrencyTicker/CurrencyTicker';
 import { ROLES } from '@/core/constants/roles';
 import toast from 'react-hot-toast';
+
+// Lazy-load non-critical components — not needed for first paint
+const NotificationBell = dynamic(
+  () =>
+    import('@/presentation/components/common/NotificationBell/NotificationBell').then(
+      (mod) => mod.NotificationBell
+    ),
+  { ssr: false, loading: () => <div className="w-8 h-8" /> }
+);
+
+const CurrencyTicker = dynamic(
+  () =>
+    import('@/presentation/components/homepage/CurrencyTicker/CurrencyTicker').then(
+      (mod) => mod.CurrencyTicker
+    ),
+  { ssr: false, loading: () => <div className="w-full h-8 bg-[rgba(255,255,255,0.03)]" /> }
+);
 
 /**
  * NAV_LINKS
@@ -136,7 +152,7 @@ export function Navbar() {
     };
   }, [isMobileMenuOpen]);
 
-  const handleNavClick = (href, e) => {
+  const handleNavClick = useCallback((href, e) => {
     if (href.startsWith('#')) {
       e.preventDefault();
       const element = document.querySelector(href);
@@ -145,9 +161,9 @@ export function Navbar() {
       }
     }
     setIsMobileMenuOpen(false);
-  };
+  }, []);
 
-  const handleLogout = async () => {
+  const handleLogout = useCallback(async () => {
     try {
       await logout();
       window.location.href = '/';
@@ -155,11 +171,11 @@ export function Navbar() {
       console.error('Logout failed', error);
       toast.error('Failed to log out. Please try again.');
     }
-  };
+  }, [logout]);
 
-  const isActive = (path) => {
+  const isActive = useCallback((path) => {
     return pathname === path || (path !== '/' && pathname.startsWith(path));
-  };
+  }, [pathname]);
 
   // Show loading state while role is still resolving (prevents flash of default nav)
   const roleLoading = loading || (isAuthenticated && !user?.role);
@@ -168,9 +184,14 @@ export function Navbar() {
    * Filter nav links by user role.
    * - roles: null  → always visible
    * - roles: [...]  → only visible when user.role is in the list
+   * Memoized so the list is only recomputed when the role changes.
    */
-  const visibleLinks = NAV_LINKS.filter(
-    (link) => link.roles === null || (user && link.roles.includes(user.role))
+  const visibleLinks = useMemo(
+    () =>
+      NAV_LINKS.filter(
+        (link) => link.roles === null || (user && link.roles.includes(user.role))
+      ),
+    [user?.role]
   );
 
   return (

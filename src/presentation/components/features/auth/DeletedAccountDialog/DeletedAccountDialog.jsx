@@ -11,7 +11,7 @@
 import { useState } from 'react';
 import { X, AlertTriangle, Mail, RefreshCw, ShieldX } from 'lucide-react';
 import { httpsCallable } from 'firebase/functions';
-import { functions } from '@/core/config/firebase.config';
+import { getFunctionsInstance } from '@/core/config/firebase.config';
 import toast from 'react-hot-toast';
 
 export function DeletedAccountDialog({ isOpen, onClose, deletionInfo, onRecovered }) {
@@ -37,7 +37,7 @@ export function DeletedAccountDialog({ isOpen, onClose, deletionInfo, onRecovere
   const handleRecover = async () => {
     setRecovering(true);
     try {
-      const recoverAccount = httpsCallable(functions, 'recoverAccount');
+      const recoverAccount = httpsCallable(getFunctionsInstance(), 'recoverAccount');
       await recoverAccount({ userId });
       toast.success('Account recovered successfully! Please log in again.');
       onRecovered?.();

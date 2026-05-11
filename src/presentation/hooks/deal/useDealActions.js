@@ -12,7 +12,7 @@
 
 import { useState } from 'react';
 import { httpsCallable } from 'firebase/functions';
-import { functions } from '@/core/config/firebase.config';
+import { getFunctionsInstance } from '@/core/config/firebase.config';
 import toast from 'react-hot-toast';
 
 /**
@@ -43,7 +43,7 @@ export function useDealActions() {
     setLoading(true);
     setError(null);
     try {
-      const fn = httpsCallable(functions, 'submitCounterOffer');
+      const fn = httpsCallable(getFunctionsInstance(), 'submitCounterOffer');
       await fn({ dealId, offer: offerData, expectedRound });
       toast.success('Counter-offer submitted!');
     } catch (err) {
@@ -65,7 +65,7 @@ export function useDealActions() {
     setLoading(true);
     setError(null);
     try {
-      const fn = httpsCallable(functions, 'acceptOffer');
+      const fn = httpsCallable(getFunctionsInstance(), 'acceptOffer');
       await fn({ dealId, offerId });
       toast.success('Offer accepted!');
     } catch (err) {
@@ -87,7 +87,7 @@ export function useDealActions() {
     setLoading(true);
     setError(null);
     try {
-      const fn = httpsCallable(functions, 'rejectOffer');
+      const fn = httpsCallable(getFunctionsInstance(), 'rejectOffer');
       await fn({ dealId, offerId });
       toast.success('Offer rejected.');
     } catch (err) {
@@ -110,7 +110,7 @@ export function useDealActions() {
     setLoading(true);
     setError(null);
     try {
-      const fn = httpsCallable(functions, 'withdrawOffer');
+      const fn = httpsCallable(getFunctionsInstance(), 'withdrawOffer');
       await fn({ dealId, offerId });
       toast.success('Offer withdrawn.');
     } catch (err) {

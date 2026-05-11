@@ -14,7 +14,7 @@
 
 import { useState } from 'react';
 import { httpsCallable } from 'firebase/functions';
-import { functions } from '@/core/config/firebase.config';
+import { getFunctionsInstance } from '@/core/config/firebase.config';
 import toast from 'react-hot-toast';
 
 /**
@@ -45,7 +45,7 @@ export function useQuoteActions() {
     setLoading(true);
     setError(null);
     try {
-      const fn = httpsCallable(functions, 'submitQuote');
+      const fn = httpsCallable(getFunctionsInstance(), 'submitQuote');
       await fn({ requestId, quoteData });
       toast.success('Quote submitted successfully!');
     } catch (err) {
@@ -68,7 +68,7 @@ export function useQuoteActions() {
     setLoading(true);
     setError(null);
     try {
-      const fn = httpsCallable(functions, 'acceptQuote');
+      const fn = httpsCallable(getFunctionsInstance(), 'acceptQuote');
       await fn({ quoteRequestId, quoteId });
       toast.success('Quote accepted!');
     } catch (err) {
@@ -95,7 +95,7 @@ export function useQuoteActions() {
     setLoading(true);
     setError(null);
     try {
-      const fn = httpsCallable(functions, 'declineQuoteRequest');
+      const fn = httpsCallable(getFunctionsInstance(), 'declineQuoteRequest');
       await fn({ requestId });
       toast.success('Request declined.');
     } catch (err) {
@@ -117,7 +117,7 @@ export function useQuoteActions() {
     setLoading(true);
     setError(null);
     try {
-      const fn = httpsCallable(functions, 'withdrawQuote');
+      const fn = httpsCallable(getFunctionsInstance(), 'withdrawQuote');
       await fn({ requestId, quoteId });
       toast.success('Quote withdrawn.');
     } catch (err) {
@@ -139,7 +139,7 @@ export function useQuoteActions() {
     setLoading(true);
     setError(null);
     try {
-      const fn = httpsCallable(functions, 'confirmProviderSelection');
+      const fn = httpsCallable(getFunctionsInstance(), 'confirmProviderSelection');
       await fn({ dealId, skippedInsurance, skippedLogistics });
       toast.success('Provider selection confirmed!');
     } catch (err) {

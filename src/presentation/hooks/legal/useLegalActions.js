@@ -14,7 +14,7 @@
 
 import { useState } from 'react';
 import { httpsCallable } from 'firebase/functions';
-import { functions } from '@/core/config/firebase.config';
+import { getFunctionsInstance } from '@/core/config/firebase.config';
 import toast from 'react-hot-toast';
 
 /**
@@ -45,7 +45,7 @@ export function useLegalActions() {
     setLoading(true);
     setError(null);
     try {
-      const fn = httpsCallable(functions, 'hireLayyer');
+      const fn = httpsCallable(getFunctionsInstance(), 'hireLayyer');
       const result = await fn({ dealId, lawyerId });
       toast.success('Hire request sent! Awaiting lawyer confirmation.');
       return result.data;
@@ -72,7 +72,7 @@ export function useLegalActions() {
     setLoading(true);
     setError(null);
     try {
-      const fn = httpsCallable(functions, 'respondToHireRequest');
+      const fn = httpsCallable(getFunctionsInstance(), 'respondToHireRequest');
       const result = await fn({ engagementId, action });
       const successMsg = action === 'accept' ? 'Engagement accepted!' : 'Request declined.';
       toast.success(successMsg);
@@ -98,7 +98,7 @@ export function useLegalActions() {
     setLoading(true);
     setError(null);
     try {
-      const fn = httpsCallable(functions, 'closeLegalEngagement');
+      const fn = httpsCallable(getFunctionsInstance(), 'closeLegalEngagement');
       const result = await fn({ engagementId });
       toast.success('Engagement closed.');
       return result.data;
@@ -124,7 +124,7 @@ export function useLegalActions() {
     setLoading(true);
     setError(null);
     try {
-      const fn = httpsCallable(functions, 'submitLawyerReview');
+      const fn = httpsCallable(getFunctionsInstance(), 'submitLawyerReview');
       const result = await fn({ engagementId, rating, comment });
       toast.success('Review submitted!');
       return result.data;
@@ -150,7 +150,7 @@ export function useLegalActions() {
     setLoading(true);
     setError(null);
     try {
-      const fn = httpsCallable(functions, 'approveLegalDraft');
+      const fn = httpsCallable(getFunctionsInstance(), 'approveLegalDraft');
       const result = await fn({ engagementId, draftId });
       toast.success('Draft approved and applied to deal!');
       return result.data;

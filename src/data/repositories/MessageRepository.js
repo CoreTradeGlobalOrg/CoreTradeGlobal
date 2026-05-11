@@ -8,7 +8,7 @@
 
 import { COLLECTIONS } from '@/core/constants/collections';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { storage } from '@/core/config/firebase.config';
+import { getStorageInstance } from '@/core/config/firebase.config';
 
 const MESSAGES_SUBCOLLECTION = 'messages';
 
@@ -207,7 +207,7 @@ export class MessageRepository {
 
     // Storage path: conversations/attachments/{conversationId}/{filename}
     const storagePath = `conversations/attachments/${conversationId}/${filename}`;
-    const storageRef = ref(storage, storagePath);
+    const storageRef = ref(getStorageInstance(), storagePath);
 
     // Upload file
     const snapshot = await uploadBytes(storageRef, file, {
