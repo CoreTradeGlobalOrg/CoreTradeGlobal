@@ -90,6 +90,12 @@ export function ConversationsManager() {
       return `${contactName} (${typeLabel})${contactEmail ? ` - ${contactEmail}` : ''}`;
     }
 
+    if (conversation.type === 'product_upload') {
+      const contactName = conversation.metadata?.contactName || 'Unknown';
+      const uploadType = conversation.metadata?.uploadType === 'csv_upload' ? 'CSV Upload' : 'Help Request';
+      return `${contactName} (Product Upload - ${uploadType})`;
+    }
+
     const names = Object.values(conversation.participantDetails || {})
       .map((p) => p.displayName || p.email || 'Unknown')
       .join(' - ');
@@ -216,6 +222,12 @@ export function ConversationsManager() {
           >
             Advertising
           </button>
+          <button
+            className={`filter-btn ${filterType === 'product_upload' ? 'active' : ''}`}
+            onClick={() => setFilterType('product_upload')}
+          >
+            Product Upload
+          </button>
         </div>
       </div>
 
@@ -251,7 +263,7 @@ export function ConversationsManager() {
                       {formatDate(conv.updatedAt)}
                     </span>
                   </div>
-                  {(conv.type === 'contact' || conv.type === 'advertising') && conv.metadata?.subject && (
+                  {(conv.type === 'contact' || conv.type === 'advertising' || conv.type === 'product_upload') && conv.metadata?.subject && (
                     <div className="conversation-subject">
                       Subject: {conv.metadata.subject}
                     </div>

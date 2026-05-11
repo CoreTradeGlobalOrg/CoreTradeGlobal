@@ -12,9 +12,9 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import dynamic from 'next/dynamic';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { collection, getDocs, where, query } from 'firebase/firestore';
 import { Handshake, Truck, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '@/presentation/contexts/AuthContext';
@@ -63,6 +63,10 @@ const ProductsRequestsManager = dynamic(
 );
 const AnnouncementManager = dynamic(
   () => import('@/presentation/components/features/admin/AnnouncementManager/AnnouncementManager').then(m => ({ default: m.default })),
+  { loading: () => <AdminTabSkeleton />, ssr: false }
+);
+const ProductUploadRequestsManager = dynamic(
+  () => import('@/presentation/components/features/admin/ProductUploadRequestsManager/ProductUploadRequestsManager').then(m => ({ default: m.ProductUploadRequestsManager })),
   { loading: () => <AdminTabSkeleton />, ssr: false }
 );
 
@@ -149,11 +153,16 @@ function TradeOverviewStats() {
 // AdminPage
 // ─────────────────────────────────────────────────────────────────────────────
 
-export default function AdminPage() {
+function AdminPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, loading: authLoading, isAuthenticated } = useAuth();
   const { users, loading, error, refetch } = useGetAllUsers();
-  const [activeTab, setActiveTab] = useState('users');
+  const validTabs = ['users', 'messages', 'categories', 'fairs', 'news', 'announcements', 'product-requests'];
+  const tabFromUrl = searchParams.get('tab');
+  const [activeTab, setActiveTab] = useState(
+    validTabs.includes(tabFromUrl) ? tabFromUrl : 'users'
+  );
 
   // Auth check - redirect if not admin
   useEffect(() => {
@@ -225,18 +234,29 @@ export default function AdminPage() {
       {/* Tabs - Scrollable on mobile */}
       <div className="mb-6 md:mb-8 border-b border-[rgba(255,255,255,0.1)] -mx-4 px-4 md:mx-0 md:px-0">
         <nav className="-mb-px flex space-x-4 md:space-x-8 overflow-x-auto scrollbar-hide pb-px">
-          {['users', 'messages', 'categories', 'fairs', 'news', 'announcements'].map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`${activeTab === tab
-                  ? 'border-[#FFD700] text-[#FFD700]'
-                  : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
-                } whitespace-nowrap py-3 md:py-4 px-1 border-b-2 font-medium text-xs md:text-sm capitalize transition-colors flex-shrink-0`}
-            >
-              {tab === 'users' ? 'Users' : tab === 'messages' ? 'Messages' : tab.charAt(0).toUpperCase() + tab.slice(1)}
-            </button>
-          ))}
+          {['users', 'messages', 'categories', 'fairs', 'news', 'announcements', 'product-requests'].map((tab) => {
+            const tabLabels = {
+              users: 'Users',
+              messages: 'Messages',
+              categories: 'Categories',
+              fairs: 'Fairs',
+              news: 'News',
+              announcements: 'Announcements',
+              'product-requests': 'Product Requests',
+            };
+            return (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`${activeTab === tab
+                    ? 'border-[#FFD700] text-[#FFD700]'
+                    : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
+                  } whitespace-nowrap py-3 md:py-4 px-1 border-b-2 font-medium text-xs md:text-sm transition-colors flex-shrink-0`}
+              >
+                {tabLabels[tab] || tab}
+              </button>
+            );
+          })}
         </nav>
       </div>
 
@@ -302,6 +322,28 @@ export default function AdminPage() {
           <AnnouncementManager />
         </div>
       )}
+
+      {/* Product Requests Tab */}
+      {activeTab === 'product-requests' && (
+        <div className="text-white">
+          <ProductUploadRequestsManager users={users} />
+        </div>
+      )}
     </div>
+  );
+}
+
+export default function AdminPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-screen bg-[#0F1B2B]">
+        <div className="text-center">
+          <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-[#FFD700] border-r-transparent"></div>
+          <p className="mt-4 text-[#A0A0A0]">Loading admin dashboard...</p>
+        </div>
+      </div>
+    }>
+      <AdminPageContent />
+    </Suspense>
   );
 }

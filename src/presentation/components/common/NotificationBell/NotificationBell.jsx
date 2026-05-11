@@ -57,6 +57,9 @@ export function NotificationBell() {
     } else if (notification.type === 'deal' && (notification.dealId || notification.link)) {
       // Navigate to deal detail page
       router.push(notification.link || `/deals/${notification.dealId}`);
+    } else if (notification.link) {
+      // Navigate using the notification's link field (e.g., product_upload_request)
+      router.push(notification.link);
     } else if (notification.data?.conversationId) {
       if (pathname?.startsWith('/messages')) {
         // Already on /messages — select conversation inline via query param

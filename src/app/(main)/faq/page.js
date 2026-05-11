@@ -5,45 +5,11 @@
  * URL: /faq
  */
 
-'use client';
-
-import { useState } from 'react';
-import dynamic from 'next/dynamic';
-import { useAuth } from '@/presentation/contexts/AuthContext';
 import { FAQSection } from '@/presentation/components/homepage/FAQ/FAQSection';
 
-const OnboardingTour = dynamic(
-  () =>
-    import(
-      '@/presentation/components/features/onboarding/OnboardingTour/OnboardingTour'
-    ).then((m) => ({ default: m.OnboardingTour })),
-  { ssr: false }
-);
-
-const TourHelpButton = dynamic(
-  () =>
-    import(
-      '@/presentation/components/features/onboarding/OnboardingTour/OnboardingTour'
-    ).then((m) => ({ default: m.TourHelpButton })),
-  { ssr: false }
-);
-
 export default function FAQPage() {
-  const { user } = useAuth();
-  const [showTour, setShowTour] = useState(false);
-
   return (
     <main className="min-h-screen pt-[var(--navbar-height)] bg-radial-navy">
-      {/* Onboarding tour — launched via "?" FAB */}
-      {showTour && (
-        <OnboardingTour user={user} onComplete={() => setShowTour(false)} />
-      )}
-
-      {/* "?" FAB — relaunch tour, authenticated users only */}
-      {user && !showTour && (
-        <TourHelpButton onLaunch={() => setShowTour(true)} />
-      )}
-
       <FAQSection />
     </main>
   );

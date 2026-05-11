@@ -13,7 +13,7 @@
 
 'use client';
 
-import { useState, useRef, useCallback, useMemo } from 'react';
+import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import Papa from 'papaparse';
 import {
   Upload,
@@ -26,6 +26,8 @@ import {
 } from 'lucide-react';
 import { CURRENCIES } from '@/core/constants/currencies';
 import { getFunctions, httpsCallable } from 'firebase/functions';
+import { ref, getDownloadURL } from 'firebase/storage';
+import { storage } from '@/core/config/firebase.config';
 import { SearchableSelect } from '@/presentation/components/common/SearchableSelect/SearchableSelect';
 
 // Valid currency codes for validation
@@ -108,13 +110,14 @@ function validateRow(row, index, categoryMap) {
 
 const REQUIRED_COLUMNS = ['Product Name', 'Price', 'Currency', 'Quantity', 'Unit'];
 
-export function BulkProductUpload({ users, categories, onClose }) {
-  const [selectedMemberId, setSelectedMemberId] = useState('');
+export function BulkProductUpload({ users, categories, onClose, initialMemberId, initialCsvUrl }) {
+  const [selectedMemberId, setSelectedMemberId] = useState(initialMemberId || '');
   const [isDragging, setIsDragging] = useState(false);
   const [parsedRows, setParsedRows] = useState(null);
   const [parseError, setParseError] = useState(null);
   const [uploadState, setUploadState] = useState(null); // null | 'uploading' | 'done'
   const [uploadResult, setUploadResult] = useState(null);
+  const [loadingCsv, setLoadingCsv] = useState(false);
   const fileInputRef = useRef(null);
 
   // Build simple category lookup map
@@ -135,6 +138,68 @@ export function BulkProductUpload({ users, categories, onClose }) {
   const selectedMember = (users || []).find(
     (u) => (u.uid || u.id) === selectedMemberId
   );
+
+  // Parse CSV text (shared by file upload and URL auto-load)
+  const parseCsvText = useCallback((csvText) => {
+    setParseError(null);
+    setParsedRows(null);
+    setUploadResult(null);
+    setUploadState(null);
+
+    Papa.parse(csvText, {
+      header: true,
+      skipEmptyLines: true,
+      complete: (results) => {
+        if (!results.data || results.data.length === 0) {
+          setParseError('The CSV file is empty or has no data rows.');
+          return;
+        }
+        const headers = results.meta.fields || [];
+        const missingCols = REQUIRED_COLUMNS.filter((col) => !headers.includes(col));
+        if (missingCols.length > 0) {
+          setParseError(
+            `Missing required columns: ${missingCols.join(', ')}. ` +
+            `Expected: Product Name, Category (optional), Price, Currency, Quantity, Unit, Description (optional), Image URLs (optional).`
+          );
+          return;
+        }
+        const validated = results.data.map((row, i) =>
+          validateRow(row, i, categoryMap)
+        );
+        setParsedRows(validated);
+      },
+      error: (err) => {
+        setParseError(`Failed to parse CSV: ${err.message}`);
+      },
+    });
+  }, [categoryMap]);
+
+  // Auto-load CSV from URL when initialCsvUrl is provided (user already uploaded it)
+  useEffect(() => {
+    if (!initialCsvUrl || parsedRows) return;
+    setLoadingCsv(true);
+
+    (async () => {
+      try {
+        // Get a fresh download URL via Firebase SDK (includes valid token)
+        const match = initialCsvUrl.match(/\/o\/(.+?)(\?|$)/);
+        let fetchUrl = initialCsvUrl;
+        if (match) {
+          const storagePath = decodeURIComponent(match[1]);
+          const fileRef = ref(storage, storagePath);
+          fetchUrl = await getDownloadURL(fileRef);
+        }
+        const res = await fetch(fetchUrl);
+        if (!res.ok) throw new Error(`Failed to fetch CSV (${res.status})`);
+        const text = await res.text();
+        parseCsvText(text);
+      } catch (err) {
+        setParseError(`Failed to load CSV: ${err.message}`);
+      } finally {
+        setLoadingCsv(false);
+      }
+    })();
+  }, [initialCsvUrl, parseCsvText, parsedRows]);
 
   const handleFileSelect = useCallback((file) => {
     if (!file) return;
@@ -303,6 +368,12 @@ export function BulkProductUpload({ users, categories, onClose }) {
       </div>
 
       {/* Step 2: CSV Upload area */}
+      {loadingCsv ? (
+        <div className="mb-5 p-6 rounded-lg bg-[rgba(255,215,0,0.05)] border border-[rgba(255,215,0,0.2)] flex items-center gap-3">
+          <Loader2 className="w-5 h-5 text-[#FFD700] animate-spin flex-shrink-0" />
+          <p className="text-[#FFD700] text-sm font-medium">Loading CSV from user upload...</p>
+        </div>
+      ) : !initialCsvUrl || parseError ? (
       <div className="mb-5">
         <label className="block text-sm font-medium text-[#A0A0A0] mb-2">
           CSV File
@@ -340,6 +411,7 @@ export function BulkProductUpload({ users, categories, onClose }) {
           className="hidden"
         />
       </div>
+      ) : null}
 
       {/* Parse error */}
       {parseError && (

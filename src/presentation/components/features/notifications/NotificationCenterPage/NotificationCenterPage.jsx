@@ -35,6 +35,7 @@ const TYPE_TO_TAB = {
   new_user_approval: 'system',
   announcement: 'system',
   rfq_created: 'system',
+  product_upload_request: 'system',
 };
 
 const HISTORY_PAGE_SIZE = 30;

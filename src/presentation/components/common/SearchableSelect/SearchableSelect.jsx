@@ -50,6 +50,8 @@ export function SearchableSelect({
   disabled = false,
   className = '',
   showFlags = false,
+  dropdownClassName = '',
+  renderSelectedLabel = null,
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -121,8 +123,10 @@ export function SearchableSelect({
           '--focus-color': accentColor,
         } : {}}
       >
-        <span className={selectedOption ? (isDark ? 'text-white' : 'text-slate-900') : (isDark ? 'text-gray-500' : 'text-slate-400')}>
-          {selectedOption ? renderOptionContent(selectedOption, true) : placeholder}
+        <span className={`truncate ${selectedOption ? (isDark ? 'text-white' : 'text-slate-900') : (isDark ? 'text-gray-500' : 'text-slate-400')}`}>
+          {selectedOption
+            ? (renderSelectedLabel ? renderSelectedLabel(selectedOption) : renderOptionContent(selectedOption, true))
+            : placeholder}
         </span>
         <svg
           className={`w-5 h-5 transition-transform flex-shrink-0 ${isOpen ? 'rotate-180' : ''
@@ -145,7 +149,7 @@ export function SearchableSelect({
         <div className={`absolute z-50 w-full mt-2 rounded-lg shadow-xl max-h-80 overflow-hidden ${isDark
           ? 'bg-[#0F1B2B] border border-[rgba(255,255,255,0.1)] text-white'
           : 'bg-white border-2 border-slate-200 text-slate-900'
-          }`}>
+          } ${dropdownClassName}`}>
           {/* Search input */}
           <div className={`p-2 border-b ${isDark ? 'border-[rgba(255,255,255,0.1)]' : 'border-slate-200'
             }`}>

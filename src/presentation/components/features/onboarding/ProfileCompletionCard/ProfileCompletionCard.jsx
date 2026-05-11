@@ -32,6 +32,7 @@ const COMPLETION_FIELDS = [
   { key: 'phone', label: 'Phone number' },
   { key: 'about', label: 'Company description' },
   { key: 'companyWebsite', label: 'Website' },
+  { key: 'companyDocuments', label: 'Company documents' },
 ];
 
 export function ProfileCompletionCard({ user }) {
@@ -51,10 +52,11 @@ export function ProfileCompletionCard({ user }) {
 
   if (!user) return null;
 
-  // Calculate completion percentage
-  const completedCount = COMPLETION_FIELDS.filter(
-    (f) => !!user[f.key]
-  ).length;
+  // Calculate completion percentage (arrays must have length > 0)
+  const completedCount = COMPLETION_FIELDS.filter((f) => {
+    const val = user[f.key];
+    return Array.isArray(val) ? val.length > 0 : !!val;
+  }).length;
   const total = COMPLETION_FIELDS.length;
   const percent = Math.round((completedCount / total) * 100);
 
@@ -64,6 +66,9 @@ export function ProfileCompletionCard({ user }) {
   // Hide for current session if dismissed
   if (dismissed) return null;
 
+  // Hide permanently when profile is 100% complete
+  if (percent === 100) return null;
+
   const handleDismiss = () => {
     if (user?.uid) {
       sessionStorage.setItem(`profileCardDismissed_${user.uid}`, '1');
@@ -71,37 +76,38 @@ export function ProfileCompletionCard({ user }) {
     setDismissed(true);
   };
 
-  const profileHref = user?.uid ? `/profile/${user.uid}` : '/profile';
+  const profileHref = user?.uid
+    ? percent === 100
+      ? `/profile/${user.uid}`
+      : `/profile/${user.uid}?highlight=incomplete`
+    : '/profile';
 
   return (
-    <div className="glass-card p-5 border border-[#2A3B52] rounded-xl relative">
-      {/* Dismiss button */}
-      <button
-        onClick={handleDismiss}
-        aria-label="Skip profile completion card for this session"
-        className="absolute top-3 right-3 flex items-center gap-1 text-xs text-gray-500 hover:text-gray-300 transition-colors px-1.5 py-1 rounded-md hover:bg-white/5"
-      >
-        <span>Skip</span>
-        <X className="w-3.5 h-3.5" />
-      </button>
-
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-4 pr-8">
-        <div className="flex-1">
-          <h2 className="text-white font-semibold text-sm leading-tight">
-            Complete Your Profile
-          </h2>
+    <div className="glass-card p-5 border border-[#2A3B52] rounded-xl">
+      {/* Header row: title + badge + skip */}
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-white font-semibold text-sm leading-tight">
+          Complete Your Profile
+        </h2>
+        <div className="flex items-center gap-2">
+          <span
+            className={`text-xs font-bold px-2 py-0.5 rounded-full shrink-0 ${
+              percent >= 50
+                ? 'bg-[#FFD700]/15 text-[#FFD700]'
+                : 'bg-white/10 text-gray-400'
+            }`}
+          >
+            {percent}%
+          </span>
+          <button
+            onClick={handleDismiss}
+            aria-label="Skip profile completion card for this session"
+            className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-300 transition-colors px-1.5 py-1 rounded-md hover:bg-white/5"
+          >
+            <span>Skip</span>
+            <X className="w-3.5 h-3.5" />
+          </button>
         </div>
-        {/* Percent badge */}
-        <span
-          className={`text-xs font-bold px-2 py-0.5 rounded-full shrink-0 ${
-            percent >= 50
-              ? 'bg-[#FFD700]/15 text-[#FFD700]'
-              : 'bg-white/10 text-gray-400'
-          }`}
-        >
-          {percent}% complete
-        </span>
       </div>
 
       {/* Gold progress bar */}
@@ -115,7 +121,8 @@ export function ProfileCompletionCard({ user }) {
       {/* Field checklist */}
       <ul className="space-y-2 mb-5">
         {COMPLETION_FIELDS.map((field) => {
-          const done = !!user[field.key];
+          const val = user[field.key];
+          const done = Array.isArray(val) ? val.length > 0 : !!val;
           return (
             <li key={field.key} className="flex items-center gap-2.5">
               {done ? (
@@ -136,9 +143,10 @@ export function ProfileCompletionCard({ user }) {
       {/* CTA */}
       <Link
         href={profileHref}
+        onClick={handleDismiss}
         className="inline-flex items-center justify-center w-full px-4 py-2 rounded-lg text-sm font-semibold !text-black bg-gradient-to-r from-[#FFD700] to-[#FDB931] hover:opacity-90 transition-opacity"
       >
-        {percent === 100 ? 'View Profile' : 'Complete Profile'}
+        Complete Profile
       </Link>
     </div>
   );

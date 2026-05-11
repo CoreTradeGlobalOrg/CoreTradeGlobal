@@ -41,11 +41,16 @@ export function RegisterFormFields({ register, errors, loading, setValue, watch,
     }
   }, [country, selectedPhoneCountry]);
 
-  // Get the compact display label for the collapsed phone code trigger
   const selectedPhoneOption = PHONE_CODE_OPTIONS.find((opt) => opt.value === selectedPhoneCountry);
-  const compactPhoneLabel = selectedPhoneOption
-    ? `${selectedPhoneOption.label.split(' ')[0]} ${selectedPhoneOption.dialCode}`
-    : '';
+
+  // Re-compute form phone value when phone country code changes
+  useEffect(() => {
+    if (!localPhone || localPhone.startsWith('+')) return;
+    const dialCode = COUNTRY_PHONE_CODES[selectedPhoneCountry] || '';
+    if (dialCode) {
+      setValue('phone', `${dialCode}${localPhone}`, { shouldValidate: false });
+    }
+  }, [selectedPhoneCountry, localPhone, setValue]);
 
   const handlePhoneChange = (e) => {
     const raw = e.target.value;
@@ -62,8 +67,8 @@ export function RegisterFormFields({ register, errors, loading, setValue, watch,
     if (raw.startsWith('+')) {
       setValue('phone', raw, { shouldValidate: false });
     } else if (dialCode) {
-      // Combine dial code + space + local number
-      setValue('phone', `${dialCode} ${raw}`, { shouldValidate: false });
+      // Combine dial code + local number (no space — libphonenumber-js expects +905551234567)
+      setValue('phone', `${dialCode}${raw}`, { shouldValidate: false });
     } else {
       setValue('phone', raw, { shouldValidate: false });
     }
@@ -138,25 +143,18 @@ export function RegisterFormFields({ register, errors, loading, setValue, watch,
               </label>
               <div className="flex">
                 {/* Independent phone country code dropdown */}
-                <div className="relative flex-shrink-0" style={{ width: '120px' }}>
+                <div className="relative flex-shrink-0" style={{ width: '130px' }}>
                   <SearchableSelect
                     options={PHONE_CODE_OPTIONS}
                     value={selectedPhoneCountry}
                     onChange={(val) => setSelectedPhoneCountry(val)}
                     placeholder="Code"
                     disabled={loading}
-                    className="dark-select phone-code-select"
+                    className="dark-select phone-code-select [&_button]:!py-[14px] [&_button]:!rounded-r-none [&_button]:!border-r-0"
                     searchPlaceholder="Search country..."
+                    dropdownClassName="!min-w-[280px]"
+                    renderSelectedLabel={(opt) => `${opt.label.split(' ')[0]} ${opt.dialCode}`}
                   />
-                  {/* Compact overlay showing flag + dial code when a value is selected */}
-                  {selectedPhoneOption && (
-                    <span
-                      className="pointer-events-none absolute inset-0 flex items-center px-3 text-white text-sm bg-[#0F1B2B] rounded-lg border border-[rgba(255,255,255,0.1)] pr-8"
-                      aria-hidden="true"
-                    >
-                      {compactPhoneLabel}
-                    </span>
-                  )}
                 </div>
                 <input
                   id="phone"

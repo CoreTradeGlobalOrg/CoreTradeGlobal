@@ -3,6 +3,7 @@
 import { Navbar } from '@/presentation/components/homepage/Navbar/Navbar';
 import { Footer } from '@/presentation/components/homepage/Footer/Footer';
 import { ErrorBoundary } from '@/presentation/components/common/ErrorBoundary/ErrorBoundary';
+import { MessagesWidget } from '@/presentation/components/common/MessagesWidget/MessagesWidget';
 
 export default function AdminLayout({ children }) {
   return (
@@ -14,6 +15,7 @@ export default function AdminLayout({ children }) {
         </ErrorBoundary>
       </div>
       <Footer />
+      <MessagesWidget />
     </div>
   );
 }

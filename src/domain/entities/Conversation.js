@@ -137,6 +137,10 @@ export class Conversation {
       return this.metadata.contactName || this.metadata.subject || 'Contact Inquiry';
     }
 
+    if (this.type === 'product_upload') {
+      return this.metadata.contactName || 'Product Upload Request';
+    }
+
     const other = this.getOtherParticipant(currentUserId);
     if (other) {
       return other.displayName || other.email || 'Unknown User';

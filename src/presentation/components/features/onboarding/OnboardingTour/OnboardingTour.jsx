@@ -1,9 +1,9 @@
 /**
  * OnboardingTour Component
  *
- * A React Portal-based 3-part guided tour with Turkish content.
+ * A React Portal-based 3-part guided tour with English content.
  * Covers: Profile Creation (4 steps), Product Upload (3 steps), RFQ Creation (3 steps).
- * Shows an intro screen before Part 1 and transition screens between parts.
+ * Shows an intro screen before Part 1 and a transition screen between Part 1 and Part 2.
  *
  * Usage:
  *   <OnboardingTour user={user} onComplete={() => {}} />
@@ -17,6 +17,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { createPortal } from 'react-dom';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/core/config/firebase.config';
@@ -29,29 +30,33 @@ import './OnboardingTour.css';
  * partStep: step number within the part (1-indexed)
  * partTotal: total steps in the part
  * isLastInPart: true if this is the final step of its part
+ * subtitle: optional subtitle displayed below the title
+ * placement: 'top-right' | 'anchor-sell' | 'anchor-buy' | 'center'
  */
 const TOUR_SEQUENCE = [
-  // ── Intro ──────────────────────────────────────────────────────────────────
+  // -- Intro ------------------------------------------------------------------
   {
     type: 'intro',
     part: 1,
-    title: 'CoreTG Kullanma Rehberine Hoşgeldiniz',
+    title: 'Welcome to CoreTG Guide',
     description:
-      'Bu rehber, platformumuzu en verimli şekilde kullanmanız için size adım adım yol gösterecek. Haydi başlayalım!',
+      'Follow the steps in our guide to complete your profile:',
   },
 
-  // ── Part 1: Profil Oluşturma Rehberi (4 steps) ─────────────────────────────
+  // -- Part 1: Profile Creation Guide (4 steps) ------------------------------
   {
     type: 'step',
     part: 1,
     partStep: 1,
     partTotal: 4,
     isLastInPart: false,
-    title: 'Şirket Profilinizi Tamamlayın',
+    title: 'Complete Your Company Profile',
+    subtitle: null,
     description:
-      'Kuruluş yılı, faaliyet sektörü ve ihracat pazarlarınız gibi temel bilgileri girerek profilinizi oluşturun.',
-    targetSelector: '[href="/profile"], [href*="/profile"]',
-    placement: 'bottom',
+      "Welcome! Let's complete your profile together. Enter your founding year and your main industry. This information will be your key identity in search results.",
+    placement: 'top-right',
+    actionLabel: 'Go to Profile',
+    actionPath: '/profile',
   },
   {
     type: 'step',
@@ -59,11 +64,13 @@ const TOUR_SEQUENCE = [
     partStep: 2,
     partTotal: 4,
     isLastInPart: false,
-    title: 'Güven Oluşturun',
+    title: 'Build Trust',
+    subtitle: 'Why You?',
     description:
-      'Sahip olduğunuz sertifikaları (ISO, CE, vb.), üretim kapasitenizi ve kalite belgelerinizi ekleyin. Bu bilgiler, potansiyel alıcıların size güven duymasını sağlar.',
-    targetSelector: '[href="/profile"], [href*="/profile"]',
-    placement: 'bottom',
+      'Trust is everything in the B2B world. Add your quality certificates like ISO, CE and your production capacity. Remember, certified profiles get 70% more attention.',
+    placement: 'top-right',
+    actionLabel: 'Go to Profile',
+    actionPath: '/profile',
   },
   {
     type: 'step',
@@ -71,11 +78,13 @@ const TOUR_SEQUENCE = [
     partStep: 3,
     partTotal: 4,
     isLastInPart: false,
-    title: 'Görsel Prestij',
+    title: 'Visual Prestige',
+    subtitle: 'Shine Your Brand',
     description:
-      'Şirket logonuzu ve kapak fotoğrafınızı yükleyin. Profesyonel bir görünüm, ilk izleniminizi güçlendirir.',
-    targetSelector: '[href="/profile"], [href*="/profile"]',
-    placement: 'bottom',
+      'Upload your company logo and a stylish cover photo representing your factory or office for a professional look. The clearer your visuals, the more your professionalism is felt.',
+    placement: 'top-right',
+    actionLabel: 'Go to Profile',
+    actionPath: '/profile',
   },
   {
     type: 'step',
@@ -83,34 +92,36 @@ const TOUR_SEQUENCE = [
     partStep: 4,
     partTotal: 4,
     isLastInPart: true,
-    title: 'Profilinizi Özetleyin',
+    title: 'Summary',
+    subtitle: 'Tell Your Story',
     description:
-      'Hakkımızda bölümünü yazın ve ihracat yaptığınız pazarları belirtin. Tamamlanmış bir profil, görünürlüğünüzü artırır.',
-    targetSelector: '[href="/profile"], [href*="/profile"]',
-    placement: 'bottom',
+      "Write your company summary in the 'About Us' section. Specify which markets you export to or what values you stand for. Congratulations, you're ready to go global!",
+    placement: 'top-right',
+    actionLabel: 'Go to Profile',
+    actionPath: '/profile',
   },
 
-  // ── Transition 1 → 2 ───────────────────────────────────────────────────────
+  // -- Transition 1 -> 2 -----------------------------------------------------
   {
     type: 'transition',
     part: 1,
-    title: 'Profiliniz tamamlandı!',
+    title: 'Your profile is complete!',
     description:
-      'Profiliniz tamamlandı! Şimdi nasıl ürün ve Talep (RFQ) oluşturacağınızı göstereceğiz.',
+      "Now we'll show you how to create products and RFQ requests with a short guide.",
   },
 
-  // ── Part 2: Ürün Ekleme Rehberi (3 steps) ──────────────────────────────────
+  // -- Part 2: Product Upload Guide (3 steps) --------------------------------
   {
     type: 'step',
     part: 2,
     partStep: 1,
     partTotal: 3,
     isLastInPart: false,
-    title: "CoreTG'ye Hoşgeldiniz",
+    title: 'Welcome to CoreTG World',
+    subtitle: null,
     description:
-      "Ürünlerinizi platformumuza eklemek için 'Ürün Ekle' butonunu kullanın.",
-    targetSelector: '[href="/marketplace"], [href*="/marketplace"]',
-    placement: 'bottom',
+      "Follow the steps to upload your first product. You can start creating your digital showroom from the 'Add Product' panel.",
+    placement: 'anchor-sell',
   },
   {
     type: 'step',
@@ -118,10 +129,10 @@ const TOUR_SEQUENCE = [
     partStep: 2,
     partTotal: 3,
     isLastInPart: false,
-    title: 'Ürün Bilgilerini Doldurun',
+    title: "Let's Upload Your First Product Together",
+    subtitle: null,
     description:
-      'Ürün adı, açıklaması, kategorisi, fiyatı ve görsellerini ekleyin. Detaylı bilgi, alıcıların ilgisini çeker.',
-    targetSelector: null,
+      'Fill in the product information in the boxes on the page, upload the product image.',
     placement: 'center',
   },
   {
@@ -130,33 +141,25 @@ const TOUR_SEQUENCE = [
     partStep: 3,
     partTotal: 3,
     isLastInPart: true,
-    title: 'Ürününüzü Yayınlayın',
+    title: 'Publish Your Product!',
+    subtitle: "That's It!",
     description:
-      "Tüm bilgileri kontrol ettikten sonra 'Yayınla' butonuna tıklayarak ürününüzü görünür hale getirin.",
-    targetSelector: null,
+      "If you've checked your information, press the 'Add Product' button. Your first product is now accessible to global buyers in the CoreTG world. Good luck!",
     placement: 'center',
   },
 
-  // ── Transition 2 → 3 ───────────────────────────────────────────────────────
-  {
-    type: 'transition',
-    part: 2,
-    title: 'Harika!',
-    description: 'Harika! Şimdi bir RFQ (Talep Teklifi) nasıl oluşturacağınızı görelim.',
-  },
-
-  // ── Part 3: RFQ Oluşturma Rehberi (3 steps) ────────────────────────────────
+  // -- Part 3: RFQ Creation Guide (3 steps) ----------------------------------
   {
     type: 'step',
     part: 3,
     partStep: 1,
     partTotal: 3,
     isLastInPart: false,
-    title: 'İhtiyacınızı Yayınlayın',
+    title: 'Publish Your Need',
+    subtitle: null,
     description:
-      "RFQ oluşturarak tedarikçilerden teklif alın. 'RFQ Oluştur' butonuna tıklayın.",
-    targetSelector: '[href="/requests"], [href*="/requests"]',
-    placement: 'bottom',
+      "Create an RFQ (Request) on CoreTG to receive offers from thousands of suppliers. Let's start by defining the product you need.",
+    placement: 'anchor-buy',
   },
   {
     type: 'step',
@@ -164,10 +167,10 @@ const TOUR_SEQUENCE = [
     partStep: 2,
     partTotal: 3,
     isLastInPart: false,
-    title: 'Miktar ve Teslimat Detayları',
+    title: 'Quantity and Delivery',
+    subtitle: 'Clarify the Details',
     description:
-      'İhtiyacınız olan ürün miktarını, teslimat tarihini ve konumunu belirtin.',
-    targetSelector: null,
+      'How many products do you need and by when should they be delivered? Write your material quality, certificates or packaging preferences in this area. These details ensure suppliers give you the most accurate price.',
     placement: 'center',
   },
   {
@@ -176,10 +179,10 @@ const TOUR_SEQUENCE = [
     partStep: 3,
     partTotal: 3,
     isLastInPart: true,
-    title: 'Talebinizi Yayınlayın',
+    title: 'Publish the Request',
+    subtitle: "You're Ready to Reach Suppliers!",
     description:
-      "Tüm detayları kontrol edip 'Yayınla' butonuyla talebinizi tedarikçilere ulaştırın.",
-    targetSelector: null,
+      "When your request is published, relevant manufacturers will receive instant notifications. You can track offers from the 'My Requests' section in your profile.",
     placement: 'center',
   },
 ];
@@ -188,39 +191,30 @@ const TOUR_SEQUENCE = [
 const SPOTLIGHT_PADDING = 8;
 
 /**
- * Calculate the panel position based on target rect and desired placement.
- * Returns centered style when placement is 'center' or no targetRect.
+ * Calculate the panel position based on placement type and optional target rect.
  */
-function getPanelStyle(targetRect, placement, panelWidth = 340, panelHeight = 220) {
-  if (!targetRect || placement === 'center') {
-    return { top: '50%', left: '50%', transform: 'translate(-50%, -50%)' };
+function getPanelStyle(placement, targetRect) {
+  // Top-right positioning for profile steps
+  if (placement === 'top-right') {
+    return { top: 80, right: 24, left: 'auto' };
   }
 
-  const vw = window.innerWidth;
-  const vh = window.innerHeight;
-  const gap = 16;
+  // Anchor to a specific hero button
+  if ((placement === 'anchor-sell' || placement === 'anchor-buy') && targetRect) {
+    const vw = window.innerWidth;
+    const panelWidth = 340;
+    const gap = 16;
 
-  const centerX = targetRect.left + targetRect.width / 2;
-  let left = centerX - panelWidth / 2;
-  left = Math.max(12, Math.min(left, vw - panelWidth - 12));
+    const centerX = targetRect.left + targetRect.width / 2;
+    let left = centerX - panelWidth / 2;
+    left = Math.max(12, Math.min(left, vw - panelWidth - 12));
 
-  if (placement === 'bottom') {
     const top = targetRect.bottom + gap;
-    if (top + panelHeight < vh) return { top, left };
-    const topAlt = targetRect.top - gap - panelHeight;
-    if (topAlt > 0) return { top: topAlt, left };
+    return { top, left };
   }
 
-  if (placement === 'top') {
-    const top = targetRect.top - gap - panelHeight;
-    if (top > 0) return { top, left };
-    return { top: targetRect.bottom + gap, left };
-  }
-
-  return {
-    top: Math.max(12, targetRect.bottom + gap),
-    left,
-  };
+  // Centered (default)
+  return { top: '50%', left: '50%', transform: 'translate(-50%, -50%)' };
 }
 
 /**
@@ -231,7 +225,9 @@ function getPanelStyle(targetRect, placement, panelWidth = 340, panelHeight = 22
  *   onComplete — called when tour is finished or skipped
  */
 export function OnboardingTour({ user, onComplete }) {
+  const router = useRouter();
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [collapsed, setCollapsed] = useState(false);
   const [targetRect, setTargetRect] = useState(null);
   const [mounted, setMounted] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -240,27 +236,33 @@ export function OnboardingTour({ user, onComplete }) {
   const screen = TOUR_SEQUENCE[currentIndex];
   const isModal = screen?.type === 'intro' || screen?.type === 'transition';
 
-  /** Find target element and update spotlight rect */
+  /** Find target element for anchor-sell / anchor-buy placements */
   const updateRect = useCallback(() => {
-    if (!screen || isModal || !screen.targetSelector || screen.placement === 'center') {
+    if (!screen || isModal) {
       setTargetRect(null);
       return;
     }
-    const selectors = screen.targetSelector.split(',').map((s) => s.trim());
-    let el = null;
-    for (const sel of selectors) {
+
+    let selector = null;
+    if (screen.placement === 'anchor-sell') {
+      selector = '.hero-cta-btn-sell';
+    } else if (screen.placement === 'anchor-buy') {
+      selector = '.hero-cta-btn-buy';
+    }
+
+    if (selector) {
       try {
-        el = document.querySelector(sel);
-        if (el) break;
+        const el = document.querySelector(selector);
+        if (el) {
+          setTargetRect(el.getBoundingClientRect());
+          return;
+        }
       } catch {
         // Invalid selector — skip
       }
     }
-    if (el) {
-      setTargetRect(el.getBoundingClientRect());
-    } else {
-      setTargetRect(null);
-    }
+
+    setTargetRect(null);
   }, [screen, isModal]);
 
   useEffect(() => {
@@ -319,25 +321,53 @@ export function OnboardingTour({ user, onComplete }) {
 
   if (!mounted || !screen) return null;
 
-  // ── Spotlight calculation ───────────────────────────────────────────────────
-  const spotlightStyle =
-    !isModal && targetRect
-      ? {
-          top: targetRect.top - SPOTLIGHT_PADDING,
-          left: targetRect.left - SPOTLIGHT_PADDING,
-          width: targetRect.width + SPOTLIGHT_PADDING * 2,
-          height: targetRect.height + SPOTLIGHT_PADDING * 2,
-        }
-      : { top: -9999, left: -9999, width: 0, height: 0 };
+  // -- Spotlight calculation --------------------------------------------------
+  const showSpotlight = !isModal && targetRect && (screen.placement === 'anchor-sell' || screen.placement === 'anchor-buy');
+  const spotlightStyle = showSpotlight
+    ? {
+        top: targetRect.top - SPOTLIGHT_PADDING,
+        left: targetRect.left - SPOTLIGHT_PADDING,
+        width: targetRect.width + SPOTLIGHT_PADDING * 2,
+        height: targetRect.height + SPOTLIGHT_PADDING * 2,
+      }
+    : { top: -9999, left: -9999, width: 0, height: 0 };
 
-  // ── Render ─────────────────────────────────────────────────────────────────
+  // -- Render -----------------------------------------------------------------
+
+  // Collapsed state: show a floating pill to restore the tour
+  if (collapsed) {
+    return createPortal(
+      <button
+        onClick={() => setCollapsed(false)}
+        className="fixed bottom-6 left-6 z-[9999] flex items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-[#FFD700] to-[#FDB931] !text-black text-sm font-semibold shadow-lg hover:scale-105 transition-transform"
+        aria-label="Resume tour guide"
+      >
+        <span className="text-base">?</span>
+        <span>Resume Guide — Step {screen.type === 'step' ? `${screen.partStep}/${screen.partTotal}` : '...'}</span>
+      </button>,
+      document.body
+    );
+  }
+
+  // Collapse button used in step panels
+  const collapseButton = (
+    <button
+      onClick={() => setCollapsed(true)}
+      className="text-gray-400 text-xs hover:text-gray-200 transition-colors px-2 py-1 rounded hover:bg-white/5"
+      aria-label="Minimize tour to make edits"
+      title="Minimize — make your edits, then resume"
+    >
+      ▼ Minimize
+    </button>
+  );
+
   return createPortal(
     <>
       {/* Dark overlay */}
       <div className="onboarding-overlay" aria-hidden="true" />
 
-      {/* Spotlight cutout — hidden for modal screens */}
-      {!isModal && <div className="onboarding-spotlight" style={spotlightStyle} aria-hidden="true" />}
+      {/* Spotlight cutout — only for anchored steps */}
+      {showSpotlight && <div className="onboarding-spotlight" style={spotlightStyle} aria-hidden="true" />}
 
       {/* Intro modal */}
       {screen.type === 'intro' && (
@@ -346,7 +376,7 @@ export function OnboardingTour({ user, onComplete }) {
           style={{ top: '50%', left: '50%', transform: 'translate(-50%, -50%)', maxWidth: 400 }}
           role="dialog"
           aria-modal="true"
-          aria-label="Rehber başlangıç ekranı"
+          aria-label="Tour introduction"
         >
           <div className="bg-[#1A283B]/95 backdrop-blur-md border border-[#FFD700]/30 rounded-xl p-7 shadow-2xl text-center">
             <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[#FFD700] to-[#FDB931] flex items-center justify-center mx-auto mb-5">
@@ -354,13 +384,22 @@ export function OnboardingTour({ user, onComplete }) {
             </div>
             <h2 className="text-white font-bold text-xl mb-3">{screen.title}</h2>
             <p className="text-gray-400 text-sm leading-relaxed mb-6">{screen.description}</p>
-            <button
-              onClick={handleAdvance}
-              disabled={saving}
-              className="w-full px-5 py-3 rounded-lg text-sm font-semibold !text-black bg-gradient-to-r from-[#FFD700] to-[#FDB931] hover:opacity-90 transition-opacity disabled:opacity-50"
-            >
-              Başla
-            </button>
+            <div className="flex items-center justify-between gap-3">
+              <button
+                onClick={handleSkip}
+                className="text-gray-400 text-sm underline underline-offset-2 hover:text-gray-200 transition-colors"
+                disabled={saving}
+              >
+                Skip
+              </button>
+              <button
+                onClick={handleAdvance}
+                disabled={saving}
+                className="px-5 py-3 rounded-lg text-sm font-semibold !text-black bg-gradient-to-r from-[#FFD700] to-[#FDB931] hover:opacity-90 transition-opacity disabled:opacity-50"
+              >
+                Start
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -372,7 +411,7 @@ export function OnboardingTour({ user, onComplete }) {
           style={{ top: '50%', left: '50%', transform: 'translate(-50%, -50%)', maxWidth: 400 }}
           role="dialog"
           aria-modal="true"
-          aria-label="Bölüm geçiş ekranı"
+          aria-label="Section transition"
         >
           <div className="bg-[#1A283B]/95 backdrop-blur-md border border-[#FFD700]/30 rounded-xl p-7 shadow-2xl text-center">
             <div className="w-12 h-12 rounded-full bg-[#FFD700]/10 border border-[#FFD700]/30 flex items-center justify-center mx-auto mb-4">
@@ -382,13 +421,22 @@ export function OnboardingTour({ user, onComplete }) {
             </div>
             <h2 className="text-white font-bold text-lg mb-3">{screen.title}</h2>
             <p className="text-gray-400 text-sm leading-relaxed mb-6">{screen.description}</p>
-            <button
-              onClick={handleAdvance}
-              disabled={saving}
-              className="w-full px-5 py-3 rounded-lg text-sm font-semibold !text-black bg-gradient-to-r from-[#FFD700] to-[#FDB931] hover:opacity-90 transition-opacity disabled:opacity-50"
-            >
-              Devam Et
-            </button>
+            <div className="flex items-center justify-between gap-3">
+              <button
+                onClick={handleSkip}
+                className="text-gray-400 text-sm underline underline-offset-2 hover:text-gray-200 transition-colors"
+                disabled={saving}
+              >
+                Skip
+              </button>
+              <button
+                onClick={handleAdvance}
+                disabled={saving}
+                className="px-5 py-3 rounded-lg text-sm font-semibold !text-black bg-gradient-to-r from-[#FFD700] to-[#FDB931] hover:opacity-90 transition-opacity disabled:opacity-50"
+              >
+                Continue
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -397,53 +445,74 @@ export function OnboardingTour({ user, onComplete }) {
       {screen.type === 'step' && (
         <div
           className="onboarding-panel onboarding-panel-enter"
-          style={getPanelStyle(targetRect, screen.placement)}
+          style={getPanelStyle(screen.placement, targetRect)}
           role="dialog"
           aria-modal="true"
-          aria-label={`Adım ${screen.partStep}/${screen.partTotal}: ${screen.title}`}
+          aria-label={`Step ${screen.partStep}/${screen.partTotal}: ${screen.title}`}
         >
           <div className="bg-[#1A283B]/95 backdrop-blur-md border border-[#2A3B52] rounded-xl p-5 shadow-2xl">
-            {/* Part label + step counter */}
+            {/* Part label + step counter + minimize */}
             <div className="flex items-center justify-between mb-3">
               <span className="text-xs text-[#FFD700] font-medium tracking-wide uppercase">
-                Adım {screen.partStep}/{screen.partTotal}
+                Step {screen.partStep}/{screen.partTotal}
               </span>
-              {/* Progress dots within the part */}
-              <div className="flex gap-1">
-                {Array.from({ length: screen.partTotal }).map((_, i) => (
-                  <div
-                    key={i}
-                    className={`h-1.5 rounded-full transition-all duration-300 ${
-                      i === screen.partStep - 1
-                        ? 'w-4 bg-[#FFD700]'
-                        : i < screen.partStep - 1
-                        ? 'w-1.5 bg-[#FFD700]/50'
-                        : 'w-1.5 bg-[#2A3B52]'
-                    }`}
-                  />
-                ))}
+              <div className="flex items-center gap-2">
+                {/* Progress dots */}
+                <div className="flex gap-1">
+                  {Array.from({ length: screen.partTotal }).map((_, i) => (
+                    <div
+                      key={i}
+                      className={`h-1.5 rounded-full transition-all duration-300 ${
+                        i === screen.partStep - 1
+                          ? 'w-4 bg-[#FFD700]'
+                          : i < screen.partStep - 1
+                          ? 'w-1.5 bg-[#FFD700]/50'
+                          : 'w-1.5 bg-[#2A3B52]'
+                      }`}
+                    />
+                  ))}
+                </div>
+                {collapseButton}
               </div>
             </div>
 
             {/* Content */}
-            <h3 className="text-white font-bold text-base mb-2">{screen.title}</h3>
-            <p className="text-gray-400 text-sm leading-relaxed mb-5">{screen.description}</p>
+            <h3 className="text-white font-bold text-base mb-1">{screen.title}</h3>
+            {screen.subtitle && (
+              <p className="text-[#FFD700]/80 text-sm font-medium mb-2">{screen.subtitle}</p>
+            )}
+            <p className="text-gray-400 text-sm leading-relaxed mb-4">{screen.description}</p>
 
-            {/* Actions */}
+            {/* Action button (e.g., "Go to Profile") — uses router.push for client-side nav so tour persists */}
+            {screen.actionLabel && screen.actionPath && (
+              <button
+                type="button"
+                onClick={() => {
+                  const href = screen.actionPath === '/profile' && user?.uid ? `/profile/${user.uid}` : screen.actionPath;
+                  setCollapsed(true);
+                  router.push(href);
+                }}
+                className="inline-flex items-center gap-1.5 text-[#FFD700] text-sm font-medium hover:underline mb-4"
+              >
+                {screen.actionLabel} →
+              </button>
+            )}
+
+            {/* Navigation */}
             <div className="flex items-center justify-between gap-3">
               <button
                 onClick={handleSkip}
                 className="text-gray-400 text-sm underline underline-offset-2 hover:text-gray-200 transition-colors"
                 disabled={saving}
               >
-                Atla
+                Skip
               </button>
               <button
                 onClick={handleAdvance}
                 disabled={saving}
                 className="px-4 py-2 rounded-lg text-sm font-semibold !text-black bg-gradient-to-r from-[#FFD700] to-[#FDB931] hover:opacity-90 transition-opacity disabled:opacity-50"
               >
-                {screen.isLastInPart && screen.part === 3 ? 'Bitir' : screen.isLastInPart ? 'Bitir' : 'Sonraki'}
+                {screen.isLastInPart ? 'Finish' : 'Next'}
               </button>
             </div>
           </div>
@@ -467,7 +536,7 @@ export function TourHelpButton({ onLaunch }) {
   return (
     <button
       onClick={onLaunch}
-      aria-label="Rehberi başlat"
+      aria-label="Launch guide"
       className="fixed bottom-6 left-6 z-[100] w-12 h-12 rounded-full !text-black bg-gradient-to-r from-[#FFD700] to-[#FDB931] hover:opacity-90 transition-opacity shadow-lg flex items-center justify-center font-bold text-xl"
     >
       ?

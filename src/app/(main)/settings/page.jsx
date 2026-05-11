@@ -8,32 +8,14 @@
 
 'use client';
 
-import { useState } from 'react';
 import { Suspense } from 'react';
 import dynamic from 'next/dynamic';
-import { useAuth } from '@/presentation/contexts/AuthContext';
 
 const SettingsPage = dynamic(
   () =>
     import(
       '@/presentation/components/features/settings/SettingsPage/SettingsPage'
     ).then((mod) => mod.SettingsPage),
-  { ssr: false }
-);
-
-const OnboardingTour = dynamic(
-  () =>
-    import(
-      '@/presentation/components/features/onboarding/OnboardingTour/OnboardingTour'
-    ).then((m) => ({ default: m.OnboardingTour })),
-  { ssr: false }
-);
-
-const TourHelpButton = dynamic(
-  () =>
-    import(
-      '@/presentation/components/features/onboarding/OnboardingTour/OnboardingTour'
-    ).then((m) => ({ default: m.TourHelpButton })),
   { ssr: false }
 );
 
@@ -48,25 +30,10 @@ function SettingsLoadingFallback() {
   );
 }
 
-function SettingsPageContent() {
-  const { user } = useAuth();
-  const [showTour, setShowTour] = useState(false);
-
+export default function SettingsPageRoute() {
   return (
-    <>
-      {/* "?" FAB + tour for authenticated users */}
-      {user && showTour && (
-        <OnboardingTour user={user} onComplete={() => setShowTour(false)} />
-      )}
-      {user && !showTour && (
-        <TourHelpButton onLaunch={() => setShowTour(true)} />
-      )}
-
-      <Suspense fallback={<SettingsLoadingFallback />}>
-        <SettingsPage />
-      </Suspense>
-    </>
+    <Suspense fallback={<SettingsLoadingFallback />}>
+      <SettingsPage />
+    </Suspense>
   );
 }
-
-export default SettingsPageContent;

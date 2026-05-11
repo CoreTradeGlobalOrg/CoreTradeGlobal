@@ -1133,6 +1133,23 @@ a:hover {
   animation: pulse-glow 2s ease-in-out infinite;
 }
 
+/* --- INCOMPLETE FIELD HIGHLIGHT ANIMATION --- */
+@keyframes highlight-incomplete {
+  0%, 100% {
+    border-color: rgba(255, 215, 0, 0.3);
+    box-shadow: 0 0 8px rgba(255, 215, 0, 0.15);
+  }
+  50% {
+    border-color: rgba(255, 215, 0, 0.7);
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.35);
+  }
+}
+
+.animate-highlight-incomplete {
+  animation: highlight-incomplete 2s ease-in-out 3;
+  border-color: rgba(255, 215, 0, 0.3) !important;
+}
+
 /* Profile Products Grid - same card style as homepage */
 .profile-products-grid {
   display: grid;
