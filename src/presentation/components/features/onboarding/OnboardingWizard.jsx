@@ -19,7 +19,7 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle, Circle } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { auth, db, storage } from '@/core/config/firebase.config';
+import { auth, db, getStorageInstance } from '@/core/config/firebase.config';
 import { ROLES } from '@/core/constants/roles';
 import { IdentityStep } from './steps/IdentityStep';
 import { DetailsStep } from './steps/DetailsStep';
@@ -153,7 +153,7 @@ export function OnboardingWizard({ uid: initialUid }) {
     setPhotoUploading(true);
     try {
       const ext = photoFile.name.split('.').pop();
-      const storageRef = ref(storage, `users/${user.uid}/profile.${ext}`);
+      const storageRef = ref(getStorageInstance(), `users/${user.uid}/profile.${ext}`);
       const snapshot = await uploadBytes(storageRef, photoFile, { contentType: photoFile.type });
       const photoURL = await getDownloadURL(snapshot.ref);
       await updateProfile(user, { photoURL });

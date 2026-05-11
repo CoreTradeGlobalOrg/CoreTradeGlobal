@@ -21,7 +21,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { httpsCallable } from 'firebase/functions';
-import { functions } from '@/core/config/firebase.config';
+import { getFunctionsInstance } from '@/core/config/firebase.config';
 import toast from 'react-hot-toast';
 
 /**
@@ -77,7 +77,7 @@ export function useContractActions(dealId, contract, currentUid, deal) {
   // ── Debounced save to Firestore ───────────────────────────────────────────
   const saveDraft = useCallback(async (approvedClauses) => {
     try {
-      const fn = httpsCallable(functions, 'saveDraftApprovals');
+      const fn = httpsCallable(getFunctionsInstance(), 'saveDraftApprovals');
       await fn({ dealId, approvedClauses: Array.from(approvedClauses) });
     } catch (err) {
       // Draft saves are silent — log but don't toast
@@ -112,7 +112,7 @@ export function useContractActions(dealId, contract, currentUid, deal) {
   const submitApprovals = useCallback(async () => {
     setLoading(true);
     try {
-      const fn = httpsCallable(functions, 'submitContractApproval');
+      const fn = httpsCallable(getFunctionsInstance(), 'submitContractApproval');
       await fn({ dealId });
       toast.success('Approvals submitted successfully');
     } catch (err) {

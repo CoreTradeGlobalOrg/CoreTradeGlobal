@@ -4,7 +4,7 @@
  * Handles file upload/download operations with Firebase Storage
  */
 
-import { storage } from '@/core/config/firebase.config';
+import { getStorageInstance } from '@/core/config/firebase.config';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 
 export class FirebaseStorageDataSource {
@@ -24,7 +24,7 @@ export class FirebaseStorageDataSource {
    */
   async uploadFile(path, file, metadata = {}) {
     try {
-      const storageRef = ref(storage, path);
+      const storageRef = ref(getStorageInstance(), path);
 
       // Set default metadata
       const fileMetadata = {
@@ -58,7 +58,7 @@ export class FirebaseStorageDataSource {
    */
   async deleteFile(path) {
     try {
-      const storageRef = ref(storage, path);
+      const storageRef = ref(getStorageInstance(), path);
       await deleteObject(storageRef);
     } catch (error) {
       console.error('Error deleting file:', error);
@@ -82,7 +82,7 @@ export class FirebaseStorageDataSource {
       const encodedPath = match[1];
       const path = decodeURIComponent(encodedPath);
 
-      const storageRef = ref(storage, path);
+      const storageRef = ref(getStorageInstance(), path);
       await deleteObject(storageRef);
     } catch (error) {
       // Ignore "object-not-found" errors - file might already be deleted
@@ -102,7 +102,7 @@ export class FirebaseStorageDataSource {
    */
   async getDownloadURL(path) {
     try {
-      const storageRef = ref(storage, path);
+      const storageRef = ref(getStorageInstance(), path);
       return await getDownloadURL(storageRef);
     } catch (error) {
       console.error('Error getting download URL:', error);

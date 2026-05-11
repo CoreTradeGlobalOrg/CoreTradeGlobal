@@ -246,9 +246,10 @@ function PlaneRoutes({ landPositions, config }) {
 }
 
 // Scene setup
-function Scene({ isMobile, disableInteraction }) {
+function Scene({ isMobile, disableInteraction, onReady }) {
   const { camera } = useThree();
   const [landPositions, setLandPositions] = useState(null);
+  const readyFiredRef = useRef(false);
 
   // Dynamic Config based on device
   const config = useMemo(() => ({
@@ -314,11 +315,17 @@ function Scene({ isMobile, disableInteraction }) {
       }
 
       setLandPositions(new Float32Array(points));
+
+      // Signal to parent that the globe is ready to display
+      if (!readyFiredRef.current && onReady) {
+        readyFiredRef.current = true;
+        onReady();
+      }
     };
 
     // Fallback moved to inline or separate handling if needed, keeping concise here.
     img.src = config.mapUrl;
-  }, [config]);
+  }, [config, onReady]);
 
   return (
     <>
@@ -338,7 +345,7 @@ function Scene({ isMobile, disableInteraction }) {
   );
 }
 
-export function GlobeCanvas({ className = '' }) {
+export function GlobeCanvas({ className = '', onReady }) {
   const [mounted, setMounted] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
@@ -382,7 +389,7 @@ export function GlobeCanvas({ className = '' }) {
         frameloop={isVisible ? 'always' : 'never'}
         style={isMobile ? { pointerEvents: 'none', touchAction: 'auto' } : {}}
       >
-        <Scene isMobile={isMobile} />
+        <Scene isMobile={isMobile} onReady={onReady} />
       </Canvas>
     </div>
   );

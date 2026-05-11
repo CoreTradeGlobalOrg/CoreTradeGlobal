@@ -31,7 +31,7 @@ import {
 } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import toast from 'react-hot-toast';
-import { db, functions } from '@/core/config/firebase.config';
+import { db, getFunctionsInstance } from '@/core/config/firebase.config';
 import { QuoteRequest } from '@/domain/entities/QuoteRequest';
 import { ShipmentUpdate } from '@/domain/entities/ShipmentUpdate';
 
@@ -274,7 +274,7 @@ export function useActiveShipments(uid, providerType) {
   const submitUpdate = useCallback(async (dealId, payload) => {
     setActionLoading(true);
     try {
-      const fn = httpsCallable(functions, 'submitShipmentUpdate');
+      const fn = httpsCallable(getFunctionsInstance(), 'submitShipmentUpdate');
       await fn({ dealId, ...payload });
       toast.success('Shipment status updated');
     } catch (err) {
@@ -295,7 +295,7 @@ export function useActiveShipments(uid, providerType) {
   const confirmCoverage = useCallback(async (dealId) => {
     setActionLoading(true);
     try {
-      const fn = httpsCallable(functions, 'confirmInsuranceCoverage');
+      const fn = httpsCallable(getFunctionsInstance(), 'confirmInsuranceCoverage');
       await fn({ dealId });
       toast.success('Insurance coverage confirmed');
     } catch (err) {

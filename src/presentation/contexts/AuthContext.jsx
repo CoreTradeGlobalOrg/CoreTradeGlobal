@@ -4,12 +4,15 @@
  * Manages global authentication state
  * Provides auth state to all components in the app
  *
- * This replaces the need for Redux/Zustand for auth state
+ * Performance: Auth state resolves fast (~100ms) via onAuthStateChanged.
+ * Profile data loads in the background and merges into the user object.
+ * Components see `loading` (= authLoading) resolve quickly, while
+ * `profileLoading` tracks the slower Firestore fetch separately.
  */
 
 'use client';
 
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { container } from '@/core/di/container';
 
 const AuthContext = createContext(null);
@@ -25,103 +28,141 @@ const AuthContext = createContext(null);
  */
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [profileLoading, setProfileLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Track whether session cookie has been set this session to avoid re-posting
+  const sessionCookieSet = useRef(false);
 
   useEffect(() => {
     // Subscribe to auth state changes
     const authRepository = container.getAuthRepository();
 
     const unsubscribe = authRepository.onAuthStateChanged(
-      async (firebaseUser) => {
-        try {
-          if (firebaseUser) {
-            // User is signed in, fetch full profile
-            const userProfile = await authRepository.getUserProfile(
-              firebaseUser.uid
-            );
+      (firebaseUser) => {
+        if (firebaseUser) {
+          // Immediately set a basic user from Firebase Auth (fast, no Firestore)
+          const basicUser = {
+            uid: firebaseUser.uid,
+            email: firebaseUser.email,
+            emailVerified: firebaseUser.emailVerified,
+          };
 
-            // Check if user profile exists in Firestore
-            if (!userProfile) {
-              console.error('User profile not found in Firestore. Logging out...');
-              await authRepository.logout();
-              setUser(null);
-              setLoading(false);
-              return;
-            }
+          setUser(basicUser);
+          setAuthLoading(false);
 
-            // Check if user is deleted
-            if (userProfile.isDeleted === true) {
-              console.error('User account is deleted. Logging out...');
-              await authRepository.logout();
-              setUser(null);
-              setLoading(false);
-              return;
-            }
-
-            // Sync emailVerified status from Firebase Auth to Firestore
-            if (userProfile && firebaseUser.emailVerified !== userProfile.emailVerified) {
-              await authRepository.updateUserProfile(firebaseUser.uid, {
-                emailVerified: firebaseUser.emailVerified,
-                updatedAt: new Date(),
-              });
-            }
-
-            const userData = {
-              ...userProfile,
-              uid: firebaseUser.uid,
-              email: firebaseUser.email,
-              emailVerified: firebaseUser.emailVerified, // Use Firebase Auth value (must be after spread)
-            };
-
-            setUser(userData);
-
-            // Set session cookie for middleware authentication
-            // SECURITY: Send Firebase ID token for server-side verification
-            try {
-              const idToken = await firebaseUser.getIdToken();
-              const sessionResponse = await fetch('/api/auth/session', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ idToken }),
-              });
-              if (!sessionResponse.ok) {
-                console.error(
-                  `Session cookie not set (status ${sessionResponse.status}). ` +
-                  'Role-based route protection may not work. ' +
-                  'Check FIREBASE_SERVICE_ACCOUNT_KEY in .env.local.'
-                );
-              }
-            } catch (cookieError) {
-              console.error('Failed to set session cookie:', cookieError);
-            }
-          } else {
-            // User is signed out - clear session cookie
-            setUser(null);
-            try {
-              await fetch('/api/auth/session', { method: 'DELETE' });
-            } catch (cookieError) {
-              console.error('Failed to clear session cookie:', cookieError);
-            }
-          }
-        } catch (err) {
-          console.error('Auth state change error:', err);
-          setError(err.message);
+          // Fetch full profile in the background
+          setProfileLoading(true);
+          fetchProfileAndSession(authRepository, firebaseUser);
+        } else {
+          // User is signed out
           setUser(null);
-        } finally {
-          setLoading(false);
+          setAuthLoading(false);
+          setProfileLoading(false);
+          sessionCookieSet.current = false;
+
+          // Clear session cookie in background (fire-and-forget)
+          fetch('/api/auth/session', { method: 'DELETE' }).catch((cookieError) => {
+            console.error('Failed to clear session cookie:', cookieError);
+          });
         }
       }
     );
 
     // Cleanup subscription on unmount
     return () => unsubscribe();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  /**
+   * Fetches the full user profile from Firestore and sets the session cookie.
+   * Runs in the background after auth state resolves.
+   */
+  const fetchProfileAndSession = async (authRepository, firebaseUser) => {
+    try {
+      let userProfile = await authRepository.getUserProfile(
+        firebaseUser.uid
+      );
+
+      // Retry once after 1s — on hard refresh, Firestore may not be ready yet
+      if (!userProfile) {
+        await new Promise((r) => setTimeout(r, 1000));
+        userProfile = await authRepository.getUserProfile(firebaseUser.uid);
+      }
+
+      // Check if user profile exists in Firestore
+      if (!userProfile) {
+        console.error('User profile not found in Firestore. Logging out...');
+        await authRepository.logout();
+        setUser(null);
+        setProfileLoading(false);
+        return;
+      }
+
+      // Check if user is deleted
+      if (userProfile.isDeleted === true) {
+        console.error('User account is deleted. Logging out...');
+        await authRepository.logout();
+        setUser(null);
+        setProfileLoading(false);
+        return;
+      }
+
+      // Sync emailVerified status from Firebase Auth to Firestore
+      if (firebaseUser.emailVerified !== userProfile.emailVerified) {
+        // Fire-and-forget — don't block on this
+        authRepository.updateUserProfile(firebaseUser.uid, {
+          emailVerified: firebaseUser.emailVerified,
+          updatedAt: new Date(),
+        }).catch((err) => {
+          console.error('Failed to sync emailVerified:', err);
+        });
+      }
+
+      const userData = {
+        ...userProfile,
+        uid: firebaseUser.uid,
+        email: firebaseUser.email,
+        emailVerified: firebaseUser.emailVerified, // Use Firebase Auth value (must be after spread)
+      };
+
+      setUser(userData);
+
+      // Set session cookie only once per session (avoid re-posting on every auth state change)
+      if (!sessionCookieSet.current) {
+        try {
+          const idToken = await firebaseUser.getIdToken();
+          const sessionResponse = await fetch('/api/auth/session', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ idToken }),
+          });
+          if (sessionResponse.ok) {
+            sessionCookieSet.current = true;
+          } else {
+            console.error(
+              `Session cookie not set (status ${sessionResponse.status}). ` +
+              'Role-based route protection may not work. ' +
+              'Check FIREBASE_SERVICE_ACCOUNT_KEY in .env.local.'
+            );
+          }
+        } catch (cookieError) {
+          console.error('Failed to set session cookie:', cookieError);
+        }
+      }
+    } catch (err) {
+      console.error('Auth state change error:', err);
+      setError(err.message);
+      setUser(null);
+    } finally {
+      setProfileLoading(false);
+    }
+  };
 
   // Force refresh user data
   const refreshUser = async () => {
     try {
-      setLoading(true);
+      setProfileLoading(true);
       const authRepository = container.getAuthRepository();
 
       // Reload Firebase Auth user
@@ -150,10 +191,12 @@ export function AuthProvider({ children }) {
         }
 
         // Sync emailVerified status
-        if (userProfile && currentUser.emailVerified !== userProfile.emailVerified) {
-          await authRepository.updateUserProfile(currentUser.uid, {
+        if (currentUser.emailVerified !== userProfile.emailVerified) {
+          authRepository.updateUserProfile(currentUser.uid, {
             emailVerified: currentUser.emailVerified,
             updatedAt: new Date(),
+          }).catch((err) => {
+            console.error('Failed to sync emailVerified:', err);
           });
         }
 
@@ -168,13 +211,16 @@ export function AuthProvider({ children }) {
       console.error('Failed to refresh user:', err);
       setError(err.message);
     } finally {
-      setLoading(false);
+      setProfileLoading(false);
     }
   };
 
   const value = {
     user,
-    loading,
+    // Backward compatibility: `loading` maps to authLoading (fast check)
+    loading: authLoading,
+    authLoading,
+    profileLoading,
     error,
     isAuthenticated: !!user && user.emailVerified === true,
     isEmailVerified: user?.emailVerified === true,
@@ -191,8 +237,10 @@ export function AuthProvider({ children }) {
  *
  * Usage:
  * const { user, loading, isAuthenticated } = useAuth()
+ * const { user, authLoading, profileLoading } = useAuth()
  *
- * if (loading) return <Loading />
+ * if (loading) return <Loading />        // resolves fast (~100ms)
+ * if (profileLoading) return <Skeleton /> // resolves after Firestore fetch
  * if (!isAuthenticated) return <Login />
  * return <Dashboard user={user} />
  */

@@ -8,7 +8,7 @@
 
 import { useState } from 'react';
 import { httpsCallable } from 'firebase/functions';
-import { functions } from '@/core/config/firebase.config';
+import { getFunctionsInstance } from '@/core/config/firebase.config';
 
 export function useBanUser() {
   const [loading, setLoading] = useState(false);
@@ -19,7 +19,7 @@ export function useBanUser() {
     setError(null);
 
     try {
-      const banUserFn = httpsCallable(functions, 'banUser');
+      const banUserFn = httpsCallable(getFunctionsInstance(), 'banUser');
       const result = await banUserFn({ userId, reason });
 
       if (!result.data.success) {

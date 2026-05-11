@@ -223,6 +223,7 @@ html {
     display: block;
     opacity: 0;
     z-index: 5;
+    transition: opacity 0.5s ease-in;
 }
 
 /* --- TAGLINE SECTION --- */

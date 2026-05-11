@@ -29,7 +29,7 @@ import {
   serverTimestamp,
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { db, storage } from '@/core/config/firebase.config';
+import { db, getStorageInstance } from '@/core/config/firebase.config';
 import { COLLECTIONS, SUBCOLLECTIONS } from '@/core/constants/collections';
 import { LegalMessage } from '@/domain/entities/LegalMessage';
 
@@ -114,7 +114,7 @@ export class LegalMessageRepository {
     const timestamp = Date.now();
     const filename = `${timestamp}_${file.name}`;
     const storagePath = `legal/attachments/${engagementId}/${filename}`;
-    const storageRef = ref(storage, storagePath);
+    const storageRef = ref(getStorageInstance(), storagePath);
 
     const snapshot = await uploadBytes(storageRef, file, {
       contentType: file.type,
@@ -145,7 +145,7 @@ export class LegalMessageRepository {
     const timestamp = Date.now();
     const filename = `${timestamp}_${file.name}`;
     const storagePath = `legal/drafts/${engagementId}/${filename}`;
-    const storageRef = ref(storage, storagePath);
+    const storageRef = ref(getStorageInstance(), storagePath);
 
     const snapshot = await uploadBytes(storageRef, file, {
       contentType: file.type,

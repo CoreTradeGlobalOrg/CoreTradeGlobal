@@ -60,12 +60,7 @@ export default function AboutUsPage() {
             {/* Hero Section */}
             <section className="relative w-full flex flex-col justify-center items-center text-center px-5 py-20 overflow-hidden">
                 <h1
-                    className="text-5xl md:text-[64px] font-extrabold leading-[1.1] tracking-[-2px] max-w-[900px] mb-5"
-                    style={{
-                        background: 'linear-gradient(180deg, #ffffff 20%, #909090 100%)',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                    }}
+                    className="text-5xl md:text-[64px] font-extrabold leading-[1.1] tracking-[-2px] max-w-[900px] mb-5 text-white"
                 >
                     CoreTradeGlobal
                 </h1>
@@ -81,7 +76,7 @@ export default function AboutUsPage() {
             <section className="px-5 pb-16 flex justify-center">
                 <div className="w-full max-w-[1200px]">
                     <div className="relative overflow-hidden rounded-[20px] p-10 border border-[rgba(255,255,255,0.08)] bg-gradient-to-br from-[rgba(26,28,32,0.6)] to-[rgba(15,27,43,0.8)]">
-                        <h2 className="text-[28px] font-bold mb-5 relative z-10" style={{ background: 'linear-gradient(180deg, #ffffff 20%, #909090 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Who We Are</h2>
+                        <h2 className="text-[28px] font-bold mb-5 relative z-10" style={{ color: '#ffffff' }}>Who We Are</h2>
                         <p className="text-base leading-[1.8] text-[#cbd5e1] relative z-10">
                             Our motto is &ldquo;Core of the B2B.&rdquo; This is not just a slogan — it is a commitment that defines the essence of our platform. We are here to enable businesses of all sizes to participate in global trade with confidence, speed, and without intermediaries.
                         </p>
@@ -94,7 +89,7 @@ export default function AboutUsPage() {
                 <div className="w-full max-w-[1200px] grid grid-cols-1 md:grid-cols-2 gap-8">
                     {/* Vision Card */}
                     <div className="relative overflow-hidden rounded-[20px] p-10 border border-[rgba(255,255,255,0.08)] bg-gradient-to-br from-[rgba(26,28,32,0.6)] to-[rgba(15,27,43,0.8)] transition-all duration-300 hover:-translate-y-1 hover:border-[rgba(255,215,0,0.3)] hover:shadow-[0_15px_40px_rgba(0,0,0,0.2)]">
-                        <h2 className="text-[32px] font-bold mb-5 flex items-center gap-3 relative z-10 [background:linear-gradient(180deg,#ffffff_20%,#909090_100%)] bg-clip-text [-webkit-text-fill-color:transparent]">
+                        <h2 className="text-[32px] font-bold mb-5 flex items-center gap-3 relative z-10 text-white">
                             <svg className="w-8 h-8 text-[#FFD700] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
@@ -108,7 +103,7 @@ export default function AboutUsPage() {
 
                     {/* Mission Card */}
                     <div className="relative overflow-hidden rounded-[20px] p-10 border border-[rgba(255,255,255,0.08)] bg-gradient-to-br from-[rgba(26,28,32,0.6)] to-[rgba(15,27,43,0.8)] transition-all duration-300 hover:-translate-y-1 hover:border-[rgba(255,215,0,0.3)] hover:shadow-[0_15px_40px_rgba(0,0,0,0.2)]">
-                        <h2 className="text-[32px] font-bold mb-5 flex items-center gap-3 relative z-10 [background:linear-gradient(180deg,#ffffff_20%,#909090_100%)] bg-clip-text [-webkit-text-fill-color:transparent]">
+                        <h2 className="text-[32px] font-bold mb-5 flex items-center gap-3 relative z-10 text-white">
                             <svg className="w-8 h-8 text-[#FFD700] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                             </svg>
@@ -125,12 +120,7 @@ export default function AboutUsPage() {
             <section className="px-5 pb-16 flex justify-center">
                 <div className="w-full max-w-[1200px]">
                     <h2
-                        className="text-[40px] font-bold text-center mb-12"
-                        style={{
-                            background: 'linear-gradient(180deg, #ffffff 20%, #909090 100%)',
-                            WebkitBackgroundClip: 'text',
-                            WebkitTextFillColor: 'transparent',
-                        }}
+                        className="text-[40px] font-bold text-center mb-12 text-white"
                     >
                         What We Offer
                     </h2>
@@ -153,7 +143,7 @@ export default function AboutUsPage() {
             <section className="px-5 pb-20 flex justify-center">
                 <div className="w-full max-w-[1200px]">
                     <div className="relative overflow-hidden rounded-[20px] p-10 border border-[rgba(255,215,0,0.15)] bg-gradient-to-br from-[rgba(26,28,32,0.6)] to-[rgba(15,27,43,0.8)]">
-                        <h2 className="text-[32px] font-bold mb-5 relative z-10" style={{ background: 'linear-gradient(180deg, #ffffff 20%, #909090 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Why CoreTradeGlobal?</h2>
+                        <h2 className="text-[32px] font-bold mb-5 relative z-10" style={{ color: '#ffffff' }}>Why CoreTradeGlobal?</h2>
                         <p className="text-base leading-[1.8] text-[#cbd5e1] relative z-10 mb-6">
                             International trade is full of friction — complex logistics, opaque insurance processes, legal requirements, and trust issues. CoreTradeGlobal solves all of these challenges on a single platform. You can trade without relying on intermediaries, endless email threads, or business partners whose credibility is uncertain.
                         </p>

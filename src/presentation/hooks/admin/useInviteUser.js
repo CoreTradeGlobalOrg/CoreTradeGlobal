@@ -10,7 +10,7 @@
 
 import { useState } from 'react';
 import { httpsCallable } from 'firebase/functions';
-import { functions } from '@/core/config/firebase.config';
+import { getFunctionsInstance } from '@/core/config/firebase.config';
 import toast from 'react-hot-toast';
 
 export function useInviteUser() {
@@ -22,7 +22,7 @@ export function useInviteUser() {
     setError(null);
 
     try {
-      const inviteUserFn = httpsCallable(functions, 'inviteUser');
+      const inviteUserFn = httpsCallable(getFunctionsInstance(), 'inviteUser');
       const result = await inviteUserFn({ email, role, name, company });
 
       toast.success(`Invite sent to ${email}`);

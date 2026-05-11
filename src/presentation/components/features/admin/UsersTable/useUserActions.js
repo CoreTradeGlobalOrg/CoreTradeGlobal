@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { httpsCallable } from 'firebase/functions';
-import { functions } from '@/core/config/firebase.config';
+import { getFunctionsInstance } from '@/core/config/firebase.config';
 import { container } from '@/core/di/container';
 import { ROLES } from '@/core/constants/roles';
 import { useApproveUser } from '@/presentation/hooks/admin/useApproveUser';
@@ -51,7 +51,7 @@ export function useUserActions({ onRefresh }) {
     const isAdmin = user.role === 'admin';
     const newRole = isAdmin ? ROLES.MEMBER : ROLES.ADMIN;
     return run(user.id,
-      async () => { const fn = httpsCallable(functions, 'setUserRole'); await fn({ userId: user.id, role: newRole }); },
+      async () => { const fn = httpsCallable(getFunctionsInstance(), 'setUserRole'); await fn({ userId: user.id, role: newRole }); },
       `${user.displayName} is ${isAdmin ? 'no longer an admin' : 'now an admin'}!`,
       'Failed to update admin status'
     );
@@ -76,7 +76,7 @@ export function useUserActions({ onRefresh }) {
 
   const handleReset2FA = (user) =>
     run(user.id,
-      async () => { const fn = httpsCallable(functions, 'resetUser2FA'); await fn({ userId: user.id }); },
+      async () => { const fn = httpsCallable(getFunctionsInstance(), 'resetUser2FA'); await fn({ userId: user.id }); },
       `2FA has been reset for ${user.displayName}`,
       'Failed to reset 2FA'
     );

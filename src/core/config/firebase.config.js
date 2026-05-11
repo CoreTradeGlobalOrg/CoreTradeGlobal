@@ -4,13 +4,14 @@
  * We initialize Firebase once and export instances
  *
  * This file replaces the old src/lib/firebase.js
+ *
+ * Performance: auth & db are eager (needed immediately).
+ * storage & functions are lazy-loaded on first use via getter functions.
  */
 
 import { initializeApp, getApps } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
-import { getStorage, connectStorageEmulator } from 'firebase/storage';
-import { getFunctions, connectFunctionsEmulator } from 'firebase/functions';
 import { getAnalytics, isSupported, logEvent, setUserId, setUserProperties } from 'firebase/analytics';
 
 // Firebase configuration from environment variables
@@ -37,24 +38,50 @@ if (!getApps().length) {
 }
 
 /**
- * Firebase Service Instances
+ * Firebase Service Instances (eager)
  *
  * - auth: Firebase Authentication
  * - db: Firestore Database
- * - storage: Firebase Storage
- * - functions: Cloud Functions
  */
 export const auth = getAuth(app);
 export const db = getFirestore(app);
-export const storage = getStorage(app);
-export const functions = getFunctions(app);
 
 /**
- * Connect to emulators in development
+ * Lazy-loaded Firebase Storage
+ *
+ * Only imports firebase/storage and initializes when first accessed.
+ * Reduces initial bundle parse/eval cost on page load.
  */
-if (process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_USE_EMULATOR === 'true') {
-  connectFunctionsEmulator(functions, '127.0.0.1', 5001);
-  connectStorageEmulator(storage, '127.0.0.1', 9199);
+let _storage = null;
+export function getStorageInstance() {
+  if (!_storage) {
+    const { getStorage } = require('firebase/storage');
+    _storage = getStorage(app);
+    if (process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_USE_EMULATOR === 'true') {
+      const { connectStorageEmulator } = require('firebase/storage');
+      connectStorageEmulator(_storage, '127.0.0.1', 9199);
+    }
+  }
+  return _storage;
+}
+
+/**
+ * Lazy-loaded Cloud Functions
+ *
+ * Only imports firebase/functions and initializes when first accessed.
+ * Reduces initial bundle parse/eval cost on page load.
+ */
+let _functions = null;
+export function getFunctionsInstance() {
+  if (!_functions) {
+    const { getFunctions } = require('firebase/functions');
+    _functions = getFunctions(app);
+    if (process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_USE_EMULATOR === 'true') {
+      const { connectFunctionsEmulator } = require('firebase/functions');
+      connectFunctionsEmulator(_functions, '127.0.0.1', 5001);
+    }
+  }
+  return _functions;
 }
 
 /**

@@ -20,7 +20,7 @@ import { registerSchema } from '@/core/validation/registerSchema';
 import { useRegister } from '@/presentation/hooks/auth/useRegister';
 import { useCategories } from '@/presentation/hooks/category/useCategories';
 import { useTrackEvent } from '@/presentation/hooks/analytics';
-import { auth, functions } from '@/core/config/firebase.config';
+import { auth, getFunctionsInstance } from '@/core/config/firebase.config';
 import { COMPANY_TYPE_TO_ROLE } from '@/core/constants/companyTypes';
 import { RegisterFormFields } from './RegisterFormFields';
 
@@ -140,7 +140,7 @@ export function RegisterForm() {
       // so the role is enforced before they access any protected route.
       if (role !== 'member') {
         try {
-          const setRoleClaim = httpsCallable(functions, 'setRoleClaimOnRegistration');
+          const setRoleClaim = httpsCallable(getFunctionsInstance(), 'setRoleClaimOnRegistration');
           await setRoleClaim({ role });
           // Force token refresh so the new claim is included in the next request
           if (auth.currentUser) {

@@ -13,7 +13,7 @@ import { useState } from 'react';
 import { httpsCallable } from 'firebase/functions';
 import toast from 'react-hot-toast';
 import { Bell, Smartphone, Mail, Send, CalendarClock } from 'lucide-react';
-import { functions } from '@/core/config/firebase.config';
+import { getFunctionsInstance } from '@/core/config/firebase.config';
 
 const AUDIENCE_OPTIONS = [
   { value: 'all', label: 'All Users' },
@@ -64,7 +64,7 @@ export default function AnnouncementForm({ onSent }) {
 
     setLoading(true);
     try {
-      const sendAnnouncement = httpsCallable(functions, 'sendAnnouncement');
+      const sendAnnouncement = httpsCallable(getFunctionsInstance(), 'sendAnnouncement');
 
       const payload = {
         title: form.title.trim(),

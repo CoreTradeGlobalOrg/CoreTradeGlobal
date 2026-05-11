@@ -8,7 +8,7 @@
 
 import { useState } from 'react';
 import { httpsCallable } from 'firebase/functions';
-import { functions } from '@/core/config/firebase.config';
+import { getFunctionsInstance } from '@/core/config/firebase.config';
 
 export function useUnbanUser() {
   const [loading, setLoading] = useState(false);
@@ -19,7 +19,7 @@ export function useUnbanUser() {
     setError(null);
 
     try {
-      const unbanUserFn = httpsCallable(functions, 'unbanUser');
+      const unbanUserFn = httpsCallable(getFunctionsInstance(), 'unbanUser');
       const result = await unbanUserFn({ userId });
 
       if (!result.data.success) {

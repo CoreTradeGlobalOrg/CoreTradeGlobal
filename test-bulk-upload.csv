@@ -1,0 +1,8 @@
+Product Name,Category,Price,Currency,Quantity,Unit,Description,Image URLs
+Premium Turkish Olive Oil,Food & Beverage,24.99,USD,500,LTR,Cold-pressed extra virgin olive oil from Aegean region,https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=400
+Organic Cotton T-Shirt,Textile & Apparel,12.50,EUR,1000,PCE,100% organic cotton unisex t-shirt,https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400
+Steel Pipe DN100,Metals & Minerals,45.00,USD,200,PCE,Galvanized steel pipe 100mm diameter,
+Industrial LED Panel,Electronics & Electrical,89.90,TRY,300,PCE,60x60cm ceiling LED panel 48W daylight,https://images.unsplash.com/photo-1565814329452-e1432e31e5e0?w=400
+Hazelnut Butter,Food Processing,8.75,EUR,2000,KGM,Roasted hazelnut butter no additives,
+Invalid Product,,0,XXX,-5,,Missing required fields test,
+Marble Floor Tile,Building Materials,35.00,USD,5000,PCE,Premium Afyon white marble 60x60cm polished,https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400

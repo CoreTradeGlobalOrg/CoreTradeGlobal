@@ -68,14 +68,34 @@ function getCountryCodeFromLocation(location) {
 }
 
 /**
+ * Skeleton shimmer bar — used as placeholder while data loads.
+ */
+function Shimmer({ width = '100%', height = '14px', className = '' }) {
+  return (
+    <span
+      className={`inline-block rounded animate-pulse ${className}`}
+      style={{
+        width,
+        height,
+        background: 'linear-gradient(90deg, rgba(255,255,255,0.06) 25%, rgba(255,255,255,0.12) 50%, rgba(255,255,255,0.06) 75%)',
+        backgroundSize: '200% 100%',
+      }}
+    />
+  );
+}
+
+/**
  * @param {Object} props
  * @param {boolean} props.fetchData - Whether live data is being displayed
+ * @param {boolean} props.dataLoading - Whether data is currently being fetched
  * @param {Object|null} props.latestProduct
  * @param {Object|null} props.latestRequest
  * @param {Object|null} props.latestFair
  * @param {Object|null} props.latestSupplier
  */
-export function HeroDataCards({ fetchData, latestProduct, latestRequest, latestFair, latestSupplier }) {
+export function HeroDataCards({ fetchData, dataLoading, latestProduct, latestRequest, latestFair, latestSupplier }) {
+  // Show skeleton when fetchData is enabled but data hasn't arrived yet
+  const showSkeleton = fetchData && dataLoading;
   return (
     <>
       {/* Left Side Info Cards */}
@@ -83,54 +103,76 @@ export function HeroDataCards({ fetchData, latestProduct, latestRequest, latestF
         {/* Product Card */}
         <Link href={fetchData && latestProduct ? `/product/${latestProduct.id}` : '/products'} className="hero-info-card hero-product-card">
           <div className="card-icon">
-            {fetchData && latestProduct?.images?.[0] ? (
+            {showSkeleton ? (
+              <Shimmer width="48px" height="48px" className="rounded" />
+            ) : fetchData && latestProduct?.images?.[0] ? (
               <img src={latestProduct.images[0]} alt={latestProduct.name} className="w-12 h-12 object-cover rounded" />
             ) : '📦'}
           </div>
           <div className="card-content">
             <h3>{fetchData ? 'Latest Product' : 'Products'}</h3>
-            <p className="card-product-name">
-              {fetchData && latestProduct ? latestProduct.name : 'Browse Products'}
-            </p>
-            <p className="card-specs" style={gradientTextStyle}>
-              {fetchData && latestProduct ? (
-                latestProduct.price ? (
-                  <>
-                    {CURRENCY_SYMBOLS[latestProduct.currency] || latestProduct.currency || '$'} {latestProduct.price}
-                    {latestProduct.unit && ` / ${latestProduct.unit}`}
-                  </>
-                ) : 'Price on request'
-              ) : 'From verified suppliers'}
-            </p>
-            <p className="card-price">{fetchData ? 'See Details ▼' : 'Explore →'}</p>
+            {showSkeleton ? (
+              <>
+                <p className="card-product-name"><Shimmer width="80%" /></p>
+                <p className="card-specs"><Shimmer width="60%" /></p>
+                <p className="card-price"><Shimmer width="40%" /></p>
+              </>
+            ) : (
+              <>
+                <p className="card-product-name">
+                  {fetchData && latestProduct ? latestProduct.name : 'Browse Products'}
+                </p>
+                <p className="card-specs" style={gradientTextStyle}>
+                  {fetchData && latestProduct ? (
+                    latestProduct.price ? (
+                      <>
+                        {CURRENCY_SYMBOLS[latestProduct.currency] || latestProduct.currency || '$'} {latestProduct.price}
+                        {latestProduct.unit && ` / ${latestProduct.unit}`}
+                      </>
+                    ) : 'Price on request'
+                  ) : 'From verified suppliers'}
+                </p>
+                <p className="card-price">{fetchData ? 'See Details ▼' : 'Explore →'}</p>
+              </>
+            )}
           </div>
         </Link>
 
         {/* RFQ Card */}
         <Link href={fetchData && latestRequest ? `/request/${latestRequest.id}` : '/requests'} className="hero-info-card hero-rfq-card">
-          <div className="card-icon">📋</div>
+          <div className="card-icon">{showSkeleton ? <Shimmer width="32px" height="32px" className="rounded" /> : '📋'}</div>
           <div className="card-content">
             <h3>{fetchData ? 'Latest RFQ' : 'RFQs'}</h3>
-            <p className="card-product-name">
-              {fetchData && latestRequest ? (latestRequest.productName || latestRequest.title) : 'Active Requests'}
-            </p>
-            <p
-              className="card-specs"
-              style={{
-                ...gradientTextStyle,
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-              }}
-            >
-              {fetchData && latestRequest ? (
-                <>
-                  {latestRequest.targetCountry && <CountryFlag countryCode={latestRequest.targetCountry} size={14} />}
-                  <span>Qty: {latestRequest.quantity || '-'} {latestRequest.unit && `${latestRequest.unit}`}</span>
-                </>
-              ) : 'Find business opportunities'}
-            </p>
-            <p className="card-budget">{fetchData ? 'Check Details ▼' : 'View All →'}</p>
+            {showSkeleton ? (
+              <>
+                <p className="card-product-name"><Shimmer width="75%" /></p>
+                <p className="card-specs"><Shimmer width="55%" /></p>
+                <p className="card-budget"><Shimmer width="40%" /></p>
+              </>
+            ) : (
+              <>
+                <p className="card-product-name">
+                  {fetchData && latestRequest ? (latestRequest.productName || latestRequest.title) : 'Active Requests'}
+                </p>
+                <p
+                  className="card-specs"
+                  style={{
+                    ...gradientTextStyle,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                  }}
+                >
+                  {fetchData && latestRequest ? (
+                    <>
+                      {latestRequest.targetCountry && <CountryFlag countryCode={latestRequest.targetCountry} size={14} />}
+                      <span>Qty: {latestRequest.quantity || '-'} {latestRequest.unit && `${latestRequest.unit}`}</span>
+                    </>
+                  ) : 'Find business opportunities'}
+                </p>
+                <p className="card-budget">{fetchData ? 'Check Details ▼' : 'View All →'}</p>
+              </>
+            )}
           </div>
         </Link>
       </div>
@@ -140,7 +182,9 @@ export function HeroDataCards({ fetchData, latestProduct, latestRequest, latestF
         {/* Fair Card */}
         <Link href={fetchData && latestFair ? `/fair/${latestFair.id}` : '/fairs'} className="hero-info-card hero-fair-card">
           <div className={`card-icon overflow-hidden relative ${fetchData && latestFair && (latestFair.country || getCountryCodeFromLocation(latestFair.location)) ? 'has-flag' : ''}`}>
-            {fetchData && latestFair && (latestFair.country || getCountryCodeFromLocation(latestFair.location)) ? (
+            {showSkeleton ? (
+              <Shimmer width="40px" height="30px" className="rounded-sm" />
+            ) : fetchData && latestFair && (latestFair.country || getCountryCodeFromLocation(latestFair.location)) ? (
               <>
                 <img
                   src={`https://flagcdn.com/w160/${(latestFair.country || getCountryCodeFromLocation(latestFair.location)).toLowerCase()}.png`}
@@ -157,22 +201,33 @@ export function HeroDataCards({ fetchData, latestProduct, latestRequest, latestF
           </div>
           <div className="card-content">
             <h3>{fetchData ? 'Latest Fair' : 'Trade Fairs'}</h3>
-            <p className="card-product-name">
-              {fetchData && latestFair ? latestFair.name : 'Upcoming Events'}
-            </p>
-            <p className="card-specs" style={gradientTextStyle}>
-              {fetchData && latestFair
-                ? `${formatDate(latestFair.startDate)} • ${latestFair.location || ''}`
-                : 'Connect in person'}
-            </p>
-            <p className="card-price">{fetchData ? '' : 'See Schedule →'}</p>
+            {showSkeleton ? (
+              <>
+                <p className="card-product-name"><Shimmer width="70%" /></p>
+                <p className="card-specs"><Shimmer width="55%" /></p>
+              </>
+            ) : (
+              <>
+                <p className="card-product-name">
+                  {fetchData && latestFair ? latestFair.name : 'Upcoming Events'}
+                </p>
+                <p className="card-specs" style={gradientTextStyle}>
+                  {fetchData && latestFair
+                    ? `${formatDate(latestFair.startDate)} • ${latestFair.location || ''}`
+                    : 'Connect in person'}
+                </p>
+                <p className="card-price">{fetchData ? '' : 'See Schedule →'}</p>
+              </>
+            )}
           </div>
         </Link>
 
         {/* Supplier Card */}
         <Link href={fetchData && latestSupplier ? `/profile/${latestSupplier.id}` : '/companies'} className="hero-info-card hero-supplier-card">
           <div className="card-icon">
-            {fetchData && (latestSupplier?.companyLogo || latestSupplier?.photoURL) ? (
+            {showSkeleton ? (
+              <Shimmer width="100%" height="100%" className="rounded-lg" />
+            ) : fetchData && (latestSupplier?.companyLogo || latestSupplier?.photoURL) ? (
               <img
                 src={latestSupplier.companyLogo || latestSupplier.photoURL}
                 alt={latestSupplier.companyName}
@@ -183,17 +238,26 @@ export function HeroDataCards({ fetchData, latestProduct, latestRequest, latestF
           <div className="card-content" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
             <h3>{fetchData ? 'Latest Supplier' : 'Suppliers'}</h3>
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-              <p className="card-product-name" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                {fetchData && latestSupplier ? (
-                  <>
-                    <CountryFlag countryCode={latestSupplier.country} size={18} />
-                    <span>{latestSupplier.companyName}</span>
-                  </>
-                ) : 'Verified Companies'}
-              </p>
-              <p className="card-specs" style={gradientTextStyle}>
-                {fetchData && latestSupplier ? (latestSupplier.industry || '') : 'Worldwide network'}
-              </p>
+              {showSkeleton ? (
+                <>
+                  <p className="card-product-name"><Shimmer width="65%" /></p>
+                  <p className="card-specs"><Shimmer width="45%" /></p>
+                </>
+              ) : (
+                <>
+                  <p className="card-product-name" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    {fetchData && latestSupplier ? (
+                      <>
+                        <CountryFlag countryCode={latestSupplier.country} size={18} />
+                        <span>{latestSupplier.companyName}</span>
+                      </>
+                    ) : 'Verified Companies'}
+                  </p>
+                  <p className="card-specs" style={gradientTextStyle}>
+                    {fetchData && latestSupplier ? (latestSupplier.industry || '') : 'Worldwide network'}
+                  </p>
+                </>
+              )}
             </div>
             {!fetchData && <p className="card-budget">Browse →</p>}
           </div>

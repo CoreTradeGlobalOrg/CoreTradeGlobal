@@ -39,10 +39,12 @@ const TourHelpButton = dynamic(
 );
 
 export default function MainLayout({ children }) {
-  const { user, loading } = useAuth();
+  const { user, loading, profileLoading } = useAuth();
   const [showTourManual, setShowTourManual] = useState(false);
+  const [tourDismissed, setTourDismissed] = useState(false);
 
-  const showTourAuto = !loading && user && !user.onboardingTourCompleted;
+  // Wait for profile to load before auto-starting tour — basic user doesn't have onboardingTourCompleted
+  const showTourAuto = !loading && !profileLoading && user && !user.onboardingTourCompleted && !tourDismissed;
   const showTour = showTourAuto || showTourManual;
 
   return (
@@ -54,7 +56,10 @@ export default function MainLayout({ children }) {
       {showTour && (
         <OnboardingTour
           user={user}
-          onComplete={() => setShowTourManual(false)}
+          onComplete={() => {
+            setShowTourManual(false);
+            setTourDismissed(true);
+          }}
         />
       )}
 
