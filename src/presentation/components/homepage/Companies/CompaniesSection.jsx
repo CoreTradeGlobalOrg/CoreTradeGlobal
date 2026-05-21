@@ -209,8 +209,11 @@ export function CompaniesSection() {
       try {
         const firestoreDS = container.getFirestoreDataSource();
 
-        // Fetch ALL companies for Latest Companies section
-        const allUsers = await firestoreDS.query('users', { limit: 35 });
+        // Fetch latest companies, ordered by creation date (newest first)
+        const allUsers = await firestoreDS.query('users', {
+          orderBy: [['createdAt', 'desc']],
+          limit: 35,
+        });
 
         if (allUsers && allUsers.length > 0) {
           // Filter: must have company name and not suspended
