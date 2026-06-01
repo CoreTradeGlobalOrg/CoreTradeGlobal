@@ -401,8 +401,8 @@ export function CompaniesSection() {
       </div>
     </section>
 
-      {/* Mobile: Featured Companies Card Stack (shows after Latest Companies) - only render when visible */}
-      {isVisible && renderMobileCardStack()}
+      {/* Mobile: Featured Companies Card Stack (shows after Latest Companies) */}
+      {renderMobileCardStack()}
     </>
   );
 }

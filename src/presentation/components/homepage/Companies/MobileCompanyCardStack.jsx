@@ -124,12 +124,44 @@ const SwipeableCard = memo(({
           pointerEvents: 'none',
         }}
       >
-        <div className="mobile-stack-card">
-          {/* Simplified content for background cards */}
-          <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-[rgba(255,255,255,0.05)] border-2 border-[rgba(255,215,0,0.3)]" />
-          <div className="h-6 bg-[rgba(255,255,255,0.08)] rounded mx-auto w-3/4 mb-3" />
-          <div className="h-4 bg-[rgba(255,255,255,0.05)] rounded mx-auto w-full mb-2" />
-          <div className="h-4 bg-[rgba(255,255,255,0.05)] rounded mx-auto w-5/6" />
+        <div className="mobile-stack-card h-full">
+          {/* Company Logo */}
+          <div className="w-20 h-20 mx-auto mb-3 rounded-full bg-[rgba(255,255,255,0.05)] border-2 border-[rgba(255,215,0,0.4)] flex items-center justify-center overflow-hidden">
+            {hasImage ? (
+              <img
+                src={profileImage}
+                alt={company.companyName}
+                className="w-full h-full object-cover"
+                onError={() => setImgError(true)}
+                loading="lazy"
+              />
+            ) : (
+              <span className="text-xl font-extrabold text-[#FFD700]">
+                {getAbbreviation(company.companyName)}
+              </span>
+            )}
+          </div>
+
+          {/* Company Name + Flag below */}
+          <div className="text-center mb-2">
+            <h3 className="text-lg font-bold text-white mb-1">
+              {company.companyName}
+            </h3>
+            <div className="flex items-center justify-center gap-1.5 mb-1">
+              <CountryFlag countryCode={company.country} size={20} />
+              <span className="text-xs text-[#94a3b8]">{getCountryName(company.country)}</span>
+            </div>
+            {categoryName && (
+              <span className="text-xs text-[#FFD700] font-semibold uppercase tracking-wider">
+                {categoryName}
+              </span>
+            )}
+          </div>
+
+          {/* Description */}
+          <p className="text-xs text-[#94a3b8] text-center leading-relaxed mb-3 px-2 line-clamp-3">
+            {truncateText(company.about, 120) || `${company.companyName} - Verified supplier from ${getCountryName(company.country)}`}
+          </p>
         </div>
       </motion.div>
     );
@@ -152,7 +184,7 @@ const SwipeableCard = memo(({
     >
       <div className="mobile-stack-card h-full">
         {/* Company Logo */}
-        <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-[rgba(255,255,255,0.05)] border-2 border-[rgba(255,215,0,0.4)] flex items-center justify-center overflow-hidden">
+        <div className="w-20 h-20 mx-auto mb-3 rounded-full bg-[rgba(255,255,255,0.05)] border-2 border-[rgba(255,215,0,0.4)] flex items-center justify-center overflow-hidden">
           {hasImage ? (
             <img
               src={profileImage}
@@ -162,18 +194,21 @@ const SwipeableCard = memo(({
               loading="lazy"
             />
           ) : (
-            <span className="text-2xl font-extrabold text-[#FFD700]">
+            <span className="text-xl font-extrabold text-[#FFD700]">
               {getAbbreviation(company.companyName)}
             </span>
           )}
         </div>
 
-        {/* Company Name + Flag */}
-        <div className="text-center mb-3">
-          <h3 className="text-xl font-bold text-white mb-1 flex items-center justify-center gap-2">
+        {/* Company Name + Flag below */}
+        <div className="text-center mb-2">
+          <h3 className="text-lg font-bold text-white mb-1">
             {company.companyName}
-            <CountryFlag countryCode={company.country} size={18} />
           </h3>
+          <div className="flex items-center justify-center gap-1.5 mb-1">
+            <CountryFlag countryCode={company.country} size={20} />
+            <span className="text-xs text-[#94a3b8]">{getCountryName(company.country)}</span>
+          </div>
           {categoryName && (
             <span className="text-xs text-[#FFD700] font-semibold uppercase tracking-wider">
               {categoryName}
@@ -182,8 +217,8 @@ const SwipeableCard = memo(({
         </div>
 
         {/* Description */}
-        <p className="text-sm text-[#94a3b8] text-center leading-relaxed mb-5 px-2 min-h-[60px]">
-          {truncateText(company.about, 150) || `${company.companyName} - Verified supplier from ${getCountryName(company.country)}`}
+        <p className="text-xs text-[#94a3b8] text-center leading-relaxed mb-3 px-2 line-clamp-3">
+          {truncateText(company.about, 120) || `${company.companyName} - Verified supplier from ${getCountryName(company.country)}`}
         </p>
 
         {/* Verified Badge */}
@@ -256,7 +291,7 @@ export function MobileCompanyCardStack({ companies: initialCompanies, categories
       </div>
 
       {/* Card Stack */}
-      <div className="relative w-full h-[420px] mb-6">
+      <div className="relative w-full h-[450px] mb-6">
         <AnimatePresence mode="popLayout">
           {visibleCompanies.map((company, index) => (
             <SwipeableCard
