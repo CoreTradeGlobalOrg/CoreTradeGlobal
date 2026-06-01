@@ -243,7 +243,7 @@ export function NotificationCenterPage() {
   const displayedNotifications = filteredNotifications();
 
   return (
-    <div className="min-h-screen pt-[var(--navbar-height)] pb-20 px-6 bg-radial-navy">
+    <div className="min-h-screen pt-[calc(var(--navbar-height)+24px)] pb-20 px-6 bg-radial-navy">
       <div className="max-w-3xl mx-auto">
         {/* Page title */}
         <div className="mt-8 mb-10 text-center">

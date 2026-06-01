@@ -27,7 +27,7 @@ export default function CookiePolicyPage() {
   };
 
   return (
-    <div className="min-h-screen pt-[var(--navbar-height)] pb-20 bg-radial-navy">
+    <div className="min-h-screen pt-[calc(var(--navbar-height)+24px)] pb-20 bg-radial-navy">
       <div className="max-w-4xl mx-auto px-4">
         {/* Back/Close Button */}
         <button

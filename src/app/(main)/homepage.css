@@ -2256,7 +2256,7 @@ html {
 
 /* --- 13. FAQ (SIKÇA SORULAN SORULAR) --- */
 .faq-section {
-    padding: 100px 20px;
+    padding: 0 20px 100px;
     background: transparent;
     position: relative;
     z-index: 10;

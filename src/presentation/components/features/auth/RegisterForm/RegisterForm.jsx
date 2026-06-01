@@ -173,7 +173,7 @@ export function RegisterForm() {
 
         <div className="text-center mb-6">
           <h1 className="text-[28px] font-bold text-white mb-2">Create Account</h1>
-          <p className="text-sm text-[#A0A0A0]">CoreTradeGlobal is an end-to-end B2B trade ecosystem that brings exporters, importers, logistics, insurance companies and businesses involved in international trade together on a single platform</p>
+          <p className="text-sm text-[#A0A0A0]">Join an end-to-end trade ecosystem designed to grow your business.</p>
         </div>
 
         <RegisterFormFields

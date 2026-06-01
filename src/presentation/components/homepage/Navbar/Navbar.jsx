@@ -91,7 +91,7 @@ const getNavGroups = (user) => [
     label: 'About',
     items: [
       { label: 'About Us', href: '/about-us' },
-      { label: 'Pricing', href: '/pricing' },
+      // { label: 'Pricing', href: '/pricing' },
       { label: 'FAQ', href: '/faq' },
       { label: 'Contact', href: '/contact' },
     ],

@@ -106,7 +106,7 @@ export function QuoteDetailView({ request, providerType, onBack, existingQuote }
   };
 
   return (
-    <main className="min-h-screen bg-radial-navy pt-[var(--navbar-height)] pb-16">
+    <main className="min-h-screen bg-radial-navy pt-[calc(var(--navbar-height)+24px)] pb-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
 
         {/* Page Header */}

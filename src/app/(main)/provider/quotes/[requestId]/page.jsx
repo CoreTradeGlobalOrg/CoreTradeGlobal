@@ -24,7 +24,7 @@ import { ROLES } from '@/core/constants/roles';
  */
 function DetailSkeleton() {
   return (
-    <main className="min-h-screen bg-radial-navy pt-[var(--navbar-height)] pb-16">
+    <main className="min-h-screen bg-radial-navy pt-[calc(var(--navbar-height)+24px)] pb-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
         {/* Back nav skeleton */}
         <div className="h-5 w-40 bg-[rgba(255,255,255,0.07)] rounded animate-pulse" />
@@ -43,7 +43,7 @@ function DetailSkeleton() {
  */
 function RequestNotFound({ onBack }) {
   return (
-    <main className="min-h-screen bg-radial-navy pt-[var(--navbar-height)] pb-16">
+    <main className="min-h-screen bg-radial-navy pt-[calc(var(--navbar-height)+24px)] pb-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col items-center justify-center py-24 text-center">
           <p className="text-white text-lg font-medium mb-2">Quote request not found</p>

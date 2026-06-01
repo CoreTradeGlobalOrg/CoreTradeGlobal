@@ -58,7 +58,7 @@ function getTabs(providerType) {
  */
 function DashboardSkeleton() {
   return (
-    <main className="min-h-screen bg-radial-navy pt-[var(--navbar-height)] pb-16">
+    <main className="min-h-screen bg-radial-navy pt-[calc(var(--navbar-height)+24px)] pb-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
         {/* Header skeleton */}
         <div className="flex items-center justify-between">
@@ -131,7 +131,7 @@ function ProviderDashboardContent() {
   const tabs = getTabs(providerType);
 
   return (
-    <main className="min-h-screen bg-radial-navy pt-[var(--navbar-height)] pb-16">
+    <main className="min-h-screen bg-radial-navy pt-[calc(var(--navbar-height)+24px)] pb-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
 
         {/* Page Header */}

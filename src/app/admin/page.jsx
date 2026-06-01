@@ -222,7 +222,7 @@ function AdminPageContent() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0F1B2B] px-4 py-6 pt-[var(--navbar-height)] md:px-8 md:py-8 md:pt-[var(--navbar-height)]">
+    <div className="min-h-screen bg-[#0F1B2B] px-4 py-6 pt-[calc(var(--navbar-height)+24px)] md:px-8 md:py-8 md:pt-[calc(var(--navbar-height)+24px)]">
       {/* Page Header */}
       <div className="mb-6 md:mb-8">
         <h2 className="text-2xl md:text-3xl font-bold text-white mb-2">Admin Dashboard</h2>

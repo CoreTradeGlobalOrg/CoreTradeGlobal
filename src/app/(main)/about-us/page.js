@@ -56,9 +56,9 @@ const OFFERINGS = [
 
 export default function AboutUsPage() {
     return (
-        <main className="pt-[var(--navbar-height)] pb-20 bg-radial-navy">
+        <main className="pt-[calc(var(--navbar-height)+24px)] pb-20 bg-radial-navy">
             {/* Hero Section */}
-            <section className="relative w-full flex flex-col justify-center items-center text-center px-5 py-20 overflow-hidden">
+            <section className="relative w-full flex flex-col justify-center items-center text-center px-5 pb-20 overflow-hidden">
                 <h1
                     className="text-5xl md:text-[64px] font-extrabold leading-[1.1] tracking-[-2px] max-w-[900px] mb-5 text-white"
                 >

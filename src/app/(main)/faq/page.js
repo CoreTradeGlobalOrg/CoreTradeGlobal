@@ -9,7 +9,7 @@ import { FAQSection } from '@/presentation/components/homepage/FAQ/FAQSection';
 
 export default function FAQPage() {
   return (
-    <main className="min-h-screen pt-[var(--navbar-height)] bg-radial-navy">
+    <main className="min-h-screen pt-[calc(var(--navbar-height)+24px)] bg-radial-navy">
       <FAQSection />
     </main>
   );

@@ -28,7 +28,7 @@ import { ShieldOff, FileQuestion } from 'lucide-react';
 
 function ContractSkeleton() {
   return (
-    <div className="min-h-screen bg-[#0F1C2E] pt-[var(--navbar-height)] p-4 sm:p-6 animate-pulse">
+    <div className="min-h-screen bg-[#0F1C2E] pt-[calc(var(--navbar-height)+24px)] p-4 sm:p-6 animate-pulse">
       <div className="max-w-6xl mx-auto space-y-4">
         <div className="h-20 bg-[#1A283B] rounded-xl" />
         <div className="h-14 bg-[#1A283B] rounded-xl" />

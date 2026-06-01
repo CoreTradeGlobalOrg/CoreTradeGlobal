@@ -94,7 +94,7 @@ export default function RequestDetailsPage() {
   // Loading State
   if (loading) {
     return (
-      <div className="min-h-screen pt-[var(--navbar-height)] pb-20 px-6 bg-radial-navy flex items-center justify-center">
+      <div className="min-h-screen pt-[calc(var(--navbar-height)+24px)] pb-20 px-6 bg-radial-navy flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FFD700] mx-auto"></div>
           <p className="mt-4 text-[#A0A0A0]">Loading request details...</p>
@@ -164,7 +164,7 @@ export default function RequestDetailsPage() {
   };
 
   return (
-    <main className="pt-[var(--navbar-height)] px-6 bg-radial-navy min-h-screen">
+    <main className="pt-[calc(var(--navbar-height)+24px)] px-6 bg-radial-navy min-h-screen">
       <div className="max-w-4xl mx-auto pb-8">
         {/* Back Button */}
         <button
