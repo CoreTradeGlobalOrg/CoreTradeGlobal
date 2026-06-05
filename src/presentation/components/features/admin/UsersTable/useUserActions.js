@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 import { httpsCallable } from 'firebase/functions';
 import { getFunctionsInstance } from '@/core/config/firebase.config';
 import { container } from '@/core/di/container';
-import { ROLES } from '@/core/constants/roles';
+import { ROLES, ROLE_DISPLAY_NAMES } from '@/core/constants/roles';
 import { useApproveUser } from '@/presentation/hooks/admin/useApproveUser';
 import { useSuspendUser } from '@/presentation/hooks/admin/useSuspendUser';
 import { useDeleteUser } from '@/presentation/hooks/admin/useDeleteUser';
@@ -18,6 +18,7 @@ import { useUnbanUser } from '@/presentation/hooks/admin/useUnbanUser';
 export function useUserActions({ onRefresh }) {
   const [actionLoading, setActionLoading] = useState(null);
   const [banReasonInput, setBanReasonInput] = useState('Violation of terms of service');
+  const [selectedRole, setSelectedRole] = useState('');
   const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, type: null, user: null });
 
   const { approveUser } = useApproveUser();
@@ -29,6 +30,7 @@ export function useUserActions({ onRefresh }) {
   const openDialog = (type, user) => {
     setConfirmDialog({ isOpen: true, type, user });
     if (type === 'ban') setBanReasonInput('Violation of terms of service');
+    if (type === 'changeRole') setSelectedRole(user.role || ROLES.MEMBER);
   };
 
   const closeDialog = () => setConfirmDialog({ isOpen: false, type: null, user: null });
@@ -81,10 +83,17 @@ export function useUserActions({ onRefresh }) {
       'Failed to reset 2FA'
     );
 
+  const handleChangeRole = (user) =>
+    run(user.id,
+      async () => { const fn = httpsCallable(getFunctionsInstance(), 'setUserRole'); await fn({ userId: user.id, role: selectedRole }); },
+      `${user.displayName}'s role changed to ${ROLE_DISPLAY_NAMES[selectedRole] || selectedRole}`,
+      'Failed to change role'
+    );
+
   const handleConfirmAction = async () => {
     const { type, user } = confirmDialog;
     if (!user) return;
-    const map = { delete: handleDelete, ban: handleBan, unban: handleUnban, suspend: handleSuspend, approve: handleApprove, admin: handleToggleAdmin, reset2fa: handleReset2FA };
+    const map = { delete: handleDelete, ban: handleBan, unban: handleUnban, suspend: handleSuspend, approve: handleApprove, admin: handleToggleAdmin, reset2fa: handleReset2FA, changeRole: handleChangeRole };
     await map[type]?.(user);
   };
 
@@ -103,11 +112,12 @@ export function useUserActions({ onRefresh }) {
       approve: { title: 'Approve User', message: `Are you sure you want to approve ${user.displayName}?`, confirmText: 'Approve', variant: 'success' },
       admin: { title: user.role === 'admin' ? 'Remove Admin Rights' : 'Grant Admin Rights', message: user.role === 'admin' ? `Are you sure you want to remove admin rights from ${user.displayName}?` : `Are you sure you want to grant admin rights to ${user.displayName}?`, confirmText: user.role === 'admin' ? 'Remove Admin' : 'Make Admin', variant: user.role === 'admin' ? 'warning' : 'success' },
       reset2fa: { title: 'Reset Two-Factor Authentication', message: `Are you sure you want to reset 2FA for ${user.displayName}? They will be able to log in without an authenticator code and can re-enroll from Settings.`, confirmText: 'Reset 2FA', variant: 'warning' },
+      changeRole: { title: 'Change User Role', message: `Change role for ${user.displayName}:`, confirmText: 'Change Role', variant: 'warning', showRoleSelect: true },
     }[type] || {};
   };
 
   return {
-    actionLoading, banReasonInput, setBanReasonInput, confirmDialog,
+    actionLoading, banReasonInput, setBanReasonInput, selectedRole, setSelectedRole, confirmDialog,
     openDialog, closeDialog, handleConfirmAction, handleDirectAction, getDialogConfig,
   };
 }

@@ -229,6 +229,7 @@ export function UsersTab({ users = [], onAction, onOpenDialog, actionLoading }) 
                         <>
                           {!user.isSuspended && user.adminApproved && <option value="feature">{user.featured ? 'Unfeature User' : 'Feature User'}</option>}
                           {!user.isSuspended && user.adminApproved && <option value="admin">{user.role === 'admin' ? 'Remove Admin' : 'Make Admin'}</option>}
+                          {!user.isSuspended && <option value="changeRole">Change Role</option>}
                           {!user.adminApproved && !user.isSuspended && <option value="approve">Approve User</option>}
                           <option value="suspend">{user.isSuspended ? 'Unsuspend User' : 'Suspend User'}</option>
                           <option value="reset2fa">Reset 2FA</option>
@@ -323,6 +324,7 @@ export function UsersTab({ users = [], onAction, onOpenDialog, actionLoading }) 
                           <>
                             {!user.isSuspended && user.adminApproved && <button type="button" onClick={() => { closeMobileDropdown(); onAction('feature', user); }} className="w-full px-4 py-3 text-left text-base text-white hover:bg-[#243444] flex items-center gap-3"><Star className="w-5 h-5" /> {user.featured ? 'Unfeature User' : 'Feature User'}</button>}
                             {!user.isSuspended && user.adminApproved && <button type="button" onClick={() => { closeMobileDropdown(); onOpenDialog('admin', user); }} className="w-full px-4 py-3 text-left text-base text-purple-400 hover:bg-[#243444] flex items-center gap-3"><Shield className="w-5 h-5" /> {user.role === 'admin' ? 'Remove Admin' : 'Make Admin'}</button>}
+                            {!user.isSuspended && <button type="button" onClick={() => { closeMobileDropdown(); onOpenDialog('changeRole', user); }} className="w-full px-4 py-3 text-left text-base text-cyan-400 hover:bg-[#243444] flex items-center gap-3"><Shield className="w-5 h-5" /> Change Role</button>}
                             {!user.adminApproved && !user.isSuspended && <button type="button" onClick={() => { closeMobileDropdown(); onOpenDialog('approve', user); }} className="w-full px-4 py-3 text-left text-base text-green-400 hover:bg-[#243444] flex items-center gap-3"><Check className="w-5 h-5" /> Approve User</button>}
                             <button type="button" onClick={() => { closeMobileDropdown(); onOpenDialog('suspend', user); }} className="w-full px-4 py-3 text-left text-base text-yellow-400 hover:bg-[#243444] flex items-center gap-3"><Ban className="w-5 h-5" /> {user.isSuspended ? 'Unsuspend User' : 'Suspend User'}</button>
                             <button type="button" onClick={() => { closeMobileDropdown(); onOpenDialog('reset2fa', user); }} className="w-full px-4 py-3 text-left text-base text-blue-400 hover:bg-[#243444] flex items-center gap-3"><ShieldOff className="w-5 h-5" /> Reset 2FA</button>
