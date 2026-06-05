@@ -236,7 +236,7 @@ export function OnboardingTour({ user, onComplete }) {
   const screen = TOUR_SEQUENCE[currentIndex];
   const isModal = screen?.type === 'intro' || screen?.type === 'transition';
 
-  /** Find target element for anchor-sell / anchor-buy placements */
+  /** Measure target element position */
   const updateRect = useCallback(() => {
     if (!screen || isModal) {
       setTargetRect(null);
@@ -265,13 +265,33 @@ export function OnboardingTour({ user, onComplete }) {
     setTargetRect(null);
   }, [screen, isModal]);
 
+  /** On step change: scroll to target element, then measure */
   useEffect(() => {
+    if (!screen || isModal) {
+      setTargetRect(null);
+      return;
+    }
+
+    let selector = null;
+    if (screen.placement === 'anchor-sell') selector = '.hero-cta-btn-sell';
+    else if (screen.placement === 'anchor-buy') selector = '.hero-cta-btn-buy';
+
+    if (selector) {
+      const el = document.querySelector(selector);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Measure after scroll settles
+        const timer = setTimeout(() => updateRect(), 400);
+        return () => clearTimeout(timer);
+      }
+    }
+
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
     rafRef.current = requestAnimationFrame(() => updateRect());
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, [updateRect, currentIndex]);
+  }, [currentIndex]);
 
   useEffect(() => {
     const handleUpdate = () => updateRect();
