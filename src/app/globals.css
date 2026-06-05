@@ -133,6 +133,10 @@ a {
   transition: color 0.2s;
 }
 
+a.cta-black-text {
+  color: #000000 !important;
+}
+
 a:hover {
   color: var(--color-primary-dark);
 }

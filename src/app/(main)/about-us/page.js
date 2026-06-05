@@ -160,13 +160,13 @@ export default function AboutUsPage() {
                 <div className="w-full max-w-[600px] text-center">
                     <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">Ready to Grow Your Business?</h2>
                     <p className="text-[#A0A0A0] mb-8">Join thousands of businesses already trading on CoreTradeGlobal.</p>
-                    <Link
+                    <a
                         href="/register"
-                        className="inline-block px-10 py-4 bg-gradient-to-r from-[#FFD700] to-[#FDB931] font-bold text-lg rounded-full shadow-[0_0_20px_rgba(255,215,0,0.3)] hover:shadow-[0_0_30px_rgba(255,215,0,0.5)] hover:-translate-y-1 transition-all duration-300"
-                        style={{ color: '#000000' }}
+                        style={{ color: '#000', WebkitTextFillColor: '#000' }}
+                        className="inline-block px-10 py-4 bg-gradient-to-r from-[#FFD700] to-[#FDB931] font-bold text-lg rounded-full shadow-[0_0_20px_rgba(255,215,0,0.3)] hover:shadow-[0_0_30px_rgba(255,215,0,0.5)] hover:-translate-y-1 transition-all duration-300 no-underline"
                     >
                         Sign Up for Free
-                    </Link>
+                    </a>
                 </div>
             </section>
         </main>
