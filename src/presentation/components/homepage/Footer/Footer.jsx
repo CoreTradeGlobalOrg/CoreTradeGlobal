@@ -128,7 +128,7 @@ export function Footer() {
 
         {/* Footer Bottom */}
         <div className="footer-bottom">
-          <span>© 2025-2026 CoreTradeGlobal Inc. All rights reserved.</span>
+          <span>© 2026 CoreTradeGlobal Inc. All rights reserved.</span>
           <div className="footer-legal">
             <Link href="/privacy-policy">Privacy Policy</Link>
             <Link href="/terms">Terms of Service</Link>
