@@ -1,8 +1,10 @@
 /**
  * RegisterForm Component
  *
- * Registration form orchestrator. Owns form state (react-hook-form + zodResolver),
- * reCAPTCHA, logo upload, and submit flow. Delegates field rendering to RegisterFormFields.
+ * 3-step registration form orchestrator.
+ * Step 1: Email + Privacy consent
+ * Step 2: Personal Information
+ * Step 3: Company Information + Password + reCAPTCHA + Submit
  */
 
 'use client';
@@ -36,6 +38,19 @@ if (isTestKey && isProduction) {
   );
 }
 
+// Fields to validate per step
+const STEP_FIELDS = {
+  1: ['email', 'acceptPolicies'],
+  2: ['firstName', 'lastName', 'phone', 'position'],
+  3: ['companyType', 'companyName', 'companyCategory', 'country', 'password', 'confirmPassword'],
+};
+
+const STEP_TITLES = {
+  1: 'Join CoreTradeGlobal',
+  2: 'Personal Information',
+  3: 'Company Information',
+};
+
 export function RegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -43,6 +58,7 @@ export function RegisterForm() {
   const { register: registerUser, loading } = useRegister();
   const { categories, loading: categoriesLoading } = useCategories();
   const { trackSignUp, track } = useTrackEvent();
+  const [step, setStep] = useState(1);
 
   useEffect(() => {
     track('begin_registration');
@@ -65,6 +81,7 @@ export function RegisterForm() {
     formState: { errors },
     setValue,
     watch,
+    trigger,
   } = useForm({
     resolver: zodResolver(registerSchema),
     mode: 'onSubmit',
@@ -85,22 +102,16 @@ export function RegisterForm() {
     },
   });
 
-  const handleLogoChange = (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (!file.type.startsWith('image/')) {
-        toast.error('Please select an image file');
-        return;
-      }
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error('Image size must be less than 5MB');
-        return;
-      }
-      setLogoFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => setLogoPreview(reader.result);
-      reader.readAsDataURL(file);
+  const handleNext = async () => {
+    const fields = STEP_FIELDS[step];
+    const valid = await trigger(fields);
+    if (valid) {
+      setStep((s) => s + 1);
     }
+  };
+
+  const handleBack = () => {
+    setStep((s) => s - 1);
   };
 
   const onSubmit = async (data) => {
@@ -111,8 +122,6 @@ export function RegisterForm() {
 
     try {
       const displayName = `${data.firstName} ${data.lastName}`.trim();
-
-      // Derive platform role from company type selection
       const role = COMPANY_TYPE_TO_ROLE[data.companyType] || 'member';
 
       const registerData = {
@@ -136,18 +145,14 @@ export function RegisterForm() {
       await registerUser(registerData);
       trackSignUp('email');
 
-      // For provider self-registration, set custom claims via Cloud Function
-      // so the role is enforced before they access any protected route.
       if (role !== 'member') {
         try {
           const setRoleClaim = httpsCallable(getFunctionsInstance(), 'setRoleClaimOnRegistration');
           await setRoleClaim({ role });
-          // Force token refresh so the new claim is included in the next request
           if (auth.currentUser) {
             await auth.currentUser.getIdToken(true);
           }
         } catch (claimErr) {
-          // Non-blocking: user is created, admin can set claims manually
           console.error('setRoleClaimOnRegistration failed (non-critical):', claimErr);
         }
       }
@@ -170,15 +175,44 @@ export function RegisterForm() {
   };
 
   return (
-    <div className="w-full max-w-[1000px] mx-auto">
+    <div className="w-full max-w-[500px] mx-auto">
       <form onSubmit={handleSubmit(onSubmit)} className="register-card w-full p-6 space-y-5">
 
-        <div className="text-center mb-6">
-          <h1 className="text-[28px] font-bold text-white mb-2">Create Account</h1>
-          <p className="text-sm text-[#A0A0A0]">Join an end-to-end trade ecosystem designed to grow your business.</p>
+        {/* Step Indicator */}
+        <div className="flex items-center justify-center gap-2 mb-2">
+          {[1, 2, 3].map((s) => (
+            <div key={s} className="flex items-center gap-2">
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
+                  s === step
+                    ? 'bg-[#FFD700] text-[#0F1B2B]'
+                    : s < step
+                    ? 'bg-[#FFD700]/20 text-[#FFD700] border border-[#FFD700]/40'
+                    : 'bg-[rgba(255,255,255,0.05)] text-[#A0A0A0] border border-[rgba(255,255,255,0.1)]'
+                }`}
+              >
+                {s < step ? '✓' : s}
+              </div>
+              {s < 3 && (
+                <div className={`w-8 h-0.5 ${s < step ? 'bg-[#FFD700]/40' : 'bg-[rgba(255,255,255,0.1)]'}`} />
+              )}
+            </div>
+          ))}
         </div>
 
+        {/* Title */}
+        <div className="text-center mb-4">
+          <h1 className="text-[24px] font-bold text-white mb-1">{STEP_TITLES[step]}</h1>
+          <p className="text-sm text-[#A0A0A0]">
+            {step === 1 && 'Join an end-to-end trade ecosystem designed to grow your business.'}
+            {step === 2 && 'Tell us about yourself.'}
+            {step === 3 && 'Tell us about your company and set your password.'}
+          </p>
+        </div>
+
+        {/* Step Content */}
         <RegisterFormFields
+          step={step}
           register={register}
           errors={errors}
           loading={loading}
@@ -188,53 +222,49 @@ export function RegisterForm() {
           categoriesLoading={categoriesLoading}
         />
 
-        {/* Terms & Conditions */}
-        <div className="space-y-3">
-          <label className="flex items-start gap-3 cursor-pointer group">
-            <input
-              type="checkbox"
-              {...register('acceptPolicies')}
-              disabled={loading}
-              className="w-5 h-5 mt-0.5 text-[#FFD700] bg-[rgba(255,255,255,0.05)] border-[rgba(255,255,255,0.2)] rounded focus:ring-2 focus:ring-[#FFD700] cursor-pointer flex-shrink-0"
+        {/* Step Actions */}
+        <div className="flex flex-col items-center gap-4 pt-2">
+          {/* reCAPTCHA — only on step 3 */}
+          {step === 3 && (
+            <ReCAPTCHA
+              ref={recaptchaRef}
+              sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY}
+              onChange={(value) => setRecaptchaValue(value)}
+              onExpired={() => setRecaptchaValue(null)}
+              theme="dark"
             />
-            <span className={`text-sm ${errors.acceptPolicies ? 'text-red-400' : 'text-[#A0A0A0]'}`}>
-              I accept the{' '}
-              <a href="/terms" target="_blank" rel="noopener noreferrer" className="font-medium text-[#FFD700] hover:underline" onClick={(e) => e.stopPropagation()}>
-                Terms of Service
-              </a>
-              ,{' '}
-              <a href="/privacy-policy" target="_blank" rel="noopener noreferrer" className="font-medium text-[#FFD700] hover:underline" onClick={(e) => e.stopPropagation()}>
-                Privacy Policy
-              </a>
-              , and{' '}
-              <a href="/product-listing-policy" target="_blank" rel="noopener noreferrer" className="font-medium text-[#FFD700] hover:underline" onClick={(e) => e.stopPropagation()}>
-                Product Listing Policy
-              </a>
-              {' '}<span className="text-red-400">*</span>
-            </span>
-          </label>
-          {errors.acceptPolicies && (
-            <p className="text-xs text-red-400 ml-8">{errors.acceptPolicies.message}</p>
           )}
-        </div>
 
-        {/* reCAPTCHA, Submit & Login Link */}
-        <div className="flex flex-col items-center gap-4 pt-4">
-          <ReCAPTCHA
-            ref={recaptchaRef}
-            sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY}
-            onChange={(value) => setRecaptchaValue(value)}
-            onExpired={() => setRecaptchaValue(null)}
-            theme="dark"
-          />
+          <div className="flex items-center gap-3 w-full">
+            {step > 1 && (
+              <button
+                type="button"
+                onClick={handleBack}
+                className="flex-1 py-3 border border-[rgba(255,255,255,0.15)] text-white font-medium rounded-full hover:bg-[rgba(255,255,255,0.05)] transition-all"
+              >
+                Back
+              </button>
+            )}
 
-          <button
-            type="submit"
-            disabled={loading || !recaptchaValue}
-            className="w-full max-w-[300px] py-4 bg-gradient-to-br from-[#FFD700] to-[#FDB931] text-[#0F1B2B] font-bold text-base rounded-full shadow-[0_4px_20px_rgba(255,215,0,0.2)] hover:-translate-y-0.5 hover:shadow-[0_6px_30px_rgba(255,215,0,0.4)] active:scale-[0.98] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? 'Creating Account...' : 'Create Account'}
-          </button>
+            {step < 3 ? (
+              <button
+                type="button"
+                onClick={handleNext}
+                disabled={loading}
+                className="flex-1 py-3 bg-gradient-to-br from-[#FFD700] to-[#FDB931] text-[#0F1B2B] font-bold rounded-full shadow-[0_4px_20px_rgba(255,215,0,0.2)] hover:-translate-y-0.5 hover:shadow-[0_6px_30px_rgba(255,215,0,0.4)] active:scale-[0.98] transition-all duration-200"
+              >
+                {step === 1 ? 'Get Started Free' : 'Continue'}
+              </button>
+            ) : (
+              <button
+                type="submit"
+                disabled={loading || !recaptchaValue}
+                className="flex-1 py-3 bg-gradient-to-br from-[#FFD700] to-[#FDB931] text-[#0F1B2B] font-bold rounded-full shadow-[0_4px_20px_rgba(255,215,0,0.2)] hover:-translate-y-0.5 hover:shadow-[0_6px_30px_rgba(255,215,0,0.4)] active:scale-[0.98] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? 'Creating Account...' : 'Create Account'}
+              </button>
+            )}
+          </div>
 
           <div className="text-sm">
             <span className="text-[#A0A0A0]">Already have an account? </span>
