@@ -222,7 +222,9 @@ export function AuthProvider({ children }) {
     authLoading,
     profileLoading,
     error,
-    isAuthenticated: !!user && user.emailVerified === true,
+    // TODO: Re-enable email verification check when verification flow is finalized
+    // isAuthenticated: !!user && user.emailVerified === true,
+    isAuthenticated: !!user,
     isEmailVerified: user?.emailVerified === true,
     refreshUser, // Expose refresh function
   };

@@ -36,13 +36,13 @@ export function LoginForm() {
   const redirectTo = searchParams.get('redirect');
 
   const handleLoginSuccess = async (user) => {
-    // Check if email is verified
-    const authRepo = container.getAuthRepository();
-    if (!authRepo.isEmailVerified()) {
-      toast.error('Please verify your email before logging in.');
-      router.push('/verify-email');
-      return;
-    }
+    // TODO: Re-enable email verification check when verification flow is finalized
+    // const authRepo = container.getAuthRepository();
+    // if (!authRepo.isEmailVerified()) {
+    //   toast.error('Please verify your email before logging in.');
+    //   router.push('/verify-email');
+    //   return;
+    // }
 
     // Fire session cookie POST without blocking navigation — middleware will
     // pick it up on the next request, and AuthContext handles client-side auth

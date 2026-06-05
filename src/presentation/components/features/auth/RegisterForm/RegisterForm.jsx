@@ -156,7 +156,9 @@ export function RegisterForm() {
         'Account created! Please check your email to verify your account.',
         { duration: 6000 }
       );
-      router.push('/verify-email');
+      // TODO: Re-enable redirect to /verify-email when verification flow is finalized
+      // router.push('/verify-email');
+      router.push('/');
     } catch (err) {
       console.error('Registration failed:', err);
       toast.error(err.message || 'Registration failed. Please try again.');
