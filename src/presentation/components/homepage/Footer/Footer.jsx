@@ -39,7 +39,7 @@ export function Footer() {
           {/* Brand Column */}
           <div className="footer-col brand-col">
             <img src="/icons/ctg-logo.png" alt="CoreTradeGlobal" className="nav-logo-img" />
-            <p>CoreTradeGlobal is the world&apos;s leading premium B2B marketplace matched with AI-driven connections.</p>
+            <p>CoreTradeGlobal is an end-to-end B2B trade ecosystem that brings exporters, importers, and businesses involved in international trade together on a single platform.</p>
             <div className="flex flex-col gap-2 mt-4 text-sm text-gray-400">
               <a href="mailto:info@coretradeglobal.com" className="hover:text-[#FFD700] transition-colors !flex items-center gap-2">
                 <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
