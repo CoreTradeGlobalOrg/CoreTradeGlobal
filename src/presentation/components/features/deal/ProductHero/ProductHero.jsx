@@ -4,13 +4,15 @@
  * Shows product context at the top of the deal page.
  * Compact hero section with product image, name, and category badge.
  * Links to the product detail page.
+ * Falls back to fetching product image from Firestore if deal snapshot is stale.
  */
 
 'use client';
 
-import Image from 'next/image';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Package, ChevronRight, Download } from 'lucide-react';
+import { container } from '@/core/di/container';
 
 /**
  * ProductHero
@@ -19,11 +21,36 @@ import { Package, ChevronRight, Download } from 'lucide-react';
  * @param {import('@/domain/entities/Deal').Deal} props.deal
  */
 export function ProductHero({ deal }) {
-  if (!deal) return null;
+  const [resolvedImage, setResolvedImage] = useState(deal?.productImage || null);
+  const [imgError, setImgError] = useState(false);
 
-  const { productId, productName, productImage, productCategory } = deal;
+  const { productId, productName, productCategory } = deal || {};
   const shortDealId = deal?.id ? deal.id.slice(0, 8).toUpperCase() : null;
   const pdfUrl = deal?.productPdfUrl || deal?.product?.pdfUrl || null;
+
+  // If deal has no productImage or it fails to load, fetch from product doc
+  useEffect(() => {
+    if (!productId) return;
+    if (resolvedImage && !imgError) return;
+
+    const fetchProductImage = async () => {
+      try {
+        const firestoreDS = container.getFirestoreDataSource();
+        const product = await firestoreDS.getById('products', productId);
+        if (product?.images?.[0]) {
+          setResolvedImage(product.images[0]);
+          setImgError(false);
+        }
+      } catch (err) {
+        // silently fail — Package icon will show
+      }
+    };
+    fetchProductImage();
+  }, [productId, resolvedImage, imgError]);
+
+  if (!deal) return null;
+
+  const showImage = resolvedImage && !imgError;
 
   return (
     <div className="bg-[#1A283B] border border-[#2A3B52] rounded-xl p-4 flex items-center gap-4">
@@ -32,11 +59,12 @@ export function ProductHero({ deal }) {
         href={`/product/${productId}`}
         className="flex-shrink-0 block w-16 h-16 rounded-lg overflow-hidden bg-[#0F1C2E] border border-[#2A3B52] hover:border-[#FFD700]/40 transition-colors"
       >
-        {productImage ? (
+        {showImage ? (
           <img
-            src={productImage}
+            src={resolvedImage}
             alt={productName || 'Product'}
             className="w-full h-full object-cover"
+            onError={() => setImgError(true)}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
