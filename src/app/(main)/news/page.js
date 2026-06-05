@@ -21,17 +21,14 @@ export default function NewsPage() {
         // Real-time subscription to news
         const unsubscribe = firestoreDS.subscribeToQuery(
             'news',
-            { limit: 50 },
+            {
+                where: [['status', '==', 'published']],
+                orderBy: [['publishedAt', 'desc']],
+                limit: 100,
+            },
             (allNews) => {
                 if (allNews && allNews.length > 0) {
-                    // Filter published news and sort by publishedAt
-                    const published = allNews.filter(n => n.status === 'published');
-                    const sorted = published.sort((a, b) => {
-                        const dateA = a.publishedAt?.toDate ? a.publishedAt.toDate() : new Date(a.publishedAt || 0);
-                        const dateB = b.publishedAt?.toDate ? b.publishedAt.toDate() : new Date(b.publishedAt || 0);
-                        return dateB - dateA;
-                    });
-                    setNews(sorted);
+                    setNews(allNews);
                 }
                 setLoading(false);
             },
