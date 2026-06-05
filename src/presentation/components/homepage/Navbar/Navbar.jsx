@@ -56,7 +56,7 @@ const getNavGroups = (user) => [
     label: 'Marketplace',
     items: [
       { label: 'Products', href: '/products' },
-      { label: 'RFQs', href: '/requests', roles: [ROLES.MEMBER, ROLES.ADMIN] },
+      { label: 'RFQs', href: '/requests' },
       { label: 'Categories', href: '/categories' },
     ],
   },
