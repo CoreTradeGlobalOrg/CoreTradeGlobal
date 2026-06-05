@@ -7,6 +7,9 @@ import { useState, useEffect, Suspense, useCallback } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 
 import { container } from '@/core/di/container';
+import { COUNTRIES } from '@/core/constants/countries';
+import { CountryFlag } from '@/presentation/components/common/CountryFlag/CountryFlag';
+import { X } from 'lucide-react';
 
 function ProductsContent() {
     const searchParams = useSearchParams();
@@ -16,8 +19,10 @@ function ProductsContent() {
     const initialCategory = searchParams.get('category') || '';
     const initialCategoryId = searchParams.get('categoryId') || '';
     const initialSearch = searchParams.get('search') || '';
+    const initialCountry = searchParams.get('country') || '';
 
     const [searchQuery, setSearchQuery] = useState(initialSearch);
+    const [countryFilter, setCountryFilter] = useState(initialCountry);
     const [displayName, setDisplayName] = useState(initialCategory || 'Selected Category');
 
     // Update URL when search changes
@@ -29,6 +34,21 @@ function ProductsContent() {
             params.set('search', value);
         } else {
             params.delete('search');
+        }
+
+        const newUrl = params.toString() ? `${pathname}?${params.toString()}` : pathname;
+        router.replace(newUrl, { scroll: false });
+    }, [searchParams, pathname, router]);
+
+    // Update URL when country changes
+    const handleCountryChange = useCallback((value) => {
+        setCountryFilter(value);
+
+        const params = new URLSearchParams(searchParams.toString());
+        if (value) {
+            params.set('country', value);
+        } else {
+            params.delete('country');
         }
 
         const newUrl = params.toString() ? `${pathname}?${params.toString()}` : pathname;
@@ -53,6 +73,7 @@ function ProductsContent() {
     // Update state if URL params change
     useEffect(() => {
         setSearchQuery(initialSearch);
+        setCountryFilter(initialCountry);
 
         if (initialCategory) {
             setDisplayName(initialCategory);
@@ -73,7 +94,7 @@ function ProductsContent() {
         } else {
             setDisplayName('Selected Category');
         }
-    }, [initialSearch, initialCategory, initialCategoryId]);
+    }, [initialSearch, initialCategory, initialCategoryId, initialCountry]);
 
     return (
         <>
@@ -95,17 +116,33 @@ function ProductsContent() {
                 {/* Category sidebar — hidden on mobile, visible on lg+ */}
                 <ProductCategorySidebar
                     activeCategoryId={initialCategoryId}
+                    activeCountry={countryFilter}
                     onCategorySelect={handleCategorySelect}
+                    onCountrySelect={handleCountryChange}
                 />
 
                 {/* Product grid — takes remaining space */}
                 <div className="flex-1 min-w-0">
-                    {(initialCategory || initialCategoryId) && (
-                        <div className="mb-6 flex items-center gap-2">
-                            <span className="text-[#A0A0A0]">Filtering by category:</span>
-                            <span className="bg-[#FFD700] text-[#0F1B2B] px-3 py-1 rounded-full text-sm font-bold capitalize">
-                                {displayName}
-                            </span>
+                    {((initialCategory || initialCategoryId) || countryFilter) && (
+                        <div className="mb-6 flex items-center gap-2 flex-wrap">
+                            {(initialCategory || initialCategoryId) && (
+                                <>
+                                    <span className="text-[#A0A0A0]">Category:</span>
+                                    <span className="bg-[#FFD700] text-[#0F1B2B] px-3 py-1 rounded-full text-sm font-bold capitalize">
+                                        {displayName}
+                                    </span>
+                                </>
+                            )}
+                            {countryFilter && (
+                                <>
+                                    <span className="text-[#A0A0A0]">{(initialCategory || initialCategoryId) ? '·' : ''} Country:</span>
+                                    <span className="bg-[rgba(255,255,255,0.1)] text-white px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1.5">
+                                        <CountryFlag countryCode={countryFilter} size={14} />
+                                        {COUNTRIES.find(c => c.value === countryFilter)?.label?.replace(/^[\u{1F1E0}-\u{1F1FF}]{2}\s*/u, '').trim() || countryFilter}
+                                        <button onClick={() => handleCountryChange('')} className="ml-1 hover:text-red-400 transition-colors"><X className="w-3.5 h-3.5" /></button>
+                                    </span>
+                                </>
+                            )}
                         </div>
                     )}
 
@@ -113,6 +150,7 @@ function ProductsContent() {
                         searchQuery={searchQuery}
                         categoryFilter={initialCategory}
                         categoryIdFilter={initialCategoryId}
+                        countryFilter={countryFilter}
                         sidebarVisible
                     />
                 </div>

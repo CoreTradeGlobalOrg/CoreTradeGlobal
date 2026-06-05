@@ -10,8 +10,9 @@ export class CreateProductUseCase {
    * Constructor
    * @param {ProductRepository} productRepository
    */
-  constructor(productRepository) {
+  constructor(productRepository, userRepository) {
     this.productRepository = productRepository;
+    this.userRepository = userRepository;
   }
 
   /**
@@ -52,7 +53,18 @@ export class CreateProductUseCase {
     this.validateImages(imageFiles);
 
     try {
-      // 2. Prepare product data (without image URLs yet)
+      // 2. Fetch owner's country to denormalize on product
+      let ownerCountry = null;
+      if (this.userRepository && userId) {
+        try {
+          const owner = await this.userRepository.getById(userId);
+          ownerCountry = owner?.country || null;
+        } catch {
+          // Non-blocking
+        }
+      }
+
+      // 3. Prepare product data (without image URLs yet)
       const newProductData = {
         userId,
         name,
@@ -65,6 +77,7 @@ export class CreateProductUseCase {
         description,
         images: [],
         status: 'active',
+        ...(ownerCountry && { country: ownerCountry }),
         ...(createdByAdmin && { createdByAdmin }),
         createdAt: new Date(),
         updatedAt: new Date(),

@@ -127,7 +127,7 @@ const DEFAULT_PRODUCTS = [
 
 const PAGE_SIZE = 12;
 
-export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter, sidebarVisible = false }) {
+export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter, countryFilter, sidebarVisible = false }) {
     const [products, setProducts] = useState(DEFAULT_PRODUCTS);
     const [filteredProducts, setFilteredProducts] = useState(DEFAULT_PRODUCTS);
     const [loading, setLoading] = useState(true);
@@ -146,6 +146,19 @@ export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter, sid
 
                 if (allProducts && allProducts.length > 0) {
                     const active = allProducts.filter(p => p.status === 'active');
+
+                    // Enrich products with owner's country if product has no country field
+                    const needsCountry = active.filter(p => !p.country && p.userId);
+                    if (needsCountry.length > 0) {
+                        const uniqueUserIds = [...new Set(needsCountry.map(p => p.userId))];
+                        const userDocs = await Promise.all(
+                            uniqueUserIds.map(uid => firestoreDS.getById('users', uid).catch(() => null))
+                        );
+                        const userCountryMap = {};
+                        userDocs.forEach(u => { if (u?.country) userCountryMap[u.id] = u.country; });
+                        active.forEach(p => { if (!p.country && userCountryMap[p.userId]) p.country = userCountryMap[p.userId]; });
+                    }
+
                     const sorted = active.sort((a, b) => {
                         const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
                         const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
@@ -169,7 +182,7 @@ export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter, sid
     // Reset display count when filters change
     useEffect(() => {
         setDisplayCount(PAGE_SIZE);
-    }, [searchQuery, categoryFilter, categoryIdFilter]);
+    }, [searchQuery, categoryFilter, categoryIdFilter, countryFilter]);
 
     // Filter Logic
     useEffect(() => {
@@ -195,9 +208,13 @@ export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter, sid
             result = result.filter(p => p.categoryId === categoryIdFilter);
         }
 
+        if (countryFilter) {
+            result = result.filter(p => p.country === countryFilter);
+        }
+
         setFilteredProducts(result);
 
-    }, [products, searchQuery, categoryFilter, categoryIdFilter]);
+    }, [products, searchQuery, categoryFilter, categoryIdFilter, countryFilter]);
 
     // Infinite scroll: load more when sentinel enters viewport
     const loadMore = useCallback(() => {
