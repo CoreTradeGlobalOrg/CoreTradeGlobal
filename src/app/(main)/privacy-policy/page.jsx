@@ -275,8 +275,8 @@ export default function PrivacyPolicyPage() {
             <h2 className="text-xl font-bold text-[#FFD700] mb-4">10. Contact Information</h2>
             <p className="text-gray-300">
               <span className="text-white font-medium">U.S. Privacy Contact:</span>{' '}
-              <a href="mailto:privacy@coretradeglobal.com" className="text-[#FFD700] hover:underline">
-                privacy@coretradeglobal.com
+              <a href="mailto:info@coretradeglobal.com" className="text-[#FFD700] hover:underline">
+                info@coretradeglobal.com
               </a>
             </p>
           </section>

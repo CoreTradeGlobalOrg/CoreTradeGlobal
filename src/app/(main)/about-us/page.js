@@ -162,7 +162,8 @@ export default function AboutUsPage() {
                     <p className="text-[#A0A0A0] mb-8">Join thousands of businesses already trading on CoreTradeGlobal.</p>
                     <Link
                         href="/register"
-                        className="inline-block px-10 py-4 bg-gradient-to-r from-[#FFD700] to-[#FDB931] text-black font-bold text-lg rounded-full shadow-[0_0_20px_rgba(255,215,0,0.3)] hover:shadow-[0_0_30px_rgba(255,215,0,0.5)] hover:-translate-y-1 transition-all duration-300"
+                        className="inline-block px-10 py-4 bg-gradient-to-r from-[#FFD700] to-[#FDB931] font-bold text-lg rounded-full shadow-[0_0_20px_rgba(255,215,0,0.3)] hover:shadow-[0_0_30px_rgba(255,215,0,0.5)] hover:-translate-y-1 transition-all duration-300"
+                        style={{ color: '#000000' }}
                     >
                         Sign Up for Free
                     </Link>

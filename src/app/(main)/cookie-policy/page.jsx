@@ -183,8 +183,8 @@ export default function CookiePolicyPage() {
             <h2 className="text-xl font-bold text-[#FFD700] mb-4">6. Contact Us</h2>
             <p className="text-gray-300">
               If you have any questions about our use of cookies, please contact us at:{' '}
-              <a href="mailto:privacy@coretradeglobal.com" className="text-[#FFD700] hover:underline">
-                privacy@coretradeglobal.com
+              <a href="mailto:info@coretradeglobal.com" className="text-[#FFD700] hover:underline">
+                info@coretradeglobal.com
               </a>
             </p>
           </section>

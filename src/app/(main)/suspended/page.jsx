@@ -85,7 +85,7 @@ export default function SuspendedPage() {
             {/* Contact Support Button */}
             <div className="pt-4">
               <a
-                href="mailto:support@coretradeglobal.com?subject=Account Suspension Appeal"
+                href="mailto:info@coretradeglobal.com?subject=Account Suspension Appeal"
                 className="inline-flex items-center gap-2 w-full justify-center px-6 py-3 text-white rounded-lg font-semibold transition-all shadow-sm hover:shadow-md"
                 style={{
                   backgroundColor: 'var(--color-error)',
@@ -111,7 +111,7 @@ export default function SuspendedPage() {
             {/* Support Info */}
             <div className="pt-4 border-t border-slate-200">
               <p className="text-xs text-slate-500">
-                Support Email: <a href="mailto:support@coretradeglobal.com" className="text-blue-600 hover:underline">support@coretradeglobal.com</a>
+                Support Email: <a href="mailto:info@coretradeglobal.com" className="text-blue-600 hover:underline">info@coretradeglobal.com</a>
               </p>
             </div>
           </div>
