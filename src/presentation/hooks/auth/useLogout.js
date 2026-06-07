@@ -12,13 +12,11 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { container } from '@/core/di/container';
 import { LogoutUseCase } from '@/domain/usecases/auth/LogoutUseCase';
 
 export function useLogout() {
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
 
   /**
    * Logout function
@@ -34,11 +32,8 @@ export function useLogout() {
       // Create use case with repository
       const logoutUseCase = new LogoutUseCase(authRepository);
 
-      // Execute logout
+      // Execute logout — caller handles redirect
       await logoutUseCase.execute();
-
-      // Redirect to login page
-      router.push('/login');
     } catch (err) {
       console.error('Logout error:', err);
     } finally {
