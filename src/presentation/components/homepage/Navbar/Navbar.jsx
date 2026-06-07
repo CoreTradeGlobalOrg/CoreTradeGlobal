@@ -305,7 +305,7 @@ export function Navbar() {
   const handleLogout = useCallback(async () => {
     try {
       await logout();
-      window.location.href = '/';
+      window.location.reload();
     } catch (error) {
       console.error('Logout failed', error);
       toast.error('Failed to log out. Please try again.');
