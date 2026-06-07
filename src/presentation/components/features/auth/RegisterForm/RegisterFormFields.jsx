@@ -1,10 +1,12 @@
 /**
  * RegisterFormFields Component
  *
- * Renders the Personal Information, Company Information, and Security
- * sections of the registration form. Controlled by the parent RegisterForm.
+ * 3-step registration form matching the landing page design.
+ * Step 1: Email + Privacy consent
+ * Step 2: Personal Information
+ * Step 3: Company Information + Password
  *
- * Props: register, errors, loading, setValue, watch, categories, categoriesLoading
+ * Props: step, register, errors, loading, setValue, watch, categories, categoriesLoading
  */
 
 'use client';
@@ -15,20 +17,11 @@ import { COMPANY_TYPES } from '@/core/constants/companyTypes';
 import { Eye, EyeOff } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
-/**
- * @param {Object} props
- * @param {Function} props.register - react-hook-form register
- * @param {Object} props.errors - react-hook-form errors
- * @param {boolean} props.loading
- * @param {Function} props.setValue - react-hook-form setValue
- * @param {Function} props.watch - react-hook-form watch
- * @param {Array} props.categories
- * @param {boolean} props.categoriesLoading
- */
-export function RegisterFormFields({ register, errors, loading, setValue, watch, categories, categoriesLoading }) {
+export function RegisterFormFields({ step, register, errors, loading, setValue, watch, categories, categoriesLoading }) {
   const country = watch('country');
   const companyCategory = watch('companyCategory');
   const companyType = watch('companyType');
+  const email = watch('email');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [localPhone, setLocalPhone] = useState('');
@@ -63,219 +56,246 @@ export function RegisterFormFields({ register, errors, loading, setValue, watch,
 
     const dialCode = COUNTRY_PHONE_CODES[selectedPhoneCountry] || '';
 
-    // If user manually types a full E.164 number (starts with +), use it directly
     if (raw.startsWith('+')) {
       setValue('phone', raw, { shouldValidate: false });
     } else if (dialCode) {
-      // Combine dial code + local number (no space — libphonenumber-js expects +905551234567)
       setValue('phone', `${dialCode}${raw}`, { shouldValidate: false });
     } else {
       setValue('phone', raw, { shouldValidate: false });
     }
   };
 
-  return (
-    <>
-      {/* Two Column Layout: Personal & Company Information */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Personal Information */}
-        <div className="bg-[rgba(255,255,255,0.02)] rounded-xl p-5 border border-[rgba(255,255,255,0.05)]">
-          <h3 className="text-base font-semibold text-white mb-4 pb-2 border-b border-[rgba(255,255,255,0.1)]">
-            Personal Information
-          </h3>
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label htmlFor="firstName" className="block text-xs text-[#A0A0A0] font-semibold tracking-wider uppercase mb-1.5">
-                  First Name <span className="text-red-400">*</span>
-                </label>
-                <input
-                  id="firstName"
-                  type="text"
-                  {...register('firstName')}
-                  className="form-input-anasyf text-sm"
-                  placeholder="John"
-                  disabled={loading}
-                />
-                {errors.firstName && (
-                  <p className="mt-1 text-xs text-red-400">{errors.firstName.message}</p>
-                )}
-              </div>
+  // ─── STEP 1: Email + Consent ───
+  if (step === 1) {
+    return (
+      <div className="space-y-4">
+        <div>
+          <label htmlFor="email" className="block text-xs text-[#A0A0A0] font-semibold tracking-wider uppercase mb-1.5">
+            Business Email <span className="text-red-400">*</span>
+          </label>
+          <input
+            id="email"
+            type="email"
+            {...register('email')}
+            className="form-input-anasyf text-sm"
+            placeholder="john@company.com"
+            disabled={loading}
+            autoFocus
+          />
+          {errors.email && (
+            <p className="mt-1 text-xs text-red-400">{errors.email.message}</p>
+          )}
+        </div>
 
-              <div>
-                <label htmlFor="lastName" className="block text-xs text-[#A0A0A0] font-semibold tracking-wider uppercase mb-1.5">
-                  Last Name <span className="text-red-400">*</span>
-                </label>
-                <input
-                  id="lastName"
-                  type="text"
-                  {...register('lastName')}
-                  className="form-input-anasyf text-sm"
-                  placeholder="Doe"
-                  disabled={loading}
-                />
-                {errors.lastName && (
-                  <p className="mt-1 text-xs text-red-400">{errors.lastName.message}</p>
-                )}
-              </div>
-            </div>
+        <label className="flex items-start gap-3 cursor-pointer group">
+          <input
+            type="checkbox"
+            {...register('acceptPolicies')}
+            disabled={loading}
+            className="w-5 h-5 mt-0.5 text-[#FFD700] bg-[rgba(255,255,255,0.05)] border-[rgba(255,255,255,0.2)] rounded focus:ring-2 focus:ring-[#FFD700] cursor-pointer flex-shrink-0"
+          />
+          <span className={`text-sm text-left ${errors.acceptPolicies ? 'text-red-400' : 'text-[#A0A0A0]'}`}>
+            I agree to the{' '}
+            <a href="/privacy-policy" target="_blank" rel="noopener noreferrer" className="font-medium text-[#FFD700] hover:underline" onClick={(e) => e.stopPropagation()}>
+              Privacy Policy
+            </a>
+            {' '}and{' '}
+            <a href="/terms" target="_blank" rel="noopener noreferrer" className="font-medium text-[#FFD700] hover:underline" onClick={(e) => e.stopPropagation()}>
+              Terms of Service
+            </a>
+            , and consent to receiving trade communications. <span className="text-red-400">*</span>
+          </span>
+        </label>
+        {errors.acceptPolicies && (
+          <p className="text-xs text-red-400 ml-8">{errors.acceptPolicies.message}</p>
+        )}
+      </div>
+    );
+  }
 
-            <div>
-              <label htmlFor="email" className="block text-xs text-[#A0A0A0] font-semibold tracking-wider uppercase mb-1.5">
-                Email <span className="text-red-400">*</span>
-              </label>
-              <input
-                id="email"
-                type="email"
-                {...register('email')}
-                className="form-input-anasyf text-sm"
-                placeholder="john@company.com"
-                disabled={loading}
-              />
-              {errors.email && (
-                <p className="mt-1 text-xs text-red-400">{errors.email.message}</p>
-              )}
-            </div>
+  // ─── STEP 2: Personal Information ───
+  if (step === 2) {
+    return (
+      <div className="space-y-4">
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label htmlFor="firstName" className="block text-xs text-[#A0A0A0] font-semibold tracking-wider uppercase mb-1.5">
+              First Name <span className="text-red-400">*</span>
+            </label>
+            <input
+              id="firstName"
+              type="text"
+              {...register('firstName')}
+              className="form-input-anasyf text-sm"
+              placeholder="John"
+              disabled={loading}
+              autoFocus
+            />
+            {errors.firstName && (
+              <p className="mt-1 text-xs text-red-400">{errors.firstName.message}</p>
+            )}
+          </div>
 
-            <div>
-              <label htmlFor="phone" className="block text-xs text-[#A0A0A0] font-semibold tracking-wider uppercase mb-1.5">
-                Phone <span className="text-red-400">*</span>
-              </label>
-              <div className="flex">
-                {/* Independent phone country code dropdown */}
-                <div className="relative flex-shrink-0" style={{ width: '130px' }}>
-                  <SearchableSelect
-                    options={PHONE_CODE_OPTIONS}
-                    value={selectedPhoneCountry}
-                    onChange={(val) => setSelectedPhoneCountry(val)}
-                    placeholder="Code"
-                    disabled={loading}
-                    className="dark-select phone-code-select [&_button]:!py-[14px] [&_button]:!rounded-r-none [&_button]:!border-r-0"
-                    searchPlaceholder="Search country..."
-                    dropdownClassName="!min-w-[280px]"
-                    renderSelectedLabel={(opt) => `${opt.label.split(' ')[0]} ${opt.dialCode}`}
-                  />
-                </div>
-                <input
-                  id="phone"
-                  type="tel"
-                  value={localPhone}
-                  onChange={handlePhoneChange}
-                  className="form-input-anasyf text-sm flex-1 rounded-l-none border-l-0"
-                  placeholder={selectedPhoneOption ? '555 123 4567' : '+1 234 567 8900'}
-                  disabled={loading}
-                />
-              </div>
-              {errors.phone && (
-                <p className="mt-1 text-xs text-red-400">{errors.phone.message}</p>
-              )}
-            </div>
-
-            <div>
-              <label htmlFor="position" className="block text-xs text-[#A0A0A0] font-semibold tracking-wider uppercase mb-1.5">
-                Position/Title <span className="text-red-400">*</span>
-              </label>
-              <input
-                id="position"
-                type="text"
-                {...register('position')}
-                className="form-input-anasyf text-sm"
-                placeholder="Sales Manager"
-                disabled={loading}
-              />
-              {errors.position && (
-                <p className="mt-1 text-xs text-red-400">{errors.position.message}</p>
-              )}
-            </div>
+          <div>
+            <label htmlFor="lastName" className="block text-xs text-[#A0A0A0] font-semibold tracking-wider uppercase mb-1.5">
+              Last Name <span className="text-red-400">*</span>
+            </label>
+            <input
+              id="lastName"
+              type="text"
+              {...register('lastName')}
+              className="form-input-anasyf text-sm"
+              placeholder="Doe"
+              disabled={loading}
+            />
+            {errors.lastName && (
+              <p className="mt-1 text-xs text-red-400">{errors.lastName.message}</p>
+            )}
           </div>
         </div>
 
-        {/* Company Information */}
-        <div className="bg-[rgba(255,255,255,0.02)] rounded-xl p-5 border border-[rgba(255,255,255,0.05)]">
-          <h3 className="text-base font-semibold text-white mb-4 pb-2 border-b border-[rgba(255,255,255,0.1)]">
-            Company Information
-          </h3>
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="companyType" className="block text-xs text-[#A0A0A0] font-semibold tracking-wider uppercase mb-1.5">
-                Company Type <span className="text-red-400">*</span>
-              </label>
-              <SearchableSelect
-                options={COMPANY_TYPES}
-                value={companyType}
-                onChange={(value) => setValue('companyType', value, { shouldValidate: true })}
-                placeholder="Select company type"
-                disabled={loading}
-                error={!!errors.companyType}
-                className="dark-select"
-              />
-              {errors.companyType && (
-                <p className="mt-1 text-xs text-red-400">{errors.companyType.message}</p>
-              )}
-            </div>
+        <div>
+          <label htmlFor="emailDisplay" className="block text-xs text-[#A0A0A0] font-semibold tracking-wider uppercase mb-1.5">
+            Email <span className="text-red-400">*</span>
+          </label>
+          <input
+            id="emailDisplay"
+            type="email"
+            value={email || ''}
+            disabled
+            className="form-input-anasyf text-sm opacity-65 cursor-not-allowed"
+          />
+        </div>
 
-            <div>
-              <label htmlFor="companyName" className="block text-xs text-[#A0A0A0] font-semibold tracking-wider uppercase mb-1.5">
-                Company Name <span className="text-red-400">*</span>
-              </label>
-              <input
-                id="companyName"
-                type="text"
-                {...register('companyName')}
-                className="form-input-anasyf text-sm"
-                placeholder="Acme Corporation"
-                disabled={loading}
-              />
-              {errors.companyName && (
-                <p className="mt-1 text-xs text-red-400">{errors.companyName.message}</p>
-              )}
-            </div>
-
-            <div>
-              <label htmlFor="companyCategory" className="block text-xs text-[#A0A0A0] font-semibold tracking-wider uppercase mb-1.5">
-                Company Category <span className="text-red-400">*</span>
-              </label>
+        <div>
+          <label htmlFor="phone" className="block text-xs text-[#A0A0A0] font-semibold tracking-wider uppercase mb-1.5">
+            Phone <span className="text-red-400">*</span>
+          </label>
+          <div className="flex">
+            <div className="relative flex-shrink-0" style={{ width: '130px' }}>
               <SearchableSelect
-                options={categories}
-                value={companyCategory}
-                onChange={(value) => setValue('companyCategory', value, { shouldValidate: true })}
-                placeholder={categoriesLoading ? "Loading categories..." : "Select category"}
-                disabled={loading || categoriesLoading}
-                error={!!errors.companyCategory}
-                className="dark-select"
-              />
-              {errors.companyCategory && (
-                <p className="mt-1 text-xs text-red-400">{errors.companyCategory.message}</p>
-              )}
-            </div>
-
-            <div>
-              <label htmlFor="country" className="block text-xs text-[#A0A0A0] font-semibold tracking-wider uppercase mb-1.5">
-                Country <span className="text-red-400">*</span>
-              </label>
-              <SearchableSelect
-                options={COUNTRIES}
-                value={country}
-                onChange={(value) => setValue('country', value, { shouldValidate: true })}
-                placeholder="Select country"
+                options={PHONE_CODE_OPTIONS}
+                value={selectedPhoneCountry}
+                onChange={(val) => setSelectedPhoneCountry(val)}
+                placeholder="Code"
                 disabled={loading}
-                error={!!errors.country}
-                className="dark-select"
-                showFlags={true}
+                className="dark-select phone-code-select [&_button]:!py-[14px] [&_button]:!rounded-r-none [&_button]:!border-r-0"
+                searchPlaceholder="Search country..."
+                dropdownClassName="!min-w-[280px]"
+                renderSelectedLabel={(opt) => `${opt.label.split(' ')[0]} ${opt.dialCode}`}
               />
-              {errors.country && (
-                <p className="mt-1 text-xs text-red-400">{errors.country.message}</p>
-              )}
             </div>
+            <input
+              id="phone"
+              type="tel"
+              value={localPhone}
+              onChange={handlePhoneChange}
+              className="form-input-anasyf text-sm flex-1 rounded-l-none border-l-0"
+              placeholder={selectedPhoneOption ? '555 123 4567' : '+1 234 567 8900'}
+              disabled={loading}
+            />
           </div>
+          {errors.phone && (
+            <p className="mt-1 text-xs text-red-400">{errors.phone.message}</p>
+          )}
+        </div>
+
+        <div>
+          <label htmlFor="position" className="block text-xs text-[#A0A0A0] font-semibold tracking-wider uppercase mb-1.5">
+            Position/Title <span className="text-red-400">*</span>
+          </label>
+          <input
+            id="position"
+            type="text"
+            {...register('position')}
+            className="form-input-anasyf text-sm"
+            placeholder="Sales Manager"
+            disabled={loading}
+          />
+          {errors.position && (
+            <p className="mt-1 text-xs text-red-400">{errors.position.message}</p>
+          )}
         </div>
       </div>
+    );
+  }
 
-      {/* Security - Full Width */}
-      <div className="bg-[rgba(255,255,255,0.02)] rounded-xl p-5 border border-[rgba(255,255,255,0.05)]">
-        <h3 className="text-base font-semibold text-white mb-4 pb-2 border-b border-[rgba(255,255,255,0.1)]">
-          Security
-        </h3>
+  // ─── STEP 3: Company Information + Password ───
+  if (step === 3) {
+    return (
+      <div className="space-y-4">
+        <div>
+          <label htmlFor="companyType" className="block text-xs text-[#A0A0A0] font-semibold tracking-wider uppercase mb-1.5">
+            Company Type <span className="text-red-400">*</span>
+          </label>
+          <SearchableSelect
+            options={COMPANY_TYPES}
+            value={companyType}
+            onChange={(value) => setValue('companyType', value, { shouldValidate: true })}
+            placeholder="Select company type"
+            disabled={loading}
+            error={!!errors.companyType}
+            className="dark-select"
+          />
+          {errors.companyType && (
+            <p className="mt-1 text-xs text-red-400">{errors.companyType.message}</p>
+          )}
+        </div>
+
+        <div>
+          <label htmlFor="companyName" className="block text-xs text-[#A0A0A0] font-semibold tracking-wider uppercase mb-1.5">
+            Company Name <span className="text-red-400">*</span>
+          </label>
+          <input
+            id="companyName"
+            type="text"
+            {...register('companyName')}
+            className="form-input-anasyf text-sm"
+            placeholder="Acme Corporation"
+            disabled={loading}
+          />
+          {errors.companyName && (
+            <p className="mt-1 text-xs text-red-400">{errors.companyName.message}</p>
+          )}
+        </div>
+
+        <div>
+          <label htmlFor="companyCategory" className="block text-xs text-[#A0A0A0] font-semibold tracking-wider uppercase mb-1.5">
+            Company Category <span className="text-red-400">*</span>
+          </label>
+          <SearchableSelect
+            options={categories}
+            value={companyCategory}
+            onChange={(value) => setValue('companyCategory', value, { shouldValidate: true })}
+            placeholder={categoriesLoading ? "Loading categories..." : "Select category"}
+            disabled={loading || categoriesLoading}
+            error={!!errors.companyCategory}
+            className="dark-select"
+          />
+          {errors.companyCategory && (
+            <p className="mt-1 text-xs text-red-400">{errors.companyCategory.message}</p>
+          )}
+        </div>
+
+        <div>
+          <label htmlFor="country" className="block text-xs text-[#A0A0A0] font-semibold tracking-wider uppercase mb-1.5">
+            Country <span className="text-red-400">*</span>
+          </label>
+          <SearchableSelect
+            options={COUNTRIES}
+            value={country}
+            onChange={(value) => setValue('country', value, { shouldValidate: true })}
+            placeholder="Select country"
+            disabled={loading}
+            error={!!errors.country}
+            className="dark-select"
+            showFlags={true}
+          />
+          {errors.country && (
+            <p className="mt-1 text-xs text-red-400">{errors.country.message}</p>
+          )}
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label htmlFor="password" className="block text-xs text-[#A0A0A0] font-semibold tracking-wider uppercase mb-1.5">
@@ -332,8 +352,10 @@ export function RegisterFormFields({ register, errors, loading, setValue, watch,
           </div>
         </div>
       </div>
-    </>
-  );
+    );
+  }
+
+  return null;
 }
 
 export default RegisterFormFields;

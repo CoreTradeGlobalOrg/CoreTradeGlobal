@@ -69,6 +69,14 @@ const ProductUploadRequestsManager = dynamic(
   () => import('@/presentation/components/features/admin/ProductUploadRequestsManager/ProductUploadRequestsManager').then(m => ({ default: m.ProductUploadRequestsManager })),
   { loading: () => <AdminTabSkeleton />, ssr: false }
 );
+const TradesManager = dynamic(
+  () => import('@/presentation/components/features/admin/TradesManager/TradesManager').then(m => ({ default: m.TradesManager })),
+  { loading: () => <AdminTabSkeleton />, ssr: false }
+);
+const TestimonialsManager = dynamic(
+  () => import('@/presentation/components/features/admin/TestimonialsManager/TestimonialsManager').then(m => ({ default: m.TestimonialsManager })),
+  { loading: () => <AdminTabSkeleton />, ssr: false }
+);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Trade Overview Stats
@@ -158,7 +166,7 @@ function AdminPageContent() {
   const searchParams = useSearchParams();
   const { user, loading: authLoading, isAuthenticated } = useAuth();
   const { users, loading, error, refetch } = useGetAllUsers();
-  const validTabs = ['users', 'messages', 'categories', 'fairs', 'news', 'announcements', 'product-requests'];
+  const validTabs = ['users', 'trades', 'messages', 'categories', 'fairs', 'news', 'testimonials', 'announcements', 'product-requests'];
   const tabFromUrl = searchParams.get('tab');
   const [activeTab, setActiveTab] = useState(
     validTabs.includes(tabFromUrl) ? tabFromUrl : 'users'
@@ -222,7 +230,7 @@ function AdminPageContent() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0F1B2B] px-4 py-6 pt-[var(--navbar-height)] md:px-8 md:py-8 md:pt-[var(--navbar-height)]">
+    <div className="min-h-screen bg-[#0F1B2B] px-4 py-6 pt-[calc(var(--navbar-height)+24px)] md:px-8 md:py-8 md:pt-[calc(var(--navbar-height)+24px)]">
       {/* Page Header */}
       <div className="mb-6 md:mb-8">
         <h2 className="text-2xl md:text-3xl font-bold text-white mb-2">Admin Dashboard</h2>
@@ -234,13 +242,15 @@ function AdminPageContent() {
       {/* Tabs - Scrollable on mobile */}
       <div className="mb-6 md:mb-8 border-b border-[rgba(255,255,255,0.1)] -mx-4 px-4 md:mx-0 md:px-0">
         <nav className="-mb-px flex space-x-4 md:space-x-8 overflow-x-auto scrollbar-hide pb-px">
-          {['users', 'messages', 'categories', 'fairs', 'news', 'announcements', 'product-requests'].map((tab) => {
+          {['users', 'trades', 'messages', 'categories', 'fairs', 'news', 'testimonials', 'announcements', 'product-requests'].map((tab) => {
             const tabLabels = {
               users: 'Users',
+              trades: 'Trades',
               messages: 'Messages',
               categories: 'Categories',
               fairs: 'Fairs',
               news: 'News',
+              testimonials: 'Testimonials',
               announcements: 'Announcements',
               'product-requests': 'Product Requests',
             };
@@ -288,6 +298,13 @@ function AdminPageContent() {
         </div>
       )}
 
+      {/* Trades Tab */}
+      {activeTab === 'trades' && (
+        <div className="text-white">
+          <TradesManager users={users} />
+        </div>
+      )}
+
       {/* Messages Tab */}
       {activeTab === 'messages' && (
         <div className="text-white">
@@ -313,6 +330,13 @@ function AdminPageContent() {
       {activeTab === 'news' && (
         <div className="text-white">
           <NewsManager />
+        </div>
+      )}
+
+      {/* Testimonials Tab */}
+      {activeTab === 'testimonials' && (
+        <div className="text-white">
+          <TestimonialsManager />
         </div>
       )}
 

@@ -44,17 +44,8 @@ export function SettingsPage() {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-radial-navy pt-28 pb-12 px-4">
+    <div className="min-h-screen bg-radial-navy pt-[calc(var(--navbar-height)+24px)] pb-12 px-4">
       <div className="max-w-3xl mx-auto space-y-6">
-        {/* Back to Profile link */}
-        <Link
-          href={`/profile/${user.uid}`}
-          className="text-[#A0A0A0] hover:text-white text-sm flex items-center gap-1 transition-colors w-fit"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back to Profile
-        </Link>
-
         {/* Compact user header */}
         <div className="flex items-center gap-4">
           {user.companyLogo || user.photoURL ? (

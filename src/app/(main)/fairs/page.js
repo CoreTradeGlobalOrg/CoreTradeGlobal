@@ -213,7 +213,7 @@ export default function FairsPage() {
     };
 
     return (
-        <main className="min-h-screen pt-[var(--navbar-height)] pb-20 px-6 bg-radial-navy">
+        <main className="min-h-screen pt-[calc(var(--navbar-height)+24px)] pb-20 px-6 bg-radial-navy">
             <div className="max-w-[1400px] mx-auto">
                 {/* Header */}
                 <section className="mb-12 text-center">

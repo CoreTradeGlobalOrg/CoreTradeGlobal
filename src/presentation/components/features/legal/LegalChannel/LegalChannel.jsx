@@ -112,7 +112,7 @@ export function LegalChannel({ engagement, deal, currentUser, isLawyer, isReadOn
   };
 
   return (
-    <div className="flex flex-col h-screen bg-[#0F1C2E] overflow-hidden pt-[var(--navbar-height)]">
+    <div className="flex flex-col h-screen bg-[#0F1C2E] overflow-hidden pt-[calc(var(--navbar-height)+24px)]">
       {/* ── Header bar ─────────────────────────────────────────────────────── */}
       <div className="flex-shrink-0 flex items-center justify-between px-4 py-2 bg-[#0D1927] border-b border-[rgba(255,255,255,0.08)] h-12">
         {/* Left: back + title */}

@@ -32,7 +32,7 @@ const LegalChannel = dynamic(
 
 function LegalChannelSkeleton() {
   return (
-    <div className="min-h-screen bg-[#0F1C2E] pt-[var(--navbar-height)] animate-pulse">
+    <div className="min-h-screen bg-[#0F1C2E] pt-[calc(var(--navbar-height)+24px)] animate-pulse">
       <div className="flex h-[calc(100vh-var(--navbar-height))]">
         <div className="w-64 bg-[#1A283B] border-r border-[rgba(255,255,255,0.08)]" />
         <div className="flex-1 bg-[#0F1C2E]" />

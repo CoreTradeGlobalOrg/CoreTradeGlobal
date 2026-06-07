@@ -20,7 +20,8 @@ export function useCreateProduct() {
 
     try {
       const productRepository = container.getProductRepository();
-      const createProductUseCase = new CreateProductUseCase(productRepository);
+      const userRepository = container.getUserRepository();
+      const createProductUseCase = new CreateProductUseCase(productRepository, userRepository);
       const product = await createProductUseCase.execute(productData, imageFiles);
       return product;
     } catch (err) {

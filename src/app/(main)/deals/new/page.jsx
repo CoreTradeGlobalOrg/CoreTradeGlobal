@@ -26,7 +26,7 @@ import toast from 'react-hot-toast';
 // ── Loading fallback ──────────────────────────────────────────────────────────
 function LoadingFallback() {
   return (
-    <main className="min-h-screen bg-radial-navy pt-24 pb-12">
+    <main className="min-h-screen bg-radial-navy pt-[calc(var(--navbar-height)+24px)] pb-12">
       <div className="max-w-2xl mx-auto px-4">
         <div className="flex flex-col items-center justify-center py-20 gap-4">
           <div className="w-10 h-10 border-2 border-[#FFD700] border-t-transparent rounded-full animate-spin" />
@@ -181,7 +181,7 @@ function NewDealContent() {
   // ── Error State ──
   if (fetchError) {
     return (
-      <main className="min-h-screen bg-radial-navy pt-24 pb-12">
+      <main className="min-h-screen bg-radial-navy pt-[calc(var(--navbar-height)+24px)] pb-12">
         <div className="max-w-2xl mx-auto px-4">
           <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
             <AlertCircle className="w-12 h-12 text-red-400" />
@@ -230,7 +230,7 @@ function NewDealContent() {
   const backLabel = isDirectPath ? 'Back to product' : 'Back to conversation';
 
   return (
-    <main className="min-h-screen bg-radial-navy pt-24 pb-12">
+    <main className="min-h-screen bg-radial-navy pt-[calc(var(--navbar-height)+24px)] pb-12">
       <div className="max-w-2xl mx-auto px-4">
         {/* ── Back Link ── */}
         <Link

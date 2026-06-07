@@ -133,6 +133,10 @@ a {
   transition: color 0.2s;
 }
 
+a.cta-black-text {
+  color: #000000 !important;
+}
+
 a:hover {
   color: var(--color-primary-dark);
 }
@@ -375,7 +379,7 @@ a:hover {
 }
 
 .nav-logo-img {
-  height: 64px;
+  height: 80px;
   width: auto;
   object-fit: contain;
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
@@ -383,7 +387,7 @@ a:hover {
 }
 
 .navbar.scrolled .nav-logo-img {
-  height: 48px;
+  height: 56px;
 }
 
 .nav-brand-text {
@@ -499,7 +503,7 @@ a:hover {
 .footer-section {
   background-color: var(--bg-deep-navy);
   border-top: 1px solid rgba(255, 255, 255, 0.05);
-  padding: 60px 40px;
+  padding: 32px 40px;
   margin-top: auto;
 }
 
@@ -508,14 +512,18 @@ a:hover {
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 40px;
+  gap: 20px;
 }
 
 .footer-grid {
   display: grid;
   grid-template-columns: 1.5fr 1fr 1fr 1.5fr;
   gap: 40px;
-  align-items: start;
+  align-items: flex-start;
+}
+
+.footer-grid > .brand-col {
+  padding-top: 0;
 }
 
 .footer-col h4 {
@@ -538,12 +546,18 @@ a:hover {
   color: var(--accent-gold);
 }
 
+.brand-col .nav-logo-img {
+  margin: -16px 0 -12px -8px;
+  padding: 0;
+  filter: none;
+}
+
 .brand-col p {
   color: var(--color-text-secondary);
   font-size: 13px;
   line-height: 1.6;
   max-width: 280px;
-  margin-top: 15px;
+  margin-top: 8px;
 }
 
 .newsletter-box {

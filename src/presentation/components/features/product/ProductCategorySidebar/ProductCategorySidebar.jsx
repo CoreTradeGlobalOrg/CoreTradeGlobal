@@ -3,24 +3,27 @@
 /**
  * ProductCategorySidebar
  *
- * Category navigation sidebar for the All Products page.
+ * Category + Country navigation sidebar for the All Products page.
  * - Fetches parent + sub categories on mount
- * - Provides a search box to filter category names client-side
- * - Highlights the active category with a gold left border
- * - Calls onCategorySelect(categoryId) on click
- * - Hidden on mobile (< lg) — top SearchBar + category chip remain for mobile users
+ * - Provides search boxes to filter categories and countries client-side
+ * - Highlights the active category/country with a gold left border
+ * - Calls onCategorySelect(categoryId) and onCountrySelect(countryCode) on click
+ * - Hidden on mobile (< lg)
  */
 
 import { useState, useEffect, useMemo } from 'react';
 import { Search } from 'lucide-react';
 import { container } from '@/core/di/container';
+import { COUNTRIES } from '@/core/constants/countries';
+import { CountryFlag } from '@/presentation/components/common/CountryFlag/CountryFlag';
 
-export function ProductCategorySidebar({ activeCategoryId, onCategorySelect }) {
+export function ProductCategorySidebar({ activeCategoryId, activeCountry, onCategorySelect, onCountrySelect }) {
     const [parents, setParents] = useState([]);
-    const [subMap, setSubMap] = useState({}); // { [parentId]: [...subcategories] }
+    const [subMap, setSubMap] = useState({});
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [expandedParents, setExpandedParents] = useState({});
+    const [countrySearch, setCountrySearch] = useState('');
 
     // Fetch categories on mount
     useEffect(() => {
@@ -33,7 +36,6 @@ export function ProductCategorySidebar({ activeCategoryId, onCategorySelect }) {
 
                 if (cancelled) return;
 
-                // Fetch sub-categories for all parents in parallel
                 const subResults = await Promise.all(
                     parentCategories.map((parent) =>
                         repo.getSubCategories(parent.id).then((subs) => ({ parentId: parent.id, subs }))
@@ -50,7 +52,6 @@ export function ProductCategorySidebar({ activeCategoryId, onCategorySelect }) {
                 setParents(parentCategories);
                 setSubMap(newSubMap);
 
-                // Auto-expand parent that contains the active category
                 if (activeCategoryId) {
                     subResults.forEach(({ parentId, subs }) => {
                         if (subs.some((s) => s.id === activeCategoryId)) {
@@ -79,7 +80,7 @@ export function ProductCategorySidebar({ activeCategoryId, onCategorySelect }) {
         });
     }, [activeCategoryId, subMap]);
 
-    // Client-side search filtering
+    // Client-side category search
     const filtered = useMemo(() => {
         if (!searchTerm.trim()) return parents;
         const lower = searchTerm.toLowerCase();
@@ -91,6 +92,15 @@ export function ProductCategorySidebar({ activeCategoryId, onCategorySelect }) {
             return parentMatch || subMatch;
         });
     }, [searchTerm, parents, subMap]);
+
+    // Client-side country search — strip emoji flags for matching
+    const filteredCountries = useMemo(() => {
+        if (!countrySearch.trim()) return COUNTRIES;
+        const lower = countrySearch.toLowerCase();
+        return COUNTRIES.filter((c) =>
+            c.label.toLowerCase().includes(lower) || c.value.toLowerCase().includes(lower)
+        );
+    }, [countrySearch]);
 
     const toggleParent = (parentId) => {
         setExpandedParents((prev) => ({ ...prev, [parentId]: !prev[parentId] }));
@@ -104,16 +114,20 @@ export function ProductCategorySidebar({ activeCategoryId, onCategorySelect }) {
         onCategorySelect?.(null);
     };
 
+    const handleCountryClick = (countryCode) => {
+        // Toggle: click same country to deselect
+        onCountrySelect?.(activeCountry === countryCode ? '' : countryCode);
+    };
+
     return (
         <aside className="hidden lg:flex flex-col w-56 flex-shrink-0">
             <div className="bg-[#1a2332] rounded-2xl border border-[rgba(255,255,255,0.07)] overflow-hidden flex flex-col sticky top-[calc(var(--navbar-height)+1rem)] max-h-[calc(100vh-var(--navbar-height)-3rem)]">
-                {/* Header */}
+
+                {/* ── Categories Section ── */}
                 <div className="px-4 pt-4 pb-3 border-b border-[rgba(255,255,255,0.06)]">
                     <h3 className="text-xs uppercase tracking-wider font-semibold text-[#FFD700] mb-3">
                         Categories
                     </h3>
-
-                    {/* Search */}
                     <div className="relative">
                         <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#64748b]" />
                         <input
@@ -127,8 +141,7 @@ export function ProductCategorySidebar({ activeCategoryId, onCategorySelect }) {
                 </div>
 
                 {/* Category list */}
-                <nav className="flex-1 overflow-y-auto py-2 scrollbar-thin">
-                    {/* All Products item */}
+                <nav className="overflow-y-auto py-2 scrollbar-thin" style={{ maxHeight: '35vh' }}>
                     <button
                         onClick={handleAllProducts}
                         className={`w-full text-left px-4 py-2.5 text-sm font-semibold transition-all flex items-center gap-2 border-l-2 ${
@@ -158,7 +171,6 @@ export function ProductCategorySidebar({ activeCategoryId, onCategorySelect }) {
                             const isExpanded = expandedParents[parent.id];
                             const isParentActive = parent.id === activeCategoryId;
 
-                            // When searching, show only matching subs
                             const visibleSubs = searchTerm.trim()
                                 ? subs.filter((s) =>
                                       s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -168,7 +180,6 @@ export function ProductCategorySidebar({ activeCategoryId, onCategorySelect }) {
 
                             return (
                                 <div key={parent.id}>
-                                    {/* Parent category row */}
                                     <button
                                         onClick={() => {
                                             if (subs.length > 0) {
@@ -195,7 +206,6 @@ export function ProductCategorySidebar({ activeCategoryId, onCategorySelect }) {
                                         )}
                                     </button>
 
-                                    {/* Sub-categories */}
                                     {(isExpanded || searchTerm) && visibleSubs.length > 0 && (
                                         <div className="pl-2">
                                             {visibleSubs.map((sub) => {
@@ -217,6 +227,59 @@ export function ProductCategorySidebar({ activeCategoryId, onCategorySelect }) {
                                         </div>
                                     )}
                                 </div>
+                            );
+                        })
+                    )}
+                </nav>
+
+                {/* ── Country Section ── */}
+                <div className="px-4 pt-3 pb-3 border-t border-[rgba(255,255,255,0.06)]">
+                    <h3 className="text-xs uppercase tracking-wider font-semibold text-[#FFD700] mb-3">
+                        Country
+                    </h3>
+                    <div className="relative">
+                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#64748b]" />
+                        <input
+                            type="text"
+                            value={countrySearch}
+                            onChange={(e) => setCountrySearch(e.target.value)}
+                            placeholder="Search countries..."
+                            className="w-full pl-8 pr-3 py-2 text-xs rounded-lg bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.08)] text-white placeholder-[#64748b] focus:outline-none focus:border-[#FFD700]/40 transition-colors"
+                        />
+                    </div>
+                </div>
+
+                <nav className="overflow-y-auto py-2 scrollbar-thin" style={{ maxHeight: '30vh' }}>
+                    {/* All Countries */}
+                    <button
+                        onClick={() => onCountrySelect?.('')}
+                        className={`w-full text-left px-4 py-2 text-sm transition-all flex items-center gap-2 border-l-2 ${
+                            !activeCountry
+                                ? 'border-[#FFD700] bg-[#FFD700]/10 text-[#FFD700] font-semibold'
+                                : 'border-transparent text-gray-300 hover:text-white hover:bg-[rgba(255,255,255,0.05)]'
+                        }`}
+                    >
+                        All Countries
+                    </button>
+
+                    {filteredCountries.length === 0 ? (
+                        <p className="px-4 py-4 text-xs text-[#64748b]">No countries found.</p>
+                    ) : (
+                        filteredCountries.map((c) => {
+                            const isActive = activeCountry === c.value;
+                            return (
+                                <button
+                                    key={c.value}
+                                    onClick={() => handleCountryClick(c.value)}
+                                    className={`w-full text-left px-4 py-2 text-xs transition-all flex items-center gap-2 border-l-2 ${
+                                        isActive
+                                            ? 'border-[#FFD700] bg-[#FFD700]/10 text-[#FFD700] font-semibold'
+                                            : 'border-transparent text-gray-400 hover:text-white hover:bg-[rgba(255,255,255,0.04)]'
+                                    }`}
+                                >
+                                    <CountryFlag countryCode={c.value} size={14} />
+                                    <span className="truncate">{c.label.replace(/^[\u{1F1E0}-\u{1F1FF}]{2}\s*/u, '').trim()}</span>
+                                </button>
                             );
                         })
                     )}

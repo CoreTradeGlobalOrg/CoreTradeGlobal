@@ -1,4 +1,5 @@
 import React from 'react';
+import Link from 'next/link';
 import { Package, Truck, Shield, Scale, BadgeCheck, Search, MessageSquare, CalendarDays, Newspaper } from 'lucide-react';
 
 export const metadata = {
@@ -56,9 +57,9 @@ const OFFERINGS = [
 
 export default function AboutUsPage() {
     return (
-        <main className="pt-[var(--navbar-height)] pb-20 bg-radial-navy">
+        <main className="pt-[calc(var(--navbar-height)+24px)] pb-20 bg-radial-navy">
             {/* Hero Section */}
-            <section className="relative w-full flex flex-col justify-center items-center text-center px-5 py-20 overflow-hidden">
+            <section className="relative w-full flex flex-col justify-center items-center text-center px-5 pb-20 overflow-hidden">
                 <h1
                     className="text-5xl md:text-[64px] font-extrabold leading-[1.1] tracking-[-2px] max-w-[900px] mb-5 text-white"
                 >
@@ -151,6 +152,21 @@ export default function AboutUsPage() {
                             Joining the platform does not require any payment. Create your company profile, list your products, and become part of a global trade network.
                         </p>
                     </div>
+                </div>
+            </section>
+
+            {/* CTA Section */}
+            <section className="px-5 pb-10 flex justify-center">
+                <div className="w-full max-w-[600px] text-center">
+                    <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">Ready to Grow Your Business?</h2>
+                    <p className="text-[#A0A0A0] mb-8">Join thousands of businesses already trading on CoreTradeGlobal.</p>
+                    <a
+                        href="/register"
+                        style={{ color: '#000', WebkitTextFillColor: '#000' }}
+                        className="inline-block px-10 py-4 bg-gradient-to-r from-[#FFD700] to-[#FDB931] font-bold text-lg rounded-full shadow-[0_0_20px_rgba(255,215,0,0.3)] hover:shadow-[0_0_30px_rgba(255,215,0,0.5)] hover:-translate-y-1 transition-all duration-300 no-underline"
+                    >
+                        Sign Up for Free
+                    </a>
                 </div>
             </section>
         </main>

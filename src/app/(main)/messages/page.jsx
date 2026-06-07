@@ -95,7 +95,7 @@ function MessagesPageContent() {
 
   if (authLoading || !isAuthenticated) {
     return (
-      <main className="min-h-screen pt-[var(--navbar-height)] pb-20 px-6 bg-radial-navy">
+      <main className="min-h-screen pt-[calc(var(--navbar-height)+24px)] pb-20 px-6 bg-radial-navy">
         <div className="max-w-[900px] mx-auto">
           <div className="messages-loading">
             <div className="loading-spinner" />
@@ -107,7 +107,7 @@ function MessagesPageContent() {
   }
 
   return (
-    <main className="min-h-screen pt-[var(--navbar-height)] pb-20 px-6 bg-radial-navy">
+    <main className="min-h-screen pt-[calc(var(--navbar-height)+24px)] pb-20 px-6 bg-radial-navy">
       <div className="max-w-[900px] mx-auto">
         {/* Header */}
         <div className="mb-10 text-center max-w-2xl mx-auto">
@@ -286,7 +286,7 @@ function formatTime(date) {
 export default function MessagesPage() {
   return (
     <Suspense fallback={
-      <main className="min-h-screen pt-[var(--navbar-height)] pb-20 px-6 bg-radial-navy">
+      <main className="min-h-screen pt-[calc(var(--navbar-height)+24px)] pb-20 px-6 bg-radial-navy">
         <div className="max-w-[900px] mx-auto">
           <div className="messages-loading">
             <div className="loading-spinner" />

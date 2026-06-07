@@ -12,6 +12,8 @@ import { InviteModal } from '@/presentation/components/features/admin/InviteModa
 import { UsersTab } from './UsersTab';
 import { InvitesTab } from './InvitesTab';
 import { useUserActions } from './useUserActions';
+import { ROLES, ROLE_DISPLAY_NAMES } from '@/core/constants/roles';
+import { SearchableSelect } from '@/presentation/components/common/SearchableSelect/SearchableSelect';
 
 export function UsersTable({ users = [], onRefresh }) {
   const [activeTab, setActiveTab] = useState('users');
@@ -21,7 +23,7 @@ export function UsersTable({ users = [], onRefresh }) {
   const { resendInvite, loading: resendLoading } = useResendInvite();
 
   const {
-    actionLoading, banReasonInput, setBanReasonInput, confirmDialog,
+    actionLoading, banReasonInput, setBanReasonInput, selectedRole, setSelectedRole, confirmDialog,
     openDialog, closeDialog, handleConfirmAction, handleDirectAction, getDialogConfig,
   } = useUserActions({ onRefresh });
 
@@ -88,6 +90,22 @@ export function UsersTable({ users = [], onRefresh }) {
               type="text" value={banReasonInput} onChange={(e) => setBanReasonInput(e.target.value)}
               className="w-full px-4 py-2 bg-[#0F1B2B] border border-white/10 rounded-lg text-white placeholder:text-gray-500 focus:border-red-500 focus:outline-none"
               placeholder="Enter reason for ban..."
+            />
+          </div>
+        )}
+        {confirmDialog.type === 'changeRole' && (
+          <div>
+            <label className="block text-sm text-gray-400 mb-2">Select new role:</label>
+            <SearchableSelect
+              options={Object.entries(ROLES).map(([key, value]) => ({
+                value,
+                label: ROLE_DISPLAY_NAMES[value],
+              }))}
+              value={selectedRole}
+              onChange={setSelectedRole}
+              placeholder="Select role..."
+              searchPlaceholder="Search roles..."
+              className="dark-select"
             />
           </div>
         )}

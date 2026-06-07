@@ -95,7 +95,7 @@ function ProfileContent() {
         onAdminClick={() => router.push('/admin')} onHomeClick={() => router.push('/')}
       />
 
-      <main className="max-w-7xl mx-auto pt-[var(--navbar-height)] pb-8 px-4 sm:px-6 lg:px-8 space-y-6">
+      <main className="max-w-7xl mx-auto pt-[calc(var(--navbar-height)+24px)] pb-8 px-4 sm:px-6 lg:px-8 space-y-6">
         <ProfileCard
           profileUser={page.profileUser} categoryName={page.categoryName}
           canEdit={page.canEdit} isEditing={page.isEditing} isOwnProfile={page.isOwnProfile}

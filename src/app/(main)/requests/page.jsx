@@ -53,7 +53,7 @@ function RequestsContent() {
 
 export default function RequestsPage() {
     return (
-        <main className="min-h-screen pt-[var(--navbar-height)] pb-20 px-6 bg-radial-navy">
+        <main className="min-h-screen pt-[calc(var(--navbar-height)+24px)] pb-20 px-6 bg-radial-navy">
             <div className="max-w-[1400px] mx-auto">
                 <Suspense fallback={
                   <div className="space-y-6 pt-10">

@@ -14,11 +14,28 @@ let adminApp;
 function getFirebaseAdmin() {
   if (getApps().length === 0) {
     // Check if service account key is available
-    const serviceAccountKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+    const serviceAccountKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY || process.env.FIREBASE_ACCOUNT_SERVICE_KEY;
 
     if (serviceAccountKey) {
       try {
-        const serviceAccount = JSON.parse(serviceAccountKey);
+        // Handle env vars with literal \n: strip to parse JSON,
+        // then rebuild PEM newlines in private_key
+        let cleanedKey = serviceAccountKey;
+        try {
+          JSON.parse(cleanedKey);
+        } catch {
+          cleanedKey = cleanedKey.replace(/\\n/g, '');
+        }
+        const serviceAccount = JSON.parse(cleanedKey);
+        if (serviceAccount.private_key && !serviceAccount.private_key.includes('\n')) {
+          let pk = serviceAccount.private_key
+            .replace('-----BEGIN PRIVATE KEY-----', '')
+            .replace('-----END PRIVATE KEY-----', '');
+          serviceAccount.private_key =
+            '-----BEGIN PRIVATE KEY-----\n' +
+            pk.match(/.{1,64}/g).join('\n') +
+            '\n-----END PRIVATE KEY-----\n';
+        }
         adminApp = initializeApp({
           credential: cert(serviceAccount),
           projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
