@@ -94,7 +94,7 @@ export function RegisterFormFields({ step, register, errors, loading, setValue, 
             disabled={loading}
             className="w-5 h-5 mt-0.5 text-[#FFD700] bg-[rgba(255,255,255,0.05)] border-[rgba(255,255,255,0.2)] rounded focus:ring-2 focus:ring-[#FFD700] cursor-pointer flex-shrink-0"
           />
-          <span className={`text-sm ${errors.acceptPolicies ? 'text-red-400' : 'text-[#A0A0A0]'}`}>
+          <span className={`text-sm text-left ${errors.acceptPolicies ? 'text-red-400' : 'text-[#A0A0A0]'}`}>
             I agree to the{' '}
             <a href="/privacy-policy" target="_blank" rel="noopener noreferrer" className="font-medium text-[#FFD700] hover:underline" onClick={(e) => e.stopPropagation()}>
               Privacy Policy

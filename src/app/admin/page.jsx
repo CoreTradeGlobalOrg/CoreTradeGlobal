@@ -73,6 +73,10 @@ const TradesManager = dynamic(
   () => import('@/presentation/components/features/admin/TradesManager/TradesManager').then(m => ({ default: m.TradesManager })),
   { loading: () => <AdminTabSkeleton />, ssr: false }
 );
+const TestimonialsManager = dynamic(
+  () => import('@/presentation/components/features/admin/TestimonialsManager/TestimonialsManager').then(m => ({ default: m.TestimonialsManager })),
+  { loading: () => <AdminTabSkeleton />, ssr: false }
+);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Trade Overview Stats
@@ -162,7 +166,7 @@ function AdminPageContent() {
   const searchParams = useSearchParams();
   const { user, loading: authLoading, isAuthenticated } = useAuth();
   const { users, loading, error, refetch } = useGetAllUsers();
-  const validTabs = ['users', 'trades', 'messages', 'categories', 'fairs', 'news', 'announcements', 'product-requests'];
+  const validTabs = ['users', 'trades', 'messages', 'categories', 'fairs', 'news', 'testimonials', 'announcements', 'product-requests'];
   const tabFromUrl = searchParams.get('tab');
   const [activeTab, setActiveTab] = useState(
     validTabs.includes(tabFromUrl) ? tabFromUrl : 'users'
@@ -238,7 +242,7 @@ function AdminPageContent() {
       {/* Tabs - Scrollable on mobile */}
       <div className="mb-6 md:mb-8 border-b border-[rgba(255,255,255,0.1)] -mx-4 px-4 md:mx-0 md:px-0">
         <nav className="-mb-px flex space-x-4 md:space-x-8 overflow-x-auto scrollbar-hide pb-px">
-          {['users', 'trades', 'messages', 'categories', 'fairs', 'news', 'announcements', 'product-requests'].map((tab) => {
+          {['users', 'trades', 'messages', 'categories', 'fairs', 'news', 'testimonials', 'announcements', 'product-requests'].map((tab) => {
             const tabLabels = {
               users: 'Users',
               trades: 'Trades',
@@ -246,6 +250,7 @@ function AdminPageContent() {
               categories: 'Categories',
               fairs: 'Fairs',
               news: 'News',
+              testimonials: 'Testimonials',
               announcements: 'Announcements',
               'product-requests': 'Product Requests',
             };
@@ -325,6 +330,13 @@ function AdminPageContent() {
       {activeTab === 'news' && (
         <div className="text-white">
           <NewsManager />
+        </div>
+      )}
+
+      {/* Testimonials Tab */}
+      {activeTab === 'testimonials' && (
+        <div className="text-white">
+          <TestimonialsManager />
         </div>
       )}
 
