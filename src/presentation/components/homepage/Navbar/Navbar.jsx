@@ -305,6 +305,8 @@ export function Navbar() {
   const handleLogout = useCallback(async () => {
     try {
       await logout();
+      // Clear session cookie before reload so middleware doesn't redirect
+      await fetch('/api/auth/session', { method: 'DELETE' }).catch(() => {});
       window.location.reload();
     } catch (error) {
       console.error('Logout failed', error);
@@ -473,12 +475,12 @@ export function Navbar() {
             </div>
           ) : (
             <>
-              <Link href="/login" className="nav-link">
+              <a href="/login" className="nav-link">
                 Log In
-              </Link>
-              <Link href="/register" className="btn-signup">
+              </a>
+              <a href="/register" className="btn-signup">
                 Register
-              </Link>
+              </a>
             </>
           )}
         </div>
@@ -593,22 +595,22 @@ export function Navbar() {
                 </>
               ) : (
                 <div className="flex flex-col gap-3 mt-4">
-                  <Link
+                  <a
                     href="/login"
                     className="btn-hero-secondary w-full text-center justify-center"
                     style={{ padding: '14px 24px', fontSize: '16px' }}
                     onClick={closeMobileMenu}
                   >
                     Log In
-                  </Link>
-                  <Link
+                  </a>
+                  <a
                     href="/register"
                     className="btn-hero-white w-full text-center"
                     style={{ padding: '14px 24px', fontSize: '16px' }}
                     onClick={closeMobileMenu}
                   >
                     Register
-                  </Link>
+                  </a>
                 </div>
               )}
             </div>
