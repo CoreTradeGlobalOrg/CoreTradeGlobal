@@ -8,11 +8,13 @@
 
 import { Suspense, useEffect, useState, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { MessageSquare } from 'lucide-react';
+import { MessageSquare, Trash2, X } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/presentation/contexts/AuthContext';
 import { useMessages } from '@/presentation/contexts/MessagesContext';
+import { useDeleteMessage } from '@/presentation/hooks/messaging/useDeleteMessage';
 import { SearchBar } from '@/presentation/components/common/SearchBar/SearchBar';
+import toast from 'react-hot-toast';
 import './messages.css';
 
 function MessagesPageContent() {
@@ -20,18 +22,32 @@ function MessagesPageContent() {
   const searchParams = useSearchParams();
   const { user, isAuthenticated, loading: authLoading } = useAuth();
   const { conversations, loading, openConversation } = useMessages();
+  const { deleteConversation, deleting } = useDeleteMessage();
   const [searchQuery, setSearchQuery] = useState('');
+  const [deleteConfirmId, setDeleteConfirmId] = useState(null);
+
+  const handleDeleteConversation = async (e, conversationId) => {
+    e.stopPropagation();
+    try {
+      await deleteConversation(conversationId);
+      setDeleteConfirmId(null);
+      toast.success('Conversation deleted');
+    } catch {
+      toast.error('Failed to delete conversation');
+    }
+  };
 
   // Get conversation ID from URL if present
   const conversationIdFromUrl = searchParams.get('conversation');
 
   // Filter conversations based on search query
   const filteredConversations = useMemo(() => {
-    if (!searchQuery.trim()) return conversations;
+    const visible = conversations.filter(c => !c.deletedBy?.includes(user?.uid));
+    if (!searchQuery.trim()) return visible;
 
     const query = searchQuery.toLowerCase().trim();
 
-    return conversations.filter((conversation) => {
+    return visible.filter((conversation) => {
       // Search in last message content
       if (conversation.lastMessage?.content?.toLowerCase().includes(query)) {
         return true;
@@ -208,11 +224,38 @@ function MessagesPageContent() {
                       )}
                     </div>
 
-                    {unreadCount > 0 && (
-                      <span className="message-list-badge">
-                        {unreadCount > 99 ? '99+' : unreadCount}
-                      </span>
-                    )}
+                    <div className="message-list-right">
+                      {unreadCount > 0 && (
+                        <span className="message-list-badge">
+                          {unreadCount > 99 ? '99+' : unreadCount}
+                        </span>
+                      )}
+                      {deleteConfirmId === conversation.id ? (
+                        <div className="message-list-delete-confirm" onClick={(e) => e.stopPropagation()}>
+                          <button
+                            onClick={(e) => handleDeleteConversation(e, conversation.id)}
+                            disabled={deleting}
+                            className="text-red-400 hover:text-red-300 text-xs px-2 py-1 rounded bg-red-900/30 border border-red-800/30"
+                          >
+                            {deleting ? '...' : 'Delete'}
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setDeleteConfirmId(null); }}
+                            className="text-gray-400 hover:text-white text-xs px-1 py-1"
+                          >
+                            <X size={12} />
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setDeleteConfirmId(conversation.id); }}
+                          className="message-list-delete-btn"
+                          title="Delete conversation"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
                   </div>
                 );
               })}

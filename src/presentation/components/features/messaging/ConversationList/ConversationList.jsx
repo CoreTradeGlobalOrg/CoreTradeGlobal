@@ -7,15 +7,30 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { MessageSquare, User, Mail, Clock, Search, X, Megaphone } from 'lucide-react';
+import { MessageSquare, User, Mail, Clock, Search, X, Megaphone, Trash2 } from 'lucide-react';
 import { useMessages } from '@/presentation/contexts/MessagesContext';
 import { useAuth } from '@/presentation/contexts/AuthContext';
+import { useDeleteMessage } from '@/presentation/hooks/messaging/useDeleteMessage';
+import toast from 'react-hot-toast';
 import './ConversationList.css';
 
 export function ConversationList() {
   const { user } = useAuth();
   const { conversations, loading, openConversation } = useMessages();
+  const { deleteConversation, deleting } = useDeleteMessage();
   const [searchQuery, setSearchQuery] = useState('');
+  const [deleteConfirmId, setDeleteConfirmId] = useState(null);
+
+  const handleDeleteConversation = async (e, conversationId) => {
+    e.stopPropagation();
+    try {
+      await deleteConversation(conversationId);
+      setDeleteConfirmId(null);
+      toast.success('Conversation deleted');
+    } catch {
+      toast.error('Failed to delete conversation');
+    }
+  };
 
   const formatTime = (date) => {
     if (!date) return '';
@@ -78,11 +93,13 @@ export function ConversationList() {
 
   // Filter conversations based on search query
   const filteredConversations = useMemo(() => {
-    if (!searchQuery.trim()) return conversations;
+    // Filter out soft-deleted conversations
+    const visible = conversations.filter(c => !c.deletedBy?.includes(user?.uid));
+    if (!searchQuery.trim()) return visible;
 
     const query = searchQuery.toLowerCase().trim();
 
-    return conversations.filter((conversation) => {
+    return visible.filter((conversation) => {
       // Search in last message content
       if (conversation.lastMessage?.content?.toLowerCase().includes(query)) {
         return true;
@@ -226,11 +243,38 @@ export function ConversationList() {
               </div>
             </div>
 
-            {unreadCount > 0 && (
-              <span className="conversation-unread-badge">
-                {unreadCount > 99 ? '99+' : unreadCount}
-              </span>
-            )}
+            <div className="conversation-right">
+              {unreadCount > 0 && (
+                <span className="conversation-unread-badge">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              )}
+              {deleteConfirmId === conversation.id ? (
+                <div className="conversation-delete-confirm" onClick={(e) => e.stopPropagation()}>
+                  <button
+                    onClick={(e) => handleDeleteConversation(e, conversation.id)}
+                    disabled={deleting}
+                    className="text-red-400 hover:text-red-300 text-xs px-2 py-1 rounded bg-red-900/30 border border-red-800/30"
+                  >
+                    {deleting ? '...' : 'Delete'}
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setDeleteConfirmId(null); }}
+                    className="text-gray-400 hover:text-white text-xs px-1 py-1"
+                  >
+                    <X size={12} />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={(e) => { e.stopPropagation(); setDeleteConfirmId(conversation.id); }}
+                  className="conversation-delete-btn"
+                  title="Delete conversation"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
           </div>
         );
       })}

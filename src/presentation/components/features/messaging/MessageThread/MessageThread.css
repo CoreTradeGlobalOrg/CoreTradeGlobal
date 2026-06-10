@@ -474,3 +474,37 @@
   font-size: 10px;
   color: #64748b;
 }
+
+/* Message delete button - appears on hover */
+.message-own-wrapper {
+  position: relative;
+}
+
+.message-actions {
+  position: absolute;
+  left: -8px;
+  top: 50%;
+  transform: translate(-100%, -50%);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  z-index: 5;
+}
+
+.message-own-wrapper:hover .message-actions {
+  opacity: 1;
+}
+
+.message-delete-btn {
+  padding: 4px;
+  border-radius: 6px;
+  color: #64748b;
+  transition: all 0.15s ease;
+  background: rgba(15, 27, 43, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.message-delete-btn:hover {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.2);
+}

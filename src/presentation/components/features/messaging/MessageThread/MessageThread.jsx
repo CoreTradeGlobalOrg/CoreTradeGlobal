@@ -11,7 +11,9 @@ import Link from 'next/link';
 import { useMessages } from '@/presentation/contexts/MessagesContext';
 import { useAuth } from '@/presentation/contexts/AuthContext';
 import { useMarkAsRead } from '@/presentation/hooks/messaging/useMarkAsRead';
-import { FileText, Download, X, Handshake } from 'lucide-react';
+import { FileText, Download, X, Handshake, Trash2 } from 'lucide-react';
+import { useDeleteMessage } from '@/presentation/hooks/messaging/useDeleteMessage';
+import toast from 'react-hot-toast';
 import './MessageThread.css';
 
 // Lightbox for viewing images
@@ -96,8 +98,20 @@ export function MessageThread({ conversationId, participantDetails = {} }) {
   const { user } = useAuth();
   const { activeMessages } = useMessages();
   const { markConversationAsRead } = useMarkAsRead();
+  const { deleteMessage, deleting } = useDeleteMessage();
   const messagesEndRef = useRef(null);
   const hasMarkedAsRead = useRef(false);
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
+
+  const handleDeleteMessage = async (messageId) => {
+    try {
+      await deleteMessage(conversationId, messageId);
+      setDeleteConfirm(null);
+      toast.success('Message deleted');
+    } catch (err) {
+      toast.error('Failed to delete message');
+    }
+  };
 
   // Scroll to bottom — scrolls the direct parent container, not the whole page
   const scrollToBottom = () => {
@@ -253,6 +267,34 @@ export function MessageThread({ conversationId, participantDetails = {} }) {
 
                 {isOwn && (
                   <div className="message-own-wrapper">
+                    {/* Delete button */}
+                    <div className="message-actions">
+                      {deleteConfirm === message.id ? (
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => handleDeleteMessage(message.id)}
+                            disabled={deleting}
+                            className="text-red-400 hover:text-red-300 text-xs px-2 py-1 rounded bg-red-900/30 border border-red-800/30"
+                          >
+                            {deleting ? '...' : 'Delete'}
+                          </button>
+                          <button
+                            onClick={() => setDeleteConfirm(null)}
+                            className="text-gray-400 hover:text-white text-xs px-2 py-1"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => setDeleteConfirm(message.id)}
+                          className="message-delete-btn"
+                          title="Delete message"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
                     {/* Attachments */}
                     {message.attachments?.length > 0 && (
                       <div className="message-attachments own">
