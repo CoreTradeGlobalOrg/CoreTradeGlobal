@@ -22,9 +22,12 @@ export default function VerifyEmailPage() {
   const [checking, setChecking] = useState(false);
   const [countdown, setCountdown] = useState(0);
 
-  // Check if email is already verified
+  // Redirect away when appropriate — always in an effect, never during render
   useEffect(() => {
-    if (!loading && user?.emailVerified) {
+    if (loading) return;
+    if (!user) {
+      router.push('/register');
+    } else if (user.emailVerified) {
       router.push('/');
     }
   }, [user, loading, router]);
@@ -89,7 +92,6 @@ export default function VerifyEmailPage() {
   }
 
   if (!user) {
-    router.push('/register');
     return null;
   }
 
