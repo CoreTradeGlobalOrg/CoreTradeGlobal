@@ -5058,6 +5058,17 @@ exports.onNewMemberRegistered = onDocumentCreated(
       const notifTitle = 'New Member Registered';
       const notifBody = `${displayName} has just registered as a member.`;
 
+      // Email body (built once, shared across admins)
+      const esc = (v) => String(v || '').replace(/[<>]/g, '');
+      const emailInnerHtml = `
+        <p style="margin:0 0 16px 0;">A new member has just registered and is awaiting your review.</p>
+        <table cellpadding="0" cellspacing="0" border="0" style="font-family:Arial,sans-serif;font-size:14px;color:#1a283b;">
+          <tr><td style="padding:4px 16px 4px 0;color:#8899AA;">Name</td><td style="padding:4px 0;font-weight:bold;">${esc(newUser.displayName) || '—'}</td></tr>
+          <tr><td style="padding:4px 16px 4px 0;color:#8899AA;">Company</td><td style="padding:4px 0;font-weight:bold;">${esc(newUser.companyName) || '—'}</td></tr>
+          <tr><td style="padding:4px 16px 4px 0;color:#8899AA;">Email</td><td style="padding:4px 0;font-weight:bold;">${esc(newUser.email) || '—'}</td></tr>
+          <tr><td style="padding:4px 16px 4px 0;color:#8899AA;">Country</td><td style="padding:4px 0;font-weight:bold;">${esc(newUser.country) || '—'}</td></tr>
+        </table>`;
+
       // Query all admin users
       const adminsSnap = await db.collection('users').where('role', '==', ROLES.ADMIN).get();
       if (adminsSnap.empty) {
@@ -5099,6 +5110,22 @@ exports.onNewMemberRegistered = onDocumentCreated(
           }
         } catch (err) {
           console.error(`onNewMemberRegistered: FCM error for admin ${adminId}:`, err);
+        }
+
+        // --- c) Email notification (preference check) ---
+        try {
+          const emailEnabled = adminData.preferences?.system?.email !== false;
+          const adminEmail = adminData.email;
+          if (adminEmail && emailEnabled) {
+            const htmlBody = buildBrandedEmailHtml(
+              emailInnerHtml,
+              'Review in Admin Panel',
+              `${APP_URL}/admin`
+            );
+            await sendDealEmail(adminEmail, `New Member Registered — ${displayName}`, htmlBody);
+          }
+        } catch (err) {
+          console.error(`onNewMemberRegistered: email error for admin ${adminId}:`, err);
         }
       }
 
