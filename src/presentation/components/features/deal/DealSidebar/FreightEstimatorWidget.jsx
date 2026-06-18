@@ -16,6 +16,7 @@ import { useState, useMemo } from 'react';
 import { ChevronDown, ChevronUp, Ship, Plane, Truck } from 'lucide-react';
 import { useFreightEstimate } from '@/presentation/hooks/intelligence/useFreightEstimate';
 import { useLiveCurrency, convertAmount } from '@/presentation/hooks/intelligence/useLiveCurrency';
+import { NamedPlaceInput } from '@/presentation/components/features/deal/NamedPlaceInput/NamedPlaceInput';
 import {
   TRANSPORT_MODES,
   getChargeableWeight,
@@ -179,6 +180,14 @@ export function FreightEstimatorWidget({ deal, latestOffer }) {
     };
   }
 
+  // NamedPlaceInput emits the value directly (not an event)
+  function handleLocationChange(setter) {
+    return (val) => {
+      setter(val);
+      if (estimate || error) reset();
+    };
+  }
+
   const inputCls =
     'bg-[#0F1C2E] border border-[#2A3B52] text-white text-xs rounded px-2 py-1.5 w-full focus:outline-none focus:border-[#FFD700]/50 placeholder-[#4A5B6E]';
 
@@ -208,12 +217,12 @@ export function FreightEstimatorWidget({ deal, latestOffer }) {
             <label className="block text-[10px] text-[#8899AA] uppercase tracking-wide mb-1">
               Origin
             </label>
-            <input
-              type="text"
+            <NamedPlaceInput
+              size="compact"
               value={origin}
-              onChange={handleFieldChange(setOrigin)}
-              placeholder="City, Country (e.g. Istanbul, Turkey)"
-              className={inputCls}
+              onChange={handleLocationChange(setOrigin)}
+              ariaLabel="Origin"
+              placeholder="City or port (e.g. Istanbul, Turkey)"
             />
           </div>
 
@@ -222,12 +231,12 @@ export function FreightEstimatorWidget({ deal, latestOffer }) {
             <label className="block text-[10px] text-[#8899AA] uppercase tracking-wide mb-1">
               Destination
             </label>
-            <input
-              type="text"
+            <NamedPlaceInput
+              size="compact"
               value={destination}
-              onChange={handleFieldChange(setDestination)}
-              placeholder="City, Country (e.g. Rotterdam, Netherlands)"
-              className={inputCls}
+              onChange={handleLocationChange(setDestination)}
+              ariaLabel="Destination"
+              placeholder="City or port (e.g. Rotterdam, Netherlands)"
             />
           </div>
 
