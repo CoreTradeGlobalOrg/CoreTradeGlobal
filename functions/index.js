@@ -1519,8 +1519,8 @@ exports.createDeal = onCall(async (request) => {
   const uid = request.auth?.uid;
 
   if (!uid) throw new HttpsError('unauthenticated', 'Must be logged in to create a deal.');
-  if (!conversationId || !productId || !initialOffer) {
-    throw new HttpsError('invalid-argument', 'conversationId, productId, and initialOffer are required.');
+  if (!productId || !initialOffer) {
+    throw new HttpsError('invalid-argument', 'productId and initialOffer are required.');
   }
   if (!initialOffer.price || !initialOffer.quantity || !initialOffer.incoterm) {
     throw new HttpsError('invalid-argument', 'initialOffer must include price, quantity, and incoterm.');
@@ -1542,6 +1542,9 @@ exports.createDeal = onCall(async (request) => {
 
   if (uid === sellerId) {
     // Seller initiated — find buyer from conversation participants
+    if (!conversationId) {
+      throw new HttpsError('invalid-argument', 'conversationId is required when the seller initiates a deal.');
+    }
     const convDoc = await db.collection('conversations').doc(conversationId).get();
     if (!convDoc.exists) {
       throw new HttpsError('not-found', 'Conversation not found.');
@@ -1591,7 +1594,7 @@ exports.createDeal = onCall(async (request) => {
       productName: product.name || '',
       productImage: product.images?.[0] || null,
       productCategory: product.categoryName || null,
-      conversationId,
+      conversationId: conversationId || null,
       status: DEAL_STATUS.NEGOTIATING,
       // After submitting, the OTHER party must respond first
       currentTurnUid: uid === actualSellerId ? buyerId : actualSellerId,
@@ -1618,12 +1621,15 @@ exports.createDeal = onCall(async (request) => {
       updatedAt: now,
     });
 
-    // Link deal to conversation metadata for persistent banner
-    const conversationRef = db.collection('conversations').doc(conversationId);
-    transaction.update(conversationRef, {
-      'metadata.dealId': dealRef.id,
-      'metadata.dealStatus': DEAL_STATUS.NEGOTIATING,
-    });
+    // Link deal to conversation metadata for persistent banner (only when the
+    // deal has an associated conversation — direct "Start Deal" deals may not).
+    if (conversationId) {
+      const conversationRef = db.collection('conversations').doc(conversationId);
+      transaction.update(conversationRef, {
+        'metadata.dealId': dealRef.id,
+        'metadata.dealStatus': DEAL_STATUS.NEGOTIATING,
+      });
+    }
   });
 
   // Note: system message is posted by onDealOfferCreated trigger (round === 1 = new_deal)
@@ -5247,7 +5253,9 @@ async function deliverAnnouncement(announcementData, announcementId) {
     // --- a) In-app notification ---
     if (channels?.inApp) {
       try {
-        await db.collection('users').doc(uid).collection('notifications').add({
+        // Deterministic doc id (announcementId) makes delivery idempotent: a
+        // re-run overwrites the same notification instead of creating a duplicate.
+        await db.collection('users').doc(uid).collection('notifications').doc(announcementId).set({
           type: 'announcement',
           title,
           body,
@@ -5590,6 +5598,7 @@ exports.processScheduledAnnouncements = onSchedule(
   {
     schedule: 'every 5 minutes',
     timeZone: 'UTC',
+    timeoutSeconds: 540,
     retryCount: 3,
   },
   async () => {
@@ -5609,9 +5618,29 @@ exports.processScheduledAnnouncements = onSchedule(
       console.log(`processScheduledAnnouncements: processing ${pendingSnap.size} announcement(s).`);
 
       for (const doc of pendingSnap.docs) {
-        const announcementData = doc.data();
+        // Atomically claim the announcement before delivering. This closes the
+        // window where an overlapping cron run (or a retry after a timeout) sees
+        // the same still-'pending' doc and delivers it a second time.
+        let claimedData;
         try {
-          const recipientCount = await deliverAnnouncement(announcementData, doc.id);
+          claimedData = await db.runTransaction(async (tx) => {
+            const fresh = await tx.get(doc.ref);
+            if (!fresh.exists || fresh.data().status !== 'pending') return null;
+            tx.update(doc.ref, { status: 'sending', claimedAt: Timestamp.now() });
+            return fresh.data();
+          });
+        } catch (claimErr) {
+          console.error(`processScheduledAnnouncements: claim failed for ${doc.id}:`, claimErr);
+          continue;
+        }
+
+        if (!claimedData) {
+          console.log(`processScheduledAnnouncements: ${doc.id} already claimed, skipping.`);
+          continue;
+        }
+
+        try {
+          const recipientCount = await deliverAnnouncement(claimedData, doc.id);
           await doc.ref.update({
             status: 'sent',
             sentAt: Timestamp.now(),
