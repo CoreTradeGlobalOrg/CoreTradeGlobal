@@ -20,6 +20,7 @@ import { useAuth } from '@/presentation/contexts/AuthContext';
 import { DealForm } from '@/presentation/components/features/deal/DealForm/DealForm';
 import { useCreateDeal } from '@/presentation/hooks/deal/useCreateDeal';
 import { container } from '@/core/di/container';
+import { CreateConversationUseCase } from '@/domain/usecases/messaging/CreateConversationUseCase';
 import { UNECE_TO_DEAL_UNIT } from '@/core/constants/dealConstants';
 import toast from 'react-hot-toast';
 
@@ -161,9 +162,39 @@ function NewDealContent() {
 
   const handleSubmit = async (formData) => {
     try {
+      let dealConversationId = conversationId;
+
+      // Direct path ("Start Deal" from a product page): there is no prior
+      // conversation. Create-or-find a buyer<->seller product conversation so the
+      // deal has a chat thread. Dedups by product context, so re-deals reuse it.
+      if (isDirectPath && user?.uid && sellerId && user.uid !== sellerId) {
+        try {
+          const createConversation = new CreateConversationUseCase(
+            container.getConversationRepository(),
+            container.getMessageRepository(),
+            container.getNotificationRepository(),
+            container.getUserRepository()
+          );
+          const conv = await createConversation.execute({
+            type: 'direct',
+            participantIds: [user.uid, sellerId],
+            creatorId: user.uid,
+            metadata: {
+              productId,
+              productName: product?.name || null,
+              productImage: product?.images?.[0] || null,
+            },
+          });
+          dealConversationId = conv?.id || null;
+        } catch (convErr) {
+          // Non-fatal: the CF accepts a null conversationId, so still create the deal.
+          console.error('NewDealPage: conversation create/find failed, proceeding without it:', convErr);
+          dealConversationId = null;
+        }
+      }
+
       await createDeal({
-        // Pass null for conversationId on direct path — CF accepts it as optional
-        conversationId: conversationId || null,
+        conversationId: dealConversationId || null,
         productId,
         initialOffer: formData,
       });
