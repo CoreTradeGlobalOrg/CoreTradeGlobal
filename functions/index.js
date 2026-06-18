@@ -3342,23 +3342,52 @@ exports.submitQuote = onCall(async (request) => {
     updatedAt: now,
   });
 
-  // Notify buyer of new/updated quote (simple in-app notification)
+  // Notify buyer of new/updated quote (in-app + push + email)
   try {
-    await db
-      .collection('users')
-      .doc(quoteRequest.buyerId)
-      .collection('notifications')
-      .add({
-        type: 'quote',
-        eventType: 'quote_received',
-        title: `New quote received for your deal`,
-        body: `A ${(providerType === 'insurance') ? 'insurance' : 'logistics'} provider has submitted a quote for your deal.`,
-        dealId: quoteRequest.dealId,
-        requestId,
-        isRead: false,
-        createdAt: now,
-        link: `/deals/${quoteRequest.dealId}`,
-      });
+    const buyerId = quoteRequest.buyerId;
+    const providerLabel = providerType === 'insurance' ? 'insurance' : 'logistics';
+    const notifTitle = 'New quote received for your deal';
+    const notifBody = `A ${providerLabel} provider has submitted a quote for your deal.`;
+    const dealLink = `/deals/${quoteRequest.dealId}`;
+
+    // a) Firestore in-app notification
+    await db.collection('users').doc(buyerId).collection('notifications').add({
+      type: 'quote',
+      eventType: 'quote_received',
+      title: notifTitle,
+      body: notifBody,
+      dealId: quoteRequest.dealId,
+      requestId,
+      isRead: false,
+      createdAt: now,
+      link: dealLink,
+    });
+
+    // b) FCM push + c) email — "Deals" preference covers quote updates
+    const buyerDoc = await db.collection('users').doc(buyerId).get();
+    if (buyerDoc.exists) {
+      const buyerData = buyerDoc.data();
+
+      if (buyerData.preferences?.deals?.push !== false) {
+        await sendFCMPushToUser(buyerId, buyerData, {
+          type: 'deal_event',
+          title: notifTitle,
+          body: notifBody,
+          dealId: quoteRequest.dealId,
+          click_action: dealLink,
+        });
+      }
+
+      const emailEnabled = buyerData.preferences?.deals?.email !== false;
+      if (buyerData.email && emailEnabled) {
+        const htmlBody = buildBrandedEmailHtml(
+          `<p style="margin:0 0 16px 0;">${notifBody}</p>`,
+          'View Deal',
+          `${APP_URL}${dealLink}`
+        );
+        await sendDealEmail(buyerData.email, notifTitle, htmlBody);
+      }
+    }
   } catch (err) {
     console.error('submitQuote: failed to send buyer notification (non-fatal):', err);
   }
