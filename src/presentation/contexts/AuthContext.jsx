@@ -96,7 +96,8 @@ export function AuthProvider({ children }) {
         // Don't log out — surface a "pending completion" user so the app can
         // route them to /complete-profile (the guard handles redirection).
         const providerId = firebaseUser.providerData?.[0]?.providerId;
-        const isOAuth = providerId && providerId !== 'password';
+        // Empty providerData = custom-token sign-in (our LinkedIn flow).
+        const isOAuth = !providerId || providerId !== 'password';
         if (isOAuth) {
           setUser({
             uid: firebaseUser.uid,
@@ -104,7 +105,7 @@ export function AuthProvider({ children }) {
             emailVerified: firebaseUser.emailVerified,
             displayName: firebaseUser.displayName || '',
             photoURL: firebaseUser.photoURL || '',
-            authProvider: providerId === 'google.com' ? 'google' : providerId,
+            authProvider: providerId === 'google.com' ? 'google' : (providerId || 'linkedin'),
             profileComplete: false,
           });
           setProfileLoading(false);
@@ -197,7 +198,8 @@ export function AuthProvider({ children }) {
         // Check if user profile exists in Firestore
         if (!userProfile) {
           const providerId = currentUser.providerData?.[0]?.providerId;
-          const isOAuth = providerId && providerId !== 'password';
+          // Empty providerData = custom-token sign-in (our LinkedIn flow).
+          const isOAuth = !providerId || providerId !== 'password';
           if (isOAuth) {
             setUser({
               uid: currentUser.uid,
@@ -205,7 +207,7 @@ export function AuthProvider({ children }) {
               emailVerified: currentUser.emailVerified,
               displayName: currentUser.displayName || '',
               photoURL: currentUser.photoURL || '',
-              authProvider: providerId === 'google.com' ? 'google' : providerId,
+              authProvider: providerId === 'google.com' ? 'google' : (providerId || 'linkedin'),
               profileComplete: false,
             });
             return;

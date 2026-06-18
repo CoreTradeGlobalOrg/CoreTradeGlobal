@@ -213,6 +213,17 @@ export class AuthRepository {
   }
 
   /**
+   * Sign in with a Firebase custom token (our LinkedIn flow). Unlike
+   * loginWithBackupCode this does NOT log out on a missing Firestore profile —
+   * AuthContext routes such users to profile completion.
+   * @param {string} customToken
+   * @returns {Promise<User>}
+   */
+  async signInWithCustomToken(customToken) {
+    return this.authDataSource.loginWithCustomToken(customToken);
+  }
+
+  /**
    * Create a Firestore user profile for an already-authenticated user
    * (e.g. after OAuth sign-in, once the profile-completion step is submitted).
    * @param {string} userId
