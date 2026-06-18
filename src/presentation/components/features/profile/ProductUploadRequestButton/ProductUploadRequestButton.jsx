@@ -102,7 +102,7 @@ export function ProductUploadRequestButton({ user }) {
     );
   }, [user?.displayName, user?.companyName]);
 
-  const createConversationWithAdmin = useCallback(async (requestType, csvUrl) => {
+  const createConversationWithAdmin = useCallback(async (requestType, csvUrl, csvAttachment = null) => {
     const adminIds = await findAllAdminIds();
     if (adminIds.length === 0) return null;
 
@@ -120,7 +120,7 @@ export function ProductUploadRequestButton({ user }) {
 
     const typeLabel = requestType === 'csv_upload' ? 'CSV Upload' : 'Help Request';
     const initialMessage = requestType === 'csv_upload'
-      ? `I have uploaded a CSV file for product upload. Please review and process it.\n\nCSV File: ${csvUrl}`
+      ? "Hi! I've uploaded my product list for review. The CSV file is attached below — please process it when you get a chance. Thank you!"
       : 'I would like help uploading my products. Please assist me with the product upload process.';
 
     // Include all admins as participants (like contact form pattern)
@@ -131,6 +131,7 @@ export function ProductUploadRequestButton({ user }) {
       participantIds,
       creatorId: user.uid,
       initialMessage,
+      attachments: csvAttachment ? [csvAttachment] : [],
       metadata: {
         source: 'product_upload',
         subject: `Product Upload - ${typeLabel}`,
@@ -172,8 +173,14 @@ export function ProductUploadRequestButton({ user }) {
         createdAt: serverTimestamp(),
       });
 
-      // 3. Create conversation with admin
-      const conversation = await createConversationWithAdmin('csv_upload', csvUrl);
+      // 3. Create conversation with admin — attach the CSV as a clean file card
+      const csvAttachment = {
+        url: csvUrl,
+        name: file.name,
+        type: file.type || 'text/csv',
+        size: file.size,
+      };
+      const conversation = await createConversationWithAdmin('csv_upload', csvUrl, csvAttachment);
 
       // 4. Notify admins
       await notifyAdmins('csv_upload');
