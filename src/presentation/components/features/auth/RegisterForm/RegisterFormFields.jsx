@@ -27,14 +27,16 @@ export function RegisterFormFields({ step, register, errors, loading, setValue, 
   const [localPhone, setLocalPhone] = useState('');
   const [selectedPhoneCountry, setSelectedPhoneCountry] = useState('');
 
-  // Pre-fill phone country from company country on first selection only
-  useEffect(() => {
-    if (country && !selectedPhoneCountry) {
-      setSelectedPhoneCountry(country);
-    }
-  }, [country, selectedPhoneCountry]);
-
   const selectedPhoneOption = PHONE_CODE_OPTIONS.find((opt) => opt.value === selectedPhoneCountry);
+
+  // A phone number is only valid with an explicit country code: the user must
+  // either pick one from the dropdown or type a full number starting with '+'.
+  // We never silently borrow the company country code (that produced phone
+  // numbers with a code the user never chose).
+  const phoneCodeMissing =
+    localPhone.trim().length > 0 &&
+    !selectedPhoneCountry &&
+    !localPhone.trim().startsWith('+');
 
   // Re-compute form phone value when phone country code changes
   useEffect(() => {
@@ -68,7 +70,7 @@ export function RegisterFormFields({ step, register, errors, loading, setValue, 
   // ─── STEP 1: Email + Consent ───
   if (step === 1) {
     return (
-      <div className="space-y-4">
+      <div key="register-step-1" className="space-y-4">
         <div>
           <label htmlFor="email" className="block text-xs text-[#A0A0A0] font-semibold tracking-wider uppercase mb-1.5">
             Business Email <span className="text-red-400">*</span>
@@ -79,6 +81,7 @@ export function RegisterFormFields({ step, register, errors, loading, setValue, 
             {...register('email')}
             className="form-input-anasyf text-sm"
             placeholder="john@company.com"
+            autoComplete="email"
             disabled={loading}
             autoFocus
           />
@@ -116,7 +119,7 @@ export function RegisterFormFields({ step, register, errors, loading, setValue, 
   // ─── STEP 2: Personal Information ───
   if (step === 2) {
     return (
-      <div className="space-y-4">
+      <div key="register-step-2" className="space-y-4">
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label htmlFor="firstName" className="block text-xs text-[#A0A0A0] font-semibold tracking-wider uppercase mb-1.5">
@@ -179,6 +182,7 @@ export function RegisterFormFields({ step, register, errors, loading, setValue, 
                 onChange={(val) => setSelectedPhoneCountry(val)}
                 placeholder="Code"
                 disabled={loading}
+                error={phoneCodeMissing}
                 className="dark-select phone-code-select [&_button]:!py-[14px] [&_button]:!rounded-r-none [&_button]:!border-r-0"
                 searchPlaceholder="Search country..."
                 dropdownClassName="!min-w-[280px]"
@@ -195,9 +199,11 @@ export function RegisterFormFields({ step, register, errors, loading, setValue, 
               disabled={loading}
             />
           </div>
-          {errors.phone && (
+          {phoneCodeMissing ? (
+            <p className="mt-1 text-xs text-red-400">Please select a country code for your phone number.</p>
+          ) : errors.phone ? (
             <p className="mt-1 text-xs text-red-400">{errors.phone.message}</p>
-          )}
+          ) : null}
         </div>
 
         <div>
@@ -223,7 +229,7 @@ export function RegisterFormFields({ step, register, errors, loading, setValue, 
   // ─── STEP 3: Company Information + Password ───
   if (step === 3) {
     return (
-      <div className="space-y-4">
+      <div key="register-step-3" className="space-y-4">
         <div>
           <label htmlFor="companyType" className="block text-xs text-[#A0A0A0] font-semibold tracking-wider uppercase mb-1.5">
             Company Type <span className="text-red-400">*</span>
@@ -308,6 +314,7 @@ export function RegisterFormFields({ step, register, errors, loading, setValue, 
                 {...register('password')}
                 className="form-input-anasyf text-sm pr-12"
                 placeholder="••••••••"
+                autoComplete="new-password"
                 disabled={loading}
               />
               <button
@@ -335,6 +342,7 @@ export function RegisterFormFields({ step, register, errors, loading, setValue, 
                 {...register('confirmPassword')}
                 className="form-input-anasyf text-sm pr-12"
                 placeholder="••••••••"
+                autoComplete="new-password"
                 disabled={loading}
               />
               <button
