@@ -13,6 +13,8 @@ import {
   signInWithEmailAndPassword,
   signInWithCustomToken,
   createUserWithEmailAndPassword,
+  GoogleAuthProvider,
+  signInWithPopup,
   signOut,
   onAuthStateChanged,
   sendPasswordResetEmail,
@@ -96,6 +98,19 @@ export class FirebaseAuthDataSource {
       email,
       password
     );
+    return userCredential.user;
+  }
+
+  /**
+   * Sign in with Google via popup.
+   * Account linking for an existing same-email account is handled by Firebase
+   * when the "Link accounts that use the same email" setting is enabled.
+   * @returns {Promise<User>} Firebase User object
+   */
+  async signInWithGoogle() {
+    const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: 'select_account' });
+    const userCredential = await signInWithPopup(this.auth, provider);
     return userCredential.user;
   }
 

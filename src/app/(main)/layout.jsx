@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { Navbar } from '@/presentation/components/homepage/Navbar/Navbar';
 import { Footer } from '@/presentation/components/homepage/Footer/Footer';
@@ -40,8 +41,19 @@ const TourHelpButton = dynamic(
 
 export default function MainLayout({ children }) {
   const { user, loading, profileLoading } = useAuth();
+  const pathname = usePathname();
+  const router = useRouter();
   const [showTourManual, setShowTourManual] = useState(false);
   const [tourDismissed, setTourDismissed] = useState(false);
+
+  // OAuth users without a completed profile must finish onboarding before using
+  // the app (role is required). Send them to /complete-profile.
+  useEffect(() => {
+    if (loading || profileLoading) return;
+    if (user && user.profileComplete === false && pathname !== '/complete-profile') {
+      router.replace('/complete-profile');
+    }
+  }, [user, loading, profileLoading, pathname, router]);
 
   // Wait for profile to load before auto-starting tour — basic user doesn't have onboardingTourCompleted
   const showTourAuto = !loading && !profileLoading && user && !user.onboardingTourCompleted && !tourDismissed;

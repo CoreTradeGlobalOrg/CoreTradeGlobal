@@ -92,6 +92,24 @@ export function AuthProvider({ children }) {
 
       // Check if user profile exists in Firestore
       if (!userProfile) {
+        // OAuth first-time sign-in: the auth user exists but has no profile yet.
+        // Don't log out — surface a "pending completion" user so the app can
+        // route them to /complete-profile (the guard handles redirection).
+        const providerId = firebaseUser.providerData?.[0]?.providerId;
+        const isOAuth = providerId && providerId !== 'password';
+        if (isOAuth) {
+          setUser({
+            uid: firebaseUser.uid,
+            email: firebaseUser.email,
+            emailVerified: firebaseUser.emailVerified,
+            displayName: firebaseUser.displayName || '',
+            photoURL: firebaseUser.photoURL || '',
+            authProvider: providerId === 'google.com' ? 'google' : providerId,
+            profileComplete: false,
+          });
+          setProfileLoading(false);
+          return;
+        }
         console.error('User profile not found in Firestore. Logging out...');
         await authRepository.logout();
         setUser(null);
@@ -124,6 +142,8 @@ export function AuthProvider({ children }) {
         uid: firebaseUser.uid,
         email: firebaseUser.email,
         emailVerified: firebaseUser.emailVerified, // Use Firebase Auth value (must be after spread)
+        // Legacy docs without the flag are treated as complete.
+        profileComplete: userProfile.profileComplete !== false,
       };
 
       setUser(userData);
@@ -176,6 +196,20 @@ export function AuthProvider({ children }) {
 
         // Check if user profile exists in Firestore
         if (!userProfile) {
+          const providerId = currentUser.providerData?.[0]?.providerId;
+          const isOAuth = providerId && providerId !== 'password';
+          if (isOAuth) {
+            setUser({
+              uid: currentUser.uid,
+              email: currentUser.email,
+              emailVerified: currentUser.emailVerified,
+              displayName: currentUser.displayName || '',
+              photoURL: currentUser.photoURL || '',
+              authProvider: providerId === 'google.com' ? 'google' : providerId,
+              profileComplete: false,
+            });
+            return;
+          }
           console.error('User profile not found in Firestore. Logging out...');
           await authRepository.logout();
           setUser(null);
@@ -205,6 +239,7 @@ export function AuthProvider({ children }) {
           uid: currentUser.uid,
           email: currentUser.email,
           emailVerified: currentUser.emailVerified, // Must be after spread
+          profileComplete: userProfile.profileComplete !== false,
         });
       }
     } catch (err) {

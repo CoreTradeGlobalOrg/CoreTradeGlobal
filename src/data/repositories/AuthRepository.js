@@ -204,6 +204,26 @@ export class AuthRepository {
   }
 
   /**
+   * Sign in with Google. Returns the Firebase auth user. The caller checks
+   * whether a Firestore profile exists to decide login vs. profile completion.
+   * @returns {Promise<User>}
+   */
+  async signInWithGoogle() {
+    return this.authDataSource.signInWithGoogle();
+  }
+
+  /**
+   * Create a Firestore user profile for an already-authenticated user
+   * (e.g. after OAuth sign-in, once the profile-completion step is submitted).
+   * @param {string} userId
+   * @param {Object} profileData
+   * @returns {Promise<Object>}
+   */
+  async createUserProfile(userId, profileData) {
+    return this.firestoreDataSource.createWithId(COLLECTIONS.USERS, userId, profileData);
+  }
+
+  /**
    * Logout current user
    * @returns {Promise<void>}
    */
