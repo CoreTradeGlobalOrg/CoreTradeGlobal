@@ -17,12 +17,17 @@ import toast from 'react-hot-toast';
 import './MessageThread.css';
 
 // Lightbox for viewing images
-function ImageLightbox({ src, alt, onClose }) {
+function ImageLightbox({ src, alt, onClose, onDownload }) {
   return (
     <div className="image-lightbox" onClick={onClose}>
-      <button className="lightbox-close" onClick={onClose}>
+      <button className="lightbox-close" onClick={onClose} aria-label="Close">
         <X className="w-6 h-6" />
       </button>
+      {onDownload && (
+        <button className="lightbox-download" onClick={onDownload} title="Download" aria-label="Download image">
+          <Download className="w-6 h-6" />
+        </button>
+      )}
       <img src={src} alt={alt} onClick={(e) => e.stopPropagation()} />
     </div>
   );
@@ -41,13 +46,53 @@ function AttachmentDisplay({ attachment, isOwn, onImageLoad }) {
     return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
   };
 
+  // Force a real download. Cross-origin Firebase Storage URLs ignore the <a download>
+  // attribute, so fetch the file as a blob and trigger a same-origin object-URL
+  // download. Falls back to opening in a new tab if the fetch is blocked (e.g. CORS).
+  const handleDownload = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      const res = await fetch(attachment.url);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = attachment.name || 'download';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      console.error('Attachment download failed, opening in new tab:', err);
+      window.open(attachment.url, '_blank', 'noopener,noreferrer');
+    }
+  };
+
+  // Browsers can only render some types inline (images, PDFs, plain text). For
+  // anything else (CSV, xlsx, docx…), "opening" the URL just triggers a download
+  // using the raw storage filename — inconsistent with the download button's clean
+  // name. So for non-previewable types we route preview through the same download.
+  const canPreviewInline =
+    attachment.type?.startsWith('image/') ||
+    attachment.type === 'application/pdf' ||
+    attachment.type === 'text/plain';
+
+  const handlePreview = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (canPreviewInline) {
+      window.open(attachment.url, '_blank', 'noopener,noreferrer');
+    } else {
+      handleDownload(e);
+    }
+  };
+
   if (isImage) {
     return (
       <>
-        <div
-          className={`message-attachment-image ${imageLoading ? 'loading' : 'loaded'}`}
-          onClick={() => !imageLoading && setLightboxOpen(true)}
-        >
+        <div className={`message-attachment-image ${imageLoading ? 'loading' : 'loaded'}`}>
           {imageLoading && (
             <div className="attachment-image-loader">
               <span className="attachment-spinner" />
@@ -56,6 +101,7 @@ function AttachmentDisplay({ attachment, isOwn, onImageLoad }) {
           <img
             src={attachment.url}
             alt={attachment.name}
+            onClick={() => !imageLoading && setLightboxOpen(true)}
             onLoad={() => {
               setImageLoading(false);
               // Small delay to ensure DOM updates with new image size before scrolling
@@ -63,12 +109,24 @@ function AttachmentDisplay({ attachment, isOwn, onImageLoad }) {
             }}
             className={imageLoading ? 'hidden' : 'visible'}
           />
+          {!imageLoading && (
+            <button
+              type="button"
+              className="attachment-image-download"
+              onClick={handleDownload}
+              title="Download"
+              aria-label="Download image"
+            >
+              <Download className="w-4 h-4" />
+            </button>
+          )}
         </div>
         {lightboxOpen && (
           <ImageLightbox
             src={attachment.url}
             alt={attachment.name}
             onClose={() => setLightboxOpen(false)}
+            onDownload={handleDownload}
           />
         )}
       </>
@@ -76,21 +134,31 @@ function AttachmentDisplay({ attachment, isOwn, onImageLoad }) {
   }
 
   return (
-    <a
-      href={attachment.url}
-      target="_blank"
-      rel="noopener noreferrer"
-      className={`message-attachment-file ${isOwn ? 'own' : 'other'}`}
-    >
-      <div className="attachment-file-icon">
-        <FileText className="w-5 h-5" />
-      </div>
-      <div className="attachment-file-info">
-        <span className="attachment-file-name">{attachment.name}</span>
-        <span className="attachment-file-size">{formatFileSize(attachment.size)}</span>
-      </div>
-      <Download className="w-4 h-4 attachment-download-icon" />
-    </a>
+    <div className={`message-attachment-file ${isOwn ? 'own' : 'other'}`}>
+      <button
+        type="button"
+        className="attachment-preview-btn"
+        onClick={handlePreview}
+        title="Preview"
+      >
+        <div className="attachment-file-icon">
+          <FileText className="w-5 h-5" />
+        </div>
+        <div className="attachment-file-info">
+          <span className="attachment-file-name">{attachment.name}</span>
+          <span className="attachment-file-size">{formatFileSize(attachment.size)}</span>
+        </div>
+      </button>
+      <button
+        type="button"
+        className="attachment-download-btn"
+        onClick={handleDownload}
+        title="Download"
+        aria-label="Download file"
+      >
+        <Download className="w-4 h-4" />
+      </button>
+    </div>
   );
 }
 
@@ -237,14 +305,6 @@ export function MessageThread({ conversationId, participantDetails = {} }) {
                       {showAvatar && (
                         <div className="message-sender-name">{message.senderName}</div>
                       )}
-                      {/* Attachments */}
-                      {message.attachments?.length > 0 && (
-                        <div className="message-attachments">
-                          {message.attachments.map((attachment, idx) => (
-                            <AttachmentDisplay key={idx} attachment={attachment} isOwn={false} onImageLoad={scrollToBottom} />
-                          ))}
-                        </div>
-                      )}
                       {/* Text content */}
                       {message.content && (
                         <div className={`message-bubble other`}>
@@ -255,6 +315,14 @@ export function MessageThread({ conversationId, participantDetails = {} }) {
                           )}
                           <p className="message-content">{message.content}</p>
                           <span className="message-time">{formatTime(message.createdAt)}</span>
+                        </div>
+                      )}
+                      {/* Attachments */}
+                      {message.attachments?.length > 0 && (
+                        <div className="message-attachments">
+                          {message.attachments.map((attachment, idx) => (
+                            <AttachmentDisplay key={idx} attachment={attachment} isOwn={false} onImageLoad={scrollToBottom} />
+                          ))}
                         </div>
                       )}
                       {/* Time for attachment-only messages */}
@@ -295,14 +363,6 @@ export function MessageThread({ conversationId, participantDetails = {} }) {
                         </button>
                       )}
                     </div>
-                    {/* Attachments */}
-                    {message.attachments?.length > 0 && (
-                      <div className="message-attachments own">
-                        {message.attachments.map((attachment, idx) => (
-                          <AttachmentDisplay key={idx} attachment={attachment} isOwn={true} onImageLoad={scrollToBottom} />
-                        ))}
-                      </div>
-                    )}
                     {/* Text content */}
                     {message.content && (
                       <div className={`message-bubble own`}>
@@ -313,6 +373,14 @@ export function MessageThread({ conversationId, participantDetails = {} }) {
                         )}
                         <p className="message-content">{message.content}</p>
                         <span className="message-time">{formatTime(message.createdAt)}</span>
+                      </div>
+                    )}
+                    {/* Attachments */}
+                    {message.attachments?.length > 0 && (
+                      <div className="message-attachments own">
+                        {message.attachments.map((attachment, idx) => (
+                          <AttachmentDisplay key={idx} attachment={attachment} isOwn={true} onImageLoad={scrollToBottom} />
+                        ))}
                       </div>
                     )}
                     {/* Time for attachment-only messages */}
