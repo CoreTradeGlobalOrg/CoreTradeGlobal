@@ -20,6 +20,7 @@ const AUDIENCE_LABELS = {
 const STATUS_STYLES = {
   sent: 'bg-green-900/30 text-green-400 border-green-700/30',
   pending: 'bg-[#FFD700]/10 text-[#FFD700] border-[#FFD700]/20',
+  sending: 'bg-blue-900/30 text-blue-400 border-blue-700/30',
   failed: 'bg-red-900/30 text-red-400 border-red-700/30',
 };
 
