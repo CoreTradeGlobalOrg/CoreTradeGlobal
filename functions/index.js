@@ -1385,6 +1385,22 @@ exports.sendWelcomeOnRegister = onDocumentCreated(
 
     const displayName = userData.displayName || userData.firstName || 'there';
     await sendWelcomeEmail(email, displayName, uid);
+
+    // Seed an in-app notification prompting the user to verify their email.
+    // A verification email is sent during registration; this is the in-app reminder.
+    try {
+      await db.collection('users').doc(uid).collection('notifications').add({
+        type: 'verify_email',
+        title: 'Verify your email',
+        body: 'Please check your mailbox and verify your email address.',
+        isRead: false,
+        createdAt: Timestamp.now(),
+        link: '/verify-email',
+      });
+    } catch (err) {
+      console.error(`sendWelcomeOnRegister: failed to create verify-email notification for ${uid}:`, err);
+    }
+
     return null;
   }
 );
