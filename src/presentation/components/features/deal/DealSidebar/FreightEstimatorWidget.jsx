@@ -112,11 +112,13 @@ function ModeCard({ quote, dealCurrency, rates }) {
 
 /**
  * @param {Object} props
- * @param {import('@/domain/entities/Deal').Deal} props.deal
- * @param {import('@/domain/entities/Offer').Offer|null} props.latestOffer
+ * @param {import('@/domain/entities/Deal').Deal} [props.deal] - Optional; prefills destination/currency in a deal context.
+ * @param {import('@/domain/entities/Offer').Offer|null} [props.latestOffer]
+ * @param {boolean} [props.standalone] - When true, renders without the collapsible header (for the dedicated page).
  */
-export function FreightEstimatorWidget({ deal, latestOffer }) {
+export function FreightEstimatorWidget({ deal, latestOffer, standalone = false }) {
   const [expanded, setExpanded] = useState(true);
+  const isOpen = standalone || expanded;
 
   // Auto-populate origin/destination from deal Incoterms namedPlace
   const snapshot = latestOffer || deal?.latestOfferSnapshot;
@@ -193,7 +195,8 @@ export function FreightEstimatorWidget({ deal, latestOffer }) {
 
   return (
     <div className="bg-[#1A283B] border border-[#2A3B52] rounded-xl p-4">
-      {/* Header with collapse toggle */}
+      {/* Header with collapse toggle — hidden in standalone mode */}
+      {!standalone && (
       <button
         type="button"
         className="flex items-center justify-between w-full group"
@@ -209,9 +212,10 @@ export function FreightEstimatorWidget({ deal, latestOffer }) {
           <ChevronDown size={14} className="text-[#8899AA] group-hover:text-white transition-colors" />
         )}
       </button>
+      )}
 
-      {expanded && (
-        <div className="mt-3 space-y-2.5">
+      {isOpen && (
+        <div className={standalone ? 'space-y-2.5' : 'mt-3 space-y-2.5'}>
           {/* Origin */}
           <div>
             <label className="block text-[10px] text-[#8899AA] uppercase tracking-wide mb-1">

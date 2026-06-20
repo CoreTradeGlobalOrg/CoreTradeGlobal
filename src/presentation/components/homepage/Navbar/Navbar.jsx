@@ -77,6 +77,12 @@ const getNavGroups = (user) => [
     ],
   },
   {
+    label: 'Tools',
+    items: [
+      { label: 'Freight Estimator', href: '/freight-estimator' },
+    ],
+  },
+  {
     label: 'My Account',
     authOnly: true,
     items: [
