@@ -14,10 +14,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { container } from '@/core/di/container';
+import { useAuth } from '@/presentation/contexts/AuthContext';
 import toast from 'react-hot-toast';
 
 export default function SocialCallbackPage() {
   const router = useRouter();
+  const { refreshUser } = useAuth();
   const ranRef = useRef(false);
   const [error, setError] = useState(false);
 
@@ -28,11 +30,47 @@ export default function SocialCallbackPage() {
     const hash = typeof window !== 'undefined' ? window.location.hash.substring(1) : '';
     const params = new URLSearchParams(hash);
     const token = params.get('token');
+    const isConnect = params.get('li_connect') === '1';
     const redirectTo = params.get('redirect') || '/';
+    const liName = params.get('name') || '';
+    const liSub = params.get('sub') || '';
+    const liPicture = params.get('picture') || '';
 
-    // Strip the token from the URL right away.
+    // Strip the fragment from the URL right away.
     if (typeof window !== 'undefined') {
       window.history.replaceState(null, '', window.location.pathname);
+    }
+
+    const authRepo = container.getAuthRepository();
+
+    // ── Connect mode: write LinkedIn metadata to the ACTUAL current user ──
+    if (isConnect) {
+      // The user is already signed in; wait for Firebase to restore auth state.
+      const unsub = authRepo.onAuthStateChanged(async (fbUser) => {
+        unsub();
+        if (!fbUser) {
+          toast.error('Please sign in to connect LinkedIn.');
+          router.replace('/login');
+          return;
+        }
+        try {
+          await container.getUserRepository().update(fbUser.uid, {
+            linkedinConnected: true,
+            linkedinName: liName || null,
+            linkedinMemberId: liSub || null,
+            linkedinPicture: liPicture || null,
+            linkedinConnectedAt: new Date(),
+            updatedAt: new Date(),
+          });
+          await refreshUser();
+          toast.success('LinkedIn connected!');
+        } catch (err) {
+          console.error('[social-callback] linkedin connect write failed:', err);
+          toast.error('Could not connect LinkedIn. Please try again.');
+        }
+        router.replace(redirectTo);
+      });
+      return;
     }
 
     if (!token) {
@@ -42,7 +80,6 @@ export default function SocialCallbackPage() {
 
     (async () => {
       try {
-        const authRepo = container.getAuthRepository();
         const user = await authRepo.signInWithCustomToken(token);
         const profile = await authRepo.getUserProfile(user.uid);
 

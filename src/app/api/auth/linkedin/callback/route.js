@@ -13,7 +13,7 @@
  */
 
 import { NextResponse } from 'next/server';
-import { getAdminAuth, getAdminFirestore } from '@/lib/firebase-admin';
+import { getAdminAuth } from '@/lib/firebase-admin';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -101,28 +101,21 @@ export async function GET(request) {
       email;
     const photoURL = profile.picture || undefined;
 
-    // ── Connect mode: attach LinkedIn metadata to the signed-in user ──
+    // ── Connect mode: hand the LinkedIn metadata to the client, which writes it
+    // to the ACTUAL signed-in user's doc. We deliberately do NOT trust the
+    // session cookie uid here (it can be stale across account switches); the
+    // client knows the true current Firebase user. Data goes in the URL fragment
+    // (not sent to servers/logs); it is non-sensitive display info only. ──
     if (mode === 'connect') {
-      const session = (() => {
-        try {
-          const raw = request.cookies.get('session')?.value;
-          return raw ? JSON.parse(raw) : null;
-        } catch {
-          return null;
-        }
-      })();
-      if (!session?.uid) return fail('connect mode but no active session');
-
-      await getAdminFirestore().collection('users').doc(session.uid).update({
-        linkedinConnected: true,
-        linkedinName: displayName,
-        linkedinMemberId: profile.sub || null,
-        linkedinPicture: photoURL || null,
-        linkedinConnectedAt: new Date(),
-        updatedAt: new Date(),
+      const safeRedirect = redirectTarget.startsWith('/') ? redirectTarget : '/';
+      const params = new URLSearchParams({
+        li_connect: '1',
+        redirect: safeRedirect,
+        name: displayName || '',
+        sub: profile.sub || '',
+        picture: photoURL || '',
       });
-
-      const dest = `${origin}${redirectTarget.startsWith('/') ? redirectTarget : '/'}?linkedin=connected`;
+      const dest = `${origin}/social-callback#${params.toString()}`;
       return clearCookies(NextResponse.redirect(dest));
     }
 
