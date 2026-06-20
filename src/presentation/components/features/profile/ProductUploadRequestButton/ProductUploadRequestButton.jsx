@@ -12,7 +12,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Upload, MessageSquare, CheckCircle, Loader2, FileUp } from 'lucide-react';
+import { Upload, MessageSquare, CheckCircle, Loader2, FileUp, Download } from 'lucide-react';
 import { db } from '@/core/config/firebase.config';
 import {
   collection,
@@ -144,6 +144,35 @@ export function ProductUploadRequestButton({ user }) {
     return conversation;
   }, [user?.uid, user?.displayName, user?.email, findAllAdminIds]);
 
+  // Download a CSV template whose headers exactly match the admin bulk-upload
+  // parser (BulkProductUpload.jsx). One example row shows the expected format.
+  const handleDownloadTemplate = useCallback(() => {
+    const headers = ['Product Name', 'Category', 'Price', 'Currency', 'Quantity', 'Unit', 'Description', 'Image URLs'];
+    const example = [
+      'Organic Cotton T-Shirt',
+      'Textile',
+      '12.50',
+      'USD',
+      '1000',
+      'piece',
+      'Soft 180gsm combed cotton, OEKO-TEX certified',
+      'https://example.com/img1.jpg, https://example.com/img2.jpg',
+    ];
+    // Quote every field and escape embedded quotes for safe CSV.
+    const toRow = (cells) => cells.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(',');
+    const csv = `${toRow(headers)}\n${toRow(example)}\n`;
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'coretradeglobal-product-template.csv';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }, []);
+
   const handleCsvUpload = useCallback(async (e) => {
     const file = e.target.files?.[0];
     if (!file || loading || existingRequest) return;
@@ -267,9 +296,19 @@ export function ProductUploadRequestButton({ user }) {
   return (
     <div className="rounded-xl border border-[rgba(255,215,0,0.2)] bg-[#0F1B2B] p-4 md:p-5">
       <h4 className="text-white font-semibold text-sm mb-1">Need help uploading products?</h4>
-      <p className="text-[#A0A0A0] text-xs mb-4">
-        Upload a CSV file or request assistance from our team.
+      <p className="text-[#A0A0A0] text-xs mb-3">
+        Download the template, fill in your products, then upload the CSV — or request assistance from our team.
       </p>
+
+      {/* Download template */}
+      <button
+        type="button"
+        onClick={handleDownloadTemplate}
+        className="inline-flex items-center gap-2 mb-4 text-[#FFD700] text-xs font-medium hover:underline"
+      >
+        <Download className="w-4 h-4" />
+        Download CSV Template
+      </button>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {/* Upload CSV Option */}
