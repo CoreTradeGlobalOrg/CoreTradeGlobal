@@ -224,6 +224,23 @@ export class AuthRepository {
   }
 
   /**
+   * Link a Google account to the current user.
+   * @returns {Promise<User>}
+   */
+  async linkGoogle() {
+    return this.authDataSource.linkGoogle();
+  }
+
+  /**
+   * Unlink a provider from the current user.
+   * @param {string} providerId
+   * @returns {Promise<User>}
+   */
+  async unlinkProvider(providerId) {
+    return this.authDataSource.unlinkProvider(providerId);
+  }
+
+  /**
    * Create a Firestore user profile for an already-authenticated user
    * (e.g. after OAuth sign-in, once the profile-completion step is submitted).
    * @param {string} userId

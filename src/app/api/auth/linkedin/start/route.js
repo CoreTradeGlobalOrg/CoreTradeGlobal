@@ -33,6 +33,9 @@ export async function GET(request) {
 
   const { searchParams } = new URL(request.url);
   const redirectTarget = searchParams.get('redirect') || '/';
+  // mode=connect links LinkedIn to the already-signed-in user (profile page);
+  // default mode signs the user in / signs them up.
+  const mode = searchParams.get('mode') === 'connect' ? 'connect' : 'signin';
   const state = crypto.randomUUID();
   const redirectUri = `${origin}/api/auth/linkedin/callback`;
 
@@ -53,5 +56,6 @@ export async function GET(request) {
   };
   res.cookies.set('li_oauth_state', state, cookieOpts);
   res.cookies.set('li_redirect', redirectTarget, cookieOpts);
+  res.cookies.set('li_mode', mode, cookieOpts);
   return res;
 }

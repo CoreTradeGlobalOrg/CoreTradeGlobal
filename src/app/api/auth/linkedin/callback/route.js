@@ -13,7 +13,7 @@
  */
 
 import { NextResponse } from 'next/server';
-import { getAdminAuth } from '@/lib/firebase-admin';
+import { getAdminAuth, getAdminFirestore } from '@/lib/firebase-admin';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -38,13 +38,22 @@ export async function GET(request) {
 
   const cookieState = request.cookies.get('li_oauth_state')?.value;
   const redirectTarget = request.cookies.get('li_redirect')?.value || '/';
+  const mode = request.cookies.get('li_mode')?.value === 'connect' ? 'connect' : 'signin';
+
+  const clearCookies = (res) => {
+    res.cookies.delete('li_oauth_state');
+    res.cookies.delete('li_redirect');
+    res.cookies.delete('li_mode');
+    return res;
+  };
 
   const fail = (reason) => {
     console.error('[linkedin/callback]', reason);
-    const res = NextResponse.redirect(`${origin}/login?error=linkedin`);
-    res.cookies.delete('li_oauth_state');
-    res.cookies.delete('li_redirect');
-    return res;
+    // On connect-mode failure, return to the profile with an error flag.
+    const target = mode === 'connect'
+      ? `${origin}${redirectTarget.startsWith('/') ? redirectTarget : '/'}?linkedin=error`
+      : `${origin}/login?error=linkedin`;
+    return clearCookies(NextResponse.redirect(target));
   };
 
   if (providerError) return fail(`provider error: ${providerError}`);
@@ -92,6 +101,31 @@ export async function GET(request) {
       email;
     const photoURL = profile.picture || undefined;
 
+    // ── Connect mode: attach LinkedIn metadata to the signed-in user ──
+    if (mode === 'connect') {
+      const session = (() => {
+        try {
+          const raw = request.cookies.get('session')?.value;
+          return raw ? JSON.parse(raw) : null;
+        } catch {
+          return null;
+        }
+      })();
+      if (!session?.uid) return fail('connect mode but no active session');
+
+      await getAdminFirestore().collection('users').doc(session.uid).update({
+        linkedinConnected: true,
+        linkedinName: displayName,
+        linkedinMemberId: profile.sub || null,
+        linkedinPicture: photoURL || null,
+        linkedinConnectedAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      const dest = `${origin}${redirectTarget.startsWith('/') ? redirectTarget : '/'}?linkedin=connected`;
+      return clearCookies(NextResponse.redirect(dest));
+    }
+
     // 3. Resolve or create the Firebase user by email (auto-link)
     const adminAuth = getAdminAuth();
     let uid;
@@ -121,10 +155,7 @@ export async function GET(request) {
     const dest =
       `${origin}/social-callback#token=${encodeURIComponent(customToken)}` +
       `&redirect=${encodeURIComponent(redirectTarget)}`;
-    const res = NextResponse.redirect(dest);
-    res.cookies.delete('li_oauth_state');
-    res.cookies.delete('li_redirect');
-    return res;
+    return clearCookies(NextResponse.redirect(dest));
   } catch (err) {
     return fail(err?.message || 'unexpected error');
   }

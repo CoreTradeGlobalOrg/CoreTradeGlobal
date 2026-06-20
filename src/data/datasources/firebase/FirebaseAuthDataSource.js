@@ -15,6 +15,8 @@ import {
   createUserWithEmailAndPassword,
   GoogleAuthProvider,
   signInWithPopup,
+  linkWithPopup,
+  unlink,
   signOut,
   onAuthStateChanged,
   sendPasswordResetEmail,
@@ -112,6 +114,30 @@ export class FirebaseAuthDataSource {
     provider.setCustomParameters({ prompt: 'select_account' });
     const userCredential = await signInWithPopup(this.auth, provider);
     return userCredential.user;
+  }
+
+  /**
+   * Link a Google account to the currently signed-in user.
+   * @returns {Promise<User>} The updated current user.
+   */
+  async linkGoogle() {
+    const user = this.auth.currentUser;
+    if (!user) throw new Error('No authenticated user to link.');
+    const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: 'select_account' });
+    const result = await linkWithPopup(user, provider);
+    return result.user;
+  }
+
+  /**
+   * Unlink a provider (e.g. 'google.com') from the current user.
+   * @param {string} providerId
+   * @returns {Promise<User>}
+   */
+  async unlinkProvider(providerId) {
+    const user = this.auth.currentUser;
+    if (!user) throw new Error('No authenticated user.');
+    return unlink(user, providerId);
   }
 
   /**

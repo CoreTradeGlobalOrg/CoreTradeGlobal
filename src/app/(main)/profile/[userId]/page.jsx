@@ -44,6 +44,10 @@ const ProfileRequests = dynamic(
   () => import('./ProfileRequests').then(m => ({ default: m.ProfileRequests })),
   { loading: () => <div className="h-48 rounded-2xl bg-[rgba(255,255,255,0.04)] animate-pulse border border-[rgba(255,255,255,0.06)]" />, ssr: false }
 );
+const ConnectedAccountsCard = dynamic(
+  () => import('@/presentation/components/features/profile/ConnectedAccountsCard/ConnectedAccountsCard').then(m => ({ default: m.ConnectedAccountsCard })),
+  { ssr: false }
+);
 
 const SPINNER = (
   <div className="min-h-screen flex items-center justify-center bg-radial-navy">
@@ -115,6 +119,11 @@ function ProfileContent() {
         {/* Profile completion card — own profile only, hides at 100% */}
         {page.isOwnProfile && currentUser && (
           <ProfileCompletionCard user={currentUser} />
+        )}
+
+        {/* Connected accounts — own profile only */}
+        {page.isOwnProfile && currentUser && (
+          <ConnectedAccountsCard user={currentUser} />
         )}
 
         {page.isOwnProfile && (
