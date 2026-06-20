@@ -144,9 +144,8 @@ const ProductCardImage = memo(function ProductCardImage({ src, alt }) {
 
   if (!src || error) {
     return (
-      <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-[#1A283B] to-[#0F1B2B] gap-2">
-        <Package className="w-10 h-10 text-[rgba(255,255,255,0.2)]" />
-        <span className="text-[10px] text-[rgba(255,255,255,0.3)] font-medium uppercase tracking-wider">No image</span>
+      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#1A283B] to-[#0F1B2B]">
+        <Package className="w-20 h-20 text-[rgba(255,255,255,0.35)]" />
       </div>
     );
   }
