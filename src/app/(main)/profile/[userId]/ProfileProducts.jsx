@@ -1,12 +1,11 @@
 'use client';
 
 import { Button } from '@/components/ui/Button';
-import { Modal } from '@/components/ui/Modal';
 import { ProductList } from '@/presentation/components/features/product/ProductList/ProductList';
-import { ProductForm } from '@/presentation/components/features/product/ProductForm/ProductForm';
 
 /**
- * ProfileProducts - Products section with pagination and add/edit modal.
+ * ProfileProducts - Products section with pagination. Add/edit navigate to
+ * dedicated pages (/product/new, /product/[id]/edit).
  */
 export function ProfileProducts({
   userId,
@@ -18,15 +17,11 @@ export function ProfileProducts({
   productPage,
   setProductPage,
   itemsPerPage,
-  productModalOpen,
-  editingProduct,
   // Handlers
   onOpenModal,
   onEditProduct,
   onDeleteProduct,
   onToggleProductStatus,
-  onProductSubmit,
-  onCloseModal,
 }) {
   return (
     <div className="glass-card p-6">
@@ -83,20 +78,6 @@ export function ProfileProducts({
           </button>
         </div>
       )}
-
-      {/* Product Modal */}
-      <Modal
-        isOpen={productModalOpen}
-        onClose={onCloseModal}
-        title={editingProduct ? 'Edit Product' : 'Add New Product'}
-      >
-        <ProductForm
-          product={editingProduct}
-          onSubmit={onProductSubmit}
-          onCancel={onCloseModal}
-          userId={userId}
-        />
-      </Modal>
     </div>
   );
 }

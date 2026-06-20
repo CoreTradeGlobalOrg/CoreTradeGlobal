@@ -156,24 +156,20 @@ function ProfileContent() {
               userId={userId} products={page.products} productsLoading={page.productsLoading}
               canEdit={page.canEdit} isOwnProfile={page.isOwnProfile} isAdmin={page.isAdmin}
               productPage={page.productPage} setProductPage={page.setProductPage} itemsPerPage={page.itemsPerPage}
-              productModalOpen={page.productModalOpen} editingProduct={page.editingProduct}
-              onOpenModal={() => { page.setEditingProduct(null); page.setProductModalOpen(true); }}
-              onEditProduct={(p) => { page.setEditingProduct(p); page.setProductModalOpen(true); }}
+              onOpenModal={() => router.push('/product/new')}
+              onEditProduct={(p) => router.push(`/product/${p.id}/edit`)}
               onDeleteProduct={page.handleDeleteProduct} onToggleProductStatus={page.handleToggleProductStatus}
-              onProductSubmit={page.handleProductSubmit} onCloseModal={() => page.setProductModalOpen(false)}
             />
 
             <ProfileRequests
               userId={userId} requests={page.requests} requestsLoading={page.requestsLoading}
               categories={page.categories} canEdit={page.canEdit} isOwnProfile={page.isOwnProfile}
               requestPage={page.requestPage} setRequestPage={page.setRequestPage} itemsPerPage={page.itemsPerPage}
-              requestModalOpen={page.requestModalOpen} editingRequest={page.editingRequest}
-              onOpenModal={() => { page.setEditingRequest(null); page.setRequestModalOpen(true); }}
-              onEditRequest={(r) => { page.setEditingRequest(r); page.setRequestModalOpen(true); }}
+              onOpenModal={() => router.push('/request/new')}
+              onEditRequest={(r) => router.push(`/request/${r.id}/edit`)}
               onDeleteRequest={page.handleDeleteRequest} onCloseRequest={page.handleCloseRequest}
               onReopenRequest={page.handleReopenRequest}
               onSendMessage={() => {}} // TODO: messaging
-              onRequestSubmit={page.handleRequestSubmit} onCloseModal={() => page.setRequestModalOpen(false)}
             />
 
           </>

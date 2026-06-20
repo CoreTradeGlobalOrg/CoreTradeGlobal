@@ -12,18 +12,13 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/presentation/contexts/AuthContext';
 import { container } from '@/core/di/container';
-import { Modal } from '@/components/ui/Modal';
-import { ProductForm } from '@/presentation/components/features/product/ProductForm/ProductForm';
-import { RequestForm } from '@/presentation/components/features/request/RequestForm/RequestForm';
-import { useCreateProduct } from '@/presentation/hooks/product/useCreateProduct';
-import { useCreateRequest } from '@/presentation/hooks/request/useCreateRequest';
 import { HeroGlobe } from './HeroGlobe';
 import { HeroStats } from './HeroStats';
 import { HeroDataCards } from './HeroDataCards';
 import { HeroSearchBar } from './HeroSearchBar';
-import toast from 'react-hot-toast';
 
 /**
  * Schedule a callback after the browser is idle, with a setTimeout fallback
@@ -65,13 +60,7 @@ export function HeroSection({ fetchData = false }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [globeLoaded, setGlobeLoaded] = useState(false);
 
-  // Modal states
-  const [productModalOpen, setProductModalOpen] = useState(false);
-  const [requestModalOpen, setRequestModalOpen] = useState(false);
-
-  // Create hooks
-  const { createProduct } = useCreateProduct();
-  const { createRequest } = useCreateRequest();
+  const router = useRouter();
 
   // Firebase data states (only used when fetchData=true)
   const [latestProduct, setLatestProduct] = useState(null);
@@ -166,25 +155,6 @@ export function HeroSection({ fetchData = false }) {
     }
   };
 
-  const handleProductSubmit = async (data, imageFiles) => {
-    try {
-      await createProduct(data, imageFiles);
-      setProductModalOpen(false);
-    } catch (error) {
-      console.error('Error creating product:', error);
-      toast.error(error.message || 'Failed to create product. Please try again.');
-    }
-  };
-
-  const handleRequestSubmit = async (data) => {
-    try {
-      await createRequest(data);
-      setRequestModalOpen(false);
-    } catch (error) {
-      console.error('Error creating request:', error);
-      toast.error(error.message || 'Failed to submit request. Please try again.');
-    }
-  };
 
   return (
     <>
@@ -220,13 +190,13 @@ export function HeroSection({ fetchData = false }) {
             ) : isAuthenticated && user ? (
               <>
                 <button
-                  onClick={() => setProductModalOpen(true)}
+                  onClick={() => router.push('/product/new')}
                   className="hero-cta-btn hero-cta-btn-sell"
                 >
                   Add Product
                 </button>
                 <button
-                  onClick={() => setRequestModalOpen(true)}
+                  onClick={() => router.push('/request/new')}
                   className="hero-cta-btn hero-cta-btn-buy"
                 >
                   Add Request
@@ -256,34 +226,6 @@ export function HeroSection({ fetchData = false }) {
           latestSupplier={latestSupplier}
         />
       </section>
-
-      {/* Product Creation Modal */}
-      <Modal
-        isOpen={productModalOpen}
-        onClose={() => setProductModalOpen(false)}
-        title="Add New Product"
-      >
-        <ProductForm
-          userId={user?.uid}
-          onSubmit={handleProductSubmit}
-          onCancel={() => setProductModalOpen(false)}
-        />
-      </Modal>
-
-      {/* Request Creation Modal — backdrop click disabled; use X or Cancel button to close (GAP-6) */}
-      <Modal
-        isOpen={requestModalOpen}
-        onClose={() => setRequestModalOpen(false)}
-        preventBackdropClose
-        title="Create New RFQ"
-        variant="blue"
-      >
-        <RequestForm
-          userId={user?.uid}
-          onSubmit={handleRequestSubmit}
-          onCancel={() => setRequestModalOpen(false)}
-        />
-      </Modal>
     </>
   );
 }

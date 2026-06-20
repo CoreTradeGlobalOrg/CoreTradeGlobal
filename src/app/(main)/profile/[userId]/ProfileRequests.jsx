@@ -1,12 +1,11 @@
 'use client';
 
 import { Button } from '@/components/ui/Button';
-import { Modal } from '@/components/ui/Modal';
 import { RequestList } from '@/presentation/components/features/request/RequestList/RequestList';
-import { RequestForm } from '@/presentation/components/features/request/RequestForm/RequestForm';
 
 /**
- * ProfileRequests - Requests section with pagination and create/edit modal.
+ * ProfileRequests - Requests section with pagination. Create/edit navigate to
+ * dedicated pages (/request/new, /request/[id]/edit).
  */
 export function ProfileRequests({
   userId,
@@ -18,8 +17,6 @@ export function ProfileRequests({
   requestPage,
   setRequestPage,
   itemsPerPage,
-  requestModalOpen,
-  editingRequest,
   // Handlers
   onOpenModal,
   onEditRequest,
@@ -27,8 +24,6 @@ export function ProfileRequests({
   onCloseRequest,
   onReopenRequest,
   onSendMessage,
-  onRequestSubmit,
-  onCloseModal,
 }) {
   return (
     <div className="glass-card p-6">
@@ -87,24 +82,6 @@ export function ProfileRequests({
           </button>
         </div>
       )}
-
-      {/* Request Modal - backdrop click disabled to prevent accidental close.
-          Use the X button or Cancel button inside RequestForm to dismiss. */}
-      <Modal
-        isOpen={requestModalOpen}
-        onClose={onCloseModal}
-        preventBackdropClose
-        title={editingRequest ? 'Edit Request' : 'Create New Request'}
-        variant="blue"
-      >
-        <RequestForm
-          request={editingRequest}
-          categories={categories}
-          onSubmit={onRequestSubmit}
-          onCancel={onCloseModal}
-          userId={userId}
-        />
-      </Modal>
     </div>
   );
 }
