@@ -294,10 +294,10 @@ export function FeaturedProducts() {
 
     const firestoreDS = container.getFirestoreDataSource();
 
-    // Real-time subscription to products (fetch max for lazy loading)
+    // Real-time subscription to products (newest first so recent uploads show)
     const unsubscribe = firestoreDS.subscribeToQuery(
       'products',
-      { limit: 35 }, // Fetch enough for lazy loading
+      { orderBy: [['createdAt', 'desc']], limit: 35 },
       (fetchedProducts) => {
         if (fetchedProducts && fetchedProducts.length > 0) {
           // Filter active products and sort by createdAt client-side
