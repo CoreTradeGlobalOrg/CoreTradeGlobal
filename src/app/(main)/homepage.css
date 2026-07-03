@@ -1263,8 +1263,8 @@ html {
     width: 100%;
     background: transparent;
     padding: 60px 0;
-    content-visibility: auto;
-    contain-intrinsic-size: auto 380px;
+    min-height: 500px;
+    contain: layout;
 }
 
 .categories-container {
@@ -1406,12 +1406,11 @@ html {
     width: 100%;
     background: transparent;
     padding: 60px 0;
-    /* Skip render when off-screen but reserve the intrinsic height so
-       the sections below (and ultimately the footer) don't jump when
-       Firestore data lands. auto in the first slot lets the browser
-       cache the actual measured height on subsequent renders. */
-    content-visibility: auto;
-    contain-intrinsic-size: auto 520px;
+    /* Pin the section height so async product/RFQ data can't push the
+       sections below (and the footer) downward. Wide enough to fit both
+       the skeleton and the tallest resolved card row. */
+    min-height: 720px;
+    contain: layout;
 }
 
 .featured-products-container {
@@ -1464,8 +1463,8 @@ html {
     width: 100%;
     background: transparent;
     padding: 60px 0;
-    content-visibility: auto;
-    contain-intrinsic-size: auto 480px;
+    min-height: 720px;
+    contain: layout;
 }
 
 .featured-rfqs-container {
@@ -1837,8 +1836,8 @@ html {
 .fair-section,
 .news-section,
 .showcase-section {
-    content-visibility: auto;
-    contain-intrinsic-size: auto 460px;
+    min-height: 640px;
+    contain: layout;
 }
 
 .fairs-wrapper {
@@ -1848,8 +1847,8 @@ html {
     justify-content: center;
     padding: 60px 0;
     border-top: 1px solid rgba(255, 255, 255, 0.05);
-    content-visibility: auto;
-    contain-intrinsic-size: auto 460px;
+    min-height: 640px;
+    contain: layout;
 }
 
 .exhibitions-container {
@@ -2655,8 +2654,8 @@ html {
     display: flex;
     justify-content: center;
     background: transparent;
-    content-visibility: auto;
-    contain-intrinsic-size: auto 520px;
+    min-height: 560px;
+    contain: layout;
 }
 
 .cta-container-v2 {
@@ -3016,8 +3015,8 @@ html {
 .hp-section {
     padding: 60px 0;
     background: transparent;
-    content-visibility: auto;
-    contain-intrinsic-size: auto 460px;
+    min-height: 640px;
+    contain: layout;
 }
 
 /* HP News Card for React */
