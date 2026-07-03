@@ -8,10 +8,16 @@
 import { NextResponse } from 'next/server';
 
 // Routes that require authentication
-const protectedRoutes = ['/dashboard', '/messages', '/settings'];
+// /admin lives here (not in adminRoutes) because the middleware relies on the
+// session cookie's role field, which can lag Firestore whenever a token has
+// not yet rotated (custom claims are cached for up to an hour, cookies live
+// 7 days). The /admin page component runs its own role check against the
+// AuthContext profile — which reads from Firestore directly — so the client
+// guard is authoritative for the admin check. Middleware still enforces auth.
+const protectedRoutes = ['/dashboard', '/messages', '/settings', '/admin'];
 
-// Routes that require admin role
-const adminRoutes = ['/admin'];
+// Reserved for routes we ever add that need pure server-side admin gating.
+const adminRoutes = [];
 
 // Routes only for guests (redirects to home if already logged in)
 const guestOnlyRoutes = ['/login', '/register'];
