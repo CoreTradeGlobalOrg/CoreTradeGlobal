@@ -1,3 +1,5 @@
+import { compressImage } from '@/lib/image-utils';
+
 /**
  * Product Repository
  *
@@ -233,7 +235,10 @@ export class ProductRepository {
     const fileName = `image-${index}.${fileExtension}`;
     const storagePath = `users/${userId}/products/${productId}/${fileName}`;
 
-    return await this.storageDataSource.uploadFile(storagePath, file, {
+    // Product photos ship in a bigger preset than logos — customers zoom.
+    const compressed = await compressImage(file, 'product');
+
+    return await this.storageDataSource.uploadFile(storagePath, compressed, {
       userId,
       productId,
       uploadType: 'product-image',

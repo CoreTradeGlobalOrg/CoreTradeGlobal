@@ -423,13 +423,15 @@ export function Navbar() {
                   aria-label={`Account menu for ${user.companyName || user.displayName || 'Account'}`}
                 >
                   {user.companyLogo || user.photoURL ? (
-                    <img
-                      src={user.companyLogo || user.photoURL}
-                      alt="Avatar"
-                      width={32}
-                      height={32}
-                      className="w-8 h-8 rounded-full object-cover object-center border border-[#FFD700]"
-                    />
+                    <div className="relative w-8 h-8 rounded-full overflow-hidden border border-[#FFD700]">
+                      <Image
+                        src={user.companyLogo || user.photoURL}
+                        alt="Avatar"
+                        fill
+                        sizes="32px"
+                        className="object-cover object-center"
+                      />
+                    </div>
                   ) : (
                     <div className="w-8 h-8 rounded-full bg-[#FFD700] flex items-center justify-center flex-shrink-0">
                       <User className="w-4 h-4 text-[#0F1B2B]" />
@@ -514,12 +516,12 @@ export function Navbar() {
                 style={{ backgroundColor: '#FFD700' }}
               >
                 {user.companyLogo || user.photoURL ? (
-                  <img
+                  <Image
                     src={user.companyLogo || user.photoURL}
                     alt="Profile"
-                    width={40}
-                    height={40}
-                    className="w-full h-full object-cover object-center"
+                    fill
+                    sizes="40px"
+                    className="object-cover object-center"
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center bg-[#FFD700]">

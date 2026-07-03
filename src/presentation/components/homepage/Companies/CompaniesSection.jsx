@@ -10,6 +10,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { container } from '@/core/di/container';
 import { CountryFlag } from '@/presentation/components/common/CountryFlag/CountryFlag';
 import { COUNTRIES } from '@/core/constants/countries';
@@ -85,14 +86,14 @@ function CompanyCard({ company, categories }) {
         {/* Header: Logo + Info */}
         <div className="flex items-start gap-4 mb-4">
           {/* Logo */}
-          <div className="w-16 h-16 rounded-xl flex-shrink-0 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] flex items-center justify-center overflow-hidden">
+          <div className="relative w-16 h-16 rounded-xl flex-shrink-0 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] flex items-center justify-center overflow-hidden">
             {hasImage ? (
-              <img
+              <Image
                 src={profileImage}
                 alt={company.companyName}
-                width={64}
-                height={64}
-                className="w-full h-full object-cover"
+                fill
+                sizes="64px"
+                className="object-cover"
                 onError={() => setImgError(true)}
               />
             ) : (

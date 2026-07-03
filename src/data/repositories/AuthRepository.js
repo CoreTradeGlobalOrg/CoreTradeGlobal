@@ -11,6 +11,7 @@
  */
 
 import { COLLECTIONS } from '@/core/constants/collections';
+import { compressImage } from '@/lib/image-utils';
 
 export class AuthRepository {
   /**
@@ -361,10 +362,14 @@ export class AuthRepository {
     const storagePath = `users/${userId}/company-logo/${fileName}`;
 
     try {
+      // Compress before upload so a 4 MB camera roll shot doesn't become a
+      // 4 MB Storage object serving a 64x64 card avatar.
+      const compressed = await compressImage(file, 'logo');
+
       // Upload file and get download URL
       const downloadURL = await this.storageDataSource.uploadFile(
         storagePath,
-        file,
+        compressed,
         {
           userId,
           uploadType: 'company-logo',
