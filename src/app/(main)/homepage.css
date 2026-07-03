@@ -1263,9 +1263,8 @@ html {
     width: 100%;
     background: transparent;
     padding: 60px 0;
-    /* Reserve space for the categories grid before async data lands so the
-       sections below don't slide up and down during hydration. */
-    min-height: 380px;
+    content-visibility: auto;
+    contain-intrinsic-size: auto 380px;
 }
 
 .categories-container {
@@ -1407,9 +1406,12 @@ html {
     width: 100%;
     background: transparent;
     padding: 60px 0;
-    /* Match the card grid height so the section holds its own space while
-       Firestore streams in — biggest single CLS source pre-fix. */
-    min-height: 520px;
+    /* Skip render when off-screen but reserve the intrinsic height so
+       the sections below (and ultimately the footer) don't jump when
+       Firestore data lands. auto in the first slot lets the browser
+       cache the actual measured height on subsequent renders. */
+    content-visibility: auto;
+    contain-intrinsic-size: auto 520px;
 }
 
 .featured-products-container {
@@ -1462,7 +1464,8 @@ html {
     width: 100%;
     background: transparent;
     padding: 60px 0;
-    min-height: 480px;
+    content-visibility: auto;
+    contain-intrinsic-size: auto 480px;
 }
 
 .featured-rfqs-container {
@@ -1831,13 +1834,11 @@ html {
 
 
 /* --- 11. FUARLAR (FAIRS) BÖLÜMÜ --- */
-/* Reserve space so Fair/News/Showcase sections don't collapse to 0 then
-   expand once their Firestore data arrives — that pattern was still
-   contributing to CLS at ~0.27 after the first pass. */
 .fair-section,
 .news-section,
 .showcase-section {
-    min-height: 460px;
+    content-visibility: auto;
+    contain-intrinsic-size: auto 460px;
 }
 
 .fairs-wrapper {
@@ -1847,7 +1848,8 @@ html {
     justify-content: center;
     padding: 60px 0;
     border-top: 1px solid rgba(255, 255, 255, 0.05);
-    min-height: 460px;
+    content-visibility: auto;
+    contain-intrinsic-size: auto 460px;
 }
 
 .exhibitions-container {
@@ -3012,7 +3014,8 @@ html {
 .hp-section {
     padding: 60px 0;
     background: transparent;
-    min-height: 460px;
+    content-visibility: auto;
+    contain-intrinsic-size: auto 460px;
 }
 
 /* HP News Card for React */
