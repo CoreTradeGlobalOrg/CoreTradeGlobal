@@ -12,6 +12,13 @@ import { NextResponse } from 'next/server';
 import { verifyIdToken } from '@/lib/firebase-admin';
 import { authLimiter, getClientIP } from '@/lib/rate-limit';
 
+// firebase-admin is a Node-only SDK. Without an explicit runtime declaration
+// Vercel can route this endpoint to Edge on a cold start and 500 every
+// request, which is exactly what stranded every user out of /admin,
+// /settings, and /messages earlier today.
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 // POST - Set session cookie (requires valid ID token)
 export async function POST(request) {
   // Rate limiting check
