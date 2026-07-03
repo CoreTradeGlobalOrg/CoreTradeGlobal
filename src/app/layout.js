@@ -84,6 +84,12 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" className={inter.variable}>
       <head>
+        {/* Warm up TLS to origins we always hit from the homepage — the
+            first Firestore listen and the first company/product image
+            are on the LCP critical path. */}
+        <link rel="preconnect" href="https://firebasestorage.googleapis.com" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://firestore.googleapis.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://firebaseinstallations.googleapis.com" />
         {GA_MEASUREMENT_ID && (
           <>
             <Script
