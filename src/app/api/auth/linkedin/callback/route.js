@@ -99,7 +99,6 @@ export async function GET(request) {
       profile.name ||
       [profile.given_name, profile.family_name].filter(Boolean).join(' ') ||
       email;
-    const photoURL = profile.picture || undefined;
 
     // ── Connect mode: hand the LinkedIn metadata to the client, which writes it
     // to the ACTUAL signed-in user's doc. We deliberately do NOT trust the
@@ -113,7 +112,6 @@ export async function GET(request) {
         redirect: safeRedirect,
         name: displayName || '',
         sub: profile.sub || '',
-        picture: photoURL || '',
       });
       const dest = `${origin}/social-callback#${params.toString()}`;
       return clearCookies(NextResponse.redirect(dest));
@@ -133,7 +131,6 @@ export async function GET(request) {
           email,
           emailVerified,
           displayName,
-          ...(photoURL ? { photoURL } : {}),
         });
         uid = created.uid;
       } else {
