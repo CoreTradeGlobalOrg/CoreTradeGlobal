@@ -9,6 +9,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { CountryFlag } from '@/presentation/components/common/CountryFlag/CountryFlag';
 import { COUNTRIES } from '@/core/constants/countries';
 
@@ -106,7 +107,15 @@ export function HeroDataCards({ fetchData, dataLoading, latestProduct, latestReq
             {showSkeleton ? (
               <Shimmer width="48px" height="48px" className="rounded" />
             ) : fetchData && latestProduct?.images?.[0] ? (
-              <img src={latestProduct.images[0]} alt={latestProduct.name} width={48} height={48} className="w-12 h-12 object-cover rounded" />
+              <div className="relative w-12 h-12 rounded overflow-hidden">
+                <Image
+                  src={latestProduct.images[0]}
+                  alt={latestProduct.name}
+                  fill
+                  sizes="48px"
+                  className="object-cover"
+                />
+              </div>
             ) : '📦'}
           </div>
           <div className="card-content">
@@ -232,12 +241,12 @@ export function HeroDataCards({ fetchData, dataLoading, latestProduct, latestReq
             {showSkeleton ? (
               <Shimmer width="100%" height="100%" className="rounded-lg" />
             ) : fetchData && (latestSupplier?.companyLogo || latestSupplier?.photoURL) ? (
-              <img
+              <Image
                 src={latestSupplier.companyLogo || latestSupplier.photoURL}
                 alt={latestSupplier.companyName}
-                width={64}
-                height={64}
-                className="w-full h-full object-cover rounded-lg"
+                fill
+                sizes="64px"
+                className="object-cover rounded-lg"
               />
             ) : '🏭'}
           </div>

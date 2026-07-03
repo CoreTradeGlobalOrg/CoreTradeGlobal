@@ -698,6 +698,10 @@ html {
 }
 
 .hero-info-card .card-icon {
+    /* position: relative is required so <Image fill> inside anchors to
+       the icon box rather than escaping to the nearest positioned
+       ancestor. */
+    position: relative;
     width: 64px;
     height: 64px;
     display: flex;
@@ -709,6 +713,7 @@ html {
     border-radius: 10px;
     background: rgba(255, 255, 255, 0.04);
     box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4) inset;
+    overflow: hidden;
 }
 
 .hero-fair-card .card-icon.has-flag {
