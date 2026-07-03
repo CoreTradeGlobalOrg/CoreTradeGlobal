@@ -1,11 +1,14 @@
 import { Inter } from 'next/font/google';
 import Script from 'next/script';
+import { SpeedInsights } from '@vercel/speed-insights/next';
+import { Analytics } from '@vercel/analytics/next';
 import './globals.css';
 import { AuthProvider } from '@/presentation/contexts/AuthContext';
 import { ProductViewProvider } from '@/presentation/contexts/ProductViewContext';
 import { MessagesProvider } from '@/presentation/contexts/MessagesContext';
 import { AnalyticsProvider } from '@/presentation/contexts/AnalyticsContext';
 import { AnalyticsTracker } from '@/presentation/components/common/AnalyticsTracker/AnalyticsTracker';
+import { WebVitals } from '@/presentation/components/common/WebVitals/WebVitals';
 import { Toaster } from 'react-hot-toast';
 
 const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID;
@@ -119,6 +122,9 @@ export default function RootLayout({ children }) {
         )}
       </head>
       <body className={inter.className}>
+        <WebVitals />
+        <SpeedInsights />
+        <Analytics />
         <AuthProvider>
           <AnalyticsProvider>
             <MessagesProvider>
