@@ -10,6 +10,7 @@
 import { useState, useCallback, memo, useEffect } from 'react';
 import { motion, useMotionValue, useTransform, animate, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
+import Image from 'next/image';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { CountryFlag } from '@/presentation/components/common/CountryFlag/CountryFlag';
 import { COUNTRIES } from '@/core/constants/countries';
@@ -126,14 +127,15 @@ const SwipeableCard = memo(({
       >
         <div className="mobile-stack-card h-full">
           {/* Company Logo */}
-          <div className="w-20 h-20 mx-auto mb-3 rounded-full bg-[rgba(255,255,255,0.05)] border-2 border-[rgba(255,215,0,0.4)] flex items-center justify-center overflow-hidden">
+          <div className="relative w-20 h-20 mx-auto mb-3 rounded-full bg-[rgba(255,255,255,0.05)] border-2 border-[rgba(255,215,0,0.4)] flex items-center justify-center overflow-hidden">
             {hasImage ? (
-              <img
+              <Image
                 src={profileImage}
                 alt={company.companyName}
-                className="w-full h-full object-cover"
+                fill
+                sizes="80px"
+                className="object-cover"
                 onError={() => setImgError(true)}
-                loading="lazy"
               />
             ) : (
               <span className="text-xl font-extrabold text-[#FFD700]">
@@ -184,14 +186,15 @@ const SwipeableCard = memo(({
     >
       <div className="mobile-stack-card h-full">
         {/* Company Logo */}
-        <div className="w-20 h-20 mx-auto mb-3 rounded-full bg-[rgba(255,255,255,0.05)] border-2 border-[rgba(255,215,0,0.4)] flex items-center justify-center overflow-hidden">
+        <div className="relative w-20 h-20 mx-auto mb-3 rounded-full bg-[rgba(255,255,255,0.05)] border-2 border-[rgba(255,215,0,0.4)] flex items-center justify-center overflow-hidden">
           {hasImage ? (
-            <img
+            <Image
               src={profileImage}
               alt={company.companyName}
-              className="w-full h-full object-cover"
+              fill
+              sizes="80px"
+              className="object-cover"
               onError={() => setImgError(true)}
-              loading="lazy"
             />
           ) : (
             <span className="text-xl font-extrabold text-[#FFD700]">
