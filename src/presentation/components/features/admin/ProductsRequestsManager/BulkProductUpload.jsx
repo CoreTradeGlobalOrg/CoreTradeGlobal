@@ -71,9 +71,11 @@ function validateRow(row, index, categoryMap) {
   // Category: try to resolve, but don't fail — admin can pick from dropdown
   const resolvedCategory = resolveCategory(row['Category'], categoryMap);
 
-  const price = parseFloat(row['Price']);
-  if (!row['Price'] || isNaN(price) || price <= 0) {
-    errors.push('Price must be a positive number');
+  const priceRaw = row['Price'];
+  const hasPrice = priceRaw !== undefined && priceRaw !== null && String(priceRaw).trim() !== '';
+  const price = hasPrice ? parseFloat(priceRaw) : null;
+  if (hasPrice && (isNaN(price) || price < 0)) {
+    errors.push('Price must be a non-negative number (0 or blank is allowed)');
   }
 
   const currency = row['Currency']?.trim().toUpperCase();
@@ -81,9 +83,11 @@ function validateRow(row, index, categoryMap) {
     errors.push(`Currency "${row['Currency'] || ''}" is not valid. Use a 3-letter code like USD, EUR.`);
   }
 
-  const quantity = parseFloat(row['Quantity']);
-  if (!row['Quantity'] || isNaN(quantity) || quantity <= 0) {
-    errors.push('Quantity must be a positive number');
+  const quantityRaw = row['Quantity'];
+  const hasQuantity = quantityRaw !== undefined && quantityRaw !== null && String(quantityRaw).trim() !== '';
+  const quantity = hasQuantity ? parseFloat(quantityRaw) : null;
+  if (hasQuantity && (isNaN(quantity) || quantity < 0)) {
+    errors.push('Quantity must be a non-negative number (0 or blank is allowed)');
   }
 
   if (!row['Unit']?.trim()) {
@@ -95,9 +99,9 @@ function validateRow(row, index, categoryMap) {
     original: row,
     name: row['Product Name']?.trim() || '',
     category: resolvedCategory, // null if unresolved — admin picks from dropdown
-    price: isNaN(price) ? null : price,
+    price: price !== null && !isNaN(price) ? price : null,
     currency: VALID_CURRENCY_CODES.has(currency) ? currency : null,
-    quantity: isNaN(quantity) ? null : quantity,
+    quantity: quantity !== null && !isNaN(quantity) ? quantity : null,
     unit: row['Unit']?.trim() || '',
     description: row['Description']?.trim() || '',
     imageUrls: row['Image URLs']?.trim() || '',
