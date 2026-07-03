@@ -29,7 +29,9 @@ const AuthContext = createContext(null);
 // Session cookie lives 7 days (see /api/auth/session). We refresh at 6 days so
 // there is always a valid cookie ahead of expiry — the httpOnly cookie can't
 // be inspected from JS, so we track write time in localStorage instead.
-const SESSION_COOKIE_HINT_KEY = 'session_cookie_written_at';
+// v2 forces a one-time cookie rewrite for every returning user; the previous
+// key held stale timestamps from before role='admin' was landing in cookies.
+const SESSION_COOKIE_HINT_KEY = 'session_cookie_written_at_v2';
 const SESSION_COOKIE_REFRESH_MS = 6 * 24 * 60 * 60 * 1000;
 
 function readSessionHint() {
