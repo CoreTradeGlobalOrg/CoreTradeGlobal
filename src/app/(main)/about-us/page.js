@@ -68,7 +68,7 @@ export default function AboutUsPage() {
                 <p className="text-xl text-[#FFD700] font-semibold mb-4">
                     &ldquo;Core of the B2B&rdquo; — The Core of the B2B World
                 </p>
-                <p className="text-lg text-[#A0A0A0] max-w-[700px] leading-relaxed mb-16">
+                <p className="text-lg text-gray-200 max-w-[700px] leading-relaxed mb-16">
                     CoreTradeGlobal is an end-to-end B2B trade ecosystem that brings exporters, importers, and businesses involved in international trade together on a single platform. We are not just a marketplace — we are an integrated solution that covers every step of trade: product listing, request for quotation, logistics, insurance, and legal support, all under one roof.
                 </p>
             </section>
@@ -78,7 +78,7 @@ export default function AboutUsPage() {
                 <div className="w-full max-w-[1200px]">
                     <div className="relative overflow-hidden rounded-[20px] p-10 border border-[rgba(255,255,255,0.08)] bg-gradient-to-br from-[rgba(26,28,32,0.6)] to-[rgba(15,27,43,0.8)]">
                         <h2 className="text-[28px] font-bold mb-5 relative z-10" style={{ color: '#ffffff' }}>Who We Are</h2>
-                        <p className="text-base leading-[1.8] text-[#cbd5e1] relative z-10">
+                        <p className="text-base leading-[1.8] text-gray-200 relative z-10">
                             Our motto is &ldquo;Core of the B2B.&rdquo; This is not just a slogan — it is a commitment that defines the essence of our platform. We are here to enable businesses of all sizes to participate in global trade with confidence, speed, and without intermediaries.
                         </p>
                     </div>
@@ -97,7 +97,7 @@ export default function AboutUsPage() {
                             </svg>
                             Our Vision
                         </h2>
-                        <p className="text-base leading-[1.8] text-[#cbd5e1] relative z-10">
+                        <p className="text-base leading-[1.8] text-gray-200 relative z-10">
                             CoreTradeGlobal&apos;s vision is to eliminate the boundaries of trade by bringing all businesses worldwide together in a single digital core. We aim for companies of every scale to be visible, accessible, and trusted in the global market — and to become the beating heart of B2B commerce in a digitalizing world.
                         </p>
                     </div>
@@ -110,7 +110,7 @@ export default function AboutUsPage() {
                             </svg>
                             Our Mission
                         </h2>
-                        <p className="text-base leading-[1.8] text-[#cbd5e1] relative z-10">
+                        <p className="text-base leading-[1.8] text-gray-200 relative z-10">
                             Our mission is to provide businesses with a secure, fast, and efficient environment where they can trade with one another in the digital age. We enable companies to showcase their products, share their requests, connect with the right partners, and manage the entire process — from logistics to insurance, from legal support to communication — on a single platform.
                         </p>
                     </div>
@@ -133,7 +133,7 @@ export default function AboutUsPage() {
                             >
                                 <item.icon className="w-8 h-8 text-[#FFD700] mb-4" strokeWidth={1.5} />
                                 <h3 className="text-lg font-semibold text-white mb-3">{item.title}</h3>
-                                <p className="text-sm leading-[1.7] text-[#cbd5e1]">{item.description}</p>
+                                <p className="text-sm leading-[1.7] text-gray-200">{item.description}</p>
                             </div>
                         ))}
                     </div>
@@ -145,7 +145,7 @@ export default function AboutUsPage() {
                 <div className="w-full max-w-[1200px]">
                     <div className="relative overflow-hidden rounded-[20px] p-10 border border-[rgba(255,215,0,0.15)] bg-gradient-to-br from-[rgba(26,28,32,0.6)] to-[rgba(15,27,43,0.8)]">
                         <h2 className="text-[32px] font-bold mb-5 relative z-10" style={{ color: '#ffffff' }}>Why CoreTradeGlobal?</h2>
-                        <p className="text-base leading-[1.8] text-[#cbd5e1] relative z-10 mb-6">
+                        <p className="text-base leading-[1.8] text-gray-200 relative z-10 mb-6">
                             International trade is full of friction — complex logistics, opaque insurance processes, legal requirements, and trust issues. CoreTradeGlobal solves all of these challenges on a single platform. You can trade without relying on intermediaries, endless email threads, or business partners whose credibility is uncertain.
                         </p>
                         <p className="text-base leading-[1.8] text-[#FFD700] font-medium relative z-10">
@@ -159,7 +159,7 @@ export default function AboutUsPage() {
             <section className="px-5 pb-10 flex justify-center">
                 <div className="w-full max-w-[600px] text-center">
                     <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">Ready to Grow Your Business?</h2>
-                    <p className="text-[#A0A0A0] mb-8">Join thousands of businesses already trading on CoreTradeGlobal.</p>
+                    <p className="text-gray-200 mb-8">Join thousands of businesses already trading on CoreTradeGlobal.</p>
                     <a
                         href="/register"
                         style={{ color: '#000', WebkitTextFillColor: '#000' }}
