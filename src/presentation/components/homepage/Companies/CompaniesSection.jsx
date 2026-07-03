@@ -90,6 +90,8 @@ function CompanyCard({ company, categories }) {
               <img
                 src={profileImage}
                 alt={company.companyName}
+                width={64}
+                height={64}
                 className="w-full h-full object-cover"
                 onError={() => setImgError(true)}
               />
@@ -111,7 +113,7 @@ function CompanyCard({ company, categories }) {
               <span className="text-xs text-[#FFD700] font-semibold mt-1 flex items-center gap-1.5">
                 {categoryIcon && (
                   categoryIcon.startsWith('http') || categoryIcon.startsWith('/') ? (
-                    <img src={categoryIcon} alt="" className="w-4 h-4 object-contain" />
+                    <img src={categoryIcon} alt="" width={16} height={16} className="w-4 h-4 object-contain" />
                   ) : (
                     <span>{categoryIcon}</span>
                   )

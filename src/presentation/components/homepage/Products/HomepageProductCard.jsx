@@ -71,6 +71,8 @@ export function HomepageProductCard({ product, onLimitReached }) {
         <img
           src={mainImage}
           alt={product.name}
+          width={280}
+          height={210}
           className="hp-product-card-image"
         />
         {/* Badge for viewed products */}

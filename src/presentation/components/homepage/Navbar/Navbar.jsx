@@ -426,6 +426,8 @@ export function Navbar() {
                     <img
                       src={user.companyLogo || user.photoURL}
                       alt="Avatar"
+                      width={32}
+                      height={32}
                       className="w-8 h-8 rounded-full object-cover object-center border border-[#FFD700]"
                     />
                   ) : (
@@ -515,6 +517,8 @@ export function Navbar() {
                   <img
                     src={user.companyLogo || user.photoURL}
                     alt="Profile"
+                    width={40}
+                    height={40}
                     className="w-full h-full object-cover object-center"
                   />
                 ) : (

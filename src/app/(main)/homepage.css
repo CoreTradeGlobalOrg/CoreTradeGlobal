@@ -1263,6 +1263,9 @@ html {
     width: 100%;
     background: transparent;
     padding: 60px 0;
+    /* Reserve space for the categories grid before async data lands so the
+       sections below don't slide up and down during hydration. */
+    min-height: 380px;
 }
 
 .categories-container {
@@ -1404,6 +1407,9 @@ html {
     width: 100%;
     background: transparent;
     padding: 60px 0;
+    /* Match the card grid height so the section holds its own space while
+       Firestore streams in — biggest single CLS source pre-fix. */
+    min-height: 520px;
 }
 
 .featured-products-container {
@@ -2995,6 +3001,7 @@ html {
 .hp-section {
     padding: 60px 0;
     background: transparent;
+    min-height: 460px;
 }
 
 /* HP News Card for React */

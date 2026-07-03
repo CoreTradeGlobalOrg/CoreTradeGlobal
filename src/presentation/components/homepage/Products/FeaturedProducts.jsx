@@ -158,6 +158,8 @@ const ProductCardImage = memo(function ProductCardImage({ src, alt }) {
       <img
         src={src}
         alt={alt}
+        width={260}
+        height={195}
         className={`w-full h-full object-cover transition-opacity duration-300 ${loading ? 'opacity-0' : 'opacity-100'}`}
         onLoad={() => setLoading(false)}
         onError={() => { setLoading(false); setError(true); }}

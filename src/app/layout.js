@@ -18,6 +18,11 @@ const inter = Inter({
   subsets: ['latin'],
   variable: '--font-inter',
   display: 'swap',
+  // Preload so the font ships in the initial payload rather than after
+  // hydration; adjust the fallback metrics so the swap from system font to
+  // Inter does not reflow paragraphs and blow up CLS.
+  preload: true,
+  adjustFontFallback: 'Arial',
 });
 
 export const metadata = {
