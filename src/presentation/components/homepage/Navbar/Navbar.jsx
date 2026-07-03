@@ -366,10 +366,10 @@ export function Navbar() {
             }}
           >
             <Image
-              src="/icons/ctg-logo.png"
+              src="/icons/ctg-logo-optimized.png"
               alt="CoreTradeGlobal"
-              width={180}
-              height={180}
+              width={200}
+              height={109}
               className="nav-logo-img"
               priority
             />

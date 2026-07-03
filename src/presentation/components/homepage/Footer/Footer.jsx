@@ -38,7 +38,7 @@ export function Footer() {
         <div className="footer-grid">
           {/* Brand Column */}
           <div className="footer-col brand-col">
-            <img src="/icons/ctg-logo.png" alt="CoreTradeGlobal" className="nav-logo-img" />
+            <img src="/icons/ctg-logo-optimized.png" alt="CoreTradeGlobal" width={200} height={109} className="nav-logo-img" />
             <p>CoreTradeGlobal is an end-to-end B2B trade ecosystem that brings exporters, importers, and businesses involved in international trade together on a single platform.</p>
             <div className="flex flex-col gap-2 mt-4 text-sm text-gray-400">
               <a href="mailto:info@coretradeglobal.com" className="hover:text-[#FFD700] transition-colors !flex items-center gap-2">
