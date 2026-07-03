@@ -31,7 +31,12 @@ html {
     scroll-behavior: smooth;
 }
 
-/* Homepage container */
+/* Homepage container.
+   min-height matches the sum of every section's reserved height so the
+   footer sits at a fixed distance from the top regardless of how the
+   internal sections resize during hydration. This is the guarantee the
+   per-section min-heights alone couldn't give — sections could still
+   grow past their own min-height and push the footer. */
 .homepage {
     margin: 0;
     padding: 0;
@@ -39,6 +44,21 @@ html {
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
     color: var(--text-white);
     overflow-x: hidden;
+    min-height: 6500px;
+}
+
+/* On narrow viewports the sections stack differently — release the
+   desktop-sized reservation and let the mobile layout flow naturally. */
+@media (max-width: 900px) {
+    .homepage {
+        min-height: 5200px;
+    }
+}
+
+@media (max-width: 600px) {
+    .homepage {
+        min-height: auto;
+    }
 }
 
 /* --- ERİŞİLEBİLİRLİK (Reduced Motion) --- */
