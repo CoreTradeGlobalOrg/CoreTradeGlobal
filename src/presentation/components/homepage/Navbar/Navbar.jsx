@@ -376,11 +376,14 @@ export function Navbar() {
           </Link>
         </div>
 
-        {/* Desktop Navigation — Dropdown Groups */}
-        <div className="nav-links hidden md:flex">
+        {/* Desktop Navigation — Dropdown Groups.
+            Reserve the full authenticated-user width during loading so
+            the "My Account" group popping in later doesn't push the
+            navbar around and cascade a shift down to the footer. */}
+        <div className="nav-links hidden md:flex" style={{ minWidth: '620px' }}>
           {roleLoading ? (
             <div className="flex items-center gap-4">
-              {[...Array(4)].map((_, i) => (
+              {[...Array(6)].map((_, i) => (
                 <div key={i} className="w-16 h-4 bg-[rgba(255,255,255,0.1)] rounded animate-pulse" />
               ))}
             </div>
@@ -395,9 +398,11 @@ export function Navbar() {
             ))
           )}
 
-          {/* Auth Section */}
+          {/* Auth Section — the resolved state can be a whole cluster
+              (messages icon + notification bell + avatar dropdown),
+              much wider than the previous 80 px pill placeholder. */}
           {roleLoading ? (
-            <div className="w-20 h-8 bg-[rgba(255,255,255,0.1)] rounded-full animate-pulse" />
+            <div className="w-[160px] h-10 bg-[rgba(255,255,255,0.1)] rounded-full animate-pulse" />
           ) : isAuthenticated && user ? (
             <div className="flex items-center gap-3">
               {/* Messages Icon */}

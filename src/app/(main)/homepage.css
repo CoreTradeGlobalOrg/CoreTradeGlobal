@@ -31,7 +31,14 @@ html {
     scroll-behavior: smooth;
 }
 
-/* Homepage container */
+/* Homepage container.
+   CLSDebug tracing showed the footer was mounted at Y≈413 on first
+   paint — sections between navbar and footer weren't yet occupying
+   their reserved heights when the browser observed the layout. Give
+   the container a min-height that matches the sum of every section's
+   reserved size on desktop so the footer's y-coordinate is stable
+   from the very first paint, regardless of section-level hydration
+   timing. Mobile stacks differently and is untouched. */
 .homepage {
     margin: 0;
     padding: 0;
@@ -39,6 +46,19 @@ html {
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
     color: var(--text-white);
     overflow-x: hidden;
+    min-height: 6500px;
+}
+
+@media (max-width: 1024px) {
+    .homepage {
+        min-height: 5000px;
+    }
+}
+
+@media (max-width: 640px) {
+    .homepage {
+        min-height: auto;
+    }
 }
 
 /* --- ERİŞİLEBİLİRLİK (Reduced Motion) --- */
