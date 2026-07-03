@@ -1462,6 +1462,7 @@ html {
     width: 100%;
     background: transparent;
     padding: 60px 0;
+    min-height: 480px;
 }
 
 .featured-rfqs-container {
@@ -1830,6 +1831,15 @@ html {
 
 
 /* --- 11. FUARLAR (FAIRS) BÖLÜMÜ --- */
+/* Reserve space so Fair/News/Showcase sections don't collapse to 0 then
+   expand once their Firestore data arrives — that pattern was still
+   contributing to CLS at ~0.27 after the first pass. */
+.fair-section,
+.news-section,
+.showcase-section {
+    min-height: 460px;
+}
+
 .fairs-wrapper {
     width: 100%;
     background: transparent;
@@ -1837,6 +1847,7 @@ html {
     justify-content: center;
     padding: 60px 0;
     border-top: 1px solid rgba(255, 255, 255, 0.05);
+    min-height: 460px;
 }
 
 .exhibitions-container {

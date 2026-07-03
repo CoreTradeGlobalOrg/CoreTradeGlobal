@@ -64,6 +64,8 @@ export function ProfileCard({
                 <img
                   src={isEditing ? logoPreview : profileUser?.companyLogo}
                   alt="Company logo"
+                  width={96}
+                  height={96}
                   className="w-24 h-24 object-cover rounded-2xl border-2 border-[rgba(255,215,0,0.3)]"
                 />
                 {canEdit && isEditing && (

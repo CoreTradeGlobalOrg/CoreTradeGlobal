@@ -134,6 +134,8 @@ function FairCard({ fair }) {
               <img
                 src={`https://flagcdn.com/w320/${(fair.country || getCountryCodeFromLocation(fair.location)).toLowerCase()}.png`}
                 alt=""
+                width={320}
+                height={213}
                 className="absolute inset-0 w-full h-full object-cover blur-xl scale-125 opacity-60"
                 loading="lazy"
               />
@@ -142,6 +144,8 @@ function FairCard({ fair }) {
                 src={`https://flagcdn.com/w320/${(fair.country || getCountryCodeFromLocation(fair.location)).toLowerCase()}.png`}
                 srcSet={`https://flagcdn.com/w640/${(fair.country || getCountryCodeFromLocation(fair.location)).toLowerCase()}.png 2x`}
                 alt={`${fair.country || getCountryCodeFromLocation(fair.location)} flag`}
+                width={320}
+                height={213}
                 className="relative z-10 max-w-[65%] max-h-[75%] object-contain rounded-md"
                 loading="lazy"
               />

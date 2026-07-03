@@ -106,7 +106,7 @@ export function HeroDataCards({ fetchData, dataLoading, latestProduct, latestReq
             {showSkeleton ? (
               <Shimmer width="48px" height="48px" className="rounded" />
             ) : fetchData && latestProduct?.images?.[0] ? (
-              <img src={latestProduct.images[0]} alt={latestProduct.name} className="w-12 h-12 object-cover rounded" />
+              <img src={latestProduct.images[0]} alt={latestProduct.name} width={48} height={48} className="w-12 h-12 object-cover rounded" />
             ) : '📦'}
           </div>
           <div className="card-content">
@@ -189,11 +189,15 @@ export function HeroDataCards({ fetchData, dataLoading, latestProduct, latestReq
                 <img
                   src={`https://flagcdn.com/w160/${(latestFair.country || getCountryCodeFromLocation(latestFair.location)).toLowerCase()}.png`}
                   alt=""
+                  width={40}
+                  height={30}
                   className="absolute inset-0 w-full h-full object-cover blur-md scale-150 opacity-60"
                 />
                 <img
                   src={`https://flagcdn.com/w160/${(latestFair.country || getCountryCodeFromLocation(latestFair.location)).toLowerCase()}.png`}
                   alt={`${latestFair.country || getCountryCodeFromLocation(latestFair.location)} flag`}
+                  width={40}
+                  height={30}
                   className="relative z-10 w-10 h-[30px] object-contain rounded-sm"
                 />
               </>
@@ -231,6 +235,8 @@ export function HeroDataCards({ fetchData, dataLoading, latestProduct, latestReq
               <img
                 src={latestSupplier.companyLogo || latestSupplier.photoURL}
                 alt={latestSupplier.companyName}
+                width={64}
+                height={64}
                 className="w-full h-full object-cover rounded-lg"
               />
             ) : '🏭'}
