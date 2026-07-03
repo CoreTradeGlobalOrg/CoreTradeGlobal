@@ -149,28 +149,27 @@ export function AuthProvider({ children }) {
 
       setUser(userData);
 
-      // Set the session cookie on every auth state resolution. The previous
-      // per-session guard skipped cookie writes when a browser had silently
-      // dropped the httpOnly cookie (7-day expiry, cross-device sync issues),
-      // leaving admins stuck at middleware role checks.
-      try {
-        const idToken = await firebaseUser.getIdToken();
-        const sessionResponse = await fetch('/api/auth/session', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ idToken }),
-        });
-        if (sessionResponse.ok) {
-          sessionCookieSet.current = true;
-        } else {
-          console.error(
-            `Session cookie not set (status ${sessionResponse.status}). ` +
-            'Role-based route protection may not work. ' +
-            'Check FIREBASE_SERVICE_ACCOUNT_KEY in .env.local.'
-          );
+      // Set session cookie only once per session (avoid re-posting on every auth state change)
+      if (!sessionCookieSet.current) {
+        try {
+          const idToken = await firebaseUser.getIdToken();
+          const sessionResponse = await fetch('/api/auth/session', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ idToken }),
+          });
+          if (sessionResponse.ok) {
+            sessionCookieSet.current = true;
+          } else {
+            console.error(
+              `Session cookie not set (status ${sessionResponse.status}). ` +
+              'Role-based route protection may not work. ' +
+              'Check FIREBASE_SERVICE_ACCOUNT_KEY in .env.local.'
+            );
+          }
+        } catch (cookieError) {
+          console.error('Failed to set session cookie:', cookieError);
         }
-      } catch (cookieError) {
-        console.error('Failed to set session cookie:', cookieError);
       }
     } catch (err) {
       console.error('Auth state change error:', err);

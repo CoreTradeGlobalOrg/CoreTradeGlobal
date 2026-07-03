@@ -74,42 +74,24 @@ export async function verifyIdToken(idToken) {
   try {
     const auth = getAdminAuth();
     const decodedToken = await auth.verifyIdToken(idToken);
-    const uid = decodedToken.uid;
     let role = decodedToken.role || null;
-    let source = role ? 'claim' : null;
 
-    // Fallback: check Firestore for legacy accounts without custom claims.
-    // When we find a role there, promote it to a custom claim so the next
-    // token refresh short-circuits this fallback path — the two paths were
-    // drifting for admins whose token predated the claim rollout.
+    // Fallback: check Firestore for legacy accounts without custom claims
     if (!role) {
       try {
         const db = getFirestore();
-        const userDoc = await db.collection('users').doc(uid).get();
+        const userDoc = await db.collection('users').doc(decodedToken.uid).get();
         if (userDoc.exists) {
           role = userDoc.data().role || null;
-          if (role) {
-            source = 'firestore';
-            try {
-              await auth.setCustomUserClaims(uid, {
-                ...(decodedToken.role ? {} : {}),
-                role,
-              });
-            } catch (claimErr) {
-              console.error('verifyIdToken: setCustomUserClaims sync failed:', claimErr);
-            }
-          }
         }
       } catch (fsError) {
         console.error('Firestore role fallback failed:', fsError);
       }
     }
 
-    console.log(`[verifyIdToken] uid=${uid} role=${role || 'null'} source=${source || 'none'}`);
-
     return {
       valid: true,
-      uid,
+      uid: decodedToken.uid,
       email: decodedToken.email,
       role,
     };
