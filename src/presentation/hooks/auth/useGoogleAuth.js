@@ -27,6 +27,17 @@ export function useGoogleAuth() {
       try {
         const authRepo = container.getAuthRepository();
         const user = await authRepo.signInWithGoogle();
+
+        const idToken = await user.getIdToken();
+        const sessionRes = await fetch('/api/auth/session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ idToken }),
+        });
+        if (!sessionRes.ok) {
+          throw new Error('Failed to establish session');
+        }
+
         const profile = await authRepo.getUserProfile(user.uid);
 
         if (profile && profile.profileComplete !== false && profile.isDeleted !== true) {

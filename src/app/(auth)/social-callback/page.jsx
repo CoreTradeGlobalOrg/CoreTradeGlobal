@@ -34,7 +34,6 @@ export default function SocialCallbackPage() {
     const redirectTo = params.get('redirect') || '/';
     const liName = params.get('name') || '';
     const liSub = params.get('sub') || '';
-    const liPicture = params.get('picture') || '';
 
     // Strip the fragment from the URL right away.
     if (typeof window !== 'undefined') {
@@ -58,7 +57,6 @@ export default function SocialCallbackPage() {
             linkedinConnected: true,
             linkedinName: liName || null,
             linkedinMemberId: liSub || null,
-            linkedinPicture: liPicture || null,
             linkedinConnectedAt: new Date(),
             updatedAt: new Date(),
           });
@@ -81,6 +79,17 @@ export default function SocialCallbackPage() {
     (async () => {
       try {
         const user = await authRepo.signInWithCustomToken(token);
+
+        const idToken = await user.getIdToken();
+        const sessionRes = await fetch('/api/auth/session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ idToken }),
+        });
+        if (!sessionRes.ok) {
+          throw new Error('Failed to establish session');
+        }
+
         const profile = await authRepo.getUserProfile(user.uid);
 
         if (profile && profile.profileComplete !== false && profile.isDeleted !== true) {

@@ -119,7 +119,7 @@ export function CompleteProfileForm() {
         companyCategory: data.companyCategory,
         country: data.country,
         role,
-        companyLogo: user.photoURL || null,
+        companyLogo: null,
         authProvider: user.authProvider || 'google',
         emailVerified: true, // OAuth provider email is already verified
         adminApproved: false,

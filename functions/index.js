@@ -6,7 +6,7 @@
  */
 
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
-const { onDocumentCreated, onDocumentUpdated } = require('firebase-functions/v2/firestore');
+const { onDocumentCreated, onDocumentUpdated, onDocumentWritten } = require('firebase-functions/v2/firestore');
 const { onSchedule } = require('firebase-functions/v2/scheduler');
 const admin = require('firebase-admin');
 const { Timestamp, FieldValue } = require('firebase-admin/firestore');
@@ -5089,16 +5089,23 @@ async function sendFCMPushToUser(uid, userData, fcmData) {
  * Channels: in-app notification + FCM push to all admins.
  * Preference check: preferences?.system?.push !== false (default true).
  */
-exports.onNewMemberRegistered = onDocumentCreated(
+exports.onNewMemberRegistered = onDocumentWritten(
   'users/{userId}',
   async (event) => {
     try {
-      const newUser = event.data?.data();
-      if (!newUser) return;
+      const before = event.data?.before?.data();
+      const after = event.data?.after?.data();
+      if (!after) return; // deletion — skip
 
       // Only notify for member self-registrations
-      if (newUser.role !== ROLES.MEMBER) return;
+      if (after.role !== ROLES.MEMBER) return;
 
+      // Idempotency: only notify when role FIRST becomes 'member', and only once.
+      if (after._adminNotifiedAt) return;
+      const beforeWasMember = before?.role === ROLES.MEMBER;
+      if (beforeWasMember) return;
+
+      const newUser = after;
       const newUserId = event.params.userId;
       const now = Timestamp.now();
       const displayName = newUser.displayName || newUser.email || 'A new member';
@@ -5174,6 +5181,14 @@ exports.onNewMemberRegistered = onDocumentCreated(
         } catch (err) {
           console.error(`onNewMemberRegistered: email error for admin ${adminId}:`, err);
         }
+      }
+
+      // Mark this user as already-notified so subsequent writes (e.g. profile
+      // edits) don't re-fire the notification cascade.
+      try {
+        await db.collection('users').doc(newUserId).update({ _adminNotifiedAt: now });
+      } catch (err) {
+        console.error(`onNewMemberRegistered: failed to set _adminNotifiedAt for ${newUserId}:`, err);
       }
 
       console.log(`onNewMemberRegistered: notified ${adminsSnap.size} admin(s) of new member ${newUserId}`);
