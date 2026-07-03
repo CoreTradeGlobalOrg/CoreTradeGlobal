@@ -18,7 +18,7 @@ const inter = Inter({
 });
 
 export const metadata = {
-  metadataBase: new URL('https://coretradeglobal.com'),
+  metadataBase: new URL('https://www.coretradeglobal.com'),
   title: 'CoreTradeGlobal | B2B Trading Platform',
   description: 'B2B Trading Platform - Connect with businesses, manage products, and trade globally',
   keywords: ['B2B', 'trading', 'platform', 'business', 'products', 'requests'],
@@ -51,13 +51,13 @@ export const metadata = {
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: 'https://coretradeglobal.com',
+    url: 'https://www.coretradeglobal.com',
     title: 'CoreTradeGlobal | B2B Trading Platform',
     description: 'B2B Trading Platform - Connect with businesses worldwide',
     siteName: 'CoreTradeGlobal',
     images: [
       {
-        url: 'https://coretradeglobal.com/og-image.png',
+        url: 'https://www.coretradeglobal.com/og-image.png',
         width: 1200,
         height: 630,
         alt: 'CoreTradeGlobal — B2B Global Trading Platform',
@@ -69,7 +69,7 @@ export const metadata = {
     title: 'CoreTradeGlobal | B2B Trading Platform',
     description: 'B2B Trading Platform - Connect with businesses worldwide',
     creator: '@CoreTradeGlobal',
-    images: ['https://coretradeglobal.com/og-image.png'],
+    images: ['https://www.coretradeglobal.com/og-image.png'],
   },
 };
 
