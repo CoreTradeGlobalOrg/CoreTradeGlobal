@@ -57,10 +57,10 @@ export const metadata = {
     siteName: 'CoreTradeGlobal',
     images: [
       {
-        url: 'https://coretradeglobal.com/Core-png.png',
+        url: 'https://coretradeglobal.com/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'Core Trade Global',
+        alt: 'CoreTradeGlobal — B2B Global Trading Platform',
       },
     ],
   },
@@ -69,7 +69,7 @@ export const metadata = {
     title: 'CoreTradeGlobal | B2B Trading Platform',
     description: 'B2B Trading Platform - Connect with businesses worldwide',
     creator: '@CoreTradeGlobal',
-    images: ['https://coretradeglobal.com/Core-png.png'],
+    images: ['https://coretradeglobal.com/og-image.png'],
   },
 };
 
