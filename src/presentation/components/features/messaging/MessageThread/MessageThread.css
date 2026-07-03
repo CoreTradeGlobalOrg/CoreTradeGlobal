@@ -166,7 +166,9 @@
   font-size: 14px;
   line-height: 1.4;
   margin: 0;
-  word-wrap: break-word;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
   white-space: pre-wrap;
 }
 
@@ -221,7 +223,7 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
-  margin-bottom: 4px;
+  margin-top: 4px;
 }
 
 .message-attachments.own {
@@ -265,6 +267,30 @@
   transition: opacity 0.3s ease;
 }
 
+/* Download button overlay on image attachments */
+.attachment-image-download {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 5;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(15, 27, 43, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  color: white;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.attachment-image-download:hover {
+  background: rgba(255, 215, 0, 0.95);
+  color: #0f1b2b;
+}
+
 .attachment-image-loader {
   display: flex;
   align-items: center;
@@ -294,13 +320,10 @@
 /* File Attachment */
 .message-attachment-file {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 14px;
+  align-items: stretch;
   border-radius: 12px;
-  text-decoration: none;
-  max-width: 260px;
-  transition: all 0.2s ease;
+  max-width: 280px;
+  overflow: hidden;
 }
 
 .message-attachment-file.own {
@@ -311,8 +334,44 @@
   background: rgba(255, 255, 255, 0.05);
 }
 
-.message-attachment-file:hover {
-  background: rgba(255, 255, 255, 0.1);
+/* Preview button — file icon + name/size; click opens the file */
+.attachment-preview-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+  padding: 10px 12px;
+  background: transparent;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.attachment-preview-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* Separate download button on the side — click downloads only */
+.attachment-download-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  flex-shrink: 0;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  color: #94a3b8;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.attachment-download-btn:hover {
+  background: rgba(255, 215, 0, 0.12);
+  color: #FFD700;
 }
 
 .message-attachment-file .attachment-file-icon {
@@ -344,25 +403,8 @@
   font-weight: 500;
 }
 
-.message-attachment-file.own .attachment-file-name {
-  color: white;
-}
-
 .message-attachment-file .attachment-file-size {
   font-size: 11px;
-  color: #94a3b8;
-}
-
-.message-attachment-file.own .attachment-file-size {
-  color: #94a3b8;
-}
-
-.message-attachment-file .attachment-download-icon {
-  color: #94a3b8;
-  flex-shrink: 0;
-}
-
-.message-attachment-file.own .attachment-download-icon {
   color: #94a3b8;
 }
 
@@ -422,6 +464,28 @@
   background: rgba(255, 255, 255, 0.2);
 }
 
+.lightbox-download {
+  position: absolute;
+  top: 20px;
+  right: 72px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 50%;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.lightbox-download:hover {
+  background: rgba(255, 215, 0, 0.95);
+  color: #0f1b2b;
+}
+
 /* ── System Messages (deal events) ── */
 .system-message-wrapper {
   display: flex;
@@ -473,4 +537,38 @@
 .system-message-time {
   font-size: 10px;
   color: #64748b;
+}
+
+/* Message delete button - appears on hover */
+.message-own-wrapper {
+  position: relative;
+}
+
+.message-actions {
+  position: absolute;
+  left: -8px;
+  top: 50%;
+  transform: translate(-100%, -50%);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  z-index: 5;
+}
+
+.message-own-wrapper:hover .message-actions {
+  opacity: 1;
+}
+
+.message-delete-btn {
+  padding: 4px;
+  border-radius: 6px;
+  color: #64748b;
+  transition: all 0.15s ease;
+  background: rgba(15, 27, 43, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.message-delete-btn:hover {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.2);
 }

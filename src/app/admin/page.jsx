@@ -164,7 +164,7 @@ function TradeOverviewStats() {
 function AdminPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user, loading: authLoading, isAuthenticated } = useAuth();
+  const { user, loading: authLoading, profileLoading, isAuthenticated } = useAuth();
   const { users, loading, error, refetch } = useGetAllUsers();
   const validTabs = ['users', 'trades', 'messages', 'categories', 'fairs', 'news', 'testimonials', 'announcements', 'product-requests'];
   const tabFromUrl = searchParams.get('tab');
@@ -172,19 +172,19 @@ function AdminPageContent() {
     validTabs.includes(tabFromUrl) ? tabFromUrl : 'users'
   );
 
-  // Auth check - redirect if not admin
+  // Auth check - redirect if not admin (wait for profile to load role)
   useEffect(() => {
-    if (!authLoading) {
+    if (!authLoading && !profileLoading) {
       if (!isAuthenticated) {
         router.replace('/login?redirect=/admin');
       } else if (user?.role !== 'admin') {
         router.replace('/');
       }
     }
-  }, [authLoading, isAuthenticated, user, router]);
+  }, [authLoading, profileLoading, isAuthenticated, user, router]);
 
-  // Show loading while checking auth
-  if (authLoading) {
+  // Show loading while checking auth or loading profile
+  if (authLoading || profileLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-[#0F1B2B]">
         <div className="text-center">

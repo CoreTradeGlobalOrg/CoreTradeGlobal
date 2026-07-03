@@ -10,7 +10,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { Bell, MessageSquare, FileText, X, Check, Trash2, CheckCircle, XCircle, UserPlus, Handshake, Scale } from 'lucide-react';
+import { Bell, MessageSquare, FileText, X, Check, Trash2, CheckCircle, XCircle, UserPlus, Handshake, Scale, Mail } from 'lucide-react';
 import { useMessages } from '@/presentation/contexts/MessagesContext';
 import { useMarkAsRead } from '@/presentation/hooks/messaging/useMarkAsRead';
 import './NotificationBell.css';
@@ -88,6 +88,8 @@ export function NotificationBell() {
         return <Handshake className="w-4 h-4" />;
       case 'legal':
         return <Scale className="w-4 h-4" />;
+      case 'verify_email':
+        return <Mail className="w-4 h-4" />;
       default:
         return <MessageSquare className="w-4 h-4" />;
     }
@@ -108,6 +110,8 @@ export function NotificationBell() {
         return 'deal-icon';
       case 'legal':
         return 'deal-icon';
+      case 'verify_email':
+        return 'quote-icon';
       default:
         return '';
     }

@@ -10,12 +10,9 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { ChevronDown } from 'lucide-react';
 import { useAuth } from '@/presentation/contexts/AuthContext';
-import { Modal } from '@/components/ui/Modal';
-import { ProductForm } from '@/presentation/components/features/product/ProductForm/ProductForm';
-import { useCreateProduct } from '@/presentation/hooks/product/useCreateProduct';
-import toast from 'react-hot-toast';
 
 const faqLinkClass = 'text-[#FFD700] hover:text-white underline underline-offset-2 transition-colors';
 
@@ -214,26 +211,11 @@ function FAQItem({ item, isOpen, onToggle }) {
 
 export function FAQSection() {
   const [openId, setOpenId] = useState(null);
-  const [productModalOpen, setProductModalOpen] = useState(false);
-  const { user, isAuthenticated } = useAuth();
-  const { createProduct } = useCreateProduct();
+  const { isAuthenticated } = useAuth();
+  const router = useRouter();
 
   const handleAddProduct = () => {
-    if (!isAuthenticated) {
-      window.location.href = '/register';
-      return;
-    }
-    setProductModalOpen(true);
-  };
-
-  const handleProductSubmit = async (data, imageFiles) => {
-    try {
-      await createProduct(data, imageFiles);
-      setProductModalOpen(false);
-    } catch (error) {
-      console.error('Error creating product:', error);
-      toast.error(error.message || 'Failed to create product. Please try again.');
-    }
+    router.push(isAuthenticated ? '/product/new' : '/register');
   };
 
   const sections = getFaqSections(handleAddProduct);
@@ -273,18 +255,6 @@ export function FAQSection() {
           </div>
         </div>
       </section>
-
-      <Modal
-        isOpen={productModalOpen}
-        onClose={() => setProductModalOpen(false)}
-        title="Add New Product"
-      >
-        <ProductForm
-          userId={user?.uid}
-          onSubmit={handleProductSubmit}
-          onCancel={() => setProductModalOpen(false)}
-        />
-      </Modal>
     </>
   );
 }

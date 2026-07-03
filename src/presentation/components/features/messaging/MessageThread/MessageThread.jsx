@@ -11,16 +11,23 @@ import Link from 'next/link';
 import { useMessages } from '@/presentation/contexts/MessagesContext';
 import { useAuth } from '@/presentation/contexts/AuthContext';
 import { useMarkAsRead } from '@/presentation/hooks/messaging/useMarkAsRead';
-import { FileText, Download, X, Handshake } from 'lucide-react';
+import { FileText, Download, X, Handshake, Trash2 } from 'lucide-react';
+import { useDeleteMessage } from '@/presentation/hooks/messaging/useDeleteMessage';
+import toast from 'react-hot-toast';
 import './MessageThread.css';
 
 // Lightbox for viewing images
-function ImageLightbox({ src, alt, onClose }) {
+function ImageLightbox({ src, alt, onClose, onDownload }) {
   return (
     <div className="image-lightbox" onClick={onClose}>
-      <button className="lightbox-close" onClick={onClose}>
+      <button className="lightbox-close" onClick={onClose} aria-label="Close">
         <X className="w-6 h-6" />
       </button>
+      {onDownload && (
+        <button className="lightbox-download" onClick={onDownload} title="Download" aria-label="Download image">
+          <Download className="w-6 h-6" />
+        </button>
+      )}
       <img src={src} alt={alt} onClick={(e) => e.stopPropagation()} />
     </div>
   );
@@ -39,13 +46,53 @@ function AttachmentDisplay({ attachment, isOwn, onImageLoad }) {
     return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
   };
 
+  // Force a real download. Cross-origin Firebase Storage URLs ignore the <a download>
+  // attribute, so fetch the file as a blob and trigger a same-origin object-URL
+  // download. Falls back to opening in a new tab if the fetch is blocked (e.g. CORS).
+  const handleDownload = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      const res = await fetch(attachment.url);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = attachment.name || 'download';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      console.error('Attachment download failed, opening in new tab:', err);
+      window.open(attachment.url, '_blank', 'noopener,noreferrer');
+    }
+  };
+
+  // Browsers can only render some types inline (images, PDFs, plain text). For
+  // anything else (CSV, xlsx, docx…), "opening" the URL just triggers a download
+  // using the raw storage filename — inconsistent with the download button's clean
+  // name. So for non-previewable types we route preview through the same download.
+  const canPreviewInline =
+    attachment.type?.startsWith('image/') ||
+    attachment.type === 'application/pdf' ||
+    attachment.type === 'text/plain';
+
+  const handlePreview = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (canPreviewInline) {
+      window.open(attachment.url, '_blank', 'noopener,noreferrer');
+    } else {
+      handleDownload(e);
+    }
+  };
+
   if (isImage) {
     return (
       <>
-        <div
-          className={`message-attachment-image ${imageLoading ? 'loading' : 'loaded'}`}
-          onClick={() => !imageLoading && setLightboxOpen(true)}
-        >
+        <div className={`message-attachment-image ${imageLoading ? 'loading' : 'loaded'}`}>
           {imageLoading && (
             <div className="attachment-image-loader">
               <span className="attachment-spinner" />
@@ -54,6 +101,7 @@ function AttachmentDisplay({ attachment, isOwn, onImageLoad }) {
           <img
             src={attachment.url}
             alt={attachment.name}
+            onClick={() => !imageLoading && setLightboxOpen(true)}
             onLoad={() => {
               setImageLoading(false);
               // Small delay to ensure DOM updates with new image size before scrolling
@@ -61,12 +109,24 @@ function AttachmentDisplay({ attachment, isOwn, onImageLoad }) {
             }}
             className={imageLoading ? 'hidden' : 'visible'}
           />
+          {!imageLoading && (
+            <button
+              type="button"
+              className="attachment-image-download"
+              onClick={handleDownload}
+              title="Download"
+              aria-label="Download image"
+            >
+              <Download className="w-4 h-4" />
+            </button>
+          )}
         </div>
         {lightboxOpen && (
           <ImageLightbox
             src={attachment.url}
             alt={attachment.name}
             onClose={() => setLightboxOpen(false)}
+            onDownload={handleDownload}
           />
         )}
       </>
@@ -74,21 +134,31 @@ function AttachmentDisplay({ attachment, isOwn, onImageLoad }) {
   }
 
   return (
-    <a
-      href={attachment.url}
-      target="_blank"
-      rel="noopener noreferrer"
-      className={`message-attachment-file ${isOwn ? 'own' : 'other'}`}
-    >
-      <div className="attachment-file-icon">
-        <FileText className="w-5 h-5" />
-      </div>
-      <div className="attachment-file-info">
-        <span className="attachment-file-name">{attachment.name}</span>
-        <span className="attachment-file-size">{formatFileSize(attachment.size)}</span>
-      </div>
-      <Download className="w-4 h-4 attachment-download-icon" />
-    </a>
+    <div className={`message-attachment-file ${isOwn ? 'own' : 'other'}`}>
+      <button
+        type="button"
+        className="attachment-preview-btn"
+        onClick={handlePreview}
+        title="Preview"
+      >
+        <div className="attachment-file-icon">
+          <FileText className="w-5 h-5" />
+        </div>
+        <div className="attachment-file-info">
+          <span className="attachment-file-name">{attachment.name}</span>
+          <span className="attachment-file-size">{formatFileSize(attachment.size)}</span>
+        </div>
+      </button>
+      <button
+        type="button"
+        className="attachment-download-btn"
+        onClick={handleDownload}
+        title="Download"
+        aria-label="Download file"
+      >
+        <Download className="w-4 h-4" />
+      </button>
+    </div>
   );
 }
 
@@ -96,8 +166,20 @@ export function MessageThread({ conversationId, participantDetails = {} }) {
   const { user } = useAuth();
   const { activeMessages } = useMessages();
   const { markConversationAsRead } = useMarkAsRead();
+  const { deleteMessage, deleting } = useDeleteMessage();
   const messagesEndRef = useRef(null);
   const hasMarkedAsRead = useRef(false);
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
+
+  const handleDeleteMessage = async (messageId) => {
+    try {
+      await deleteMessage(conversationId, messageId);
+      setDeleteConfirm(null);
+      toast.success('Message deleted');
+    } catch (err) {
+      toast.error('Failed to delete message');
+    }
+  };
 
   // Scroll to bottom — scrolls the direct parent container, not the whole page
   const scrollToBottom = () => {
@@ -223,14 +305,6 @@ export function MessageThread({ conversationId, participantDetails = {} }) {
                       {showAvatar && (
                         <div className="message-sender-name">{message.senderName}</div>
                       )}
-                      {/* Attachments */}
-                      {message.attachments?.length > 0 && (
-                        <div className="message-attachments">
-                          {message.attachments.map((attachment, idx) => (
-                            <AttachmentDisplay key={idx} attachment={attachment} isOwn={false} onImageLoad={scrollToBottom} />
-                          ))}
-                        </div>
-                      )}
                       {/* Text content */}
                       {message.content && (
                         <div className={`message-bubble other`}>
@@ -243,6 +317,14 @@ export function MessageThread({ conversationId, participantDetails = {} }) {
                           <span className="message-time">{formatTime(message.createdAt)}</span>
                         </div>
                       )}
+                      {/* Attachments */}
+                      {message.attachments?.length > 0 && (
+                        <div className="message-attachments">
+                          {message.attachments.map((attachment, idx) => (
+                            <AttachmentDisplay key={idx} attachment={attachment} isOwn={false} onImageLoad={scrollToBottom} />
+                          ))}
+                        </div>
+                      )}
                       {/* Time for attachment-only messages */}
                       {!message.content && message.attachments?.length > 0 && (
                         <span className="message-time-standalone">{formatTime(message.createdAt)}</span>
@@ -253,14 +335,34 @@ export function MessageThread({ conversationId, participantDetails = {} }) {
 
                 {isOwn && (
                   <div className="message-own-wrapper">
-                    {/* Attachments */}
-                    {message.attachments?.length > 0 && (
-                      <div className="message-attachments own">
-                        {message.attachments.map((attachment, idx) => (
-                          <AttachmentDisplay key={idx} attachment={attachment} isOwn={true} onImageLoad={scrollToBottom} />
-                        ))}
-                      </div>
-                    )}
+                    {/* Delete button */}
+                    <div className="message-actions">
+                      {deleteConfirm === message.id ? (
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => handleDeleteMessage(message.id)}
+                            disabled={deleting}
+                            className="text-red-400 hover:text-red-300 text-xs px-2 py-1 rounded bg-red-900/30 border border-red-800/30"
+                          >
+                            {deleting ? '...' : 'Delete'}
+                          </button>
+                          <button
+                            onClick={() => setDeleteConfirm(null)}
+                            className="text-gray-400 hover:text-white text-xs px-2 py-1"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => setDeleteConfirm(message.id)}
+                          className="message-delete-btn"
+                          title="Delete message"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
                     {/* Text content */}
                     {message.content && (
                       <div className={`message-bubble own`}>
@@ -271,6 +373,14 @@ export function MessageThread({ conversationId, participantDetails = {} }) {
                         )}
                         <p className="message-content">{message.content}</p>
                         <span className="message-time">{formatTime(message.createdAt)}</span>
+                      </div>
+                    )}
+                    {/* Attachments */}
+                    {message.attachments?.length > 0 && (
+                      <div className="message-attachments own">
+                        {message.attachments.map((attachment, idx) => (
+                          <AttachmentDisplay key={idx} attachment={attachment} isOwn={true} onImageLoad={scrollToBottom} />
+                        ))}
                       </div>
                     )}
                     {/* Time for attachment-only messages */}

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Star, Check, Ban, Trash2, Eye, Shield, ShieldX, ShieldOff, ChevronDown } from 'lucide-react';
 import { COUNTRIES } from '@/core/constants/countries';
 import { ROLES, ROLE_DISPLAY_NAMES, ROLE_BADGE_COLORS } from '@/core/constants/roles';
+import { useCategories } from '@/presentation/hooks/category/useCategories';
 
 function getCountryLabel(countryCode) {
   const country = COUNTRIES.find((c) => c.value === countryCode);
@@ -34,6 +35,7 @@ function getRoleBadgeClasses(role) {
  */
 export function UsersTab({ users = [], onAction, onOpenDialog, actionLoading }) {
   const router = useRouter();
+  const { categories } = useCategories();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterVerified, setFilterVerified] = useState('all');
   const [filterApproved, setFilterApproved] = useState('all');
@@ -194,7 +196,7 @@ export function UsersTab({ users = [], onAction, onOpenDialog, actionLoading }) 
                   </td>
                   <td className="px-6 py-4">
                     <div className="font-medium text-white">{user.companyName || 'N/A'}</div>
-                    {user.companyCategory && <div className="text-sm text-gray-400">{user.companyCategory}</div>}
+                    {user.companyCategory && <div className="text-sm text-gray-400">{categories?.find(c => c.value === user.companyCategory)?.label || user.companyCategory}</div>}
                   </td>
                   <td className="px-6 py-4">
                     <div className="text-sm text-white">{user.country ? getCountryLabel(user.country) : 'N/A'}</div>

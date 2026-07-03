@@ -297,3 +297,35 @@
     text-align: center;
   }
 }
+
+/* Conversation delete */
+.message-list-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.message-list-delete-btn {
+  opacity: 0;
+  padding: 6px;
+  border-radius: 8px;
+  color: #64748b;
+  transition: all 0.15s ease;
+}
+
+.message-list-item:hover .message-list-delete-btn {
+  opacity: 1;
+}
+
+.message-list-delete-btn:hover {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.message-list-delete-confirm {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}

@@ -16,6 +16,7 @@ import Link from 'next/link';
 import toast from 'react-hot-toast';
 import { container } from '@/core/di/container';
 import { DeletedAccountDialog } from '@/presentation/components/features/auth/DeletedAccountDialog/DeletedAccountDialog';
+import { SocialAuthButtons } from '@/presentation/components/features/auth/SocialAuthButtons/SocialAuthButtons';
 import { useTrackEvent } from '@/presentation/hooks/analytics';
 import { Eye, EyeOff, ShieldCheck, KeyRound } from 'lucide-react';
 
@@ -287,6 +288,10 @@ export function LoginForm() {
         >
           {loading ? 'Logging in...' : 'Log In'}
         </button>
+
+        <div className="mt-6">
+          <SocialAuthButtons redirectTo={redirectTo} />
+        </div>
 
         <p className="mt-6 text-center text-sm text-[#A0A0A0]">
           Don't have an account? <Link href="/register" className="text-[#FFD700] font-semibold hover:text-white transition-colors">Register Now</Link>

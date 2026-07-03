@@ -29,10 +29,11 @@ export class CreateConversationUseCase {
    * @param {Array<string>} params.participantIds - User IDs to include
    * @param {string} params.creatorId - ID of the user creating the conversation
    * @param {string} params.initialMessage - Optional initial message content
+   * @param {Array<Object>} params.attachments - Optional file attachments for the initial message ({ url, name, type, size })
    * @param {Object} params.metadata - Optional metadata (subject, source, dealId, providerId, etc.)
    * @returns {Promise<Object>} Created conversation
    */
-  async execute({ type = 'direct', participantIds, creatorId, initialMessage = null, metadata = {} }) {
+  async execute({ type = 'direct', participantIds, creatorId, initialMessage = null, attachments = [], metadata = {} }) {
     // 1. Validate inputs
     this.validateInputs(type, participantIds, creatorId);
 
@@ -178,13 +179,14 @@ export class CreateConversationUseCase {
     const conversation = await this.conversationRepository.create(conversationData);
 
     // 5. If there's an initial message, create it
-    if (initialMessage && creatorId) {
+    if ((initialMessage || attachments.length > 0) && creatorId) {
       const creatorDetails = participantDetails[creatorId];
       const messageData = {
         senderId: creatorId,
         senderName: creatorDetails?.displayName || 'Unknown',
         content: initialMessage,
         type: type === 'contact' ? 'contact_inquiry' : 'text',
+        attachments,
         metadata: {
           subject: metadata.subject || null,
           contactEmail: metadata.contactEmail || null,
@@ -196,7 +198,7 @@ export class CreateConversationUseCase {
 
       // Update lastMessage in conversation
       await this.conversationRepository.updateLastMessage(conversation.id, {
-        content: initialMessage.substring(0, 100),
+        content: initialMessage ? initialMessage.substring(0, 100) : '📎 Attachment',
         senderId: creatorId,
         senderName: creatorDetails?.displayName || 'Unknown',
         createdAt: new Date(),

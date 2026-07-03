@@ -71,7 +71,9 @@ export class RegisterUseCase {
         linkedinProfile: linkedinProfile || null,
         country,
         companyLogo: null, // Will be updated after upload
-        // Verification status
+        // Auth + verification status
+        authProvider: 'password',
+        profileComplete: true, // Email/password registration collects everything up-front
         emailVerified: false, // Will be updated when user verifies email
         adminApproved: false, // Admin must approve user
         isSuspended: false, // Admin can suspend users

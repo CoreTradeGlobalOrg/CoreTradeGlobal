@@ -104,6 +104,238 @@ function buildInviteEmailHtml(name, role, signInLink) {
 }
 
 /**
+ * Build branded welcome email HTML for newly self-registered users.
+ * Placeholders {{displayName}} and {{userID}} are replaced with the user's data.
+ */
+function buildWelcomeEmailHtml(displayName, userID) {
+  const safeName = String(displayName || 'there').replace(/[<>]/g, '');
+  const safeId = String(userID || '');
+  return `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Welcome to CoreTradeGlobal</title>
+<style type="text/css">
+  body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+  table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+  img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+  table { border-collapse: collapse !important; }
+  body { height: 100% !important; margin: 0 !important; padding: 0 !important; width: 100% !important; background-color: #0f1b2b; }
+  a[x-apple-data-detectors] { color: inherit !important; text-decoration: none !important; font-size: inherit !important; font-family: inherit !important; font-weight: inherit !important; line-height: inherit !important; }
+  .btn-cta:hover { background: #fdb931 !important; }
+  .quick-link:hover { background-color: rgba(255, 215, 0, 0.12) !important; border-color: rgba(255, 215, 0, 0.35) !important; }
+  .step-btn { display: inline-block; width: 90px; padding: 0; background-color: rgba(255, 215, 0, 0.07); border: 1px solid rgba(255, 215, 0, 0.28); border-radius: 10px; text-decoration: none; box-sizing: border-box; vertical-align: middle; }
+  .step-btn:hover { background-color: rgba(255, 215, 0, 0.18) !important; border-color: rgba(255, 215, 0, 0.6) !important; box-shadow: 0 0 14px rgba(255, 215, 0, 0.18) !important; }
+  @media only screen and (max-width: 599px) {
+    .menu-item { display: inline-block !important; padding: 6px 10px !important; }
+    .menu-bullet { display: none !important; }
+  }
+</style>
+</head>
+<body style="margin: 0; padding: 0; background-color: #0f1b2b; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+  <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #0f1b2b; table-layout: fixed;">
+    <tr>
+      <td align="center" style="padding: 30px 10px 20px 10px;">
+        <table border="0" cellpadding="0" cellspacing="0" width="600" style="max-width: 600px; background-color: #1a283b; border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.25);">
+          <tr>
+            <td style="padding: 30px 40px 15px 40px; text-align: center;">
+              <h1 style="color: #ffffff; font-size: 30px; font-weight: 800; margin: 0 0 15px 0; line-height: 1.35;">
+                Welcome to<br /><span style="color: #ffd700;">CoreTradeGlobal!</span>
+              </h1>
+              <p style="color: #e2e8f0; font-size: 18px; line-height: 1.6; margin: 0;">
+                Hey ${safeName}, we are thrilled to welcome you to the family! You are now part of a B2B trade network connecting importers and exporters with integrated logistics and transit insurance. Complete the 3 quick steps below to get started:
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 20px 40px 10px 40px;">
+              <h3 style="color: #ffffff; font-size: 20px; font-weight: 700; margin: 0; text-align: center; text-transform: uppercase; letter-spacing: 0.05em;">How to Get Started</h3>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 10px 40px 15px 40px;">
+              <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                <tr>
+                  <td style="padding-bottom: 10px;">
+                    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px;">
+                      <tr>
+                        <td valign="middle" width="110" style="padding: 12px 0 12px 12px; text-align: center;">
+                          <a href="https://www.coretradeglobal.com/profile/${safeId}" target="_blank" class="step-btn">
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                              <tr>
+                                <td width="16" style="font-size: 1px; line-height: 1;">&nbsp;</td>
+                                <td align="center" style="padding-top: 8px; font-size: 1px; line-height: 1;">
+                                  <img src="https://cdn.jsdelivr.net/npm/material-design-icons@3.0.1/social/drawable-xxhdpi/ic_person_white_24dp.png" alt="Profile" width="20" height="20" style="display: block; margin: 0 auto; width: 20px; height: 20px; border: 0;" />
+                                </td>
+                                <td width="16" align="right" valign="top" style="padding: 4px 4px 0 0; font-size: 10px; line-height: 1; color: #ffd700;">&#x2197;</td>
+                              </tr>
+                              <tr>
+                                <td colspan="3" align="center" style="color: #ffd700; font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 6px 4px 8px 4px; line-height: 1.2;">Profile</td>
+                              </tr>
+                            </table>
+                          </a>
+                        </td>
+                        <td valign="middle" style="padding: 12px 16px;">
+                          <div style="color: #ffd700; font-size: 14px; font-weight: 800; margin-bottom: 4px;">Let's complete your profile!</div>
+                          <p style="color: #f1f5f9; font-size: 13px; line-height: 1.5; margin: 0;">Upload your logo, website, LinkedIn, description, and documents to build trust.</p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding-bottom: 10px;">
+                    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px;">
+                      <tr>
+                        <td valign="middle" width="110" style="padding: 12px 0 12px 12px; text-align: center;">
+                          <a href="https://www.coretradeglobal.com/products" target="_blank" class="step-btn">
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                              <tr>
+                                <td width="16" style="font-size: 1px; line-height: 1;">&nbsp;</td>
+                                <td align="center" style="padding-top: 8px; font-size: 1px; line-height: 1;">
+                                  <img src="https://cdn.jsdelivr.net/npm/material-design-icons@3.0.1/action/drawable-xxhdpi/ic_shopping_cart_white_24dp.png" alt="Products" width="20" height="20" style="display: block; margin: 0 auto; width: 20px; height: 20px; border: 0;" />
+                                </td>
+                                <td width="16" align="right" valign="top" style="padding: 4px 4px 0 0; font-size: 10px; line-height: 1; color: #ffd700;">&#x2197;</td>
+                              </tr>
+                              <tr>
+                                <td colspan="3" align="center" style="color: #ffd700; font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 6px 4px 8px 4px; line-height: 1.2;">Products</td>
+                              </tr>
+                            </table>
+                          </a>
+                        </td>
+                        <td valign="middle" style="padding: 12px 16px;">
+                          <div style="color: #ffd700; font-size: 14px; font-weight: 800; margin-bottom: 4px;">Upload your first product!</div>
+                          <p style="color: #f1f5f9; font-size: 13px; line-height: 1.5; margin: 0 0 6px 0;">Upload products with pricing, details, and delivery terms.</p>
+                          <div style="background-color: rgba(255,215,0,0.04); border: 1px dashed rgba(255,215,0,0.35); border-radius: 8px; padding: 6px 10px; color: #ffd700; font-size: 12px; line-height: 1.4;">
+                            <strong>&#128161; Bulk Upload:</strong> Send us your CSV file from your profile page and we'll upload your products.
+                          </div>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px;">
+                      <tr>
+                        <td valign="middle" width="110" style="padding: 12px 0 12px 12px; text-align: center;">
+                          <a href="https://www.coretradeglobal.com/requests" target="_blank" class="step-btn">
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                              <tr>
+                                <td width="16" style="font-size: 1px; line-height: 1;">&nbsp;</td>
+                                <td align="center" style="padding-top: 8px; font-size: 1px; line-height: 1;">
+                                  <img src="https://cdn.jsdelivr.net/npm/material-design-icons@3.0.1/action/drawable-xxhdpi/ic_assignment_white_24dp.png" alt="RFQ" width="20" height="20" style="display: block; margin: 0 auto; width: 20px; height: 20px; border: 0;" />
+                                </td>
+                                <td width="16" align="right" valign="top" style="padding: 4px 4px 0 0; font-size: 10px; line-height: 1; color: #ffd700;">&#x2197;</td>
+                              </tr>
+                              <tr>
+                                <td colspan="3" align="center" style="color: #ffd700; font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 6px 4px 8px 4px; line-height: 1.2;">Post RFQ</td>
+                              </tr>
+                            </table>
+                          </a>
+                        </td>
+                        <td valign="middle" style="padding: 12px 16px;">
+                          <div style="color: #ffd700; font-size: 14px; font-weight: 800; margin-bottom: 4px;">Create your first RFQ!</div>
+                          <p style="color: #f1f5f9; font-size: 13px; line-height: 1.5; margin: 0;">Enter requirements to receive and compare live quotes from global suppliers.</p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td align="center" style="padding: 10px 40px 20px 40px;">
+              <table border="0" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td align="center" bgcolor="#ffd700" style="border-radius: 99px;">
+                    <a href="https://coretradeglobal.com/" target="_blank" class="btn-cta" style="display: inline-block; padding: 16px 36px; font-size: 18px; font-weight: 700; color: #0f1b2b; text-decoration: none; border-radius: 99px; background-color: #ffd700;">Go to Dashboard &rarr;</a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td align="center" style="padding: 20px 40px 20px 40px; border-top: 1px solid rgba(255, 255, 255, 0.08);">
+              <div style="color: #64748b; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px; text-align: center;">Explore the Platform</div>
+              <table border="0" cellpadding="0" cellspacing="0" class="explore-menu" style="margin: 0 auto; text-align: center;">
+                <tr>
+                  <td class="menu-item" style="padding: 0 8px;"><a href="https://www.coretradeglobal.com/products" target="_blank" style="color: #ffd700; text-decoration: none; font-size: 13px; font-weight: 600;">Browse Products</a></td>
+                  <td class="menu-bullet" style="color: #64748b; font-size: 13px;">&bull;</td>
+                  <td class="menu-item" style="padding: 0 8px;"><a href="https://www.coretradeglobal.com/requests" target="_blank" style="color: #ffd700; text-decoration: none; font-size: 13px; font-weight: 600;">Browse RFQs</a></td>
+                  <td class="menu-bullet" style="color: #64748b; font-size: 13px;">&bull;</td>
+                  <td class="menu-item" style="padding: 0 8px;"><a href="https://www.coretradeglobal.com/about-us" target="_blank" style="color: #ffd700; text-decoration: none; font-size: 13px; font-weight: 600;">About Us</a></td>
+                  <td class="menu-bullet" style="color: #64748b; font-size: 13px;">&bull;</td>
+                  <td class="menu-item" style="padding: 0 8px;"><a href="https://www.coretradeglobal.com/faq" target="_blank" style="color: #ffd700; text-decoration: none; font-size: 13px; font-weight: 600;">FAQ</a></td>
+                  <td class="menu-bullet" style="color: #64748b; font-size: 13px;">&bull;</td>
+                  <td class="menu-item" style="padding: 0 8px;"><a href="https://www.coretradeglobal.com/fairs" target="_blank" style="color: #ffd700; text-decoration: none; font-size: 13px; font-weight: 600;">Trade Fairs</a></td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+    <tr>
+      <td align="center" style="padding: 0 10px 40px 10px;">
+        <table border="0" cellpadding="0" cellspacing="0" width="600" style="max-width: 600px; text-align: center;">
+          <tr>
+            <td align="center" style="padding-bottom: 20px;">
+              <a href="https://linkedin.com/company/coretradeglobal" target="_blank" style="color: #94a3b8; text-decoration: none;">
+                <img src="https://img.icons8.com/ios-filled/50/94a3b8/linkedin.png" alt="LinkedIn" width="20" style="display: inline-block; width: 20px; height: auto;" />
+              </a>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding-bottom: 15px; color: #ffd700; font-size: 16px;">
+              <a href="mailto:info@coretradeglobal.com" style="color: #ffd700; text-decoration: none; font-weight: 500;">info@coretradeglobal.com</a>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 0 20px 15px 20px; color: #64748b; font-size: 14px; line-height: 1.5;">You are receiving this email because you signed up for CoreTradeGlobal.</td>
+          </tr>
+          <tr>
+            <td style="color: #64748b; font-size: 14px; line-height: 1.5; padding: 0 20px;">
+              &copy; 2026 CoreTradeGlobal Inc. All rights reserved.
+              <br /><br />
+              <a href="https://coretradeglobal.com/privacy-policy" target="_blank" style="color: #64748b; text-decoration: underline;">Privacy Policy</a>
+              &nbsp;&nbsp;|&nbsp;&nbsp;
+              <a href="https://coretradeglobal.com/terms" target="_blank" style="color: #64748b; text-decoration: underline;">Terms of Service</a>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+}
+
+/**
+ * Send a welcome email via Resend. Non-blocking — failure does not fail the CF.
+ */
+async function sendWelcomeEmail(to, displayName, userID) {
+  const resend = getResend();
+  if (!resend) {
+    console.warn('sendWelcomeEmail: RESEND_API_KEY not set, skipping email.');
+    return;
+  }
+  try {
+    await resend.emails.send({
+      from: 'CoreTradeGlobal <noreply@coretradeglobal.com>',
+      to,
+      subject: 'Welcome to CoreTradeGlobal!',
+      html: buildWelcomeEmailHtml(displayName, userID),
+    });
+    console.log(`sendWelcomeEmail: sent welcome to ${to}`);
+  } catch (err) {
+    console.error(`sendWelcomeEmail: failed to send to ${to}:`, err);
+  }
+}
+
+/**
  * Send an invite email via Resend. Non-blocking — failure does not fail the CF.
  */
 async function sendInviteEmail(to, name, role, signInLink) {
@@ -1123,6 +1355,58 @@ exports.sendMessageNotification = onDocumentCreated(
   }
 );
 
+/**
+ * Send welcome email when a new user self-registers.
+ *
+ * Triggered on user document creation. Skips invited users (providers/lawyers)
+ * since they receive a separate invite email. Only self-registered members get
+ * the welcome email. Non-blocking — email failure does not affect registration.
+ */
+exports.sendWelcomeOnRegister = onDocumentCreated(
+  'users/{uid}',
+  async (event) => {
+    const snapshot = event.data;
+    if (!snapshot) return null;
+
+    const userData = snapshot.data();
+    const uid = event.params.uid;
+
+    // Skip invited users — they get an invite email instead
+    if (userData.invitedBy || userData.inviteStatus) {
+      console.log(`sendWelcomeOnRegister: skipping invited user ${uid}`);
+      return null;
+    }
+
+    const email = userData.email;
+    if (!email) {
+      console.log(`sendWelcomeOnRegister: no email for user ${uid}, skipping`);
+      return null;
+    }
+
+    const displayName = userData.displayName || userData.firstName || 'there';
+    await sendWelcomeEmail(email, displayName, uid);
+
+    // Seed an in-app notification prompting the user to verify their email.
+    // Skip for OAuth users (Google/LinkedIn) whose email is already verified.
+    if (!userData.emailVerified) {
+      try {
+        await db.collection('users').doc(uid).collection('notifications').add({
+          type: 'verify_email',
+          title: 'Verify your email',
+          body: 'Please check your mailbox and verify your email address.',
+          isRead: false,
+          createdAt: Timestamp.now(),
+          link: '/verify-email',
+        });
+      } catch (err) {
+        console.error(`sendWelcomeOnRegister: failed to create verify-email notification for ${uid}:`, err);
+      }
+    }
+
+    return null;
+  }
+);
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Deal Negotiation Constants (mirrored from src/core/constants/dealConstants.js)
 // Cloud Functions are CommonJS — cannot import ESM from the Next.js app.
@@ -1253,8 +1537,8 @@ exports.createDeal = onCall(async (request) => {
   const uid = request.auth?.uid;
 
   if (!uid) throw new HttpsError('unauthenticated', 'Must be logged in to create a deal.');
-  if (!conversationId || !productId || !initialOffer) {
-    throw new HttpsError('invalid-argument', 'conversationId, productId, and initialOffer are required.');
+  if (!productId || !initialOffer) {
+    throw new HttpsError('invalid-argument', 'productId and initialOffer are required.');
   }
   if (!initialOffer.price || !initialOffer.quantity || !initialOffer.incoterm) {
     throw new HttpsError('invalid-argument', 'initialOffer must include price, quantity, and incoterm.');
@@ -1276,6 +1560,9 @@ exports.createDeal = onCall(async (request) => {
 
   if (uid === sellerId) {
     // Seller initiated — find buyer from conversation participants
+    if (!conversationId) {
+      throw new HttpsError('invalid-argument', 'conversationId is required when the seller initiates a deal.');
+    }
     const convDoc = await db.collection('conversations').doc(conversationId).get();
     if (!convDoc.exists) {
       throw new HttpsError('not-found', 'Conversation not found.');
@@ -1325,7 +1612,7 @@ exports.createDeal = onCall(async (request) => {
       productName: product.name || '',
       productImage: product.images?.[0] || null,
       productCategory: product.categoryName || null,
-      conversationId,
+      conversationId: conversationId || null,
       status: DEAL_STATUS.NEGOTIATING,
       // After submitting, the OTHER party must respond first
       currentTurnUid: uid === actualSellerId ? buyerId : actualSellerId,
@@ -1352,12 +1639,15 @@ exports.createDeal = onCall(async (request) => {
       updatedAt: now,
     });
 
-    // Link deal to conversation metadata for persistent banner
-    const conversationRef = db.collection('conversations').doc(conversationId);
-    transaction.update(conversationRef, {
-      'metadata.dealId': dealRef.id,
-      'metadata.dealStatus': DEAL_STATUS.NEGOTIATING,
-    });
+    // Link deal to conversation metadata for persistent banner (only when the
+    // deal has an associated conversation — direct "Start Deal" deals may not).
+    if (conversationId) {
+      const conversationRef = db.collection('conversations').doc(conversationId);
+      transaction.update(conversationRef, {
+        'metadata.dealId': dealRef.id,
+        'metadata.dealStatus': DEAL_STATUS.NEGOTIATING,
+      });
+    }
   });
 
   // Note: system message is posted by onDealOfferCreated trigger (round === 1 = new_deal)
@@ -3070,23 +3360,52 @@ exports.submitQuote = onCall(async (request) => {
     updatedAt: now,
   });
 
-  // Notify buyer of new/updated quote (simple in-app notification)
+  // Notify buyer of new/updated quote (in-app + push + email)
   try {
-    await db
-      .collection('users')
-      .doc(quoteRequest.buyerId)
-      .collection('notifications')
-      .add({
-        type: 'quote',
-        eventType: 'quote_received',
-        title: `New quote received for your deal`,
-        body: `A ${(providerType === 'insurance') ? 'insurance' : 'logistics'} provider has submitted a quote for your deal.`,
-        dealId: quoteRequest.dealId,
-        requestId,
-        isRead: false,
-        createdAt: now,
-        link: `/deals/${quoteRequest.dealId}`,
-      });
+    const buyerId = quoteRequest.buyerId;
+    const providerLabel = providerType === 'insurance' ? 'insurance' : 'logistics';
+    const notifTitle = 'New quote received for your deal';
+    const notifBody = `A ${providerLabel} provider has submitted a quote for your deal.`;
+    const dealLink = `/deals/${quoteRequest.dealId}`;
+
+    // a) Firestore in-app notification
+    await db.collection('users').doc(buyerId).collection('notifications').add({
+      type: 'quote',
+      eventType: 'quote_received',
+      title: notifTitle,
+      body: notifBody,
+      dealId: quoteRequest.dealId,
+      requestId,
+      isRead: false,
+      createdAt: now,
+      link: dealLink,
+    });
+
+    // b) FCM push + c) email — "Deals" preference covers quote updates
+    const buyerDoc = await db.collection('users').doc(buyerId).get();
+    if (buyerDoc.exists) {
+      const buyerData = buyerDoc.data();
+
+      if (buyerData.preferences?.deals?.push !== false) {
+        await sendFCMPushToUser(buyerId, buyerData, {
+          type: 'deal_event',
+          title: notifTitle,
+          body: notifBody,
+          dealId: quoteRequest.dealId,
+          click_action: dealLink,
+        });
+      }
+
+      const emailEnabled = buyerData.preferences?.deals?.email !== false;
+      if (buyerData.email && emailEnabled) {
+        const htmlBody = buildBrandedEmailHtml(
+          `<p style="margin:0 0 16px 0;">${notifBody}</p>`,
+          'View Deal',
+          `${APP_URL}${dealLink}`
+        );
+        await sendDealEmail(buyerData.email, notifTitle, htmlBody);
+      }
+    }
   } catch (err) {
     console.error('submitQuote: failed to send buyer notification (non-fatal):', err);
   }
@@ -4786,6 +5105,17 @@ exports.onNewMemberRegistered = onDocumentCreated(
       const notifTitle = 'New Member Registered';
       const notifBody = `${displayName} has just registered as a member.`;
 
+      // Email body (built once, shared across admins)
+      const esc = (v) => String(v || '').replace(/[<>]/g, '');
+      const emailInnerHtml = `
+        <p style="margin:0 0 16px 0;">A new member has just registered and is awaiting your review.</p>
+        <table cellpadding="0" cellspacing="0" border="0" style="font-family:Arial,sans-serif;font-size:14px;color:#1a283b;">
+          <tr><td style="padding:4px 16px 4px 0;color:#8899AA;">Name</td><td style="padding:4px 0;font-weight:bold;">${esc(newUser.displayName) || '—'}</td></tr>
+          <tr><td style="padding:4px 16px 4px 0;color:#8899AA;">Company</td><td style="padding:4px 0;font-weight:bold;">${esc(newUser.companyName) || '—'}</td></tr>
+          <tr><td style="padding:4px 16px 4px 0;color:#8899AA;">Email</td><td style="padding:4px 0;font-weight:bold;">${esc(newUser.email) || '—'}</td></tr>
+          <tr><td style="padding:4px 16px 4px 0;color:#8899AA;">Country</td><td style="padding:4px 0;font-weight:bold;">${esc(newUser.country) || '—'}</td></tr>
+        </table>`;
+
       // Query all admin users
       const adminsSnap = await db.collection('users').where('role', '==', ROLES.ADMIN).get();
       if (adminsSnap.empty) {
@@ -4827,6 +5157,22 @@ exports.onNewMemberRegistered = onDocumentCreated(
           }
         } catch (err) {
           console.error(`onNewMemberRegistered: FCM error for admin ${adminId}:`, err);
+        }
+
+        // --- c) Email notification (preference check) ---
+        try {
+          const emailEnabled = adminData.preferences?.system?.email !== false;
+          const adminEmail = adminData.email;
+          if (adminEmail && emailEnabled) {
+            const htmlBody = buildBrandedEmailHtml(
+              emailInnerHtml,
+              'Review in Admin Panel',
+              `${APP_URL}/admin`
+            );
+            await sendDealEmail(adminEmail, `New Member Registered — ${displayName}`, htmlBody);
+          }
+        } catch (err) {
+          console.error(`onNewMemberRegistered: email error for admin ${adminId}:`, err);
         }
       }
 
@@ -4981,7 +5327,9 @@ async function deliverAnnouncement(announcementData, announcementId) {
     // --- a) In-app notification ---
     if (channels?.inApp) {
       try {
-        await db.collection('users').doc(uid).collection('notifications').add({
+        // Deterministic doc id (announcementId) makes delivery idempotent: a
+        // re-run overwrites the same notification instead of creating a duplicate.
+        await db.collection('users').doc(uid).collection('notifications').doc(announcementId).set({
           type: 'announcement',
           title,
           body,
@@ -5324,6 +5672,7 @@ exports.processScheduledAnnouncements = onSchedule(
   {
     schedule: 'every 5 minutes',
     timeZone: 'UTC',
+    timeoutSeconds: 540,
     retryCount: 3,
   },
   async () => {
@@ -5343,9 +5692,29 @@ exports.processScheduledAnnouncements = onSchedule(
       console.log(`processScheduledAnnouncements: processing ${pendingSnap.size} announcement(s).`);
 
       for (const doc of pendingSnap.docs) {
-        const announcementData = doc.data();
+        // Atomically claim the announcement before delivering. This closes the
+        // window where an overlapping cron run (or a retry after a timeout) sees
+        // the same still-'pending' doc and delivers it a second time.
+        let claimedData;
         try {
-          const recipientCount = await deliverAnnouncement(announcementData, doc.id);
+          claimedData = await db.runTransaction(async (tx) => {
+            const fresh = await tx.get(doc.ref);
+            if (!fresh.exists || fresh.data().status !== 'pending') return null;
+            tx.update(doc.ref, { status: 'sending', claimedAt: Timestamp.now() });
+            return fresh.data();
+          });
+        } catch (claimErr) {
+          console.error(`processScheduledAnnouncements: claim failed for ${doc.id}:`, claimErr);
+          continue;
+        }
+
+        if (!claimedData) {
+          console.log(`processScheduledAnnouncements: ${doc.id} already claimed, skipping.`);
+          continue;
+        }
+
+        try {
+          const recipientCount = await deliverAnnouncement(claimedData, doc.id);
           await doc.ref.update({
             status: 'sent',
             sentAt: Timestamp.now(),

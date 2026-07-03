@@ -287,3 +287,35 @@
   color: #0f1b2b;
   flex-shrink: 0;
 }
+
+/* Conversation delete button */
+.conversation-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.conversation-delete-btn {
+  opacity: 0;
+  padding: 4px;
+  border-radius: 6px;
+  color: #64748b;
+  transition: all 0.15s ease;
+}
+
+.conversation-item:hover .conversation-delete-btn {
+  opacity: 1;
+}
+
+.conversation-delete-btn:hover {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.conversation-delete-confirm {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}

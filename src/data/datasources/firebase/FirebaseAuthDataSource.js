@@ -13,6 +13,10 @@ import {
   signInWithEmailAndPassword,
   signInWithCustomToken,
   createUserWithEmailAndPassword,
+  GoogleAuthProvider,
+  signInWithPopup,
+  linkWithPopup,
+  unlink,
   signOut,
   onAuthStateChanged,
   sendPasswordResetEmail,
@@ -97,6 +101,43 @@ export class FirebaseAuthDataSource {
       password
     );
     return userCredential.user;
+  }
+
+  /**
+   * Sign in with Google via popup.
+   * Account linking for an existing same-email account is handled by Firebase
+   * when the "Link accounts that use the same email" setting is enabled.
+   * @returns {Promise<User>} Firebase User object
+   */
+  async signInWithGoogle() {
+    const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: 'select_account' });
+    const userCredential = await signInWithPopup(this.auth, provider);
+    return userCredential.user;
+  }
+
+  /**
+   * Link a Google account to the currently signed-in user.
+   * @returns {Promise<User>} The updated current user.
+   */
+  async linkGoogle() {
+    const user = this.auth.currentUser;
+    if (!user) throw new Error('No authenticated user to link.');
+    const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: 'select_account' });
+    const result = await linkWithPopup(user, provider);
+    return result.user;
+  }
+
+  /**
+   * Unlink a provider (e.g. 'google.com') from the current user.
+   * @param {string} providerId
+   * @returns {Promise<User>}
+   */
+  async unlinkProvider(providerId) {
+    const user = this.auth.currentUser;
+    if (!user) throw new Error('No authenticated user.');
+    return unlink(user, providerId);
   }
 
   /**

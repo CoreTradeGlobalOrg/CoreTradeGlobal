@@ -18,6 +18,7 @@ import {
   Scale,
   Megaphone,
   Package,
+  Mail,
 } from 'lucide-react';
 
 // Type-specific icon mapping (mirrors NotificationBell)
@@ -39,6 +40,8 @@ const getNotificationIcon = (type) => {
       return <Megaphone className="w-4 h-4" />;
     case 'rfq_created':
       return <Package className="w-4 h-4" />;
+    case 'verify_email':
+      return <Mail className="w-4 h-4" />;
     case 'message':
     case 'new_message':
     case 'conversation_created':
@@ -52,6 +55,7 @@ const getNotificationIcon = (type) => {
 const getIconStyle = (type) => {
   switch (type) {
     case 'quote_received':
+    case 'verify_email':
       return { bg: 'rgba(59,130,246,0.15)', color: '#3b82f6' };
     case 'quote_accepted':
       return { bg: 'rgba(16,185,129,0.15)', color: '#10b981' };

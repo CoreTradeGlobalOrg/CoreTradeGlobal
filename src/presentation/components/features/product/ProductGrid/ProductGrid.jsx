@@ -131,8 +131,8 @@ export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter, cou
     const [products, setProducts] = useState(DEFAULT_PRODUCTS);
     const [filteredProducts, setFilteredProducts] = useState(DEFAULT_PRODUCTS);
     const [loading, setLoading] = useState(true);
-    const [displayCount, setDisplayCount] = useState(PAGE_SIZE);
-    const sentinelRef = useRef(null);
+    const [currentPage, setCurrentPage] = useState(1);
+    const gridTopRef = useRef(null);
     const { categories } = useCategories();
     const { isFavorited, toggleFavorite } = useFavoriteProduct();
 
@@ -141,8 +141,13 @@ export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter, cou
         const fetchProducts = async () => {
             try {
                 const firestoreDS = container.getFirestoreDataSource();
-                // TODO: Optimize to use server-side filtering with 'where' clauses if data grows
-                const allProducts = await firestoreDS.query('products', { limit: 50 });
+                // Newest first (so recent uploads appear) with a generous cap.
+                // Pagination is client-side over this set. TODO: server-side
+                // filtering/cursor pagination if the catalog grows much larger.
+                const allProducts = await firestoreDS.query('products', {
+                    orderBy: [['createdAt', 'desc']],
+                    limit: 500,
+                });
 
                 if (allProducts && allProducts.length > 0) {
                     const active = allProducts.filter(p => p.status === 'active');
@@ -179,9 +184,9 @@ export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter, cou
         fetchProducts();
     }, []);
 
-    // Reset display count when filters change
+    // Reset to first page when filters change
     useEffect(() => {
-        setDisplayCount(PAGE_SIZE);
+        setCurrentPage(1);
     }, [searchQuery, categoryFilter, categoryIdFilter, countryFilter]);
 
     // Filter Logic
@@ -216,27 +221,17 @@ export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter, cou
 
     }, [products, searchQuery, categoryFilter, categoryIdFilter, countryFilter]);
 
-    // Infinite scroll: load more when sentinel enters viewport
-    const loadMore = useCallback(() => {
-        setDisplayCount(prev => prev + PAGE_SIZE);
-    }, []);
+    // Numbered pagination (client-side over the filtered set).
+    const totalPages = Math.max(1, Math.ceil(filteredProducts.length / PAGE_SIZE));
+    const safePage = Math.min(currentPage, totalPages);
+    const pageProducts = filteredProducts.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
-    useEffect(() => {
-        const sentinel = sentinelRef.current;
-        if (!sentinel) return;
-
-        const observer = new IntersectionObserver(
-            (entries) => {
-                if (entries[0].isIntersecting) {
-                    loadMore();
-                }
-            },
-            { threshold: 0.1 }
-        );
-
-        observer.observe(sentinel);
-        return () => observer.disconnect();
-    }, [loadMore, filteredProducts]);
+    const goToPage = useCallback((page) => {
+        const clamped = Math.min(Math.max(1, page), totalPages);
+        setCurrentPage(clamped);
+        // Smooth-scroll back to the top of the grid on page change.
+        gridTopRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, [totalPages]);
 
     // Reduce to 3 columns when the category sidebar is visible (sidebar takes ~224px)
     const gridColsClass = sidebarVisible
@@ -263,13 +258,26 @@ export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter, cou
         );
     }
 
-    const visibleProducts = filteredProducts.slice(0, displayCount);
-    const hasMore = displayCount < filteredProducts.length;
+    // Windowed page numbers with ellipsis: 1 … (p-1) p (p+1) … N
+    const pageItems = (() => {
+        const items = [];
+        const add = (v) => items.push(v);
+        const window = new Set([1, totalPages, safePage, safePage - 1, safePage + 1]);
+        let prev = 0;
+        for (let i = 1; i <= totalPages; i++) {
+            if (!window.has(i)) continue;
+            if (i - prev > 1) add('ellipsis');
+            add(i);
+            prev = i;
+        }
+        return items;
+    })();
 
     return (
         <>
+            <div ref={gridTopRef} className="scroll-mt-28" />
             <div className={`grid ${gridColsClass} gap-6`}>
-                {visibleProducts.map((product) => (
+                {pageProducts.map((product) => (
                     <ProductCard
                         key={product.id}
                         product={product}
@@ -279,9 +287,48 @@ export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter, cou
                     />
                 ))}
             </div>
-            {/* Infinite scroll sentinel */}
-            {hasMore && (
-                <div ref={sentinelRef} className="h-4 mt-6" aria-hidden="true" />
+
+            {/* Numbered pagination */}
+            {totalPages > 1 && (
+                <nav className="flex items-center justify-center flex-wrap gap-2 mt-10" aria-label="Products pagination">
+                    <button
+                        type="button"
+                        onClick={() => goToPage(safePage - 1)}
+                        disabled={safePage === 1}
+                        className="px-4 py-2 rounded-lg bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] text-white text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[rgba(255,255,255,0.1)] transition-all"
+                    >
+                        ‹ Previous
+                    </button>
+
+                    {pageItems.map((item, idx) =>
+                        item === 'ellipsis' ? (
+                            <span key={`e${idx}`} className="px-2 text-[#A0A0A0] select-none">…</span>
+                        ) : (
+                            <button
+                                key={item}
+                                type="button"
+                                onClick={() => goToPage(item)}
+                                aria-current={item === safePage ? 'page' : undefined}
+                                className={`min-w-[40px] px-3 py-2 rounded-lg text-sm font-semibold transition-all border ${
+                                    item === safePage
+                                        ? 'bg-[#FFD700] text-[#0F1B2B] border-[#FFD700]'
+                                        : 'bg-[rgba(255,255,255,0.05)] text-white border-[rgba(255,255,255,0.1)] hover:bg-[rgba(255,255,255,0.1)]'
+                                }`}
+                            >
+                                {item}
+                            </button>
+                        )
+                    )}
+
+                    <button
+                        type="button"
+                        onClick={() => goToPage(safePage + 1)}
+                        disabled={safePage === totalPages}
+                        className="px-4 py-2 rounded-lg bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] text-white text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[rgba(255,255,255,0.1)] transition-all"
+                    >
+                        Next ›
+                    </button>
+                </nav>
             )}
         </>
     );

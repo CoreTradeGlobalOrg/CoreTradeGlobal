@@ -220,7 +220,10 @@ service cloud.firestore {
           request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants ||
           isAdmin()
         );
-        allow delete: if isAdmin();
+        // Sender can delete own message, admin can delete any
+        allow delete: if isAuthenticated() && (
+          resource.data.senderId == request.auth.uid || isAdmin()
+        );
       }
     }
 

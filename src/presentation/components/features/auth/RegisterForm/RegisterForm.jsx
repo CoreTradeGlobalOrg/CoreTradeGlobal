@@ -25,6 +25,7 @@ import { useTrackEvent } from '@/presentation/hooks/analytics';
 import { auth, getFunctionsInstance } from '@/core/config/firebase.config';
 import { COMPANY_TYPE_TO_ROLE } from '@/core/constants/companyTypes';
 import { RegisterFormFields } from './RegisterFormFields';
+import { SocialAuthButtons } from '@/presentation/components/features/auth/SocialAuthButtons/SocialAuthButtons';
 
 // SECURITY: Google's test reCAPTCHA key - should NEVER be used in production
 const RECAPTCHA_TEST_KEY = '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI';
@@ -265,6 +266,12 @@ export function RegisterForm() {
               </button>
             )}
           </div>
+
+          {step === 1 && (
+            <div className="w-full">
+              <SocialAuthButtons redirectTo={redirectTo} label="or sign up with" />
+            </div>
+          )}
 
           <div className="text-sm">
             <span className="text-[#A0A0A0]">Already have an account? </span>

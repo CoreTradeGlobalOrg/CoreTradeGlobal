@@ -10,60 +10,20 @@
 
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/presentation/contexts/AuthContext';
-import { Modal } from '@/components/ui/Modal';
-import { ProductForm } from '@/presentation/components/features/product/ProductForm/ProductForm';
-import { RequestForm } from '@/presentation/components/features/request/RequestForm/RequestForm';
-import { useCreateProduct } from '@/presentation/hooks/product/useCreateProduct';
-import { useCreateRequest } from '@/presentation/hooks/request/useCreateRequest';
-import toast from 'react-hot-toast';
 
 export function StrategicCTA() {
   const { user, isAuthenticated, loading } = useAuth();
   const router = useRouter();
-  const [productModalOpen, setProductModalOpen] = useState(false);
-  const [requestModalOpen, setRequestModalOpen] = useState(false);
-
-  const { createProduct } = useCreateProduct();
-  const { createRequest } = useCreateRequest();
 
   const handleSellClick = () => {
-    if (isAuthenticated && user) {
-      setProductModalOpen(true);
-    } else {
-      router.push('/register?type=seller');
-    }
+    router.push(isAuthenticated && user ? '/product/new' : '/register?type=seller');
   };
 
   const handleBuyClick = () => {
-    if (isAuthenticated && user) {
-      setRequestModalOpen(true);
-    } else {
-      router.push('/register?type=buyer');
-    }
-  };
-
-  const handleProductSubmit = async (data, imageFiles) => {
-    try {
-      await createProduct(data, imageFiles);
-      setProductModalOpen(false);
-    } catch (error) {
-      console.error('Error creating product:', error);
-      toast.error(error.message || 'Failed to create product. Please try again.');
-    }
-  };
-
-  const handleRequestSubmit = async (data) => {
-    try {
-      await createRequest(data);
-      setRequestModalOpen(false);
-    } catch (error) {
-      console.error('Error creating request:', error);
-      toast.error(error.message || 'Failed to submit request. Please try again.');
-    }
+    router.push(isAuthenticated && user ? '/request/new' : '/register?type=buyer');
   };
 
   return (
@@ -112,34 +72,6 @@ export function StrategicCTA() {
           </div>
         </div>
       </section>
-
-      {/* Product Creation Modal */}
-      <Modal
-        isOpen={productModalOpen}
-        onClose={() => setProductModalOpen(false)}
-        title="Add New Product"
-      >
-        <ProductForm
-          userId={user?.uid}
-          onSubmit={handleProductSubmit}
-          onCancel={() => setProductModalOpen(false)}
-        />
-      </Modal>
-
-      {/* Request Creation Modal — backdrop click disabled; use X or Cancel button to close (GAP-6) */}
-      <Modal
-        isOpen={requestModalOpen}
-        onClose={() => setRequestModalOpen(false)}
-        preventBackdropClose
-        title="Create New RFQ"
-        variant="blue"
-      >
-        <RequestForm
-          userId={user?.uid}
-          onSubmit={handleRequestSubmit}
-          onCancel={() => setRequestModalOpen(false)}
-        />
-      </Modal>
     </>
   );
 }

@@ -144,9 +144,8 @@ const ProductCardImage = memo(function ProductCardImage({ src, alt }) {
 
   if (!src || error) {
     return (
-      <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-[#1A283B] to-[#0F1B2B] gap-2">
-        <Package className="w-10 h-10 text-[rgba(255,255,255,0.2)]" />
-        <span className="text-[10px] text-[rgba(255,255,255,0.3)] font-medium uppercase tracking-wider">No image</span>
+      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#1A283B] to-[#0F1B2B]">
+        <Package className="w-20 h-20 text-[rgba(255,255,255,0.35)]" />
       </div>
     );
   }
@@ -295,10 +294,10 @@ export function FeaturedProducts() {
 
     const firestoreDS = container.getFirestoreDataSource();
 
-    // Real-time subscription to products (fetch max for lazy loading)
+    // Real-time subscription to products (newest first so recent uploads show)
     const unsubscribe = firestoreDS.subscribeToQuery(
       'products',
-      { limit: 35 }, // Fetch enough for lazy loading
+      { orderBy: [['createdAt', 'desc']], limit: 35 },
       (fetchedProducts) => {
         if (fetchedProducts && fetchedProducts.length > 0) {
           // Filter active products and sort by createdAt client-side

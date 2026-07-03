@@ -46,7 +46,7 @@ export class Conversation {
    * @returns {Conversation}
    */
   static fromFirestore(data) {
-    return new Conversation(
+    const conv = new Conversation(
       data.id,
       data.type || 'direct',
       data.participants || [],
@@ -62,6 +62,8 @@ export class Conversation {
       data.createdAt?.toDate?.() || data.createdAt || new Date(),
       data.updatedAt?.toDate?.() || data.updatedAt || new Date()
     );
+    if (data.deletedBy) conv.deletedBy = data.deletedBy;
+    return conv;
   }
 
   /**

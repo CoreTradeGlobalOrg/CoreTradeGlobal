@@ -33,6 +33,9 @@ export function NamedPlaceInput({
   incoterm,
   disabled = false,
   error = false,
+  size = 'default',
+  placeholder: placeholderProp,
+  ariaLabel,
 }) {
   const [inputValue, setInputValue] = useState(value || '');
   const [suggestions, setSuggestions] = useState([]);
@@ -122,14 +125,15 @@ export function NamedPlaceInput({
     }
   };
 
-  const label = incoterm?.namedPlaceLabel || 'Named Place';
-  const placeholder = incoterm?.namedPlacePlaceholder || 'Enter location';
+  const compact = size === 'compact';
+  const label = ariaLabel || incoterm?.namedPlaceLabel || 'Named Place';
+  const placeholder = placeholderProp || incoterm?.namedPlacePlaceholder || 'Enter location';
 
   return (
     <div ref={containerRef} className="relative">
       <div className="relative">
         <MapPin
-          className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#64748b] pointer-events-none"
+          className={`absolute top-1/2 -translate-y-1/2 text-[#64748b] pointer-events-none ${compact ? 'left-2.5 w-3.5 h-3.5' : 'left-3 w-4 h-4'}`}
           aria-hidden
         />
         <input
@@ -147,21 +151,15 @@ export function NamedPlaceInput({
           aria-label={label}
           aria-autocomplete="list"
           aria-expanded={open}
-          className={`
-            w-full pl-9 pr-9 py-3 rounded-xl border text-white text-sm
-            bg-[#0A1628] placeholder:text-[#4a5568]
-            focus:outline-none focus:ring-2 transition-all duration-200
-            ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
-            ${
-              error
-                ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20'
-                : 'border-[rgba(255,255,255,0.1)] focus:border-[#FFD700] focus:ring-[#FFD700]/20'
-            }
-          `}
+          className={
+            compact
+              ? `w-full pl-8 pr-8 py-1.5 rounded border text-white text-xs bg-[#0F1C2E] placeholder-[#4A5B6E] focus:outline-none transition-colors ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${error ? 'border-red-500' : 'border-[#2A3B52] focus:border-[#FFD700]/50'}`
+              : `w-full pl-9 pr-9 py-3 rounded-xl border text-white text-sm bg-[#0A1628] placeholder:text-[#4a5568] focus:outline-none focus:ring-2 transition-all duration-200 ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${error ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : 'border-[rgba(255,255,255,0.1)] focus:border-[#FFD700] focus:ring-[#FFD700]/20'}`
+          }
         />
         {loading && (
           <Loader2
-            className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#64748b] animate-spin"
+            className={`absolute top-1/2 -translate-y-1/2 text-[#64748b] animate-spin ${compact ? 'right-2.5 w-3.5 h-3.5' : 'right-3 w-4 h-4'}`}
             aria-hidden
           />
         )}
@@ -187,8 +185,8 @@ export function NamedPlaceInput({
               onClick={() => handleSelect(suggestion)}
               onMouseEnter={() => setHighlighted(index)}
               className={`
-                w-full text-left px-4 py-2.5 text-sm transition-colors
-                flex items-start gap-2
+                w-full text-left transition-colors flex items-start gap-2
+                ${compact ? 'px-3 py-2 text-xs' : 'px-4 py-2.5 text-sm'}
                 ${
                   index === highlighted
                     ? 'bg-[rgba(255,215,0,0.1)] text-white'

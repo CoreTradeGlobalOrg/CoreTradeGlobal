@@ -204,6 +204,54 @@ export class AuthRepository {
   }
 
   /**
+   * Sign in with Google. Returns the Firebase auth user. The caller checks
+   * whether a Firestore profile exists to decide login vs. profile completion.
+   * @returns {Promise<User>}
+   */
+  async signInWithGoogle() {
+    return this.authDataSource.signInWithGoogle();
+  }
+
+  /**
+   * Sign in with a Firebase custom token (our LinkedIn flow). Unlike
+   * loginWithBackupCode this does NOT log out on a missing Firestore profile —
+   * AuthContext routes such users to profile completion.
+   * @param {string} customToken
+   * @returns {Promise<User>}
+   */
+  async signInWithCustomToken(customToken) {
+    return this.authDataSource.loginWithCustomToken(customToken);
+  }
+
+  /**
+   * Link a Google account to the current user.
+   * @returns {Promise<User>}
+   */
+  async linkGoogle() {
+    return this.authDataSource.linkGoogle();
+  }
+
+  /**
+   * Unlink a provider from the current user.
+   * @param {string} providerId
+   * @returns {Promise<User>}
+   */
+  async unlinkProvider(providerId) {
+    return this.authDataSource.unlinkProvider(providerId);
+  }
+
+  /**
+   * Create a Firestore user profile for an already-authenticated user
+   * (e.g. after OAuth sign-in, once the profile-completion step is submitted).
+   * @param {string} userId
+   * @param {Object} profileData
+   * @returns {Promise<Object>}
+   */
+  async createUserProfile(userId, profileData) {
+    return this.firestoreDataSource.createWithId(COLLECTIONS.USERS, userId, profileData);
+  }
+
+  /**
    * Logout current user
    * @returns {Promise<void>}
    */
