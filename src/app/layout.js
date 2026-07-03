@@ -17,10 +17,13 @@ const CLARITY_PROJECT_ID = process.env.NEXT_PUBLIC_CLARITY_PROJECT_ID;
 const inter = Inter({
   subsets: ['latin'],
   variable: '--font-inter',
-  display: 'swap',
-  // Preload so the font ships in the initial payload rather than after
-  // hydration; adjust the fallback metrics so the swap from system font to
-  // Inter does not reflow paragraphs and blow up CLS.
+  // 'optional' is the CLS-safe display mode: browsers try to load Inter
+  // inside a 100ms window and, if it isn't there in time, fall back to the
+  // system font for the WHOLE page load with no mid-page swap. Speed
+  // Insights kept attributing 0.4 CLS to the footer paragraph — every
+  // paragraph reflowed the moment the 1.75s font swap fired. 'optional'
+  // ends that class of shift entirely.
+  display: 'optional',
   preload: true,
   adjustFontFallback: 'Arial',
 });
@@ -94,9 +97,15 @@ export default function RootLayout({ children }) {
       <head>
         {/* Warm up TLS to origins we always hit from the homepage — the
             first Firestore listen and the first company/product image
-            are on the LCP critical path. */}
+            are on the LCP critical path. crossOrigin is omitted on the
+            authenticated APIs because the SDK issues credentialed
+            requests; a crossOrigin='anonymous' preconnect creates a
+            different connection than the credentialed one that ends up
+            handling the real request, which is why Lighthouse marked
+            the earlier version as "unused preconnect". */}
+        <link rel="preconnect" href="https://firebase.googleapis.com" />
+        <link rel="preconnect" href="https://firestore.googleapis.com" />
         <link rel="preconnect" href="https://firebasestorage.googleapis.com" crossOrigin="anonymous" />
-        <link rel="preconnect" href="https://firestore.googleapis.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://firebaseinstallations.googleapis.com" />
         {GA_MEASUREMENT_ID && (
           <>

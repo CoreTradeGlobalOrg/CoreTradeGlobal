@@ -72,6 +72,21 @@ async function processOne(file) {
   if (maxSize === null) return { path: p, skipped: 'protected-path' };
   if (!/\.(jpe?g|png|webp)$/i.test(p)) return { path: p, skipped: 'not-image' };
 
+  // Read the existing custom metadata BEFORE anything else. Firebase Storage
+  // download URLs authenticate via `firebaseStorageDownloadTokens` living in
+  // custom metadata; overwriting the file with file.save() replaces custom
+  // metadata, and if we don't hand the token back in the same call every URL
+  // already stored in Firestore starts returning 403.
+  const [remoteMeta] = await file.getMetadata();
+  const existingToken = remoteMeta?.metadata?.firebaseStorageDownloadTokens;
+  if (!existingToken) {
+    // No token means either (a) the file was never handed to the client with a
+    // token URL and it's safe to skip, or (b) restoration hasn't run yet and
+    // touching it now would leave it in the same broken state. Either way,
+    // don't gamble.
+    return { path: p, skipped: 'no-download-token' };
+  }
+
   const [origBuf] = await file.download();
   const origBytes = origBuf.length;
 
@@ -98,16 +113,30 @@ async function processOne(file) {
   if (savings <= 0) return { path: p, skipped: 'no-savings', origBytes, newBytes: outBuf.length };
 
   if (!DRY_RUN) {
+    // Persist the download token in the same call so existing Firestore URLs
+    // keep working after the overwrite.
     await file.save(outBuf, {
-      contentType: file.metadata.contentType || `image/${fn === 'jpeg' ? 'jpeg' : fn}`,
+      contentType: remoteMeta.contentType || `image/${fn === 'jpeg' ? 'jpeg' : fn}`,
       resumable: false,
       metadata: {
         metadata: {
+          firebaseStorageDownloadTokens: existingToken,
           compressed_at: new Date().toISOString(),
           original_size: String(origBytes),
         },
       },
     });
+
+    // Verify the token survived — Storage's metadata handling has been known
+    // to strip fields silently. If it's gone, put it back explicitly.
+    const [verify] = await file.getMetadata();
+    if (verify?.metadata?.firebaseStorageDownloadTokens !== existingToken) {
+      await file.setMetadata({
+        metadata: {
+          firebaseStorageDownloadTokens: existingToken,
+        },
+      });
+    }
   }
 
   return { path: p, origBytes, newBytes: outBuf.length, savings };
