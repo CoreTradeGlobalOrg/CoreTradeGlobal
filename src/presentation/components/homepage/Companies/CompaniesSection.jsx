@@ -280,12 +280,17 @@ export function CompaniesSection() {
     );
   }
 
-  // Mobile: Show card stack (Featured Companies with swipe)
+  // Mobile: Show card stack (Featured Companies with swipe).
+  // Falls back to the latest companies when no company is explicitly marked
+  // featured, so the section is never empty on mobile.
   const renderMobileCardStack = () => {
     if (!isMobile) return null;
 
-    // Don't show if no featured companies
-    if (featuredCompanies.length === 0) {
+    const cardStackCompanies = featuredCompanies.length > 0
+      ? featuredCompanies.slice(0, 15)
+      : allCompanies.slice(0, 15);
+
+    if (cardStackCompanies.length === 0) {
       if (loading) {
         return (
           <section className="featured-products-section">
@@ -309,14 +314,13 @@ export function CompaniesSection() {
           </section>
         );
       }
-      // No featured companies - don't render card stack
       return null;
     }
 
     return (
       <section className="featured-products-section">
         <MobileCompanyCardStack
-          companies={featuredCompanies.slice(0, 15)}
+          companies={cardStackCompanies}
           categories={categories}
         />
       </section>
