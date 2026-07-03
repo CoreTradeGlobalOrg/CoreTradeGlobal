@@ -12,11 +12,6 @@ import { NextResponse } from 'next/server';
 import { verifyIdToken } from '@/lib/firebase-admin';
 import { authLimiter, getClientIP } from '@/lib/rate-limit';
 
-// firebase-admin is a Node-only SDK; pin the runtime so a Vercel edge
-// fallback never silently 500s this route.
-export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
-
 // POST - Set session cookie (requires valid ID token)
 export async function POST(request) {
   // Rate limiting check
