@@ -18,10 +18,24 @@ import { useCategories } from '@/presentation/hooks/category/useCategories';
 import { useResponsiveLimit, useScrollLoadMore } from '@/presentation/hooks/useResponsiveLimit';
 import dynamic from 'next/dynamic';
 
-// Dynamically import mobile card stack to reduce initial bundle
+// Dynamically import mobile card stack to reduce initial bundle.
+// A loading skeleton keeps the section from silently vanishing while the
+// chunk streams in on slow mobile connections.
 const MobileCompanyCardStack = dynamic(
   () => import('./MobileCompanyCardStack'),
-  { ssr: false }
+  {
+    ssr: false,
+    loading: () => (
+      <div className="mobile-card-stack-container">
+        <div className="section-header" style={{ marginTop: 0, marginBottom: '1.5rem' }}>
+          <h2 className="section-title">Featured Companies</h2>
+        </div>
+        <div className="relative w-full h-[450px] mb-6 flex items-center justify-center">
+          <div className="w-[90%] h-[420px] bg-[rgba(255,255,255,0.03)] rounded-2xl border border-[rgba(255,215,0,0.2)] animate-pulse" />
+        </div>
+      </div>
+    ),
+  }
 );
 
 
@@ -149,10 +163,12 @@ export function CompaniesSection() {
   const sectionRef = useRef(null);
   const { categories } = useCategories();
 
-  // Detect mobile screen
+  // Detect narrow viewports (mobile + small tablets). The breakpoint is 1024
+  // so devices like iPad portrait, folded phones, and zoomed-out browsers
+  // still receive the swipeable card stack instead of a hidden section.
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth <= 768);
+      setIsMobile(window.innerWidth <= 1024);
     };
     checkMobile();
     window.addEventListener('resize', checkMobile);

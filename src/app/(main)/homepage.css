@@ -3056,11 +3056,11 @@ html {
     -webkit-user-select: none;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
     .mobile-card-stack-container {
         display: block;
     }
-    
+
     /* Hide desktop companies section on mobile when using card stack */
     .companies-desktop-view {
         display: none !important;
