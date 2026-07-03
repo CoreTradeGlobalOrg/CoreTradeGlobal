@@ -32,7 +32,7 @@ export default function CookiePolicyPage() {
         {/* Back/Close Button */}
         <button
           onClick={handleBack}
-          className="flex items-center gap-2 text-gray-400 hover:text-[#FFD700] mb-8 transition-colors group"
+          className="flex items-center gap-2 text-gray-300 hover:text-[#FFD700] mb-8 transition-colors group"
         >
           {isNewTab ? (
             <>
@@ -62,7 +62,7 @@ export default function CookiePolicyPage() {
             >
               Cookie Policy
             </h1>
-            <p className="text-[#A0A0A0]">
+            <p className="text-gray-200">
               Last updated: October 18, 2025
             </p>
           </div>
@@ -74,10 +74,10 @@ export default function CookiePolicyPage() {
           {/* Section 1 */}
           <section>
             <h2 className="text-xl font-bold text-[#FFD700] mb-4">1. What Are Cookies?</h2>
-            <p className="text-gray-300 mb-4">
+            <p className="text-gray-200 mb-4">
               Cookies are small text files that are stored on your device (computer, tablet, or mobile) when you visit a website. They help the website remember your preferences and improve your browsing experience.
             </p>
-            <p className="text-gray-300">
+            <p className="text-gray-200">
               CoreTradeGlobal uses cookies and similar technologies to provide, protect, and improve our Platform.
             </p>
           </section>
@@ -87,7 +87,7 @@ export default function CookiePolicyPage() {
             <h2 className="text-xl font-bold text-[#FFD700] mb-4">2. Types of Cookies We Use</h2>
 
             <h3 className="text-lg font-semibold text-white mt-6 mb-3">2.1 Strictly Necessary Cookies</h3>
-            <p className="text-gray-300 mb-4">
+            <p className="text-gray-200 mb-4">
               These cookies are essential for the Platform to function properly. They enable core functionality such as security, authentication, and session management. You cannot opt out of these cookies.
             </p>
             <div className="overflow-x-auto mb-4">
@@ -99,7 +99,7 @@ export default function CookiePolicyPage() {
                     <th className="border-b border-[rgba(255,255,255,0.1)] px-4 py-3 text-left text-white font-semibold">Duration</th>
                   </tr>
                 </thead>
-                <tbody className="text-gray-300 text-sm">
+                <tbody className="text-gray-200 text-sm">
                   <tr className="border-b border-[rgba(255,255,255,0.05)]">
                     <td className="px-4 py-3 font-medium text-white">session</td>
                     <td className="px-4 py-3">Maintains your login session and authentication state</td>
@@ -115,27 +115,27 @@ export default function CookiePolicyPage() {
             </div>
 
             <h3 className="text-lg font-semibold text-white mt-6 mb-3">2.2 Functional Cookies</h3>
-            <p className="text-gray-300 mb-4">
+            <p className="text-gray-200 mb-4">
               These cookies enable enhanced functionality and personalization, such as remembering your language preferences and region settings.
             </p>
 
             <h3 className="text-lg font-semibold text-white mt-6 mb-3">2.3 Analytics Cookies</h3>
-            <p className="text-gray-300 mb-4">
+            <p className="text-gray-200 mb-4">
               We use analytics cookies to understand how visitors interact with our Platform. This helps us improve our services and user experience. When you consent to analytics cookies, we may collect:
             </p>
-            <ul className="list-disc pl-6 text-gray-300 space-y-2 mb-4">
+            <ul className="list-disc pl-6 text-gray-200 space-y-2 mb-4">
               <li><span className="text-white font-medium">Page Views & Navigation:</span> Which pages you visit and how you navigate through the site</li>
               <li><span className="text-white font-medium">Session Duration:</span> How long you spend on each page and overall session time</li>
               <li><span className="text-white font-medium">Click Tracking:</span> Which buttons, links, and elements you interact with</li>
               <li><span className="text-white font-medium">Heatmaps:</span> Aggregated visual representations of where users click and scroll</li>
               <li><span className="text-white font-medium">User Journey:</span> The path you take through our Platform to complete actions</li>
             </ul>
-            <p className="text-gray-300">
+            <p className="text-gray-200">
               This data is collected anonymously and used solely to improve our Platform's usability and performance. You can opt out of analytics cookies at any time through the Cookie Settings.
             </p>
 
             <h3 className="text-lg font-semibold text-white mt-6 mb-3">2.4 Third-Party Cookies</h3>
-            <p className="text-gray-300">
+            <p className="text-gray-200">
               Some cookies are placed by third-party services that appear on our pages, such as Firebase (for authentication and database services). These third parties have their own privacy policies.
             </p>
           </section>
@@ -143,15 +143,15 @@ export default function CookiePolicyPage() {
           {/* Section 3 */}
           <section>
             <h2 className="text-xl font-bold text-[#FFD700] mb-4">3. Managing Your Cookie Preferences</h2>
-            <p className="text-gray-300 mb-4">
+            <p className="text-gray-200 mb-4">
               You can control and manage cookies in several ways:
             </p>
-            <ul className="list-disc pl-6 text-gray-300 space-y-2">
+            <ul className="list-disc pl-6 text-gray-200 space-y-2">
               <li><span className="text-white font-medium">Browser Settings:</span> Most browsers allow you to refuse or accept cookies, delete existing cookies, and set preferences for certain websites.</li>
               <li><span className="text-white font-medium">Cookie Banner:</span> When you first visit our Platform, you can set your preferences using our cookie consent banner.</li>
               <li><span className="text-white font-medium">Opt-Out Links:</span> For third-party analytics, you can opt out through their respective websites.</li>
             </ul>
-            <p className="text-gray-300 mt-4">
+            <p className="text-gray-200 mt-4">
               Please note that disabling certain cookies may affect the functionality of the Platform.
             </p>
           </section>
@@ -159,10 +159,10 @@ export default function CookiePolicyPage() {
           {/* Section 4 */}
           <section>
             <h2 className="text-xl font-bold text-[#FFD700] mb-4">4. Your Rights</h2>
-            <p className="text-gray-300 mb-4">
+            <p className="text-gray-200 mb-4">
               Under GDPR, UK GDPR, and CCPA, you have the right to:
             </p>
-            <ul className="list-disc pl-6 text-gray-300 space-y-2">
+            <ul className="list-disc pl-6 text-gray-200 space-y-2">
               <li>Know what cookies we use and why</li>
               <li>Opt out of non-essential cookies</li>
               <li>Request deletion of your data</li>
@@ -173,7 +173,7 @@ export default function CookiePolicyPage() {
           {/* Section 5 */}
           <section>
             <h2 className="text-xl font-bold text-[#FFD700] mb-4">5. Updates to This Policy</h2>
-            <p className="text-gray-300">
+            <p className="text-gray-200">
               We may update this Cookie Policy from time to time to reflect changes in our practices or for legal reasons. We encourage you to review this page periodically for the latest information.
             </p>
           </section>
@@ -181,7 +181,7 @@ export default function CookiePolicyPage() {
           {/* Section 6 */}
           <section>
             <h2 className="text-xl font-bold text-[#FFD700] mb-4">6. Contact Us</h2>
-            <p className="text-gray-300">
+            <p className="text-gray-200">
               If you have any questions about our use of cookies, please contact us at:{' '}
               <a href="mailto:info@coretradeglobal.com" className="text-[#FFD700] hover:underline">
                 info@coretradeglobal.com
@@ -191,7 +191,7 @@ export default function CookiePolicyPage() {
 
           {/* Footer Note */}
           <div className="mt-8 p-4 bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.1)] rounded-xl">
-            <p className="text-sm text-gray-400">
+            <p className="text-sm text-gray-300">
               By continuing to use CoreTradeGlobal, you acknowledge that you have read and understood this Cookie Policy.
             </p>
           </div>

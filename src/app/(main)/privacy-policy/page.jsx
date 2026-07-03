@@ -33,7 +33,7 @@ export default function PrivacyPolicyPage() {
         {/* Back/Close Button */}
         <button
           onClick={handleBack}
-          className="flex items-center gap-2 text-gray-400 hover:text-[#FFD700] mb-8 transition-colors group"
+          className="flex items-center gap-2 text-gray-300 hover:text-[#FFD700] mb-8 transition-colors group"
         >
           {isNewTab ? (
             <>
@@ -63,7 +63,7 @@ export default function PrivacyPolicyPage() {
             >
               Privacy Policy
             </h1>
-            <p className="text-[#A0A0A0]">
+            <p className="text-gray-200">
               Last updated: October 18, 2025
             </p>
           </div>
@@ -75,10 +75,10 @@ export default function PrivacyPolicyPage() {
           {/* Section 1 */}
           <section>
             <h2 className="text-xl font-bold text-[#FFD700] mb-4">1. Introduction and Scope</h2>
-            <p className="text-gray-300 mb-4">
+            <p className="text-gray-200 mb-4">
               CoreTradeGlobal ("we", "our", or "the Platform") values your privacy and is committed to protecting your personal data in compliance with international privacy regulations, including:
             </p>
-            <ul className="list-disc pl-6 text-gray-300 space-y-2">
+            <ul className="list-disc pl-6 text-gray-200 space-y-2">
               <li>The UK Data Protection Act 2018 and UK GDPR</li>
               <li>The EU General Data Protection Regulation (GDPR)</li>
               <li>The California Consumer Privacy Act (CCPA) and California Privacy Rights Act (CPRA)</li>
@@ -89,13 +89,13 @@ export default function PrivacyPolicyPage() {
           {/* Section 2 */}
           <section>
             <h2 className="text-xl font-bold text-[#FFD700] mb-4">2. Data Responsibility</h2>
-            <p className="text-gray-300 mb-4">
+            <p className="text-gray-200 mb-4">
               For users located in the UK or EEA, CoreTradeGlobal acts as the Data Controller under UK GDPR / EU GDPR.
             </p>
-            <p className="text-gray-300 mb-4">
+            <p className="text-gray-200 mb-4">
               For users in the United States, CoreTradeGlobal acts as a "business" as defined by CCPA/CPRA.
             </p>
-            <p className="text-gray-300">
+            <p className="text-gray-200">
               <span className="text-white font-medium">U.S. Privacy Contact:</span>{' '}
               <a href="mailto:info@coretradeglobal.com" className="text-[#FFD700] hover:underline">
                 info@coretradeglobal.com
@@ -106,12 +106,12 @@ export default function PrivacyPolicyPage() {
           {/* Section 3 */}
           <section>
             <h2 className="text-xl font-bold text-[#FFD700] mb-4">3. Information We Collect</h2>
-            <p className="text-gray-300 mb-4">
+            <p className="text-gray-200 mb-4">
               We collect personal data necessary to operate, secure, and improve the Platform.
             </p>
 
             <h3 className="text-lg font-semibold text-white mt-6 mb-3">(a) Information You Provide Directly</h3>
-            <ul className="list-disc pl-6 text-gray-300 space-y-2">
+            <ul className="list-disc pl-6 text-gray-200 space-y-2">
               <li>Name, company name, address, email, and phone number</li>
               <li>Account credentials (username, password)</li>
               <li>Tax or business registration information (for sellers)</li>
@@ -119,14 +119,14 @@ export default function PrivacyPolicyPage() {
             </ul>
 
             <h3 className="text-lg font-semibold text-white mt-6 mb-3">(b) Automatically Collected Information</h3>
-            <ul className="list-disc pl-6 text-gray-300 space-y-2">
+            <ul className="list-disc pl-6 text-gray-200 space-y-2">
               <li>Device identifiers (IP address, browser type, OS version, approximate location)</li>
               <li>Usage logs, pages visited, and session time</li>
               <li>Cookies and analytics tags</li>
             </ul>
 
             <h3 className="text-lg font-semibold text-white mt-6 mb-3">(c) Information from Third Parties</h3>
-            <ul className="list-disc pl-6 text-gray-300 space-y-2">
+            <ul className="list-disc pl-6 text-gray-200 space-y-2">
               <li>Identity verification and KYC providers</li>
               <li>Payment processors and logistics partners</li>
               <li>Analytics, advertising, or fraud-prevention partners</li>
@@ -136,7 +136,7 @@ export default function PrivacyPolicyPage() {
           {/* Section 4 */}
           <section>
             <h2 className="text-xl font-bold text-[#FFD700] mb-4">4. Purpose and Legal Basis for Processing</h2>
-            <p className="text-gray-300 mb-4">
+            <p className="text-gray-200 mb-4">
               We process your personal data for defined and lawful purposes based on the following legal bases:
             </p>
             <div className="overflow-x-auto">
@@ -148,7 +148,7 @@ export default function PrivacyPolicyPage() {
                     <th className="border-b border-[rgba(255,255,255,0.1)] px-4 py-3 text-left text-white font-semibold">CCPA/CPRA Category</th>
                   </tr>
                 </thead>
-                <tbody className="text-gray-300 text-sm">
+                <tbody className="text-gray-200 text-sm">
                   <tr className="border-b border-[rgba(255,255,255,0.05)]">
                     <td className="px-4 py-3">Account registration</td>
                     <td className="px-4 py-3">Art. 6(1)(b) – Contract</td>
@@ -177,11 +177,11 @@ export default function PrivacyPolicyPage() {
           {/* Section 5 */}
           <section>
             <h2 className="text-xl font-bold text-[#FFD700] mb-4">5. Cookies and Tracking Technologies</h2>
-            <p className="text-gray-300 mb-4">
+            <p className="text-gray-200 mb-4">
               We use cookies, pixels, and similar technologies to enhance functionality and analyze performance. You can manage your preferences via our Cookie Consent Banner or browser settings.
             </p>
-            <p className="text-gray-300 mb-4">Cookies are grouped as follows:</p>
-            <ul className="list-disc pl-6 text-gray-300 space-y-2">
+            <p className="text-gray-200 mb-4">Cookies are grouped as follows:</p>
+            <ul className="list-disc pl-6 text-gray-200 space-y-2">
               <li>Strictly Necessary</li>
               <li>Functional</li>
               <li>Performance / Analytics</li>
@@ -192,10 +192,10 @@ export default function PrivacyPolicyPage() {
           {/* Section 6 */}
           <section>
             <h2 className="text-xl font-bold text-[#FFD700] mb-4">6. Data Sharing and Disclosure</h2>
-            <p className="text-gray-300 mb-4">
+            <p className="text-gray-200 mb-4">
               We do not sell personal information for monetary gain. However, we may share data as necessary for legitimate business operations with:
             </p>
-            <ul className="list-disc pl-6 text-gray-300 space-y-2">
+            <ul className="list-disc pl-6 text-gray-200 space-y-2">
               <li>Service providers (hosting, analytics, payment, communication)</li>
               <li>Affiliates and subsidiaries</li>
               <li>Legal or regulatory authorities where required</li>
@@ -206,7 +206,7 @@ export default function PrivacyPolicyPage() {
           {/* Section 7 */}
           <section>
             <h2 className="text-xl font-bold text-[#FFD700] mb-4">7. Data Retention</h2>
-            <p className="text-gray-300 mb-4">
+            <p className="text-gray-200 mb-4">
               We retain data only as long as necessary for the purposes outlined in this Policy or to meet legal obligations.
             </p>
             <div className="overflow-x-auto">
@@ -217,7 +217,7 @@ export default function PrivacyPolicyPage() {
                     <th className="border-b border-[rgba(255,255,255,0.1)] px-4 py-3 text-left text-white font-semibold">Retention Period</th>
                   </tr>
                 </thead>
-                <tbody className="text-gray-300 text-sm">
+                <tbody className="text-gray-200 text-sm">
                   <tr className="border-b border-[rgba(255,255,255,0.05)]">
                     <td className="px-4 py-3">Account information</td>
                     <td className="px-4 py-3">Until account deletion + 12 months</td>
@@ -242,10 +242,10 @@ export default function PrivacyPolicyPage() {
           {/* Section 8 */}
           <section>
             <h2 className="text-xl font-bold text-[#FFD700] mb-4">8. Your Rights Under UK and EU GDPR</h2>
-            <p className="text-gray-300 mb-4">
+            <p className="text-gray-200 mb-4">
               If you are located in the UK or EU/EEA, you have the following rights:
             </p>
-            <ul className="list-disc pl-6 text-gray-300 space-y-2">
+            <ul className="list-disc pl-6 text-gray-200 space-y-2">
               <li>Access your data (Art. 15)</li>
               <li>Rectify or erase data (Arts. 16–17)</li>
               <li>Restrict or object to processing (Arts. 18 & 21)</li>
@@ -257,10 +257,10 @@ export default function PrivacyPolicyPage() {
           {/* Section 9 */}
           <section>
             <h2 className="text-xl font-bold text-[#FFD700] mb-4">9. Your Rights Under U.S. Privacy Laws (CCPA/CPRA)</h2>
-            <p className="text-gray-300 mb-4">
+            <p className="text-gray-200 mb-4">
               U.S. residents, particularly those in California, have the following rights:
             </p>
-            <ul className="list-disc pl-6 text-gray-300 space-y-2">
+            <ul className="list-disc pl-6 text-gray-200 space-y-2">
               <li>Right to Know – what categories of data we collect, use, or disclose</li>
               <li>Right to Delete – request deletion subject to legal exceptions</li>
               <li>Right to Correct – inaccurate information</li>
@@ -273,7 +273,7 @@ export default function PrivacyPolicyPage() {
           {/* Section 10 */}
           <section>
             <h2 className="text-xl font-bold text-[#FFD700] mb-4">10. Contact Information</h2>
-            <p className="text-gray-300">
+            <p className="text-gray-200">
               <span className="text-white font-medium">U.S. Privacy Contact:</span>{' '}
               <a href="mailto:info@coretradeglobal.com" className="text-[#FFD700] hover:underline">
                 info@coretradeglobal.com
@@ -283,7 +283,7 @@ export default function PrivacyPolicyPage() {
 
           {/* Footer Note */}
           <div className="mt-8 p-4 bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.1)] rounded-xl">
-            <p className="text-sm text-gray-400">
+            <p className="text-sm text-gray-300">
               By using CoreTradeGlobal, you acknowledge that you have read, understood, and agree to be bound by this Privacy Policy.
             </p>
           </div>
