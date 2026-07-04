@@ -509,7 +509,7 @@ export function Navbar() {
               <NotificationBell />
               <Link
                 href={`/profile/${user.uid}`}
-                className="w-10 h-10 flex-shrink-0 rounded-full overflow-hidden border-2 border-[#FFD700] hover:opacity-90 transition-opacity"
+                className="relative w-10 h-10 flex-shrink-0 rounded-full overflow-hidden border-2 border-[#FFD700] hover:opacity-90 transition-opacity"
                 style={{ backgroundColor: '#FFD700' }}
               >
                 {user.companyLogo || user.photoURL ? (
