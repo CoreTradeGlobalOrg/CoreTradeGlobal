@@ -22,12 +22,13 @@ import { CompaniesSection } from '@/presentation/components/homepage/Companies/C
 // Only the *last three* sections are dynamic — they sit well below the
 // fold (after ShowcaseSection they're purely scroll-reveal content) so
 // splitting them out of the initial bundle shaves ~150 KiB of JS from
-// the LCP path. Placeholders carry an inline min-height that matches
-// their CSS reservation so a slow-network placeholder-to-real swap
-// can't reintroduce CLS the way the earlier full-tree split did.
+// the LCP path. Placeholder min-heights match the CSS reservations so
+// the placeholder-to-real swap can't shift the footer during throttled
+// Lighthouse loads (showcase's 850px reservation was previously 640,
+// which was ~200px shorter than the real content).
 const ShowcaseSection = dynamic(
   () => import('@/presentation/components/homepage/Showcase/ShowcaseSection').then((m) => m.ShowcaseSection),
-  { loading: () => <section className="showcase-section" style={{ minHeight: 640 }} /> }
+  { loading: () => <section className="showcase-section" style={{ minHeight: 850 }} /> }
 );
 const FairsSection = dynamic(
   () => import('@/presentation/components/homepage/Fairs/FairsSection').then((m) => m.FairsSection),
@@ -35,7 +36,7 @@ const FairsSection = dynamic(
 );
 const NewsSection = dynamic(
   () => import('@/presentation/components/homepage/News/NewsSection').then((m) => m.NewsSection),
-  { loading: () => <section className="news-section" style={{ minHeight: 640 }} /> }
+  { loading: () => <section className="news-section" style={{ minHeight: 710 }} /> }
 );
 
 export default function Home() {
