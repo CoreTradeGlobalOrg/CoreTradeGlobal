@@ -31,7 +31,14 @@ html {
     scroll-behavior: smooth;
 }
 
-/* Homepage container */
+/* Homepage container.
+   CLSDebug tracing showed the footer was mounted at Y≈413 on first
+   paint — sections between navbar and footer weren't yet occupying
+   their reserved heights when the browser observed the layout. Give
+   the container a min-height that matches the sum of every section's
+   reserved size on desktop so the footer's y-coordinate is stable
+   from the very first paint, regardless of section-level hydration
+   timing. Mobile stacks differently and is untouched. */
 .homepage {
     margin: 0;
     padding: 0;
@@ -39,6 +46,19 @@ html {
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
     color: var(--text-white);
     overflow-x: hidden;
+    min-height: 6500px;
+}
+
+@media (max-width: 1024px) {
+    .homepage {
+        min-height: 5000px;
+    }
+}
+
+@media (max-width: 640px) {
+    .homepage {
+        min-height: auto;
+    }
 }
 
 /* --- ERİŞİLEBİLİRLİK (Reduced Motion) --- */
@@ -282,10 +302,12 @@ html {
     width: 100%;
     max-width: 595px;
     margin: 0 auto;
-    animation: fadeUp 0.6s ease 0.3s forwards;
-    opacity: 0;
-    transform: scale(0.85);
-    transform-origin: center;
+    /* No opacity/transform intro animation. The slogan sits directly
+       above this element and used to be gated by the same fadeUp entry
+       animation, which made hero-slogan invisible until ~900ms and
+       pushed LCP out to ~3.5s on throttled Lighthouse. Rendering both
+       elements visible on first paint promotes hero-slogan to the LCP
+       candidate immediately. */
 }
 
 .hero-overlay .slogan-container {
@@ -294,10 +316,6 @@ html {
     max-width: 1100px;
     margin: 0 auto;
     padding-top: 8px;
-    animation: fadeUp 0.6s ease 0.3s forwards;
-    opacity: 0;
-    transform: scale(0.85);
-    transform-origin: center;
 }
 
 .hero-slogan {
@@ -698,6 +716,10 @@ html {
 }
 
 .hero-info-card .card-icon {
+    /* position: relative is required so <Image fill> inside anchors to
+       the icon box rather than escaping to the nearest positioned
+       ancestor. */
+    position: relative;
     width: 64px;
     height: 64px;
     display: flex;
@@ -709,6 +731,7 @@ html {
     border-radius: 10px;
     background: rgba(255, 255, 255, 0.04);
     box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4) inset;
+    overflow: hidden;
 }
 
 .hero-fair-card .card-icon.has-flag {
@@ -1263,6 +1286,8 @@ html {
     width: 100%;
     background: transparent;
     padding: 60px 0;
+    min-height: 500px;
+    contain: layout;
 }
 
 .categories-container {
@@ -1404,6 +1429,11 @@ html {
     width: 100%;
     background: transparent;
     padding: 60px 0;
+    /* Actual desktop-rendered height is 788px (measured with real cards).
+       Reserve 800px so the section never grows past its lock and shifts
+       the footer down during throttled loads. */
+    min-height: 800px;
+    contain: layout;
 }
 
 .featured-products-container {
@@ -1456,6 +1486,8 @@ html {
     width: 100%;
     background: transparent;
     padding: 60px 0;
+    min-height: 720px;
+    contain: layout;
 }
 
 .featured-rfqs-container {
@@ -1824,6 +1856,27 @@ html {
 
 
 /* --- 11. FUARLAR (FAIRS) BÖLÜMÜ --- */
+/* Section-level reservations — each value matches the actual rendered
+   height on desktop. Slow-network Lighthouse used to record ~340px CLS
+   because showcase's 40vh (504px) reservation and news's 640px undershot
+   the real 842px and 702px content, so the footer sat higher on first
+   paint and shifted down once the sections mounted. */
+.fair-section,
+.fairs-wrapper {
+    min-height: 640px;
+    contain: layout;
+}
+
+.news-section {
+    min-height: 710px;
+    contain: layout;
+}
+
+.showcase-section {
+    min-height: 850px;
+    contain: layout;
+}
+
 .fairs-wrapper {
     width: 100%;
     background: transparent;
@@ -1831,6 +1884,8 @@ html {
     justify-content: center;
     padding: 60px 0;
     border-top: 1px solid rgba(255, 255, 255, 0.05);
+    min-height: 640px;
+    contain: layout;
 }
 
 .exhibitions-container {
@@ -1949,7 +2004,10 @@ html {
 
 /* --- 12. SHOWCASE (3D CAROUSEL) --- */
 .showcase-section {
-    min-height: 40vh;
+    /* Locked to the actual desktop height so throttled loads don't shift
+       the footer when the carousel mounts. Was 40vh (~504px) which caused
+       a ~340px CLS on Lighthouse. */
+    min-height: 850px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -2636,6 +2694,10 @@ html {
     display: flex;
     justify-content: center;
     background: transparent;
+    /* Actual desktop height is 606px; reserve 620 so early paint locks
+       the correct footer position. */
+    min-height: 620px;
+    contain: layout;
 }
 
 .cta-container-v2 {
@@ -2995,6 +3057,8 @@ html {
 .hp-section {
     padding: 60px 0;
     background: transparent;
+    min-height: 640px;
+    contain: layout;
 }
 
 /* HP News Card for React */

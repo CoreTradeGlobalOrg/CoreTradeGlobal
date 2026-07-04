@@ -186,7 +186,14 @@ export function HeroSection({ fetchData = false }) {
         <div className="hero-interactions">
           <div className="hero-cta-group">
             {loading ? (
-              <div className="w-48 h-14 bg-[rgba(255,255,255,0.1)] rounded-full animate-pulse" />
+              // Two placeholders shaped like the resolved buttons so the
+              // hero-cta-group has the same width & row height whether the
+              // auth check is still running or done. Prevents a 40-100 px
+              // shift on mobile once useAuth resolves.
+              <>
+                <div className="w-40 h-[52px] bg-[rgba(255,255,255,0.1)] rounded-full animate-pulse" />
+                <div className="w-32 h-[52px] bg-[rgba(255,255,255,0.1)] rounded-full animate-pulse" />
+              </>
             ) : isAuthenticated && user ? (
               <>
                 <button

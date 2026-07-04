@@ -52,6 +52,8 @@ const CompanyLogoImage = memo(function CompanyLogoImage({ src, alt, fallback }) 
       <img
         src={src}
         alt={alt}
+        width={320}
+        height={400}
         className={`w-full h-full object-cover transition-opacity duration-200 ${loading ? 'opacity-0' : 'opacity-100'}`}
         onLoad={() => setLoading(false)}
         onError={() => { setLoading(false); setError(true); }}

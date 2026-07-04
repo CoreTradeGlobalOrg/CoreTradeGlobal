@@ -17,7 +17,15 @@ const CLARITY_PROJECT_ID = process.env.NEXT_PUBLIC_CLARITY_PROJECT_ID;
 const inter = Inter({
   subsets: ['latin'],
   variable: '--font-inter',
-  display: 'swap',
+  // 'optional' is the CLS-safe display mode: browsers try to load Inter
+  // inside a 100ms window and, if it isn't there in time, fall back to the
+  // system font for the WHOLE page load with no mid-page swap. Speed
+  // Insights kept attributing 0.4 CLS to the footer paragraph — every
+  // paragraph reflowed the moment the 1.75s font swap fired. 'optional'
+  // ends that class of shift entirely.
+  display: 'optional',
+  preload: true,
+  adjustFontFallback: 'Arial',
 });
 
 export const metadata = {
@@ -89,10 +97,30 @@ export default function RootLayout({ children }) {
       <head>
         {/* Warm up TLS to origins we always hit from the homepage — the
             first Firestore listen and the first company/product image
-            are on the LCP critical path. */}
+            are on the LCP critical path. crossOrigin is omitted on the
+            authenticated APIs because the SDK issues credentialed
+            requests; a crossOrigin='anonymous' preconnect creates a
+            different connection than the credentialed one that ends up
+            handling the real request, which is why Lighthouse marked
+            the earlier version as "unused preconnect". */}
+        <link rel="preconnect" href="https://firebase.googleapis.com" />
+        <link rel="preconnect" href="https://firestore.googleapis.com" />
         <link rel="preconnect" href="https://firebasestorage.googleapis.com" crossOrigin="anonymous" />
-        <link rel="preconnect" href="https://firestore.googleapis.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://firebaseinstallations.googleapis.com" />
+        {/* Critical CLS reservation for the homepage wrapper.
+            Real-browser CLS is already 0 with this rule in homepage.css,
+            but Lighthouse's slow-network simulation delivers the CSS
+            chunk after first paint — the footer briefly lands at
+            Y≈413, then snaps to Y=6500 once the stylesheet arrives, and
+            Lighthouse attributes the trip to <footer> with a ~0.4
+            score. Inlining the rule here ships it inside the HTML
+            document so browsers apply it during the initial parse,
+            independent of external CSS latency. */}
+        <style dangerouslySetInnerHTML={{ __html: `
+          .homepage{min-height:6500px}
+          @media (max-width:1024px){.homepage{min-height:5000px}}
+          @media (max-width:600px){.homepage{min-height:0}}
+        ` }} />
         {GA_MEASUREMENT_ID && (
           <>
             <Script

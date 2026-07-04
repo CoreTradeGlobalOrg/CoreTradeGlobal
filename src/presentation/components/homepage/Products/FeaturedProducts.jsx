@@ -9,6 +9,7 @@
 
 import { useState, useEffect, useRef, memo } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { container } from '@/core/di/container';
 import { ChevronLeft, ChevronRight, Package, Star } from 'lucide-react';
 import { useCategories } from '@/presentation/hooks/category/useCategories';
@@ -155,10 +156,12 @@ const ProductCardImage = memo(function ProductCardImage({ src, alt }) {
       {loading && (
         <div className="absolute inset-0 animate-shimmer z-10" />
       )}
-      <img
+      <Image
         src={src}
         alt={alt}
-        className={`w-full h-full object-cover transition-opacity duration-300 ${loading ? 'opacity-0' : 'opacity-100'}`}
+        fill
+        sizes="(max-width: 768px) 50vw, (max-width: 1200px) 25vw, 280px"
+        className={`object-cover transition-opacity duration-300 ${loading ? 'opacity-0' : 'opacity-100'}`}
         onLoad={() => setLoading(false)}
         onError={() => { setLoading(false); setError(true); }}
       />

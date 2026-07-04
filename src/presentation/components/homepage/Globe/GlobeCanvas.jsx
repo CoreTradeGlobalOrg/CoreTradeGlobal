@@ -258,7 +258,11 @@ function Scene({ isMobile, disableInteraction, onReady }) {
     pointSize: isMobile ? 0.28 : 0.22, // Slightly smaller for denser points
     pointColor: 0xFFFFFF,
     waterColor: 0x0A1628,
-    mapUrl: 'https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/earth_specular_2048.jpg',
+    // Self-hosted copy of the three.js earth specular map — loading it from
+    // raw.githubusercontent.com pulled it in on every visit against a 5 min
+    // cache TTL and blocked LCP by ~200 ms. Serving it from /public lets
+    // Vercel's CDN cache it aggressively instead.
+    mapUrl: '/textures/earth_specular_2048.jpg',
     maxRoutes: isMobile ? 4 : 8, // Further reduced for a cleaner look
     tubeSegments: isMobile ? 32 : 64,
     cameraZ: isMobile ? 22 : 35,

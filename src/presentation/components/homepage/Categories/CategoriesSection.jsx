@@ -33,6 +33,8 @@ const CategoryCard = ({ category }) => {
           <img
             src={category.iconUrl}
             alt={category.name}
+            width={64}
+            height={64}
             className="w-full h-full object-contain"
             style={{ filter: 'drop-shadow(0 0 8px rgba(255, 215, 0, 0.5))' }} // Gold glow
             onError={() => setImgError(true)}

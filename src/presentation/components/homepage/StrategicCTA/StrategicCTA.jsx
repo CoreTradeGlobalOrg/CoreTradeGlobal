@@ -44,11 +44,14 @@ export function StrategicCTA() {
               Expand your business globally. Showcase your products to buyers worldwide.
               <span className="cta-action-highlight">Upload Your First Product:</span>
             </p>
-            {!loading && (
-              <button onClick={handleSellClick} className="cta-btn cta-btn-sell">
-                I want to sell
-              </button>
-            )}
+            <button
+              onClick={loading ? undefined : handleSellClick}
+              disabled={loading}
+              className="cta-btn cta-btn-sell"
+              style={{ visibility: loading ? 'hidden' : 'visible' }}
+            >
+              I want to sell
+            </button>
           </div>
 
           {/* Buyer Card */}
@@ -64,11 +67,14 @@ export function StrategicCTA() {
               Describe your requirements, receive quotes from verified global manufacturers.
               <span className="cta-action-highlight">Post Your First RFQ:</span>
             </p>
-            {!loading && (
-              <button onClick={handleBuyClick} className="cta-btn cta-btn-buy">
-                I want to buy
-              </button>
-            )}
+            <button
+              onClick={loading ? undefined : handleBuyClick}
+              disabled={loading}
+              className="cta-btn cta-btn-buy"
+              style={{ visibility: loading ? 'hidden' : 'visible' }}
+            >
+              I want to buy
+            </button>
           </div>
         </div>
       </section>

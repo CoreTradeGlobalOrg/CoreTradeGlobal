@@ -131,6 +131,8 @@ const SwipeableCard = memo(({
               <img
                 src={profileImage}
                 alt={company.companyName}
+                width={80}
+                height={80}
                 className="w-full h-full object-cover"
                 onError={() => setImgError(true)}
                 loading="lazy"
@@ -189,6 +191,8 @@ const SwipeableCard = memo(({
             <img
               src={profileImage}
               alt={company.companyName}
+              width={80}
+              height={80}
               className="w-full h-full object-cover"
               onError={() => setImgError(true)}
               loading="lazy"

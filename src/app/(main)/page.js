@@ -11,15 +11,33 @@
 
 'use client';
 
+import dynamic from 'next/dynamic';
 import { HeroSection } from '@/presentation/components/homepage/Hero/HeroSection';
 import { FeaturedProducts } from '@/presentation/components/homepage/Products/FeaturedProducts';
 import { FeaturedRFQs } from '@/presentation/components/homepage/RFQs/FeaturedRFQs';
 import { CategoriesSection } from '@/presentation/components/homepage/Categories/CategoriesSection';
 import { StrategicCTA } from '@/presentation/components/homepage/StrategicCTA/StrategicCTA';
 import { CompaniesSection } from '@/presentation/components/homepage/Companies/CompaniesSection';
-import { ShowcaseSection } from '@/presentation/components/homepage/Showcase/ShowcaseSection';
-import { FairsSection } from '@/presentation/components/homepage/Fairs/FairsSection';
-import { NewsSection } from '@/presentation/components/homepage/News/NewsSection';
+
+// Only the *last three* sections are dynamic — they sit well below the
+// fold (after ShowcaseSection they're purely scroll-reveal content) so
+// splitting them out of the initial bundle shaves ~150 KiB of JS from
+// the LCP path. Placeholder min-heights match the CSS reservations so
+// the placeholder-to-real swap can't shift the footer during throttled
+// Lighthouse loads (showcase's 850px reservation was previously 640,
+// which was ~200px shorter than the real content).
+const ShowcaseSection = dynamic(
+  () => import('@/presentation/components/homepage/Showcase/ShowcaseSection').then((m) => m.ShowcaseSection),
+  { loading: () => <section className="showcase-section" style={{ minHeight: 850 }} /> }
+);
+const FairsSection = dynamic(
+  () => import('@/presentation/components/homepage/Fairs/FairsSection').then((m) => m.FairsSection),
+  { loading: () => <div className="fairs-wrapper" style={{ minHeight: 640 }} /> }
+);
+const NewsSection = dynamic(
+  () => import('@/presentation/components/homepage/News/NewsSection').then((m) => m.NewsSection),
+  { loading: () => <section className="news-section" style={{ minHeight: 710 }} /> }
+);
 
 export default function Home() {
   const HERO_FETCH_DATA = true;

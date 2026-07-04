@@ -16,6 +16,7 @@ import {
 } from 'firebase/auth';
 import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { compressImage } from '@/lib/image-utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle, Circle } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -153,8 +154,9 @@ export function OnboardingWizard({ uid: initialUid }) {
     setPhotoUploading(true);
     try {
       const ext = photoFile.name.split('.').pop();
+      const compressed = await compressImage(photoFile, 'logo');
       const storageRef = ref(getStorageInstance(), `users/${user.uid}/profile.${ext}`);
-      const snapshot = await uploadBytes(storageRef, photoFile, { contentType: photoFile.type });
+      const snapshot = await uploadBytes(storageRef, compressed, { contentType: compressed.type });
       const photoURL = await getDownloadURL(snapshot.ref);
       await updateProfile(user, { photoURL });
       await updateDoc(doc(db, 'users', user.uid), { photoURL, updatedAt: serverTimestamp() });
