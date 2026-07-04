@@ -113,8 +113,6 @@ export function HeroDataCards({ fetchData, dataLoading, latestProduct, latestReq
                   alt={latestProduct.name}
                   fill
                   sizes="48px"
-                  priority
-                  fetchPriority="high"
                   className="object-cover"
                 />
               </div>
