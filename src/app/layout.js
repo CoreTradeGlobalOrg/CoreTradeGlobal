@@ -9,7 +9,6 @@ import { MessagesProvider } from '@/presentation/contexts/MessagesContext';
 import { AnalyticsProvider } from '@/presentation/contexts/AnalyticsContext';
 import { AnalyticsTracker } from '@/presentation/components/common/AnalyticsTracker/AnalyticsTracker';
 import { WebVitals } from '@/presentation/components/common/WebVitals/WebVitals';
-import { CLSDebug } from '@/presentation/components/common/CLSDebug/CLSDebug';
 import { Toaster } from 'react-hot-toast';
 
 const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID;
@@ -152,7 +151,6 @@ export default function RootLayout({ children }) {
       </head>
       <body className={inter.className}>
         <WebVitals />
-        <CLSDebug />
         <SpeedInsights />
         <Analytics />
         <AuthProvider>
