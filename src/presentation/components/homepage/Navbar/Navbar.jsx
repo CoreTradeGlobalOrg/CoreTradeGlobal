@@ -377,14 +377,20 @@ export function Navbar() {
         </div>
 
         {/* Desktop Navigation — Dropdown Groups.
-            Reserve the FULL authenticated-cluster footprint during
-            loading so the "My Account" group + auth cluster popping in
-            later doesn't shift the row. CLS diagnosis showed the .nav-links
-            container growing from 648x40 (skeleton) to 882x48 (real) —
-            +234px width and +8px height — worth ~0.03 CLS. Match both
-            axes exactly here: min-width 882px, and pulses sized to
-            occupy the same 48px row height as .nav-link (padding + text). */}
-        <div className="nav-links hidden md:flex items-center h-12" style={{ minWidth: '882px' }}>
+            Reserve the authenticated-cluster footprint ONLY during the
+            skeleton phase — otherwise a logged-out visitor sees the
+            4 real dropdowns + Log In + Register cluster (~500 px) sitting
+            inside a rigid 882 px flex box with a huge empty gap.
+            Skeleton (roleLoading true): min-width 882 so the shift from
+            skeleton -> authenticated cluster is layout-neutral.
+            Loaded state (roleLoading false): min-width unset -> content
+            width. Logged-out cluster paints at its natural size; the
+            skeleton -> logged-out transition happens on a position:fixed
+            navbar so it does not push document content around. */}
+        <div
+          className="nav-links hidden md:flex items-center h-12"
+          style={{ minWidth: roleLoading ? '882px' : undefined }}
+        >
           {roleLoading ? (
             <div className="flex items-center gap-4 h-12">
               {[...Array(6)].map((_, i) => (
