@@ -89,16 +89,27 @@ function TickerSkeleton() {
 
 // ── Main component ────────────────────────────────────────────────────────────
 
+// Reserved slot height must match Navbar.jsx's dynamic-import loading
+// placeholder (h-8 = 32px). Every render path — loading, no-data, real
+// ticker — must occupy this exact height, or the navbar wrapper resizes,
+// --navbar-height changes, and mobile hero (margin-top: var(--navbar-height))
+// shifts by up to 32px on hard reload.
 export function CurrencyTicker() {
   const { rates, fetchedAt, isStale, cacheExpired, error, loading } = useLiveCurrency();
 
-  // Don't render anything while loading or when no rates available
-  if (loading || cacheExpired || (error && !rates) || !rates) {
-    return null;
+  const noRates = loading || cacheExpired || (error && !rates) || !rates;
+
+  if (noRates) {
+    return (
+      <div
+        className="w-full h-8 bg-[#0A1628] border-b border-[#2A3B52]"
+        aria-hidden="true"
+      />
+    );
   }
 
   return (
-    <div className="w-full overflow-hidden bg-[#0A1628] border-b border-[#2A3B52] py-1">
+    <div className="w-full h-8 flex items-center overflow-hidden bg-[#0A1628] border-b border-[#2A3B52]">
       <div className="flex animate-marquee whitespace-nowrap text-[10px] sm:text-xs [animation-play-state:running] hover:[animation-play-state:paused]">
         <TickerItems rates={rates} fetchedAt={fetchedAt} isStale={isStale} />
         <TickerItems rates={rates} fetchedAt={fetchedAt} isStale={isStale} ariaHidden />

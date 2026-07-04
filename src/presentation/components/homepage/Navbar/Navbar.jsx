@@ -224,7 +224,7 @@ function MobileAccordion({ group, isActive, onNavigate }) {
 }
 
 export function Navbar() {
-  const { user, isAuthenticated, loading } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const { logout } = useLogout();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -325,8 +325,6 @@ export function Navbar() {
     [pathname]
   );
 
-  const roleLoading = loading || (isAuthenticated && !user?.role);
-
   /**
    * Build visible nav groups: filter out authOnly groups for unauthenticated users,
    * and filter out role-restricted items within each group.
@@ -377,33 +375,27 @@ export function Navbar() {
         </div>
 
         {/* Desktop Navigation — Dropdown Groups.
-            Reserve the full authenticated-user width during loading so
-            the "My Account" group popping in later doesn't push the
-            navbar around and cascade a shift down to the footer. */}
-        <div className="nav-links hidden md:flex" style={{ minWidth: '620px' }}>
-          {roleLoading ? (
-            <div className="flex items-center gap-4">
-              {[...Array(6)].map((_, i) => (
-                <div key={i} className="w-16 h-4 bg-[rgba(255,255,255,0.1)] rounded animate-pulse" />
-              ))}
-            </div>
-          ) : (
-            visibleGroups.map((group) => (
-              <DesktopDropdown
-                key={group.label}
-                group={group}
-                isActive={isActive}
-                onNavigate={() => {}}
-              />
-            ))
-          )}
+            Render real content immediately. The unauthenticated tree
+            (4 dropdowns + Log In + Register) is a valid, interactive
+            default; visibleGroups filters authOnly groups (My Account)
+            and role-restricted items automatically. Authenticated users
+            see a one-frame swap in-cluster when Firebase resolves —
+            the navbar is position: fixed, so no document reflow, no
+            CLS. A skeleton here previously required guessing the final
+            cluster width, and any wrong guess (882 vs 500 px) either
+            shifted content on hydrate or left a big empty middle. */}
+        <div className="nav-links hidden md:flex items-center h-12">
+          {visibleGroups.map((group) => (
+            <DesktopDropdown
+              key={group.label}
+              group={group}
+              isActive={isActive}
+              onNavigate={() => {}}
+            />
+          ))}
 
-          {/* Auth Section — the resolved state can be a whole cluster
-              (messages icon + notification bell + avatar dropdown),
-              much wider than the previous 80 px pill placeholder. */}
-          {roleLoading ? (
-            <div className="w-[160px] h-10 bg-[rgba(255,255,255,0.1)] rounded-full animate-pulse" />
-          ) : isAuthenticated && user ? (
+          {/* Auth Section */}
+          {isAuthenticated && user ? (
             <div className="flex items-center gap-3">
               {/* Messages Icon */}
               <Link
@@ -557,27 +549,17 @@ export function Navbar() {
           style={{ maxHeight: 'calc(100vh - var(--navbar-height, 100px))' }}
         >
           <div className="px-6 py-4 space-y-1">
-            {roleLoading ? (
-              <div className="space-y-3">
-                {[...Array(4)].map((_, i) => (
-                  <div key={i} className="w-24 h-4 bg-[rgba(255,255,255,0.1)] rounded animate-pulse" />
-                ))}
-              </div>
-            ) : (
-              visibleGroups.map((group) => (
-                <MobileAccordion
-                  key={group.label}
-                  group={group}
-                  isActive={isActive}
-                  onNavigate={closeMobileMenu}
-                />
-              ))
-            )}
+            {visibleGroups.map((group) => (
+              <MobileAccordion
+                key={group.label}
+                group={group}
+                isActive={isActive}
+                onNavigate={closeMobileMenu}
+              />
+            ))}
 
             <div className="pt-4 mt-2 border-t border-[rgba(255,255,255,0.1)] space-y-1">
-              {roleLoading ? (
-                <div className="w-full h-10 bg-[rgba(255,255,255,0.1)] rounded-full animate-pulse" />
-              ) : isAuthenticated && user ? (
+              {isAuthenticated && user ? (
                 <>
                   <Link
                     href={`/profile/${user.uid}`}

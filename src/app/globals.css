@@ -6,8 +6,40 @@ html, body {
   color: #F5F5F5;
 }
 
+/* Sticky footer scaffold.
+   The homepage's .homepage {min-height: 6500px} reservation had a race
+   condition on hard reload — the CLS logger saw the footer land at
+   y=396 with a 264px height for one frame, then jump to its resting
+   position, worth ~0.40 CLS on its own. Root cause is layout order:
+   during hydration and possibly (main)/layout's router.replace redirect,
+   the .homepage children momentarily settle at zero height before the
+   min-height rule wins. Making <body> a vertical flex column with
+   min-height: 100vh and giving direct children flex:1 pins the footer
+   to viewport-bottom BEFORE any content lands. Content taller than
+   viewport pushes footer down naturally; shorter content keeps footer
+   at viewport-bottom. Either way, no per-hydration reflow. */
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+body > * {
+  flex-shrink: 0;
+}
+.homepage,
+main {
+  flex: 1 0 auto;
+}
+
 :root {
-  --navbar-height: 100px; /* fallback until ResizeObserver sets actual value (navbar only, ticker excluded) */
+  /* Fallback until ResizeObserver in Navbar.jsx measures the live nav.
+     Matches the SSR-rendered box: .navbar-content is 72px + CurrencyTicker
+     reserves a fixed 32px slot = 104px. The JS measurement reads
+     nav.offsetHeight which includes the ticker, so this fallback must
+     include it too — otherwise every consumer (mobile #hero-section
+     margin-top, page-level pt-[calc(var(--navbar-height)+24px)]) shifts
+     by 4-32px the instant Navbar mounts on hard reload. */
+  --navbar-height: 104px;
 }
 
 html {

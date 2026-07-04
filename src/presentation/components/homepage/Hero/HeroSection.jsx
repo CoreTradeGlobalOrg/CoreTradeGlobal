@@ -186,13 +186,19 @@ export function HeroSection({ fetchData = false }) {
         <div className="hero-interactions">
           <div className="hero-cta-group">
             {loading ? (
-              // Two placeholders shaped like the resolved buttons so the
-              // hero-cta-group has the same width & row height whether the
-              // auth check is still running or done. Prevents a 40-100 px
-              // shift on mobile once useAuth resolves.
+              // Placeholders match the RESOLVED buttons pixel-for-pixel.
+              // .btn-hero-white / .btn-hero-secondary render at 60px tall
+              // on desktop (padding 16*2 + line-height ~28 with the 2px
+              // secondary border), and .hero-cta-btn (auth'd path) renders
+              // at 56px. Mobile media query overrides both to 48px via
+              // padding 14*2 + font-size 16 line-height 1.25. The 52px
+              // pills used to sit 8-11px shorter than the desktop cluster
+              // on hard reload, which triggered a Performance-tab CLS marker
+              // at ~1.6s once useAuth resolved. Match the desktop 60px
+              // ceiling — mobile shrinks together via CSS regardless.
               <>
-                <div className="w-40 h-[52px] bg-[rgba(255,255,255,0.1)] rounded-full animate-pulse" />
-                <div className="w-32 h-[52px] bg-[rgba(255,255,255,0.1)] rounded-full animate-pulse" />
+                <div className="w-full md:w-40 h-[48px] md:h-[60px] bg-[rgba(255,255,255,0.1)] rounded-full animate-pulse" />
+                <div className="w-full md:w-32 h-[48px] md:h-[60px] bg-[rgba(255,255,255,0.1)] rounded-full animate-pulse" />
               </>
             ) : isAuthenticated && user ? (
               <>
