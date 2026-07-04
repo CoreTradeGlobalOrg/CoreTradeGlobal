@@ -108,6 +108,20 @@ export default function RootLayout({ children }) {
         <link rel="preconnect" href="https://firestore.googleapis.com" />
         <link rel="preconnect" href="https://firebasestorage.googleapis.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://firebaseinstallations.googleapis.com" />
+        {/* Critical CLS reservation for the homepage wrapper.
+            Real-browser CLS is already 0 with this rule in homepage.css,
+            but Lighthouse's slow-network simulation delivers the CSS
+            chunk after first paint — the footer briefly lands at
+            Y≈413, then snaps to Y=6500 once the stylesheet arrives, and
+            Lighthouse attributes the trip to <footer> with a ~0.4
+            score. Inlining the rule here ships it inside the HTML
+            document so browsers apply it during the initial parse,
+            independent of external CSS latency. */}
+        <style dangerouslySetInnerHTML={{ __html: `
+          .homepage{min-height:6500px}
+          @media (max-width:1024px){.homepage{min-height:5000px}}
+          @media (max-width:600px){.homepage{min-height:0}}
+        ` }} />
         {GA_MEASUREMENT_ID && (
           <>
             <Script
