@@ -2,14 +2,21 @@
  * HeroGlobe Component
  *
  * Three.js globe wrapper with loading state for the hero section.
- * Dynamically imports GlobeCanvas to avoid SSR issues.
- * Wrapped in a Suspense boundary so the Three.js bundle doesn't block
- * the hero text and buttons from rendering.
+ *
+ * PERF PREVIEW BRANCH — GlobeCanvas is short-circuited on this branch to
+ * measure the Three.js chunk's real cost against a Lighthouse run. The
+ * dynamic import is left in the module so the code still tree-shakes and
+ * reads normally; the guard just prevents the render call that triggers
+ * the fetch. Canvas container stays in the DOM so mobile layout height
+ * (320px reservation) matches the with-globe branch; onGlobeReady fires
+ * on mount so the "Welcome to CoreTradeGlobal" loading text doesn't
+ * stick around. Delete this branch to revert; do not merge to
+ * development / main.
  */
 
 'use client';
 
-import { Suspense } from 'react';
+import { Suspense, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 
 const GlobeCanvas = dynamic(
@@ -19,6 +26,9 @@ const GlobeCanvas = dynamic(
     loading: () => null,
   }
 );
+
+// PERF PREVIEW — flip to false to re-enable the Three.js globe on this branch.
+const GLOBE_ENABLED = false;
 
 function GlobeFallback() {
   return (
@@ -32,10 +42,19 @@ function GlobeFallback() {
 }
 
 export function HeroGlobe({ mounted, globeLoaded, onGlobeReady }) {
+  // With the globe disabled there's nothing to wait for — resolve the
+  // ready callback immediately so HeroSection hides the loading text
+  // and the canvas-container fades to opacity 1.
+  useEffect(() => {
+    if (!GLOBE_ENABLED && mounted && !globeLoaded) {
+      onGlobeReady?.();
+    }
+  }, [mounted, globeLoaded, onGlobeReady]);
+
   return (
     <>
       {/* Globe Loading Text */}
-      {!globeLoaded && (
+      {!globeLoaded && GLOBE_ENABLED && (
         <div className="globe-loading-text" id="loading" suppressHydrationWarning>
           Welcome to CoreTradeGlobal
         </div>
@@ -44,10 +63,10 @@ export function HeroGlobe({ mounted, globeLoaded, onGlobeReady }) {
       {/* Three.js Canvas Container */}
       <div
         id="canvas-container"
-        style={globeLoaded ? { opacity: 1 } : undefined}
+        style={globeLoaded || !GLOBE_ENABLED ? { opacity: 1 } : undefined}
         suppressHydrationWarning
       >
-        {mounted && (
+        {mounted && GLOBE_ENABLED && (
           <Suspense fallback={<GlobeFallback />}>
             <GlobeCanvas onReady={onGlobeReady} />
           </Suspense>
