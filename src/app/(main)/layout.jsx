@@ -87,9 +87,22 @@ export default function MainLayout({ children }) {
         </div>
       )}
 
-      <ErrorBoundary>
-        {children}
-      </ErrorBoundary>
+      {/* Homepage-only footer reservation. Next.js/React 19 streams
+          (main)/page.jsx via a BAILOUT_TO_CLIENT_SIDE_RENDERING
+          placeholder — server HTML ships an empty <div hidden> at
+          this position and stashes real content in <div hidden id="S:0">
+          at the bottom of <body>. Without this reservation, the footer
+          paints at y≈396 and only jumps to y≈6510 after client-side
+          hydration inserts .homepage into the placeholder, worth ~0.40
+          CLS. Reservations match the .homepage rules in homepage.css.
+          Restricted to pathname === '/' so short routes (/messages,
+          /products with sparse content, etc.) don't get a giant empty
+          gap between content and footer. */}
+      <div className={pathname === '/' ? 'main-content-reservation' : undefined}>
+        <ErrorBoundary>
+          {children}
+        </ErrorBoundary>
+      </div>
       <Footer />
       <MessagesWidget />
       <NotificationPrompt />

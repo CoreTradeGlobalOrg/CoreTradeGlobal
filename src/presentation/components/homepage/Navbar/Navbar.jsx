@@ -377,14 +377,18 @@ export function Navbar() {
         </div>
 
         {/* Desktop Navigation — Dropdown Groups.
-            Reserve the full authenticated-user width during loading so
-            the "My Account" group popping in later doesn't push the
-            navbar around and cascade a shift down to the footer. */}
-        <div className="nav-links hidden md:flex" style={{ minWidth: '620px' }}>
+            Reserve the FULL authenticated-cluster footprint during
+            loading so the "My Account" group + auth cluster popping in
+            later doesn't shift the row. CLS diagnosis showed the .nav-links
+            container growing from 648x40 (skeleton) to 882x48 (real) —
+            +234px width and +8px height — worth ~0.03 CLS. Match both
+            axes exactly here: min-width 882px, and pulses sized to
+            occupy the same 48px row height as .nav-link (padding + text). */}
+        <div className="nav-links hidden md:flex items-center h-12" style={{ minWidth: '882px' }}>
           {roleLoading ? (
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 h-12">
               {[...Array(6)].map((_, i) => (
-                <div key={i} className="w-16 h-4 bg-[rgba(255,255,255,0.1)] rounded animate-pulse" />
+                <div key={i} className="w-16 h-5 bg-[rgba(255,255,255,0.1)] rounded animate-pulse" />
               ))}
             </div>
           ) : (
@@ -398,11 +402,12 @@ export function Navbar() {
             ))
           )}
 
-          {/* Auth Section — the resolved state can be a whole cluster
-              (messages icon + notification bell + avatar dropdown),
-              much wider than the previous 80 px pill placeholder. */}
+          {/* Auth Section — the resolved state is a cluster of
+              messages icon + notification bell + avatar dropdown.
+              Skeleton matches the ~232x48 real footprint so the swap
+              is layout-neutral. */}
           {roleLoading ? (
-            <div className="w-[160px] h-10 bg-[rgba(255,255,255,0.1)] rounded-full animate-pulse" />
+            <div className="w-[232px] h-12 bg-[rgba(255,255,255,0.1)] rounded-full animate-pulse" />
           ) : isAuthenticated && user ? (
             <div className="flex items-center gap-3">
               {/* Messages Icon */}
