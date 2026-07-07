@@ -24,7 +24,15 @@ const inter = Inter({
   // paragraph reflowed the moment the 1.75s font swap fired. 'optional'
   // ends that class of shift entirely.
   display: 'optional',
-  preload: true,
+  // preload: false — Lighthouse flagged the ~84 KiB woff2 as sitting at
+  // the top of a 3,114 ms critical-path chain and warned that the
+  // resource was preloaded but not used within a few seconds of load.
+  // Under 'optional' the browser gives up in ~100 ms and paints with
+  // Arial for the rest of the load anyway, so shipping the preload
+  // hint only guaranteed the bandwidth cost without a matching win.
+  // Returning visitors still pick Inter from cache; first-time slow-
+  // network visitors keep the metric-matched Arial fallback below.
+  preload: false,
   adjustFontFallback: 'Arial',
 });
 

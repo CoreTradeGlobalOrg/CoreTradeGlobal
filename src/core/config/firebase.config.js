@@ -6,13 +6,15 @@
  * This file replaces the old src/lib/firebase.js
  *
  * Performance: auth & db are eager (needed immediately).
- * storage & functions are lazy-loaded on first use via getter functions.
+ * storage, functions, and analytics are lazy-loaded on first use via
+ * getter/wrapper functions so their SDKs stay out of the initial
+ * bundle. Analytics in particular is gated behind cookie consent —
+ * for a visitor who hasn't opted in, firebase/analytics never loads.
  */
 
 import { initializeApp, getApps } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
-import { getAnalytics, isSupported, logEvent, setUserId, setUserProperties } from 'firebase/analytics';
 
 // Firebase configuration from environment variables
 const firebaseConfig = {
@@ -85,21 +87,34 @@ export function getFunctionsInstance() {
 }
 
 /**
- * Firebase Analytics
+ * Firebase Analytics — lazy-loaded
  *
- * Analytics is only initialized client-side when supported
- * Use initializeAnalytics() to get the analytics instance
+ * Same pattern as storage / functions above: require() inside the
+ * accessors so the firebase/analytics SDK only enters the bundle when
+ * something actually calls it. AnalyticsContext gates the first call
+ * behind cookie consent, so visitors who never opt in never pay for
+ * the analytics chunk. logEvent / setUserId / setUserProperties are
+ * re-exported as thin sync wrappers to preserve the original API for
+ * consumers.
  */
 let analyticsInstance = null;
+let _analyticsModule = null;
+function loadAnalyticsModule() {
+  if (!_analyticsModule) {
+    _analyticsModule = require('firebase/analytics');
+  }
+  return _analyticsModule;
+}
 
 export const initializeAnalytics = async () => {
   if (typeof window === 'undefined') return null;
 
   if (analyticsInstance) return analyticsInstance;
 
-  const supported = await isSupported();
+  const mod = loadAnalyticsModule();
+  const supported = await mod.isSupported();
   if (supported) {
-    analyticsInstance = getAnalytics(app);
+    analyticsInstance = mod.getAnalytics(app);
   }
 
   return analyticsInstance;
@@ -107,7 +122,9 @@ export const initializeAnalytics = async () => {
 
 export const getAnalyticsInstance = () => analyticsInstance;
 
-export { logEvent, setUserId, setUserProperties };
+export const logEvent = (...args) => loadAnalyticsModule().logEvent(...args);
+export const setUserId = (...args) => loadAnalyticsModule().setUserId(...args);
+export const setUserProperties = (...args) => loadAnalyticsModule().setUserProperties(...args);
 
 /**
  * Export the app instance for advanced usage
