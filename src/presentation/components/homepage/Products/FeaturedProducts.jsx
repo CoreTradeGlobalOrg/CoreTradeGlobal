@@ -160,7 +160,13 @@ const ProductCardImage = memo(function ProductCardImage({ src, alt }) {
         src={src}
         alt={alt}
         fill
-        sizes="(max-width: 768px) 50vw, (max-width: 1200px) 25vw, 280px"
+        // Lighthouse flagged these product card images as ~123 KiB
+        // oversize (served 384px wide against actual displayed widths
+        // of 98–254px). Tighten the sizes hint so Next/image picks the
+        // next size DOWN — desktop lands on ~256px served for the
+        // largest 254px cell instead of 384px. Mobile / tablet slots
+        // are proportionally smaller than the old 50vw / 25vw claimed.
+        sizes="(max-width: 768px) 45vw, (max-width: 1200px) 22vw, 200px"
         className={`object-cover transition-opacity duration-300 ${loading ? 'opacity-0' : 'opacity-100'}`}
         onLoad={() => setLoading(false)}
         onError={() => { setLoading(false); setError(true); }}
