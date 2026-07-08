@@ -1,17 +1,16 @@
 /**
- * HeroGlobe Component
+ * HeroGlobe Component (v2 wrapper)
  *
- * Three.js globe wrapper with loading state for the hero section.
- * Dynamically imports GlobeCanvas to avoid SSR issues and to keep the
- * Three.js + worker bundle off the initial paint's critical path.
- * GlobeCanvas.jsx dispatches to the OffscreenCanvas + Worker path where
- * supported and falls back to the R3F main-thread implementation on
- * older Safari.
+ * Dynamic import for GlobeCanvas so the Three.js + three-globe worker
+ * bundle stays off the initial critical path. The R3F main-thread
+ * fallback that shipped alongside the previous worker was removed with
+ * the polygon-globe rewrite — modern OffscreenCanvas support covers
+ * everything we target and the fallback path was carrying its own
+ * ~500 KiB of unused code.
  */
 
 'use client';
 
-import { Suspense } from 'react';
 import dynamic from 'next/dynamic';
 
 const GlobeCanvas = dynamic(
@@ -22,38 +21,24 @@ const GlobeCanvas = dynamic(
   }
 );
 
-function GlobeFallback() {
-  return (
-    <div
-      className="w-full h-full"
-      style={{
-        background: 'radial-gradient(ellipse at center, rgba(10,22,40,0.6) 0%, transparent 70%)',
-      }}
-    />
-  );
-}
-
 export function HeroGlobe({ mounted, globeLoaded, onGlobeReady }) {
   return (
     <>
-      {/* Globe Loading Text */}
+      {/* Loading overlay — spec's "Initializing WebGL Network…" copy sits
+          in front of the empty canvas-container until the worker posts
+          ready. Fades out when globeLoaded flips true. */}
       {!globeLoaded && (
         <div className="globe-loading-text" id="loading" suppressHydrationWarning>
-          Welcome to CoreTradeGlobal
+          Initializing WebGL Network…
         </div>
       )}
 
-      {/* Three.js Canvas Container */}
       <div
         id="canvas-container"
         style={globeLoaded ? { opacity: 1 } : undefined}
         suppressHydrationWarning
       >
-        {mounted && (
-          <Suspense fallback={<GlobeFallback />}>
-            <GlobeCanvas onReady={onGlobeReady} />
-          </Suspense>
-        )}
+        {mounted && <GlobeCanvas onReady={onGlobeReady} />}
       </div>
     </>
   );

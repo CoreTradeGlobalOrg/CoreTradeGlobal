@@ -1,32 +1,29 @@
 /**
- * GlobeCanvas — thin main-thread shell around globe.worker.js.
+ * GlobeCanvas — main-thread shell around globe.worker.js (three-globe).
  *
- * The heavy Three.js render + trade-route physics run in a Web Worker
- * on an OffscreenCanvas transferred from here. This file mounts a
- * canvas element, hands its offscreen twin to the worker, and forwards
- * three streams of events:
+ * Owns:
+ *   - canvas mount + transferControlToOffscreen
+ *   - GeoJSON fetch (deferred 600 ms per spec) and post to worker
+ *   - Pointer / resize / visibility forwarding
+ *   - "Selected Region" HUD overlay reacting to worker messages
  *
- *   - resize:      ResizeObserver → { type: 'resize', width, height, dpr }
- *   - visibility:  IntersectionObserver → pauses the worker RAF loop when
- *                  the hero scrolls out (matches the original R3F path)
- *   - pointer:     desktop drag → { type: 'pointer', kind, x, y } — the
- *                  worker runs a hand-rolled OrbitControls equivalent
+ * The whole render loop, raycasting, polygon country mesh, atmosphere,
+ * and camera orbit run inside the worker on an OffscreenCanvas — main
+ * thread only forwards events and paints the HUD.
  *
- * Browsers without OffscreenCanvas + transferControlToOffscreen fall
- * back to GlobeCanvasFallback (the original @react-three/fiber
- * implementation) via dynamic import so its bundle doesn't ship on
- * the worker path.
+ * OffscreenCanvas is required. Older Safari (< 16.4) hits this path via
+ * the same feature-detect and lands on a null render — the fallback R3F
+ * globe was removed with this rewrite. Adding one back is a future
+ * option if the analytics show non-trivial Safari-16-and-earlier
+ * traffic; for now the audience is on modern engines.
  */
 
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import dynamic from 'next/dynamic';
 
-const GlobeCanvasFallback = dynamic(
-  () => import('./GlobeCanvasFallback').then((m) => m.GlobeCanvas),
-  { ssr: false, loading: () => null }
-);
+const COUNTRIES_URL =
+  'https://cdn.jsdelivr.net/gh/vasturiano/globe.gl/example/datasets/ne_110m_admin_0_countries.geojson';
 
 function supportsOffscreen() {
   if (typeof window === 'undefined') return false;
@@ -35,10 +32,22 @@ function supportsOffscreen() {
   return !!proto && typeof proto.transferControlToOffscreen === 'function';
 }
 
+/** 1x1 canvas #0a1122 data URL — spec calls for this instead of an
+ * external ocean texture download. */
+function makeOceanDataUrl() {
+  const c = document.createElement('canvas');
+  c.width = 1;
+  c.height = 1;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#0a1122';
+  ctx.fillRect(0, 0, 1, 1);
+  return c.toDataURL();
+}
+
 export function GlobeCanvas({ className = '', onReady }) {
-  // null = detecting, true = worker path, false = fallback path
-  const [pathMode, setPathMode] = useState(null);
+  const [supported, setSupported] = useState(null);
   const [isMobile, setIsMobile] = useState(false);
+  const [selectedAdmin, setSelectedAdmin] = useState(null);
 
   const containerRef = useRef(null);
   const canvasRef = useRef(null);
@@ -46,35 +55,30 @@ export function GlobeCanvas({ className = '', onReady }) {
   const readyFiredRef = useRef(false);
   const onReadyRef = useRef(onReady);
 
-  // Keep the callback ref current without re-mounting the worker
   useEffect(() => {
     onReadyRef.current = onReady;
   }, [onReady]);
 
-  // Detect capability + mobile size
   useEffect(() => {
-    setPathMode(supportsOffscreen());
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    setSupported(supportsOffscreen());
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
   }, []);
 
-  // Boot the worker path
   useEffect(() => {
-    if (pathMode !== true) return;
+    if (supported !== true) return;
     const container = containerRef.current;
     const canvas = canvasRef.current;
     if (!container || !canvas) return;
 
     const rect = container.getBoundingClientRect();
-    const cssWidth = Math.max(1, rect.width);
-    const cssHeight = Math.max(1, rect.height);
+    const cssWidth = Math.max(1, Math.floor(rect.width));
+    const cssHeight = Math.max(1, Math.floor(rect.height));
     const dpr = window.devicePixelRatio || 1;
     const maxDpr = isMobile ? 1.5 : 2;
     const clampedDpr = Math.min(dpr, maxDpr);
-
-    // Physical pixel intrinsic size for the canvas backing store.
     const physicalWidth = Math.floor(cssWidth * clampedDpr);
     const physicalHeight = Math.floor(cssHeight * clampedDpr);
     canvas.width = physicalWidth;
@@ -85,10 +89,8 @@ export function GlobeCanvas({ className = '', onReady }) {
     let offscreen;
     try {
       offscreen = canvas.transferControlToOffscreen();
-    } catch (err) {
-      // A canvas can only be transferred once. If a stale one is passed
-      // (StrictMode double-effect in dev), fall back for this session.
-      setPathMode(false);
+    } catch {
+      setSupported(false);
       return;
     }
 
@@ -98,9 +100,15 @@ export function GlobeCanvas({ className = '', onReady }) {
     workerRef.current = worker;
 
     const handleMessage = (e) => {
-      if (e.data?.type === 'ready' && !readyFiredRef.current) {
+      const msg = e.data;
+      if (!msg) return;
+      if (msg.type === 'ready' && !readyFiredRef.current) {
         readyFiredRef.current = true;
         onReadyRef.current?.();
+      } else if (msg.type === 'countrySelected') {
+        setSelectedAdmin(msg.admin);
+      } else if (msg.type === 'countryDeselected') {
+        setSelectedAdmin(null);
       }
     };
     worker.addEventListener('message', handleMessage);
@@ -113,16 +121,38 @@ export function GlobeCanvas({ className = '', onReady }) {
         height: physicalHeight,
         dpr: clampedDpr,
         isMobile,
+        oceanImageUrl: makeOceanDataUrl(),
       },
       [offscreen]
     );
 
-    // Resize plumbing — forward CSS pixel size + dpr, the worker converts.
+    // Deferred GeoJSON fetch — spec says 600 ms after mount to keep FCP /
+    // LCP clear. Main thread fetches (network is the same source either
+    // way) then posts the feature collection to the worker.
+    const fetchTimer = setTimeout(async () => {
+      try {
+        const res = await fetch(COUNTRIES_URL);
+        const data = await res.json();
+        worker.postMessage({ type: 'setCountries', countries: data.features || [] });
+      } catch (err) {
+        // Non-fatal — the ocean sphere still renders. Log for observability
+        // once we wire a proper sink.
+        // eslint-disable-next-line no-console
+        console.warn('Globe GeoJSON fetch failed:', err);
+      }
+    }, 600);
+
     const ro = new ResizeObserver((entries) => {
       const entry = entries[0];
       if (!entry) return;
-      const w = Math.max(1, entry.contentRect.width);
-      const h = Math.max(1, entry.contentRect.height);
+      // Sub-pixel jitter guard per spec — floor + 5 px threshold prevents
+      // a Retina resize loop.
+      const rawW = entry.contentRect.width;
+      const rawH = entry.contentRect.height;
+      const w = Math.max(1, Math.floor(rawW));
+      const h = Math.max(1, Math.floor(rawH));
+      const prevW = parseInt(canvas.style.width, 10) || 0;
+      if (Math.abs(prevW - w) < 5) return;
       const currentDpr = window.devicePixelRatio || 1;
       const currentClamped = Math.min(currentDpr, maxDpr);
       canvas.style.width = `${w}px`;
@@ -136,8 +166,6 @@ export function GlobeCanvas({ className = '', onReady }) {
     });
     ro.observe(container);
 
-    // Pause the render loop when the hero scrolls out — matches the
-    // frameloop: isVisible ? 'always' : 'never' from the R3F path.
     const io = new IntersectionObserver(
       ([entry]) => {
         worker.postMessage({ type: 'visibility', visible: entry.isIntersecting });
@@ -146,43 +174,67 @@ export function GlobeCanvas({ className = '', onReady }) {
     );
     io.observe(container);
 
-    // Pointer drag → forward to worker's orbit controller (desktop only).
-    const forwardPointer = (kind) => (e) => {
+    const relativeCoords = (e) => {
       const r = container.getBoundingClientRect();
-      worker.postMessage({
-        type: 'pointer',
-        kind,
-        x: e.clientX - r.left,
-        y: e.clientY - r.top,
-      });
+      return { x: e.clientX - r.left, y: e.clientY - r.top, w: r.width, h: r.height };
     };
+
     const onDown = (e) => {
       try {
         container.setPointerCapture(e.pointerId);
       } catch {
-        // pointer capture is best-effort — some pointer types reject it
+        // pointer capture is best-effort; some pointer types reject it
       }
-      forwardPointer('down')(e);
+      const p = relativeCoords(e);
+      worker.postMessage({ type: 'pointer', kind: 'down', x: p.x, y: p.y });
     };
-    const onMove = forwardPointer('move');
+    const onMove = (e) => {
+      const p = relativeCoords(e);
+      // Two-in-one: drag update + hover raycast. Worker distinguishes by
+      // its own dragging flag.
+      worker.postMessage({ type: 'pointer', kind: 'move', x: p.x, y: p.y });
+      if (!isMobile) {
+        worker.postMessage({
+          type: 'pointer',
+          kind: 'hover',
+          x: p.x,
+          y: p.y,
+          cssWidth: p.w,
+          cssHeight: p.h,
+        });
+      }
+    };
     const onUp = (e) => {
       try {
         container.releasePointerCapture(e.pointerId);
       } catch {
-        // capture may have already been released by the browser
+        // capture may already be released by the browser
       }
-      forwardPointer('up')(e);
+      worker.postMessage({ type: 'pointer', kind: 'up' });
     };
-    const onCancel = forwardPointer('cancel');
+    const onCancel = () => worker.postMessage({ type: 'pointer', kind: 'cancel' });
+    const onClick = (e) => {
+      const p = relativeCoords(e);
+      worker.postMessage({
+        type: 'pointer',
+        kind: 'click',
+        x: p.x,
+        y: p.y,
+        cssWidth: p.w,
+        cssHeight: p.h,
+      });
+    };
 
     if (!isMobile) {
       container.addEventListener('pointerdown', onDown);
       container.addEventListener('pointermove', onMove);
       container.addEventListener('pointerup', onUp);
       container.addEventListener('pointercancel', onCancel);
+      container.addEventListener('click', onClick);
     }
 
     return () => {
+      clearTimeout(fetchTimer);
       worker.postMessage({ type: 'dispose' });
       worker.removeEventListener('message', handleMessage);
       worker.terminate();
@@ -194,28 +246,55 @@ export function GlobeCanvas({ className = '', onReady }) {
         container.removeEventListener('pointermove', onMove);
         container.removeEventListener('pointerup', onUp);
         container.removeEventListener('pointercancel', onCancel);
+        container.removeEventListener('click', onClick);
       }
     };
-  }, [pathMode, isMobile]);
+  }, [supported, isMobile]);
 
-  // Detection hasn't run yet — matches the original mounted-guard behavior
-  // (no canvas paints before we know the path).
-  if (pathMode === null) return null;
-
-  if (pathMode === false) {
-    return <GlobeCanvasFallback className={className} onReady={onReady} />;
+  if (supported === null) return null;
+  if (supported === false) {
+    // No fallback path in v2 — canvas ships nothing, hero still paints
+    // its slogan / search / CTA over the same reserved space.
+    return null;
   }
+
+  const handleCloseHud = () => {
+    setSelectedAdmin(null);
+    workerRef.current?.postMessage({ type: 'deselect' });
+  };
+
+  // On mobile the wrapper opts out of pointer events so touch-scrolling
+  // through the hero doesn't get eaten by the canvas (spec).
+  const wrapperPointer = isMobile ? { pointerEvents: 'none', touchAction: 'auto' } : { touchAction: 'none' };
 
   return (
     <div
       ref={containerRef}
-      className={`relative w-full h-full ${className}`}
-      style={isMobile ? { pointerEvents: 'none', touchAction: 'auto' } : { touchAction: 'none' }}
+      className={`globe-container ${className}`}
+      style={{ position: 'relative', width: '100%', height: '100%', ...wrapperPointer }}
     >
       <canvas
         ref={canvasRef}
         style={{ display: 'block', width: '100%', height: '100%' }}
       />
+
+      {/* Selected Region HUD — bottom-left overlay per spec */}
+      {selectedAdmin && !isMobile && (
+        <div className="globe-selected-hud" role="status" aria-live="polite">
+          <div className="globe-selected-hud-row">
+            <span className="globe-selected-hud-eyebrow">Selected Region</span>
+            <button
+              type="button"
+              className="globe-selected-hud-close"
+              onClick={handleCloseHud}
+              aria-label="Clear selection"
+            >
+              ×
+            </button>
+          </div>
+          <div className="globe-selected-hud-name">{selectedAdmin}</div>
+        </div>
+      )}
     </div>
   );
 }

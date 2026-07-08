@@ -492,8 +492,8 @@ html {
     left: 50%;
     transform: translate(-50%, -50%);
     color: #ffd700;
-    font-size: 24px;
-    letter-spacing: 4px;
+    font-size: 18px;
+    letter-spacing: 3px;
     font-weight: 700;
     text-transform: uppercase;
     opacity: 0.9;
@@ -502,6 +502,91 @@ html {
     pointer-events: none;
     text-align: center;
     width: 100%;
+}
+
+/* Selected Region HUD — bottom-left overlay when a country is picked
+   in the interactive desktop globe. Mirrors the spec exactly:
+   translucent navy panel, gold eyebrow + border, close × button. */
+.globe-selected-hud {
+    position: absolute;
+    bottom: 16px;
+    left: 16px;
+    background: rgba(15, 27, 43, 0.85);
+    border: 1px solid rgba(255, 215, 0, 0.3);
+    border-radius: 6px;
+    padding: 10px 16px;
+    color: #ffffff;
+    font-family: var(--font-inter), system-ui, sans-serif;
+    z-index: 12;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 180px;
+    animation: globeHudFadeIn 240ms ease-out;
+}
+
+.globe-selected-hud-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.globe-selected-hud-eyebrow {
+    font-size: 11px;
+    color: #FFD700;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.globe-selected-hud-close {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.6);
+    cursor: pointer;
+    font-size: 16px;
+    padding: 0 4px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    line-height: 1;
+    transition: color 0.15s ease;
+}
+
+.globe-selected-hud-close:hover {
+    color: #ffffff;
+}
+
+.globe-selected-hud-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: #ffffff;
+    margin-top: 2px;
+}
+
+@keyframes globeHudFadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Tooltip pill for the globe — spec calls for a translucent navy card
+   with no default black shadow. react-globe.gl's classes are re-styled
+   here in case any future feature wires up polygonLabel. */
+.globe-tooltip,
+.scene-tooltip {
+    background: rgba(15, 27, 43, 0.85) !important;
+    border: none !important;
+    box-shadow: none !important;
+    color: #FFD700 !important;
+    padding: 6px 12px !important;
+    border-radius: 4px !important;
+    backdrop-filter: blur(4px) !important;
+    -webkit-backdrop-filter: blur(4px) !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
 }
 
 /* --- 5. ARAMA ÇUBUĞU BÖLÜMÜ --- */
