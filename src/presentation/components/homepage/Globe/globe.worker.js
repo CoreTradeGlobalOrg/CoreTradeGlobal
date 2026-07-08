@@ -191,8 +191,16 @@ function refreshPolygonColors() {
 
 /**
  * Cast a ray from screen coords through the camera and return the
- * first three-globe polygon feature hit, or null. three-globe attaches
- * the original GeoJSON feature to each cap mesh via `mesh.__data`.
+ * first three-globe polygon GeoJSON feature hit, or null.
+ *
+ * three-globe wraps every polygon in an internal singlePolygon object
+ * shaped { id, data: <feature>, capColor, geoJson, ... } and attaches
+ * the wrapper on the polygon Group as `group.__data`. The Group's
+ * children are the actual meshes the raycaster returns, so we walk
+ * parents from the hit mesh until we find the wrapper, then unwrap to
+ * the source feature at `.data`. Fall through to the raw wrapper if
+ * `.properties` is somehow already at the top level (defensive — this
+ * covers other three-globe layer types that skip the wrapper).
  */
 function pickPolygonAt(cssX, cssY, cssWidth, cssHeight) {
   if (!globe) return null;
@@ -203,7 +211,13 @@ function pickPolygonAt(cssX, cssY, cssWidth, cssHeight) {
   for (const hit of hits) {
     let node = hit.object;
     while (node) {
-      if (node.__data && node.__data.properties) return node.__data;
+      const bound = node.__data;
+      if (bound) {
+        // Wrapper shape from three-globe polygon digest
+        if (bound.data && bound.data.properties) return bound.data;
+        // Raw feature (in case three-globe internals change)
+        if (bound.properties) return bound;
+      }
       node = node.parent;
     }
   }
@@ -302,7 +316,10 @@ async function _initInner({ canvas, width, height, dpr, isMobile }) {
   scene = new THREE.Scene();
 
   const aspect = width / height;
-  camera = new THREE.PerspectiveCamera(50, aspect, 0.1, 5000);
+  // FOV 45 (was 50) — user feedback the globe read a touch too big
+  // relative to the hero. Tighter FOV subtends the sphere in ~10% less
+  // screen area at the same orbit distance.
+  camera = new THREE.PerspectiveCamera(45, aspect, 0.1, 5000);
   updateCameraFromOrbit();
 
   raycaster = new THREE.Raycaster();
@@ -423,6 +440,9 @@ self.addEventListener('message', (e) => {
       if (hit !== hoveredCountry) {
         hoveredCountry = hit;
         refreshPolygonColors();
+        // Tell the main thread whether the pointer is over a country so
+        // the wrapper can flip the cursor between grab / pointer.
+        self.postMessage({ type: 'hoverChanged', hovering: !!hit });
       }
       return;
     }

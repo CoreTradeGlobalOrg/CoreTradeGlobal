@@ -36,6 +36,8 @@ export function GlobeCanvas({ className = '', onReady }) {
   const [supported, setSupported] = useState(null);
   const [isMobile, setIsMobile] = useState(false);
   const [selectedAdmin, setSelectedAdmin] = useState(null);
+  const [hovering, setHovering] = useState(false);
+  const [dragging, setDragging] = useState(false);
 
   const containerRef = useRef(null);
   const canvasRef = useRef(null);
@@ -103,6 +105,8 @@ export function GlobeCanvas({ className = '', onReady }) {
         setSelectedAdmin(msg.admin);
       } else if (msg.type === 'countryDeselected') {
         setSelectedAdmin(null);
+      } else if (msg.type === 'hoverChanged') {
+        setHovering(!!msg.hovering);
       } else if (msg.type === 'error') {
         // Worker's init caught the exception itself — log for diagnosis
         // and still fire ready so the hero drops the loading text
@@ -193,6 +197,7 @@ export function GlobeCanvas({ className = '', onReady }) {
       } catch {
         // pointer capture is best-effort; some pointer types reject it
       }
+      setDragging(true);
       const p = relativeCoords(e);
       worker.postMessage({ type: 'pointer', kind: 'down', x: p.x, y: p.y });
     };
@@ -218,9 +223,13 @@ export function GlobeCanvas({ className = '', onReady }) {
       } catch {
         // capture may already be released by the browser
       }
+      setDragging(false);
       worker.postMessage({ type: 'pointer', kind: 'up' });
     };
-    const onCancel = () => worker.postMessage({ type: 'pointer', kind: 'cancel' });
+    const onCancel = () => {
+      setDragging(false);
+      worker.postMessage({ type: 'pointer', kind: 'cancel' });
+    };
     const onClick = (e) => {
       const p = relativeCoords(e);
       worker.postMessage({
@@ -272,8 +281,16 @@ export function GlobeCanvas({ className = '', onReady }) {
   };
 
   // On mobile the wrapper opts out of pointer events so touch-scrolling
-  // through the hero doesn't get eaten by the canvas (spec).
-  const wrapperPointer = isMobile ? { pointerEvents: 'none', touchAction: 'auto' } : { touchAction: 'none' };
+  // through the hero doesn't get eaten by the canvas (spec). On desktop
+  // the cursor telegraphs affordance: grab by default, grabbing during
+  // a drag, pointer while over a country cap so users know it's clickable.
+  let desktopCursor = 'grab';
+  if (dragging) desktopCursor = 'grabbing';
+  else if (hovering) desktopCursor = 'pointer';
+
+  const wrapperPointer = isMobile
+    ? { pointerEvents: 'none', touchAction: 'auto' }
+    : { touchAction: 'none', cursor: desktopCursor };
 
   return (
     <div
