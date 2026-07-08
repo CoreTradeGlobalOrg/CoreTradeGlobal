@@ -32,18 +32,6 @@ function supportsOffscreen() {
   return !!proto && typeof proto.transferControlToOffscreen === 'function';
 }
 
-/** 1x1 canvas #0a1122 data URL — spec calls for this instead of an
- * external ocean texture download. */
-function makeOceanDataUrl() {
-  const c = document.createElement('canvas');
-  c.width = 1;
-  c.height = 1;
-  const ctx = c.getContext('2d');
-  ctx.fillStyle = '#0a1122';
-  ctx.fillRect(0, 0, 1, 1);
-  return c.toDataURL();
-}
-
 export function GlobeCanvas({ className = '', onReady }) {
   const [supported, setSupported] = useState(null);
   const [isMobile, setIsMobile] = useState(false);
@@ -142,7 +130,6 @@ export function GlobeCanvas({ className = '', onReady }) {
         height: physicalHeight,
         dpr: clampedDpr,
         isMobile,
-        oceanImageUrl: makeOceanDataUrl(),
       },
       [offscreen]
     );

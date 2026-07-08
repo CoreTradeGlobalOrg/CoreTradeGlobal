@@ -267,7 +267,7 @@ async function init(msg) {
   }
 }
 
-async function _initInner({ canvas, width, height, dpr, isMobile, oceanImageUrl }) {
+async function _initInner({ canvas, width, height, dpr, isMobile }) {
   config = {
     isMobile,
     maxDpr: isMobile ? 1.5 : 2,
@@ -316,19 +316,25 @@ async function _initInner({ canvas, width, height, dpr, isMobile, oceanImageUrl 
     ThreeGlobe = mod.default || mod.ThreeGlobe || mod;
   }
 
-  // three-globe expects a URL. Main thread computed a data URL from a
-  // 1x1 canvas fill (spec) — no external texture download.
+  // Spec's original approach was `.globeImageUrl(<1x1 #0a1122 data URL>)`
+  // to give the ocean a solid deep-navy fill without downloading any
+  // external texture. Inside a worker three-globe's texture loader
+  // still routes through Three.js's ImageLoader, which does
+  // `document.createElement('img')` and blows up with
+  // "ReferenceError: document is not defined". Same visual outcome is
+  // available one step earlier by never handing three-globe a URL and
+  // just setting the sphere material's base color directly — no
+  // texture path involved, no document touched, ocean paints as a
+  // solid #0a1122.
   globe = new ThreeGlobe()
-    .globeImageUrl(oceanImageUrl)
     .showAtmosphere(true)
     .atmosphereColor('#3b82f6')
     .atmosphereAltitude(0.15);
 
-  // Neutralize the internal material tint so slate grey caps render as
-  // specified without picking up the base texture's darker undertone.
   const mat = globe.globeMaterial();
-  if (mat && mat.color) {
-    mat.color.set('#ffffff');
+  if (mat) {
+    mat.map = null;
+    if (mat.color) mat.color.set('#0a1122');
     mat.needsUpdate = true;
   }
 
