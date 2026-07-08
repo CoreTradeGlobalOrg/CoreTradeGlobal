@@ -99,19 +99,40 @@ export function GlobeCanvas({ className = '', onReady }) {
     });
     workerRef.current = worker;
 
+    const fireReadyOnce = () => {
+      if (!readyFiredRef.current) {
+        readyFiredRef.current = true;
+        onReadyRef.current?.();
+      }
+    };
+
     const handleMessage = (e) => {
       const msg = e.data;
       if (!msg) return;
-      if (msg.type === 'ready' && !readyFiredRef.current) {
-        readyFiredRef.current = true;
-        onReadyRef.current?.();
+      if (msg.type === 'ready') {
+        fireReadyOnce();
       } else if (msg.type === 'countrySelected') {
         setSelectedAdmin(msg.admin);
       } else if (msg.type === 'countryDeselected') {
         setSelectedAdmin(null);
+      } else if (msg.type === 'error') {
+        // Worker's init caught the exception itself — log for diagnosis
+        // and still fire ready so the hero drops the loading text
+        // instead of stalling forever.
+        // eslint-disable-next-line no-console
+        console.error(`[globe worker error @ ${msg.where}]`, msg.message);
+        fireReadyOnce();
       }
     };
+    const handleWorkerError = (e) => {
+      // Fatal error the worker never caught — surface it and unblock UI.
+      // eslint-disable-next-line no-console
+      console.error('[globe worker fatal]', e.message || e);
+      fireReadyOnce();
+    };
     worker.addEventListener('message', handleMessage);
+    worker.addEventListener('error', handleWorkerError);
+    worker.addEventListener('messageerror', handleWorkerError);
 
     worker.postMessage(
       {

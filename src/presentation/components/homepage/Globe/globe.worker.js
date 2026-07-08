@@ -26,15 +26,34 @@
  *    intentionally gone (spec rev drops both).
  *
  * three-globe reads window.THREE at module top-level; a worker has no
- * `window`, so we polyfill `globalThis.window = {}` before importing —
- * the fallback path uses the imported Three.js classes directly.
+ * `window`, so we polyfill `globalThis.window = {}` BEFORE the library
+ * runs. ES module static imports hoist above every other statement in
+ * the module body, so a plain `import ThreeGlobe from 'three-globe'`
+ * would execute the library's top-level code before the polyfill line
+ * has actually run — that's exactly what killed the first preview
+ * build (worker crashed on init with `ReferenceError: window is not
+ * defined`, the `ready` postMessage never fired, and the hero stayed
+ * on "Initializing WebGL Network…" forever). Loading three-globe with
+ * dynamic `await import()` inside `init()` defers its evaluation until
+ * after the polyfill has taken effect.
  */
 
-// eslint-disable-next-line no-global-assign
-globalThis.window = globalThis.window || {};
+// three-globe's frame-ticker dep calls window.requestAnimationFrame,
+// tinycolor2 touches window when detecting global THREE, etc. An empty
+// `{}` polyfill leaves those calls throwing "not a function". Aliasing
+// `window` to `globalThis` in the worker exposes every DOM-shape API
+// the worker actually implements (requestAnimationFrame,
+// cancelAnimationFrame, setTimeout, fetch, performance, …) while
+// keeping `window.THREE` undefined so three-globe still falls through
+// to the imported Three.js classes.
+if (typeof globalThis.window === 'undefined') {
+  // eslint-disable-next-line no-global-assign
+  globalThis.window = globalThis;
+}
 
 import * as THREE from 'three';
-import ThreeGlobe from 'three-globe';
+
+let ThreeGlobe = null;
 
 // ── Runtime state ────────────────────────────────────────────────────────────
 
@@ -232,7 +251,23 @@ function animate(t) {
 
 // ── Init ─────────────────────────────────────────────────────────────────────
 
-async function init({ canvas, width, height, dpr, isMobile, oceanImageUrl }) {
+async function init(msg) {
+  try {
+    await _initInner(msg);
+  } catch (err) {
+    // Surface the failure back to the main thread so the hero can drop
+    // the loading text instead of hanging on it forever. The message
+    // string is minimally-formatted so a console.error on the main side
+    // is enough to diagnose.
+    self.postMessage({
+      type: 'error',
+      where: 'init',
+      message: err && err.message ? err.message : String(err),
+    });
+  }
+}
+
+async function _initInner({ canvas, width, height, dpr, isMobile, oceanImageUrl }) {
   config = {
     isMobile,
     maxDpr: isMobile ? 1.5 : 2,
@@ -272,6 +307,14 @@ async function init({ canvas, width, height, dpr, isMobile, oceanImageUrl }) {
 
   raycaster = new THREE.Raycaster();
   ndc = new THREE.Vector2();
+
+  // Dynamic import — deferred until this point so our window polyfill
+  // above is already in effect. Static import would evaluate three-globe
+  // BEFORE the polyfill line runs (ES module import hoisting) and throw.
+  if (!ThreeGlobe) {
+    const mod = await import('three-globe');
+    ThreeGlobe = mod.default || mod.ThreeGlobe || mod;
+  }
 
   // three-globe expects a URL. Main thread computed a data URL from a
   // 1x1 canvas fill (spec) — no external texture download.
