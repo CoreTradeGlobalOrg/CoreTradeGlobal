@@ -6,15 +6,23 @@
  * This file replaces the old src/lib/firebase.js
  *
  * Performance: auth & db are eager (needed immediately).
- * storage, functions, and analytics are lazy-loaded on first use via
- * getter/wrapper functions so their SDKs stay out of the initial
- * bundle. Analytics in particular is gated behind cookie consent —
- * for a visitor who hasn't opted in, firebase/analytics never loads.
+ * storage & functions are lazy-loaded on first use via getter functions.
+ *
+ * NOTE on analytics: an earlier revision tried to lazy-load
+ * firebase/analytics via require() (mirroring the storage / functions
+ * pattern). Firebase v12 is ESM-only and the require() interop
+ * returned an object shape that Firebase's own analytics internals
+ * chokes on ("TypeError: e is not a function" in the SDK's own
+ * dispatch code). Reverted to static import. Dynamic import()
+ * remains a future avenue — the callsites in AnalyticsContext are all
+ * fire-and-forget and would tolerate an async logEvent — but that
+ * needs a proper preview shakeout before shipping again.
  */
 
 import { initializeApp, getApps } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
+import { getAnalytics, isSupported, logEvent, setUserId, setUserProperties } from 'firebase/analytics';
 
 // Firebase configuration from environment variables
 const firebaseConfig = {
@@ -87,34 +95,21 @@ export function getFunctionsInstance() {
 }
 
 /**
- * Firebase Analytics — lazy-loaded
+ * Firebase Analytics
  *
- * Same pattern as storage / functions above: require() inside the
- * accessors so the firebase/analytics SDK only enters the bundle when
- * something actually calls it. AnalyticsContext gates the first call
- * behind cookie consent, so visitors who never opt in never pay for
- * the analytics chunk. logEvent / setUserId / setUserProperties are
- * re-exported as thin sync wrappers to preserve the original API for
- * consumers.
+ * Analytics is only initialized client-side when supported.
+ * Use initializeAnalytics() to get the analytics instance.
  */
 let analyticsInstance = null;
-let _analyticsModule = null;
-function loadAnalyticsModule() {
-  if (!_analyticsModule) {
-    _analyticsModule = require('firebase/analytics');
-  }
-  return _analyticsModule;
-}
 
 export const initializeAnalytics = async () => {
   if (typeof window === 'undefined') return null;
 
   if (analyticsInstance) return analyticsInstance;
 
-  const mod = loadAnalyticsModule();
-  const supported = await mod.isSupported();
+  const supported = await isSupported();
   if (supported) {
-    analyticsInstance = mod.getAnalytics(app);
+    analyticsInstance = getAnalytics(app);
   }
 
   return analyticsInstance;
@@ -122,9 +117,7 @@ export const initializeAnalytics = async () => {
 
 export const getAnalyticsInstance = () => analyticsInstance;
 
-export const logEvent = (...args) => loadAnalyticsModule().logEvent(...args);
-export const setUserId = (...args) => loadAnalyticsModule().setUserId(...args);
-export const setUserProperties = (...args) => loadAnalyticsModule().setUserProperties(...args);
+export { logEvent, setUserId, setUserProperties };
 
 /**
  * Export the app instance for advanced usage
