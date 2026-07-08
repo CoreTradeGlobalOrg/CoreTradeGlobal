@@ -1,8 +1,63 @@
 rules_version = '2';
+
 service firebase.storage {
   match /b/{bucket}/o {
+
+    // ── Publicly readable assets ────────────────────────────────────────────
+    // Product images and company logos are shown to unauthenticated visitors
+    // on the marketplace (homepage FeaturedProducts, /products list, product
+    // details, company profiles). Vercel's image optimizer proxies these
+    // over the /_next/image endpoint with no user credentials, so the
+    // pre-2024 "download URL bypasses rules" behaviour is not reliable —
+    // rules must explicitly permit anonymous read.
+
+    match /users/{userId}/products/{productId}/{filename} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == userId;
+      allow delete: if request.auth != null && request.auth.uid == userId;
+    }
+
+    match /users/{userId}/company-logo/{filename} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == userId;
+      allow delete: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // ── Owner-only private assets ───────────────────────────────────────────
+    // KYC documents, ID scans, other user-uploaded documents. Only the owner
+    // can read or modify.
+
+    match /users/{userId}/documents/{filename} {
+      allow read, write, delete: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // ── Auth-gated shared assets ────────────────────────────────────────────
+    // Conversation attachments — any authenticated user (Firestore-level
+    // participant check happens in MessageRepository before revealing the
+    // storage path). Legal engagement attachments and drafts — same
+    // pattern. Tightening these to participant-only would require a
+    // Firestore get() in rules; leaving as auth-check for now.
+
+    match /conversations/attachments/{conversationId}/{filename} {
+      allow read, write, delete: if request.auth != null;
+    }
+
+    match /legal/{allPaths=**} {
+      allow read, write, delete: if request.auth != null;
+    }
+
+    // ── Fallback for any remaining user-owned paths ─────────────────────────
+
+    match /users/{userId}/{allPaths=**} {
+      allow read, write, delete: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // ── Global fallback ─────────────────────────────────────────────────────
+    // Deny by default rather than the previous permissive "any authed user
+    // reads anything" — every intentional path is spelled out above.
+
     match /{allPaths=**} {
-      allow read, write: if request.auth != null;
+      allow read, write: if false;
     }
   }
 }
