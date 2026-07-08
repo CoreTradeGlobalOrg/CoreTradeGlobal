@@ -14,9 +14,11 @@ import { container } from '@/core/di/container';
 import { useCreateFair } from '@/presentation/hooks/fairs/useCreateFair';
 import { useUpdateFair } from '@/presentation/hooks/fairs/useUpdateFair';
 import { useDeleteFair } from '@/presentation/hooks/fairs/useDeleteFair';
-import { Plus } from 'lucide-react';
+import { useBulkCreateFairs } from '@/presentation/hooks/fairs/useBulkCreateFairs';
+import { Plus, UploadCloud } from 'lucide-react';
 import { FairsList } from './FairsList';
 import { FairForm } from './FairForm';
+import { FairsBulkUpload } from './FairsBulkUpload';
 
 const EMPTY_FORM = {
   name: '',
@@ -62,10 +64,20 @@ export function FairsManager() {
   const { createFair } = useCreateFair();
   const { updateFair } = useUpdateFair();
   const { deleteFair } = useDeleteFair();
+  const { bulkCreateFairs, loading: bulkImporting } = useBulkCreateFairs();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingFair, setEditingFair] = useState(null);
   const [formData, setFormData] = useState(EMPTY_FORM);
+  const [bulkOpen, setBulkOpen] = useState(false);
+
+  const handleBulkImport = async (rows) => {
+    const result = await bulkCreateFairs(rows);
+    if (result?.created > 0) {
+      await fetchFairs();
+    }
+    return result;
+  };
 
   const handleCreate = () => {
     setEditingFair(null);
@@ -159,10 +171,19 @@ export function FairsManager() {
           <h3 className="text-xl md:text-2xl font-bold text-white">Trade Fairs</h3>
           <p className="text-sm text-[#A0A0A0] mt-1">Manage trade fairs and exhibitions</p>
         </div>
-        <Button onClick={handleCreate} className="flex items-center justify-center gap-2 bg-[#FFD700] hover:bg-[#B5952F] text-black font-semibold text-sm w-full sm:w-auto">
-          <Plus className="w-4 h-4" />
-          Add Fair
-        </Button>
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+          <Button
+            onClick={() => setBulkOpen(true)}
+            className="flex items-center justify-center gap-2 bg-transparent border border-[#FFD700]/40 text-[#FFD700] hover:bg-[#FFD700]/10 font-semibold text-sm w-full sm:w-auto"
+          >
+            <UploadCloud className="w-4 h-4" />
+            Bulk CSV Upload
+          </Button>
+          <Button onClick={handleCreate} className="flex items-center justify-center gap-2 bg-[#FFD700] hover:bg-[#B5952F] text-black font-semibold text-sm w-full sm:w-auto">
+            <Plus className="w-4 h-4" />
+            Add Fair
+          </Button>
+        </div>
       </div>
 
       <FairsList
@@ -179,6 +200,13 @@ export function FairsManager() {
         setFormData={setFormData}
         onSubmit={handleSubmit}
         onClose={handleCloseModal}
+      />
+
+      <FairsBulkUpload
+        isOpen={bulkOpen}
+        onClose={() => setBulkOpen(false)}
+        onImport={handleBulkImport}
+        importing={bulkImporting}
       />
     </div>
   );
