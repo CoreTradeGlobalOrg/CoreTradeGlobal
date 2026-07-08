@@ -24,7 +24,15 @@ const inter = Inter({
   // paragraph reflowed the moment the 1.75s font swap fired. 'optional'
   // ends that class of shift entirely.
   display: 'optional',
-  preload: true,
+  // preload: false — Lighthouse flagged the ~84 KiB woff2 as sitting at
+  // the top of a 3,114 ms critical-path chain and warned that the
+  // resource was preloaded but not used within a few seconds of load.
+  // Under 'optional' the browser gives up in ~100 ms and paints with
+  // Arial for the rest of the load anyway, so shipping the preload
+  // hint only guaranteed the bandwidth cost without a matching win.
+  // Returning visitors still pick Inter from cache; first-time slow-
+  // network visitors keep the metric-matched Arial fallback below.
+  preload: false,
   adjustFontFallback: 'Arial',
 });
 
@@ -107,6 +115,12 @@ export default function RootLayout({ children }) {
         <link rel="preconnect" href="https://firestore.googleapis.com" />
         <link rel="preconnect" href="https://firebasestorage.googleapis.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://firebaseinstallations.googleapis.com" />
+        {/* Clarity's tag script fetches from scripts.clarity.ms after
+            the tag is injected. Lighthouse flagged ~160 ms LCP savings
+            from preconnecting because the CDN handshake was cold. */}
+        {CLARITY_PROJECT_ID && (
+          <link rel="preconnect" href="https://scripts.clarity.ms" crossOrigin="anonymous" />
+        )}
         {/* Critical CLS reservation.
             Real-browser CLS is already 0 with these rules in homepage.css /
             globals.css, but Lighthouse's slow-network simulation AND
@@ -130,13 +144,20 @@ export default function RootLayout({ children }) {
           @media (max-width:1024px){.main-content-reservation,.homepage{min-height:5000px}}
           @media (max-width:600px){.main-content-reservation,.homepage{min-height:0}}
         ` }} />
+        {/* Analytics stack moved to strategy="lazyOnload" — the browser
+            defers fetch/eval until the window load event, so gtag.js
+            (~157 KiB) and Clarity's tag no longer sit on the LCP
+            critical path. Lighthouse called gtag out for 315 KiB total
+            with 177 KiB unused; deferring pays that whole cost after
+            the user can already see the page. Both are pure telemetry
+            with no first-paint dependency, so lazy is safe. */}
         {GA_MEASUREMENT_ID && (
           <>
             <Script
               src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
-              strategy="afterInteractive"
+              strategy="lazyOnload"
             />
-            <Script id="google-analytics" strategy="afterInteractive">
+            <Script id="google-analytics" strategy="lazyOnload">
               {`
                 window.dataLayer = window.dataLayer || [];
                 function gtag(){dataLayer.push(arguments);}
@@ -147,7 +168,7 @@ export default function RootLayout({ children }) {
           </>
         )}
         {CLARITY_PROJECT_ID && (
-          <Script id="microsoft-clarity" strategy="afterInteractive">
+          <Script id="microsoft-clarity" strategy="lazyOnload">
             {`
               (function(c,l,a,r,i,t,y){
                   c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};

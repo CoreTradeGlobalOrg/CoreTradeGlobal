@@ -7,6 +7,16 @@
  *
  * Performance: auth & db are eager (needed immediately).
  * storage & functions are lazy-loaded on first use via getter functions.
+ *
+ * NOTE on analytics: an earlier revision tried to lazy-load
+ * firebase/analytics via require() (mirroring the storage / functions
+ * pattern). Firebase v12 is ESM-only and the require() interop
+ * returned an object shape that Firebase's own analytics internals
+ * chokes on ("TypeError: e is not a function" in the SDK's own
+ * dispatch code). Reverted to static import. Dynamic import()
+ * remains a future avenue — the callsites in AnalyticsContext are all
+ * fire-and-forget and would tolerate an async logEvent — but that
+ * needs a proper preview shakeout before shipping again.
  */
 
 import { initializeApp, getApps } from 'firebase/app';
@@ -87,8 +97,8 @@ export function getFunctionsInstance() {
 /**
  * Firebase Analytics
  *
- * Analytics is only initialized client-side when supported
- * Use initializeAnalytics() to get the analytics instance
+ * Analytics is only initialized client-side when supported.
+ * Use initializeAnalytics() to get the analytics instance.
  */
 let analyticsInstance = null;
 

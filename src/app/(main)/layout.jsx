@@ -87,18 +87,30 @@ export default function MainLayout({ children }) {
         </div>
       )}
 
-      {/* Homepage-only footer reservation. Next.js/React 19 streams
-          (main)/page.jsx via a BAILOUT_TO_CLIENT_SIDE_RENDERING
-          placeholder — server HTML ships an empty <div hidden> at
-          this position and stashes real content in <div hidden id="S:0">
-          at the bottom of <body>. Without this reservation, the footer
-          paints at y≈396 and only jumps to y≈6510 after client-side
-          hydration inserts .homepage into the placeholder, worth ~0.40
-          CLS. Reservations match the .homepage rules in homepage.css.
-          Restricted to pathname === '/' so short routes (/messages,
-          /products with sparse content, etc.) don't get a giant empty
-          gap between content and footer. */}
-      <div className={pathname === '/' ? 'main-content-reservation' : undefined}>
+      {/* Content reservation to keep the footer out of the initial
+          viewport across all (main) routes.
+
+          Homepage uses .main-content-reservation (6500 px, matches the
+          .homepage tall content) because React 19 streams (main)/page
+          via a BAILOUT_TO_CLIENT_SIDE_RENDERING placeholder — server
+          HTML ships an empty <div hidden> here and stashes real content
+          in <div hidden id="S:0"> at the bottom of <body>. Without the
+          reservation the footer paints at y≈396 and only jumps to
+          y≈6510 after client hydration, worth ~0.40 CLS.
+
+          Non-homepage routes reserve exactly 100vh (min-h-screen). Every
+          (main) page currently gates its real UI behind a useAuth
+          loading spinner (~200 px tall). Before this fix the wrapper
+          matched the spinner's tiny height, footer landed inside the
+          viewport, and the swap to a real ~2000-3000 px form shoved
+          it out — Speed Insights was seeing CLS 0.36 on /profile,
+          0.4 on /join, and a 0.96 outlier on /product/new. min-h-screen
+          keeps the wrapper >= viewport height during loading, so the
+          footer sits just below the fold from paint one; when content
+          later grows past 100vh, the footer travels down BELOW the
+          viewport (invisible shift, zero CLS contribution). Real
+          content stretches the wrapper naturally beyond the min. */}
+      <div className={pathname === '/' ? 'main-content-reservation' : 'min-h-screen'}>
         <ErrorBoundary>
           {children}
         </ErrorBoundary>
