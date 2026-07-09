@@ -24,12 +24,13 @@ const GlobeCanvas = dynamic(
 export function HeroGlobe({ mounted, globeLoaded, onGlobeReady }) {
   return (
     <>
-      {/* Loading overlay — spec's "Initializing WebGL Network…" copy sits
-          in front of the empty canvas-container until the worker posts
-          ready. Fades out when globeLoaded flips true. */}
+      {/* Loading overlay — sits in front of the empty canvas-container
+          until the worker posts ready. Fades out when globeLoaded flips
+          true. Spec suggested "Initializing WebGL Network…" but preview
+          feedback landed on the original brand line. */}
       {!globeLoaded && (
         <div className="globe-loading-text" id="loading" suppressHydrationWarning>
-          Initializing WebGL Network…
+          Welcome to CoreTradeGlobal
         </div>
       )}
 
