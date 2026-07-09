@@ -73,10 +73,13 @@ let countriesLoaded = false;
 let config = null;
 
 const GLOBE_RADIUS = 100; // three-globe default
-const DEFAULT_ALTITUDE = 2.2;
-// Spec calls for 1.5 but that read as "sphere fills the frame and you
-// can't tell what you clicked on" during preview review. Softer target
-// still gives a clear zoom cue without occluding the surrounding ocean.
+// Spec's 2.2 was still filling most of the hero on desktop. 2.8 pulls
+// the camera further out so the sphere reads smaller and there's real
+// breathing room around it inside the 780 px hero container.
+const DEFAULT_ALTITUDE = 2.8;
+// Spec's 1.5 was too aggressive — sphere edge-to-edge, surrounding
+// ocean unreadable. 1.8 keeps the clicked country centered and clearly
+// identifiable.
 const CLICK_ALTITUDE = 1.8;
 
 // Orbit camera state — replaces OrbitControls
@@ -281,7 +284,12 @@ function animate(t) {
     stepCameraTween(t);
   } else {
     if (orbit.autoRotate && !orbit.dragging) {
-      orbit.azimuth += ((2 * Math.PI) / 60) * orbit.autoRotateSpeed * dt;
+      // With azimuth = (90 - lng)°, increasing azimuth moves the camera
+      // toward smaller lng — i.e. earth appears to spin west. Real earth
+      // rotates west-to-east (sunrise sweeps in from the right when you
+      // face the equator). Subtract instead of add so the visible drift
+      // matches that intuition.
+      orbit.azimuth -= ((2 * Math.PI) / 60) * orbit.autoRotateSpeed * dt;
     }
     if (orbit.enableRotate && !orbit.dragging) {
       orbit.azimuth += orbit.velocityAzimuth;
