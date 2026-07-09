@@ -233,7 +233,19 @@ function pickPolygonAt(cssX, cssY, cssWidth, cssHeight) {
   ndc.y = -(cssY / cssHeight) * 2 + 1;
   raycaster.setFromCamera(ndc, camera);
   const hits = raycaster.intersectObject(globe, true);
+
+  // Raycaster is purely geometric — the sphere is opaque visually but
+  // rays pass right through it and keep hitting the polygon caps on the
+  // FAR hemisphere behind the globe. Without this cutoff an ocean
+  // click on the near side would resolve to a random country on the
+  // antipode ("suya tikladim ama ulke seciliyor", "onceki yeri
+  // gosteriyor"). Camera-to-origin distance is the boundary between the
+  // visible near hemisphere and the hidden far side, so any hit past
+  // that distance is invisible to the user and must not select.
+  const nearHemisphereMaxDistance = camera.position.length();
+
   for (const hit of hits) {
+    if (hit.distance > nearHemisphereMaxDistance) break;
     let node = hit.object;
     while (node) {
       const bound = node.__data;
