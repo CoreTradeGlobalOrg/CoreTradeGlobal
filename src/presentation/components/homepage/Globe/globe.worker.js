@@ -142,17 +142,20 @@ function updateCameraFromOrbit() {
  * three-globe's polar2Cartesian uses phi = (90 - lat)°, theta =
  * (90 - lng)°, and places the point at
  *   x = r sin(phi) cos(theta), y = r cos(phi), z = r sin(phi) sin(theta).
- * Our updateCameraFromOrbit uses my_polar = phi and my_azimuth s.t.
- *   x = r sin(polar) sin(azimuth), y = r cos(polar), z = r sin(polar) cos(azimuth).
- * Matching the two gives azimuth = π/2 - theta = lng * π/180. The
- * previous v1 formula added an extra π/2 offset which put the camera
- * on the *opposite* side of the country — user saw the globe zoom in
- * but the target country was hidden behind the sphere ("kure buyuyor,
- * ulke gorunmuyor").
+ * updateCameraFromOrbit (below) matches that ordering:
+ *   x = r sin(polar) cos(azimuth), y = r cos(polar), z = r sin(polar) sin(azimuth).
+ * So azimuth just IS theta = (90 - lng)°.
+ *
+ * The earlier iteration used azimuth = lng° which lands the camera on
+ * a different longitude entirely — reviewer's "click Hindistan, camera
+ * goes to a nonsense place, then click somewhere else and it still
+ * shows Hindistan" was the raycaster picking up the previous cap on
+ * the far hemisphere because the camera was aimed at the wrong side of
+ * the globe from the start.
  */
 function latLngToOrbit(lat, lng, altitude) {
   const polar = ((90 - lat) * Math.PI) / 180;
-  const azimuth = (lng * Math.PI) / 180;
+  const azimuth = ((90 - lng) * Math.PI) / 180;
   const radius = altitudeToRadius(altitude);
   return { azimuth, polar, radius };
 }
