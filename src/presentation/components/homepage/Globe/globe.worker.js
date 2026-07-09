@@ -284,12 +284,15 @@ function animate(t) {
     stepCameraTween(t);
   } else {
     if (orbit.autoRotate && !orbit.dragging) {
-      // With azimuth = (90 - lng)°, increasing azimuth moves the camera
-      // toward smaller lng — i.e. earth appears to spin west. Real earth
-      // rotates west-to-east (sunrise sweeps in from the right when you
-      // face the equator). Subtract instead of add so the visible drift
-      // matches that intuition.
-      orbit.azimuth -= ((2 * Math.PI) / 60) * orbit.autoRotateSpeed * dt;
+      // With `azimuth = (90 - lng) * π/180`, INCREASING azimuth moves the
+      // camera toward smaller lng — the camera drifts west around a
+      // stationary earth, and from that camera's view features appear to
+      // drift east (LEFT-to-RIGHT across the frame). That's the real
+      // earth-rotation direction (sunrise sweeps in from the right when
+      // you face the equator with north up). Add, don't subtract — the
+      // previous iteration flipped this by mistake while chasing an
+      // unrelated bug.
+      orbit.azimuth += ((2 * Math.PI) / 60) * orbit.autoRotateSpeed * dt;
     }
     if (orbit.enableRotate && !orbit.dragging) {
       orbit.azimuth += orbit.velocityAzimuth;
@@ -481,7 +484,16 @@ self.addEventListener('message', (e) => {
       const dy = msg.y - orbit.lastY;
       orbit.lastX = msg.x;
       orbit.lastY = msg.y;
-      const deltaAz = -dx * orbit.rotateSpeed;
+      // Drag horizontal: dx > 0 (drag right) — user expects the surface
+      // under the cursor to follow the cursor, i.e. features sweep right.
+      // Features sweeping right = camera drifts west = azimuth increases
+      // in the (90-lng) convention, so delta is +dx * rate. The previous
+      // pass used -dx and made the sphere spin opposite to grab-and-drag
+      // intuition (reviewer: "sürükleyince ters çeviriyor").
+      // Drag vertical: dy > 0 (drag down) — features should sweep down
+      // with the cursor. Camera drifts north, polar decreases, delta is
+      // -dy * rate. That axis already read correctly.
+      const deltaAz = dx * orbit.rotateSpeed;
       const deltaPolar = -dy * orbit.rotateSpeed;
       orbit.azimuth += deltaAz;
       orbit.polar += deltaPolar;
