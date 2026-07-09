@@ -191,20 +191,37 @@ export function GlobeCanvas({ className = '', onReady }) {
       return { x: e.clientX - r.left, y: e.clientY - r.top, w: r.width, h: r.height };
     };
 
+    // Track pointer travel between down and up. Browsers still fire a
+    // click event after a drag if the release lands close to the start,
+    // but with the sphere in constant auto-rotation any drag-to-orbit
+    // gesture would double as a "select this country" if we didn't
+    // gate. > 5 px of travel counts as a drag; smaller = intent to click.
+    let dragStartX = 0;
+    let dragStartY = 0;
+    let dragTravel = 0;
+    const CLICK_TRAVEL_LIMIT = 5;
+
     const onDown = (e) => {
       try {
         container.setPointerCapture(e.pointerId);
       } catch {
         // pointer capture is best-effort; some pointer types reject it
       }
-      setDragging(true);
       const p = relativeCoords(e);
+      dragStartX = p.x;
+      dragStartY = p.y;
+      dragTravel = 0;
+      setDragging(true);
       worker.postMessage({ type: 'pointer', kind: 'down', x: p.x, y: p.y });
     };
     const onMove = (e) => {
       const p = relativeCoords(e);
-      // Two-in-one: drag update + hover raycast. Worker distinguishes by
-      // its own dragging flag.
+      // Update travel any time the pointer moves; used by the click
+      // handler below to decide whether the release was a drag or a tap.
+      const dx = p.x - dragStartX;
+      const dy = p.y - dragStartY;
+      const dist = Math.hypot(dx, dy);
+      if (dist > dragTravel) dragTravel = dist;
       worker.postMessage({ type: 'pointer', kind: 'move', x: p.x, y: p.y });
       if (!isMobile) {
         worker.postMessage({
@@ -231,6 +248,12 @@ export function GlobeCanvas({ className = '', onReady }) {
       worker.postMessage({ type: 'pointer', kind: 'cancel' });
     };
     const onClick = (e) => {
+      if (dragTravel > CLICK_TRAVEL_LIMIT) {
+        // Release was a drag, not a select. Reset for the next gesture
+        // so a genuine tap after a drag still counts.
+        dragTravel = 0;
+        return;
+      }
       const p = relativeCoords(e);
       worker.postMessage({
         type: 'pointer',

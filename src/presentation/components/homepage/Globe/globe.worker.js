@@ -73,11 +73,10 @@ let countriesLoaded = false;
 let config = null;
 
 const GLOBE_RADIUS = 100; // three-globe default
-// Iteration ladder from preview review: spec 2.2 -> 2.8 -> 3.5. Each
-// bump pushes the camera further out so the sphere reads smaller
-// inside the 780 px hero container. At 3.5 the globe sits comfortably
-// centered with meaningful negative space around it.
-const DEFAULT_ALTITUDE = 3.5;
+// Iteration ladder from preview review: spec 2.2 -> 2.8 -> 3.5 -> 4.2.
+// Each bump pushes the camera further out so the sphere reads smaller
+// inside the 780 px hero container.
+const DEFAULT_ALTITUDE = 4.2;
 // Spec's 1.5 was too aggressive — sphere edge-to-edge, surrounding
 // ocean unreadable. 1.8 keeps the clicked country centered and clearly
 // identifiable.
