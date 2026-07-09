@@ -486,6 +486,20 @@ self.addEventListener('message', (e) => {
       const hit = pickPolygonAt(msg.x, msg.y, msg.cssWidth, msg.cssHeight);
 
       if (hit) {
+        // Zoomed in on a country, the visible surface is dominated by
+        // that country — any misclick near its edge falls on the same
+        // cap and the raycast picks it again. Re-running the tween on
+        // the same target then reads as "camera stayed put but flashed
+        // funny" and the user can't tell if the click did anything.
+        // Ignore re-clicks of the currently-selected country; to switch
+        // to another the user first deselects via ocean click or the
+        // HUD × button, which zooms back to altitude 2.2 so distant
+        // countries are visible and pickable again.
+        if (hit === selectedCountry) {
+          justClickedCountryAt = performance.now();
+          return;
+        }
+
         // Country click — engage lock so the trailing globe click doesn't
         // deselect within the same event cluster.
         justClickedCountryAt = performance.now();
@@ -493,7 +507,7 @@ self.addEventListener('message', (e) => {
         orbit.autoRotate = false;
         refreshPolygonColors();
 
-        // Camera pointOfView tween — center on the hit country, altitude 1.5.
+        // Camera pointOfView tween — center on the hit country.
         const centroid = polygonCentroid(hit);
         if (centroid) {
           const target = latLngToOrbit(centroid.lat, centroid.lng, CLICK_ALTITUDE);
@@ -545,18 +559,38 @@ self.addEventListener('message', (e) => {
 // ── Polygon centroid ─────────────────────────────────────────────────────────
 
 /**
- * Approximate centroid of a GeoJSON polygon feature — average of the
- * outer-ring vertices. Good enough to aim the camera; three-globe's own
- * centroid math is internal and not exposed.
+ * Best-guess visual center of a GeoJSON polygon feature.
+ *
+ * Preview review flagged the camera aiming a hair off from the country
+ * it just latched onto. Root cause is the naive averaging fallback:
+ * outer-ring vertex mean is wrong for countries with a jagged silhouette
+ * (Canada, Norway), a huge low-density interior (Russia), or coordinates
+ * that wrap the anti-meridian (Russia again, USA + Alaska, Fiji) — the
+ * lng average pulls the point to some empty spot in the Pacific.
+ *
+ * Natural Earth's admin-0 dataset ships explicit label-placement coords
+ * on every feature: `properties.LABEL_X`, `properties.LABEL_Y`. Those
+ * are hand-tuned by cartographers to sit over the country's visual
+ * centre. Prefer them. Fall back to LON / LAT, then to the outer-ring
+ * mean as a last resort so a foreign GeoJSON without label props still
+ * works.
  */
 function polygonCentroid(feature) {
+  const p = feature.properties || {};
+
+  const labelLat = Number(p.LABEL_Y ?? p.label_y ?? p.LAT ?? p.lat);
+  const labelLng = Number(p.LABEL_X ?? p.label_x ?? p.LON ?? p.lon ?? p.LONG ?? p.long);
+  if (Number.isFinite(labelLat) && Number.isFinite(labelLng)) {
+    return { lat: labelLat, lng: labelLng };
+  }
+
   const geom = feature.geometry;
   if (!geom) return null;
   let ring;
   if (geom.type === 'Polygon') {
     ring = geom.coordinates[0];
   } else if (geom.type === 'MultiPolygon') {
-    // Pick the largest polygon in the multi.
+    // Pick the polygon with the most vertices as a rough "largest".
     let best = null;
     for (const poly of geom.coordinates) {
       if (!best || poly[0].length > best[0].length) best = poly;
