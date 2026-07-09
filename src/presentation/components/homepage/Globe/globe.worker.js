@@ -244,18 +244,36 @@ function pickPolygonAt(cssX, cssY, cssWidth, cssHeight) {
   // rays pass right through it and keep hitting the polygon caps on the
   // FAR hemisphere behind the globe. Without this cutoff an ocean
   // click on the near side would resolve to a random country on the
-  // antipode ("suya tikladim ama ulke seciliyor", "onceki yeri
-  // gosteriyor"). Camera-to-origin distance is the boundary between the
+  // antipode. Camera-to-origin distance is the boundary between the
   // visible near hemisphere and the hidden far side, so any hit past
   // that distance is invisible to the user and must not select.
   const nearHemisphereMaxDistance = camera.position.length();
 
+  // three-globe extrudes each polygon cap between radius R (sphere
+  // surface) and R * (1 + polygonAltitude). Rays that just miss the
+  // polygon's TOP face still catch its SIDE wall — a thin ring at the
+  // polygon border — and the reviewer read that as "clicked way off the
+  // country but it still selected". Only accept hits close to the cap
+  // top so sides get rejected and the ray continues on to either
+  // another cap top or the sphere.
+  const CAP_TOP_MIN_RADIUS = GLOBE_RADIUS * (1 + 0.008);
+
   for (const hit of hits) {
     if (hit.distance > nearHemisphereMaxDistance) break;
+
+    // Ignore hits on cap side walls / sub-cap-height points. The sphere
+    // (radius R) also fails this check, which is correct — sphere hits
+    // are ocean clicks and should return null further down.
+    const hitRadius = hit.point.length();
+    const isCapTopHit = hitRadius >= CAP_TOP_MIN_RADIUS;
+
     let node = hit.object;
     while (node) {
       const bound = node.__data;
       if (bound) {
+        // A polygon hit only counts if the ray actually landed on top
+        // of the country, not a grazing edge / side wall hit.
+        if (!isCapTopHit) break;
         // Wrapper shape from three-globe polygon digest
         if (bound.data && bound.data.properties) return bound.data;
         // Raw feature (in case three-globe internals change)
