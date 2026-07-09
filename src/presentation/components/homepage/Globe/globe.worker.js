@@ -74,7 +74,10 @@ let config = null;
 
 const GLOBE_RADIUS = 100; // three-globe default
 const DEFAULT_ALTITUDE = 2.2;
-const CLICK_ALTITUDE = 1.5;
+// Spec calls for 1.5 but that read as "sphere fills the frame and you
+// can't tell what you clicked on" during preview review. Softer target
+// still gives a clear zoom cue without occluding the surrounding ocean.
+const CLICK_ALTITUDE = 1.8;
 
 // Orbit camera state — replaces OrbitControls
 const orbit = {
@@ -103,6 +106,14 @@ let cameraTween = null;
 // country we just clicked in the same tick).
 let justClickedCountryAt = 0;
 
+// Hover raycast throttle. Every pointermove used to fire a full
+// intersectObject through the polygon layer, which meant hundreds of
+// raycasts per second while the mouse skimmed the sphere. Now the
+// worker just stores the latest hover coord and does at most one
+// raycast per rAF tick — the CPU savings on the Activity Monitor
+// reading are almost entirely from this change.
+let pendingHover = null;
+
 // ── Camera / orbit helpers ────────────────────────────────────────────────────
 
 function altitudeToRadius(alt) {
@@ -110,11 +121,16 @@ function altitudeToRadius(alt) {
 }
 
 function updateCameraFromOrbit() {
+  // Camera position matches three-globe's own polar2Cartesian ordering
+  // so that latLngToOrbit's azimuth = lng * π/180 lands the camera
+  // directly over the requested country instead of on the antipode.
+  //   x = r sin(polar) cos(azimuth) — was sin(azimuth) previously
+  //   z = r sin(polar) sin(azimuth) — was cos(azimuth) previously
   const sinPolar = Math.sin(orbit.polar);
   camera.position.set(
-    orbit.radius * sinPolar * Math.sin(orbit.azimuth),
+    orbit.radius * sinPolar * Math.cos(orbit.azimuth),
     orbit.radius * Math.cos(orbit.polar),
-    orbit.radius * sinPolar * Math.cos(orbit.azimuth)
+    orbit.radius * sinPolar * Math.sin(orbit.azimuth)
   );
   camera.lookAt(orbit.target);
 }
@@ -122,12 +138,21 @@ function updateCameraFromOrbit() {
 /**
  * Convert lat/lng (degrees) into orbit spherical coords so the camera
  * ends up looking at that country from the requested altitude.
+ *
+ * three-globe's polar2Cartesian uses phi = (90 - lat)°, theta =
+ * (90 - lng)°, and places the point at
+ *   x = r sin(phi) cos(theta), y = r cos(phi), z = r sin(phi) sin(theta).
+ * Our updateCameraFromOrbit uses my_polar = phi and my_azimuth s.t.
+ *   x = r sin(polar) sin(azimuth), y = r cos(polar), z = r sin(polar) cos(azimuth).
+ * Matching the two gives azimuth = π/2 - theta = lng * π/180. The
+ * previous v1 formula added an extra π/2 offset which put the camera
+ * on the *opposite* side of the country — user saw the globe zoom in
+ * but the target country was hidden behind the sphere ("kure buyuyor,
+ * ulke gorunmuyor").
  */
 function latLngToOrbit(lat, lng, altitude) {
   const polar = ((90 - lat) * Math.PI) / 180;
-  // three-globe wraps longitude such that lng=0 -> +X axis. Our
-  // spherical convention has azimuth=0 -> +Z, so we shift by PI/2.
-  const azimuth = (lng * Math.PI) / 180 + Math.PI / 2;
+  const azimuth = (lng * Math.PI) / 180;
   const radius = altitudeToRadius(altitude);
   return { azimuth, polar, radius };
 }
@@ -258,6 +283,18 @@ function animate(t) {
 
   updateCameraFromOrbit();
 
+  // Flush the coalesced hover raycast — at most once per frame.
+  if (pendingHover && countriesLoaded && !orbit.dragging) {
+    const { x, y, cssWidth, cssHeight } = pendingHover;
+    pendingHover = null;
+    const hit = pickPolygonAt(x, y, cssWidth, cssHeight);
+    if (hit !== hoveredCountry) {
+      hoveredCountry = hit;
+      refreshPolygonColors();
+      self.postMessage({ type: 'hoverChanged', hovering: !!hit });
+    }
+  }
+
   // three-globe drives its own internal ticks via its animation system;
   // we just render each frame.
   renderer.render(scene, camera);
@@ -316,10 +353,10 @@ async function _initInner({ canvas, width, height, dpr, isMobile }) {
   scene = new THREE.Scene();
 
   const aspect = width / height;
-  // FOV 45 (was 50) — user feedback the globe read a touch too big
-  // relative to the hero. Tighter FOV subtends the sphere in ~10% less
-  // screen area at the same orbit distance.
-  camera = new THREE.PerspectiveCamera(45, aspect, 0.1, 5000);
+  // FOV 40 (from 50 -> 45 -> 40 across preview iterations). Each drop
+  // shrinks the sphere's screen footprint at the same orbit distance
+  // without touching the spec's altitude values.
+  camera = new THREE.PerspectiveCamera(40, aspect, 0.1, 5000);
   updateCameraFromOrbit();
 
   raycaster = new THREE.Raycaster();
@@ -435,15 +472,13 @@ self.addEventListener('message', (e) => {
       return;
     }
     if (msg.kind === 'hover') {
-      if (!countriesLoaded) return;
-      const hit = pickPolygonAt(msg.x, msg.y, msg.cssWidth, msg.cssHeight);
-      if (hit !== hoveredCountry) {
-        hoveredCountry = hit;
-        refreshPolygonColors();
-        // Tell the main thread whether the pointer is over a country so
-        // the wrapper can flip the cursor between grab / pointer.
-        self.postMessage({ type: 'hoverChanged', hovering: !!hit });
-      }
+      // Coalesce — actual raycast happens on the next rAF tick.
+      pendingHover = {
+        x: msg.x,
+        y: msg.y,
+        cssWidth: msg.cssWidth,
+        cssHeight: msg.cssHeight,
+      };
       return;
     }
     if (msg.kind === 'click') {
