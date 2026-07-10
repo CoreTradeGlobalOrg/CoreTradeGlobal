@@ -72,9 +72,9 @@ function polygonStrokeColor() { return '#0a1122'; }
 let lastFrameTime = 0;
 let rafId = null;
 
-// 60 FPS cap. Default rAF on 90/120/144 Hz displays renders more frames
-// than the eye needs on a slow-rotating sphere.
-const MIN_FRAME_MS = 1000 / 60;
+// 30 FPS cap. Slow-rotating sphere doesn't need more; halves render
+// cost again versus 60. Eye can't distinguish at 1.5°/s rotation.
+const MIN_FRAME_MS = 1000 / 30;
 let lastRenderedAt = 0;
 
 function animate(t) {
@@ -127,7 +127,7 @@ async function init(msg) {
 async function _initInner({ canvas, width, height, dpr, isMobile }) {
   config = {
     isMobile,
-    maxDpr: isMobile ? 1.15 : 1.25,
+    maxDpr: 1,
     isLowEnd:
       isMobile ||
       (typeof navigator !== 'undefined' && (navigator.hardwareConcurrency || 8) <= 4),
@@ -166,10 +166,15 @@ async function _initInner({ canvas, width, height, dpr, isMobile }) {
   // Ocean color set via material — avoids three-globe's ImageLoader
   // path which would `document.createElement('img')` and crash in a
   // worker context.
-  globe = new ThreeGlobe()
+  // waitForGlobeReady:false + explicit pauseAnimation stops three-globe's
+  // internal frame ticker. We drive rendering ourselves via the 30 FPS
+  // gated rAF above; the library's own loop would otherwise run in
+  // parallel and burn CPU on tween ticks even with no active tweens.
+  globe = new ThreeGlobe({ waitForGlobeReady: false, animateIn: false })
     .showAtmosphere(true)
     .atmosphereColor('#3b82f6')
     .atmosphereAltitude(0.15);
+  if (typeof globe.pauseAnimation === 'function') globe.pauseAnimation();
 
   const mat = globe.globeMaterial();
   if (mat) {
@@ -209,6 +214,7 @@ self.addEventListener('message', (e) => {
       .polygonStrokeColor(polygonStrokeColor)
       .polygonAltitude(0.01)
       .polygonSideColor(() => 'rgba(0, 0, 0, 0)')
+      .polygonCapCurvatureResolution(2)
       .polygonsTransitionDuration(0);
     return;
   }

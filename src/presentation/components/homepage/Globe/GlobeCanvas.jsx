@@ -73,10 +73,11 @@ function GlobeCanvasInner({ className = '', onReady }) {
     const cssWidth = Math.max(1, Math.floor(rect.width));
     const cssHeight = Math.max(1, Math.floor(rect.height));
     const dpr = window.devicePixelRatio || 1;
-    // DPR cap: 1.25 desktop / 1.15 mobile. Retina + 4K default to 2-3x,
-    // which drives GPU fill rate through the roof for zero visual gain
-    // on a slowly-rotating sphere. Tight cap = -60–70 % pixels shaded.
-    const maxDpr = isMobile ? 1.15 : 1.25;
+    // DPR hard-capped at 1.0. Retina defaults 2-3x drive fill rate
+    // through the roof; on a slow-rotate ocean sphere the visual delta
+    // between DPR 1 and DPR 1.25 is invisible while GPU load drops
+    // another ~30-40 %.
+    const maxDpr = 1;
     const clampedDpr = Math.min(dpr, maxDpr);
     const physicalWidth = Math.floor(cssWidth * clampedDpr);
     const physicalHeight = Math.floor(cssHeight * clampedDpr);
