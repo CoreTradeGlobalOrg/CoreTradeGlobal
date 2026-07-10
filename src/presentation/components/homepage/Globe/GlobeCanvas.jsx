@@ -1,9 +1,7 @@
 /**
- * GlobeCanvas — main-thread shell around globe.worker.js (three-globe).
+ * GlobeCanvas — main-thread shell around globe.worker.js.
  *
- * Drag orbits, click selects a country (raycast in worker), close (×)
- * or ocean click deselects. Hover raycasting removed for CPU — cursor
- * is grab/grabbing only, no pointer hover state.
+ * Drag-to-orbit only. No click select, no HUD, no hover.
  */
 
 'use client';
@@ -37,7 +35,6 @@ function supportsOffscreen() {
 function GlobeCanvasInner({ className = '', onReady }) {
   const [supported, setSupported] = useState(null);
   const [isMobile, setIsMobile] = useState(false);
-  const [selectedAdmin, setSelectedAdmin] = useState(null);
   const [dragging, setDragging] = useState(false);
 
   const containerRef = useRef(null);
@@ -68,7 +65,7 @@ function GlobeCanvasInner({ className = '', onReady }) {
     const cssWidth = Math.max(1, Math.floor(rect.width));
     const cssHeight = Math.max(1, Math.floor(rect.height));
     const dpr = window.devicePixelRatio || 1;
-    const maxDpr = 1; // hard cap
+    const maxDpr = 1;
     const clampedDpr = Math.min(dpr, maxDpr);
     const physicalWidth = Math.floor(cssWidth * clampedDpr);
     const physicalHeight = Math.floor(cssHeight * clampedDpr);
@@ -102,10 +99,6 @@ function GlobeCanvasInner({ className = '', onReady }) {
       if (!msg) return;
       if (msg.type === 'ready') {
         fireReadyOnce();
-      } else if (msg.type === 'countrySelected') {
-        setSelectedAdmin(msg.admin);
-      } else if (msg.type === 'countryDeselected') {
-        setSelectedAdmin(null);
       } else if (msg.type === 'error') {
         // eslint-disable-next-line no-console
         console.error(`[globe worker error @ ${msg.where}]`, msg.message);
@@ -175,28 +168,17 @@ function GlobeCanvasInner({ className = '', onReady }) {
 
     const relativeCoords = (e) => {
       const r = container.getBoundingClientRect();
-      return { x: e.clientX - r.left, y: e.clientY - r.top, w: r.width, h: r.height };
+      return { x: e.clientX - r.left, y: e.clientY - r.top };
     };
-
-    // Drag-vs-click gate: >5 px travel = drag, otherwise treat click.
-    let dragStartX = 0;
-    let dragStartY = 0;
-    let dragTravel = 0;
-    const CLICK_TRAVEL_LIMIT = 5;
 
     const onDown = (e) => {
       try { container.setPointerCapture(e.pointerId); } catch {}
       const p = relativeCoords(e);
-      dragStartX = p.x;
-      dragStartY = p.y;
-      dragTravel = 0;
       setDragging(true);
       worker.postMessage({ type: 'pointer', kind: 'down', x: p.x, y: p.y });
     };
     const onMove = (e) => {
       const p = relativeCoords(e);
-      const dist = Math.hypot(p.x - dragStartX, p.y - dragStartY);
-      if (dist > dragTravel) dragTravel = dist;
       worker.postMessage({ type: 'pointer', kind: 'move', x: p.x, y: p.y });
     };
     const onUp = (e) => {
@@ -208,28 +190,12 @@ function GlobeCanvasInner({ className = '', onReady }) {
       setDragging(false);
       worker.postMessage({ type: 'pointer', kind: 'cancel' });
     };
-    const onClick = (e) => {
-      if (dragTravel > CLICK_TRAVEL_LIMIT) {
-        dragTravel = 0;
-        return;
-      }
-      const p = relativeCoords(e);
-      worker.postMessage({
-        type: 'pointer',
-        kind: 'click',
-        x: p.x,
-        y: p.y,
-        cssWidth: p.w,
-        cssHeight: p.h,
-      });
-    };
 
     if (!isMobile) {
       container.addEventListener('pointerdown', onDown);
       container.addEventListener('pointermove', onMove);
       container.addEventListener('pointerup', onUp);
       container.addEventListener('pointercancel', onCancel);
-      container.addEventListener('click', onClick);
     }
 
     return () => {
@@ -245,7 +211,6 @@ function GlobeCanvasInner({ className = '', onReady }) {
         container.removeEventListener('pointermove', onMove);
         container.removeEventListener('pointerup', onUp);
         container.removeEventListener('pointercancel', onCancel);
-        container.removeEventListener('click', onClick);
       }
     };
   }, [supported, isMobile]);
@@ -253,13 +218,6 @@ function GlobeCanvasInner({ className = '', onReady }) {
   if (supported === null) return null;
   if (supported === false) return null;
 
-  const handleCloseHud = () => {
-    setSelectedAdmin(null);
-    workerRef.current?.postMessage({ type: 'deselect' });
-  };
-
-  // Cursor: grab default, grabbing during drag. No `pointer` state
-  // because hover raycasting is off (CPU savings).
   const desktopCursor = dragging ? 'grabbing' : 'grab';
   const wrapperPointer = isMobile
     ? { pointerEvents: 'none', touchAction: 'auto' }
@@ -275,23 +233,6 @@ function GlobeCanvasInner({ className = '', onReady }) {
         ref={canvasRef}
         style={{ display: 'block', width: '100%', height: '100%' }}
       />
-
-      {selectedAdmin && !isMobile && (
-        <div className="globe-selected-hud" role="status" aria-live="polite">
-          <div className="globe-selected-hud-row">
-            <span className="globe-selected-hud-eyebrow">Selected Region</span>
-            <button
-              type="button"
-              className="globe-selected-hud-close"
-              onClick={handleCloseHud}
-              aria-label="Clear selection"
-            >
-              ×
-            </button>
-          </div>
-          <div className="globe-selected-hud-name">{selectedAdmin}</div>
-        </div>
-      )}
     </div>
   );
 }
