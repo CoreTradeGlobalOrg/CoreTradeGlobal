@@ -186,8 +186,12 @@ async function _initInner({ canvas, width, height, dpr, isMobile }) {
   try {
     const res = await fetch(EARTH_TEXTURE_URL);
     const blob = await res.blob();
-    const bitmap = await createImageBitmap(blob);
+    // three.js flipY on Texture is a no-op for ImageBitmap; do the flip
+    // at bitmap-decode time and turn off the (ignored anyway) Texture
+    // flag so orientation is consistent across drivers.
+    const bitmap = await createImageBitmap(blob, { imageOrientation: 'flipY' });
     const texture = new THREE.Texture(bitmap);
+    texture.flipY = false;
     texture.colorSpace = THREE.SRGBColorSpace;
     texture.needsUpdate = true;
     material.map = texture;
