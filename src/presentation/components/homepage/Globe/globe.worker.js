@@ -401,9 +401,10 @@ self.addEventListener('message', (e) => {
 
       if (hit) {
         if (hit === selectedCountry) return;
-        // Highlight only — no camera tween, autoRotate stays on. Sphere
-        // keeps spinning while the country stays gold.
+        // Highlight + stop rotation. No camera tween — sphere freezes
+        // where it is so the user can read the selection.
         selectedCountry = hit;
+        orbit.autoRotate = false;
         refreshPolygonColors();
         self.postMessage({
           type: 'countrySelected',
@@ -411,6 +412,7 @@ self.addEventListener('message', (e) => {
         });
       } else if (selectedCountry) {
         selectedCountry = null;
+        orbit.autoRotate = true;
         refreshPolygonColors();
         self.postMessage({ type: 'countryDeselected' });
       }
@@ -421,6 +423,7 @@ self.addEventListener('message', (e) => {
   if (msg.type === 'deselect') {
     if (selectedCountry) {
       selectedCountry = null;
+      orbit.autoRotate = true;
       refreshPolygonColors();
     }
     return;
