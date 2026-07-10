@@ -19,8 +19,13 @@ if (typeof globalThis.window === 'undefined') {
 
 import * as THREE from 'three';
 
-const EARTH_TEXTURE_URL =
-  'https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg';
+// Stylized equirectangular map, drawn once into an OffscreenCanvas from
+// GeoJSON. Ocean #0a1122, continents #94a3b8, borders #0a1122 — same
+// palette as the old three-globe polygon layer.
+const COUNTRIES_URL =
+  'https://cdn.jsdelivr.net/gh/vasturiano/globe.gl/example/datasets/ne_110m_admin_0_countries.geojson';
+const MAP_WIDTH = 2048;
+const MAP_HEIGHT = 1024;
 
 let renderer = null;
 let scene = null;
@@ -180,18 +185,60 @@ async function _initInner({ canvas, width, height, dpr, isMobile }) {
   startAnimation();
   postReady();
 
-  // Load earth texture off the main thread. THREE.TextureLoader would
-  // route through ImageLoader → document.createElement('img') which
-  // doesn't exist in a worker. Fetch + createImageBitmap is worker-safe.
+  // Build the stylized map texture off the render path. GeoJSON → 2:1
+  // equirectangular OffscreenCanvas → CanvasTexture. One-shot at init,
+  // never touched again.
   try {
-    const res = await fetch(EARTH_TEXTURE_URL);
-    const blob = await res.blob();
-    // three.js flipY on Texture is a no-op for ImageBitmap; do the flip
-    // at bitmap-decode time and turn off the (ignored anyway) Texture
-    // flag so orientation is consistent across drivers.
-    const bitmap = await createImageBitmap(blob, { imageOrientation: 'flipY' });
-    const texture = new THREE.Texture(bitmap);
-    texture.flipY = false;
+    const res = await fetch(COUNTRIES_URL);
+    const data = await res.json();
+    const features = data.features || [];
+
+    const map = new OffscreenCanvas(MAP_WIDTH, MAP_HEIGHT);
+    const ctx = map.getContext('2d');
+
+    // Ocean fill
+    ctx.fillStyle = '#0a1122';
+    ctx.fillRect(0, 0, MAP_WIDTH, MAP_HEIGHT);
+
+    // Continents fill + border stroke
+    ctx.fillStyle = '#94a3b8';
+    ctx.strokeStyle = '#0a1122';
+    ctx.lineWidth = 1;
+    ctx.lineJoin = 'round';
+
+    const projX = (lng) => ((lng + 180) / 360) * MAP_WIDTH;
+    // NOTE: canvas y grows downward, and we set texture flipY=false
+    // below; keep the natural top-is-north mapping here.
+    const projY = (lat) => ((90 - lat) / 180) * MAP_HEIGHT;
+
+    const drawRing = (ring) => {
+      if (!ring || ring.length === 0) return;
+      ctx.beginPath();
+      for (let i = 0; i < ring.length; i++) {
+        const [lng, lat] = ring[i];
+        const x = projX(lng);
+        const y = projY(lat);
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+    };
+
+    for (const feat of features) {
+      const geom = feat.geometry;
+      if (!geom) continue;
+      if (geom.type === 'Polygon') {
+        for (const ring of geom.coordinates) drawRing(ring);
+      } else if (geom.type === 'MultiPolygon') {
+        for (const poly of geom.coordinates) {
+          for (const ring of poly) drawRing(ring);
+        }
+      }
+    }
+
+    const texture = new THREE.CanvasTexture(map);
     texture.colorSpace = THREE.SRGBColorSpace;
     texture.needsUpdate = true;
     material.map = texture;
