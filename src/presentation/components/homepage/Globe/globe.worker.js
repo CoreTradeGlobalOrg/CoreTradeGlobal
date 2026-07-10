@@ -400,33 +400,19 @@ self.addEventListener('message', (e) => {
       const hit = pickPolygonAt(msg.x, msg.y, msg.cssWidth, msg.cssHeight);
 
       if (hit) {
-        if (hit === selectedCountry) {
-          justClickedCountryAt = performance.now();
-          return;
-        }
-        justClickedCountryAt = performance.now();
+        if (hit === selectedCountry) return;
+        // Highlight only — no camera tween, autoRotate stays on. Sphere
+        // keeps spinning while the country stays gold.
         selectedCountry = hit;
-        orbit.autoRotate = false;
         refreshPolygonColors();
-
-        const centroid = polygonCentroid(hit);
-        if (centroid) {
-          const target = latLngToOrbit(centroid.lat, centroid.lng, CLICK_ALTITUDE);
-          startCameraTween(target.azimuth, target.polar, target.radius, 1000);
-        }
         self.postMessage({
           type: 'countrySelected',
           admin: hit.properties?.ADMIN || hit.properties?.name || 'Unknown',
         });
-      } else {
-        if (performance.now() - justClickedCountryAt < 100) return;
-        if (selectedCountry) {
-          selectedCountry = null;
-          orbit.autoRotate = true;
-          refreshPolygonColors();
-          startCameraTween(orbit.azimuth, orbit.polar, altitudeToRadius(DEFAULT_ALTITUDE), 1000);
-          self.postMessage({ type: 'countryDeselected' });
-        }
+      } else if (selectedCountry) {
+        selectedCountry = null;
+        refreshPolygonColors();
+        self.postMessage({ type: 'countryDeselected' });
       }
       return;
     }
@@ -435,9 +421,7 @@ self.addEventListener('message', (e) => {
   if (msg.type === 'deselect') {
     if (selectedCountry) {
       selectedCountry = null;
-      orbit.autoRotate = true;
       refreshPolygonColors();
-      startCameraTween(orbit.azimuth, orbit.polar, altitudeToRadius(DEFAULT_ALTITUDE), 1000);
     }
     return;
   }
