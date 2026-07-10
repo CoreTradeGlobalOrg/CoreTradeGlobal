@@ -1,16 +1,15 @@
 /**
- * Globe rendering worker — v2.3 (drag only, no selection).
+ * Globe rendering worker — v3 (pure three.js, textured sphere).
  *
- * three-globe polygon countries on OffscreenCanvas. Drag orbits the
- * camera. No click / no raycasting / no HUD. Pure rotate + spin.
+ * three-globe removed. Just one SphereGeometry + earth texture. Country
+ * borders live inside the texture image, so there are only ~2 draw
+ * calls per frame instead of ~354. autoRotate + drag orbit only.
  *
  * Perf guardrails:
  *   - 30 FPS cap
- *   - `startAnimation` / `stopAnimation` gated by visibility
- *   - antialias off + `mediump` precision on low-end / mobile
- *   - polygonAltitude 0.01, transition duration 0, cap curvature 2
+ *   - RAF fully stops on visibility=false
+ *   - antialias off + mediump on low-end / mobile
  *   - DPR cap 1.0
- *   - three-globe internal ticker paused
  */
 
 if (typeof globalThis.window === 'undefined') {
@@ -20,12 +19,13 @@ if (typeof globalThis.window === 'undefined') {
 
 import * as THREE from 'three';
 
-let ThreeGlobe = null;
+const EARTH_TEXTURE_URL =
+  'https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg';
 
 let renderer = null;
 let scene = null;
 let camera = null;
-let globe = null;
+let sphere = null;
 
 let visible = true;
 let disposed = false;
@@ -67,9 +67,6 @@ function updateCameraFromOrbit() {
   );
   camera.lookAt(orbit.target);
 }
-
-function polygonCapColor() { return '#94a3b8'; }
-function polygonStrokeColor() { return '#0a1122'; }
 
 // ── RAF loop ────────────────────────────────────────────────────────────────
 
@@ -173,27 +170,36 @@ async function _initInner({ canvas, width, height, dpr, isMobile }) {
   camera = new THREE.PerspectiveCamera(40, aspect, 0.1, 5000);
   updateCameraFromOrbit();
 
-  if (!ThreeGlobe) {
-    const mod = await import('three-globe');
-    ThreeGlobe = mod.default || mod.ThreeGlobe || mod;
-  }
+  // Sphere first with a solid ocean color so something paints instantly.
+  // Texture streams in and swaps material.map when ready.
+  const geometry = new THREE.SphereGeometry(GLOBE_RADIUS, 48, 32);
+  const material = new THREE.MeshBasicMaterial({ color: 0x0a1122 });
+  sphere = new THREE.Mesh(geometry, material);
+  scene.add(sphere);
 
-  globe = new ThreeGlobe({ waitForGlobeReady: false, animateIn: false })
-    .showAtmosphere(true)
-    .atmosphereColor('#3b82f6')
-    .atmosphereAltitude(0.15);
-  if (typeof globe.pauseAnimation === 'function') globe.pauseAnimation();
-
-  const mat = globe.globeMaterial();
-  if (mat) {
-    mat.map = null;
-    if (mat.color) mat.color.set('#0a1122');
-    mat.needsUpdate = true;
-  }
-
-  scene.add(globe);
   startAnimation();
   postReady();
+
+  // Load earth texture off the main thread. THREE.TextureLoader would
+  // route through ImageLoader → document.createElement('img') which
+  // doesn't exist in a worker. Fetch + createImageBitmap is worker-safe.
+  try {
+    const res = await fetch(EARTH_TEXTURE_URL);
+    const blob = await res.blob();
+    const bitmap = await createImageBitmap(blob);
+    const texture = new THREE.Texture(bitmap);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    texture.needsUpdate = true;
+    material.map = texture;
+    material.color.set(0xffffff);
+    material.needsUpdate = true;
+  } catch (err) {
+    self.postMessage({
+      type: 'error',
+      where: 'texture',
+      message: err && err.message ? err.message : String(err),
+    });
+  }
 }
 
 function postReady() {
@@ -213,19 +219,6 @@ self.addEventListener('message', (e) => {
     return;
   }
   if (!renderer) return;
-
-  if (msg.type === 'setCountries') {
-    if (!globe) return;
-    globe
-      .polygonsData(msg.countries || [])
-      .polygonCapColor(polygonCapColor)
-      .polygonStrokeColor(polygonStrokeColor)
-      .polygonAltitude(0.01)
-      .polygonSideColor(() => 'rgba(0, 0, 0, 0)')
-      .polygonCapCurvatureResolution(2)
-      .polygonsTransitionDuration(0);
-    return;
-  }
 
   if (msg.type === 'resize') {
     const clampedDpr = Math.min(msg.dpr, config.maxDpr);
@@ -252,12 +245,10 @@ self.addEventListener('message', (e) => {
       const dy = msg.y - orbit.lastY;
       orbit.lastX = msg.x;
       orbit.lastY = msg.y;
-      const deltaAz = dx * orbit.rotateSpeed;
-      const deltaPolar = -dy * orbit.rotateSpeed;
-      orbit.azimuth += deltaAz;
-      orbit.polar += deltaPolar;
-      orbit.velocityAzimuth = deltaAz;
-      orbit.velocityPolar = deltaPolar;
+      orbit.azimuth += dx * orbit.rotateSpeed;
+      orbit.polar += -dy * orbit.rotateSpeed;
+      orbit.velocityAzimuth = dx * orbit.rotateSpeed;
+      orbit.velocityPolar = -dy * orbit.rotateSpeed;
       return;
     }
     if (msg.kind === 'up' || msg.kind === 'cancel') {

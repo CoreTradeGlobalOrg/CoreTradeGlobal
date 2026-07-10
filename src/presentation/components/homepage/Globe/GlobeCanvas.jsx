@@ -8,23 +8,6 @@
 
 import { memo, useEffect, useRef, useState } from 'react';
 
-const COUNTRIES_URL =
-  'https://cdn.jsdelivr.net/gh/vasturiano/globe.gl/example/datasets/ne_110m_admin_0_countries.geojson';
-
-let countriesPromise = null;
-function loadCountries() {
-  if (!countriesPromise) {
-    countriesPromise = fetch(COUNTRIES_URL)
-      .then((res) => res.json())
-      .then((data) => data.features || [])
-      .catch((err) => {
-        countriesPromise = null;
-        throw err;
-      });
-  }
-  return countriesPromise;
-}
-
 function supportsOffscreen() {
   if (typeof window === 'undefined') return false;
   if (typeof OffscreenCanvas === 'undefined') return false;
@@ -126,16 +109,6 @@ function GlobeCanvasInner({ className = '', onReady }) {
       [offscreen]
     );
 
-    const fetchTimer = setTimeout(async () => {
-      try {
-        const features = await loadCountries();
-        worker.postMessage({ type: 'setCountries', countries: features });
-      } catch (err) {
-        // eslint-disable-next-line no-console
-        console.warn('Globe GeoJSON fetch failed:', err);
-      }
-    }, 600);
-
     const ro = new ResizeObserver((entries) => {
       const entry = entries[0];
       if (!entry) return;
@@ -199,7 +172,6 @@ function GlobeCanvasInner({ className = '', onReady }) {
     }
 
     return () => {
-      clearTimeout(fetchTimer);
       worker.postMessage({ type: 'dispose' });
       worker.removeEventListener('message', handleMessage);
       worker.terminate();
