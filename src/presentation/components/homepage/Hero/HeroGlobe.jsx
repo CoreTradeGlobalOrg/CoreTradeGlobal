@@ -11,6 +11,7 @@
 
 'use client';
 
+import { memo } from 'react';
 import dynamic from 'next/dynamic';
 
 const GlobeCanvas = dynamic(
@@ -21,7 +22,7 @@ const GlobeCanvas = dynamic(
   }
 );
 
-export function HeroGlobe({ mounted, globeLoaded, onGlobeReady }) {
+function HeroGlobeInner({ mounted, globeLoaded, onGlobeReady }) {
   return (
     <>
       {/* Loading overlay — sits in front of the empty canvas-container
@@ -44,5 +45,7 @@ export function HeroGlobe({ mounted, globeLoaded, onGlobeReady }) {
     </>
   );
 }
+
+export const HeroGlobe = memo(HeroGlobeInner);
 
 export default HeroGlobe;

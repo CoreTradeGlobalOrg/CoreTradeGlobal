@@ -3,27 +3,36 @@
  *
  * Owns:
  *   - canvas mount + transferControlToOffscreen
- *   - GeoJSON fetch (deferred 600 ms per spec) and post to worker
- *   - Pointer / resize / visibility forwarding
- *   - "Selected Region" HUD overlay reacting to worker messages
+ *   - GeoJSON fetch (deferred 600 ms, module-level shared cache)
+ *   - Resize / visibility forwarding
  *
- * The whole render loop, raycasting, polygon country mesh, atmosphere,
- * and camera orbit run inside the worker on an OffscreenCanvas — main
- * thread only forwards events and paints the HUD.
- *
- * OffscreenCanvas is required. Older Safari (< 16.4) hits this path via
- * the same feature-detect and lands on a null render — the fallback R3F
- * globe was removed with this rewrite. Adding one back is a future
- * option if the analytics show non-trivial Safari-16-and-earlier
- * traffic; for now the audience is on modern engines.
+ * Zero-interaction mode: hover / click / tooltip disabled; raycaster off
+ * in the worker. Idle CPU drops to ~0 while cursor moves over the sphere.
  */
 
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 
 const COUNTRIES_URL =
   'https://cdn.jsdelivr.net/gh/vasturiano/globe.gl/example/datasets/ne_110m_admin_0_countries.geojson';
+
+// Module-level shared cache — desktop + mobile mounts (and any remount)
+// reuse the same parsed FeatureCollection instead of re-downloading and
+// re-parsing. Halves the network + RAM cost across device-mode swaps.
+let countriesPromise = null;
+function loadCountries() {
+  if (!countriesPromise) {
+    countriesPromise = fetch(COUNTRIES_URL)
+      .then((res) => res.json())
+      .then((data) => data.features || [])
+      .catch((err) => {
+        countriesPromise = null;
+        throw err;
+      });
+  }
+  return countriesPromise;
+}
 
 function supportsOffscreen() {
   if (typeof window === 'undefined') return false;
@@ -32,12 +41,9 @@ function supportsOffscreen() {
   return !!proto && typeof proto.transferControlToOffscreen === 'function';
 }
 
-export function GlobeCanvas({ className = '', onReady }) {
+function GlobeCanvasInner({ className = '', onReady }) {
   const [supported, setSupported] = useState(null);
   const [isMobile, setIsMobile] = useState(false);
-  const [selectedAdmin, setSelectedAdmin] = useState(null);
-  const [hovering, setHovering] = useState(false);
-  const [dragging, setDragging] = useState(false);
 
   const containerRef = useRef(null);
   const canvasRef = useRef(null);
@@ -67,7 +73,10 @@ export function GlobeCanvas({ className = '', onReady }) {
     const cssWidth = Math.max(1, Math.floor(rect.width));
     const cssHeight = Math.max(1, Math.floor(rect.height));
     const dpr = window.devicePixelRatio || 1;
-    const maxDpr = isMobile ? 1.5 : 2;
+    // DPR cap: 1.25 desktop / 1.15 mobile. Retina + 4K default to 2-3x,
+    // which drives GPU fill rate through the roof for zero visual gain
+    // on a slowly-rotating sphere. Tight cap = -60–70 % pixels shaded.
+    const maxDpr = isMobile ? 1.15 : 1.25;
     const clampedDpr = Math.min(dpr, maxDpr);
     const physicalWidth = Math.floor(cssWidth * clampedDpr);
     const physicalHeight = Math.floor(cssHeight * clampedDpr);
@@ -101,23 +110,13 @@ export function GlobeCanvas({ className = '', onReady }) {
       if (!msg) return;
       if (msg.type === 'ready') {
         fireReadyOnce();
-      } else if (msg.type === 'countrySelected') {
-        setSelectedAdmin(msg.admin);
-      } else if (msg.type === 'countryDeselected') {
-        setSelectedAdmin(null);
-      } else if (msg.type === 'hoverChanged') {
-        setHovering(!!msg.hovering);
       } else if (msg.type === 'error') {
-        // Worker's init caught the exception itself — log for diagnosis
-        // and still fire ready so the hero drops the loading text
-        // instead of stalling forever.
         // eslint-disable-next-line no-console
         console.error(`[globe worker error @ ${msg.where}]`, msg.message);
         fireReadyOnce();
       }
     };
     const handleWorkerError = (e) => {
-      // Fatal error the worker never caught — surface it and unblock UI.
       // eslint-disable-next-line no-console
       console.error('[globe worker fatal]', e.message || e);
       fireReadyOnce();
@@ -138,17 +137,12 @@ export function GlobeCanvas({ className = '', onReady }) {
       [offscreen]
     );
 
-    // Deferred GeoJSON fetch — spec says 600 ms after mount to keep FCP /
-    // LCP clear. Main thread fetches (network is the same source either
-    // way) then posts the feature collection to the worker.
+    // Deferred GeoJSON — 600 ms after mount so FCP/LCP paint first.
     const fetchTimer = setTimeout(async () => {
       try {
-        const res = await fetch(COUNTRIES_URL);
-        const data = await res.json();
-        worker.postMessage({ type: 'setCountries', countries: data.features || [] });
+        const features = await loadCountries();
+        worker.postMessage({ type: 'setCountries', countries: features });
       } catch (err) {
-        // Non-fatal — the ocean sphere still renders. Log for observability
-        // once we wire a proper sink.
         // eslint-disable-next-line no-console
         console.warn('Globe GeoJSON fetch failed:', err);
       }
@@ -157,8 +151,8 @@ export function GlobeCanvas({ className = '', onReady }) {
     const ro = new ResizeObserver((entries) => {
       const entry = entries[0];
       if (!entry) return;
-      // Sub-pixel jitter guard per spec — floor + 5 px threshold prevents
-      // a Retina resize loop.
+      // Sub-pixel jitter guard — floor + 5 px threshold prevents Retina
+      // resize loops (582.33 <-> 582 oscillation).
       const rawW = entry.contentRect.width;
       const rawH = entry.contentRect.height;
       const w = Math.max(1, Math.floor(rawW));
@@ -186,93 +180,6 @@ export function GlobeCanvas({ className = '', onReady }) {
     );
     io.observe(container);
 
-    const relativeCoords = (e) => {
-      const r = container.getBoundingClientRect();
-      return { x: e.clientX - r.left, y: e.clientY - r.top, w: r.width, h: r.height };
-    };
-
-    // Track pointer travel between down and up. Browsers still fire a
-    // click event after a drag if the release lands close to the start,
-    // but with the sphere in constant auto-rotation any drag-to-orbit
-    // gesture would double as a "select this country" if we didn't
-    // gate. > 5 px of travel counts as a drag; smaller = intent to click.
-    let dragStartX = 0;
-    let dragStartY = 0;
-    let dragTravel = 0;
-    const CLICK_TRAVEL_LIMIT = 5;
-
-    const onDown = (e) => {
-      try {
-        container.setPointerCapture(e.pointerId);
-      } catch {
-        // pointer capture is best-effort; some pointer types reject it
-      }
-      const p = relativeCoords(e);
-      dragStartX = p.x;
-      dragStartY = p.y;
-      dragTravel = 0;
-      setDragging(true);
-      worker.postMessage({ type: 'pointer', kind: 'down', x: p.x, y: p.y });
-    };
-    const onMove = (e) => {
-      const p = relativeCoords(e);
-      // Update travel any time the pointer moves; used by the click
-      // handler below to decide whether the release was a drag or a tap.
-      const dx = p.x - dragStartX;
-      const dy = p.y - dragStartY;
-      const dist = Math.hypot(dx, dy);
-      if (dist > dragTravel) dragTravel = dist;
-      worker.postMessage({ type: 'pointer', kind: 'move', x: p.x, y: p.y });
-      if (!isMobile) {
-        worker.postMessage({
-          type: 'pointer',
-          kind: 'hover',
-          x: p.x,
-          y: p.y,
-          cssWidth: p.w,
-          cssHeight: p.h,
-        });
-      }
-    };
-    const onUp = (e) => {
-      try {
-        container.releasePointerCapture(e.pointerId);
-      } catch {
-        // capture may already be released by the browser
-      }
-      setDragging(false);
-      worker.postMessage({ type: 'pointer', kind: 'up' });
-    };
-    const onCancel = () => {
-      setDragging(false);
-      worker.postMessage({ type: 'pointer', kind: 'cancel' });
-    };
-    const onClick = (e) => {
-      if (dragTravel > CLICK_TRAVEL_LIMIT) {
-        // Release was a drag, not a select. Reset for the next gesture
-        // so a genuine tap after a drag still counts.
-        dragTravel = 0;
-        return;
-      }
-      const p = relativeCoords(e);
-      worker.postMessage({
-        type: 'pointer',
-        kind: 'click',
-        x: p.x,
-        y: p.y,
-        cssWidth: p.w,
-        cssHeight: p.h,
-      });
-    };
-
-    if (!isMobile) {
-      container.addEventListener('pointerdown', onDown);
-      container.addEventListener('pointermove', onMove);
-      container.addEventListener('pointerup', onUp);
-      container.addEventListener('pointercancel', onCancel);
-      container.addEventListener('click', onClick);
-    }
-
     return () => {
       clearTimeout(fetchTimer);
       worker.postMessage({ type: 'dispose' });
@@ -281,70 +188,34 @@ export function GlobeCanvas({ className = '', onReady }) {
       workerRef.current = null;
       ro.disconnect();
       io.disconnect();
-      if (!isMobile) {
-        container.removeEventListener('pointerdown', onDown);
-        container.removeEventListener('pointermove', onMove);
-        container.removeEventListener('pointerup', onUp);
-        container.removeEventListener('pointercancel', onCancel);
-        container.removeEventListener('click', onClick);
-      }
     };
   }, [supported, isMobile]);
 
   if (supported === null) return null;
-  if (supported === false) {
-    // No fallback path in v2 — canvas ships nothing, hero still paints
-    // its slogan / search / CTA over the same reserved space.
-    return null;
-  }
+  if (supported === false) return null;
 
-  const handleCloseHud = () => {
-    setSelectedAdmin(null);
-    workerRef.current?.postMessage({ type: 'deselect' });
-  };
-
-  // On mobile the wrapper opts out of pointer events so touch-scrolling
-  // through the hero doesn't get eaten by the canvas (spec). On desktop
-  // the cursor telegraphs affordance: grab by default, grabbing during
-  // a drag, pointer while over a country cap so users know it's clickable.
-  let desktopCursor = 'grab';
-  if (dragging) desktopCursor = 'grabbing';
-  else if (hovering) desktopCursor = 'pointer';
-
-  const wrapperPointer = isMobile
-    ? { pointerEvents: 'none', touchAction: 'auto' }
-    : { touchAction: 'none', cursor: desktopCursor };
-
+  // Zero-interaction mode — pointerEvents off across the board so the
+  // canvas never blocks page scroll or eats hover on siblings.
   return (
     <div
       ref={containerRef}
       className={`globe-container ${className}`}
-      style={{ position: 'relative', width: '100%', height: '100%', ...wrapperPointer }}
+      style={{
+        position: 'relative',
+        width: '100%',
+        height: '100%',
+        pointerEvents: 'none',
+        touchAction: 'auto',
+      }}
     >
       <canvas
         ref={canvasRef}
         style={{ display: 'block', width: '100%', height: '100%' }}
       />
-
-      {/* Selected Region HUD — bottom-left overlay per spec */}
-      {selectedAdmin && !isMobile && (
-        <div className="globe-selected-hud" role="status" aria-live="polite">
-          <div className="globe-selected-hud-row">
-            <span className="globe-selected-hud-eyebrow">Selected Region</span>
-            <button
-              type="button"
-              className="globe-selected-hud-close"
-              onClick={handleCloseHud}
-              aria-label="Clear selection"
-            >
-              ×
-            </button>
-          </div>
-          <div className="globe-selected-hud-name">{selectedAdmin}</div>
-        </div>
-      )}
     </div>
   );
 }
+
+export const GlobeCanvas = memo(GlobeCanvasInner);
 
 export default GlobeCanvas;
