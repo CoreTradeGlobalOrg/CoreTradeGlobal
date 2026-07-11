@@ -30,6 +30,7 @@ import { ContractSidebar } from '../ContractSidebar/ContractSidebar';
 import { GeneratingContractOverlay } from '../GeneratingContractOverlay/GeneratingContractOverlay';
 import { ConfirmDialog } from '@/presentation/components/common/ConfirmDialog/ConfirmDialog';
 import { LegalBanner } from '@/presentation/components/features/legal/LegalBanner/LegalBanner';
+import { LEGAL_SUPPORT_ENABLED } from '@/core/constants/featureFlags';
 import { Tooltip } from '@/presentation/components/common/Tooltip/Tooltip';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -227,8 +228,10 @@ export function ContractPage({ deal, contract, currentUserUid, actions }) {
           <WaitingBanner otherPartyLabel={otherPartyLabel} />
         )}
 
-        {/* Legal banner */}
-        <LegalBanner dealId={deal.id} currentUserUid={currentUserUid} />
+        {/* Legal banner — gated behind LEGAL_SUPPORT_ENABLED */}
+        {LEGAL_SUPPORT_ENABLED && (
+          <LegalBanner dealId={deal.id} currentUserUid={currentUserUid} />
+        )}
 
         {/* Main content + sticky sidebar */}
         <div className="flex flex-col lg:flex-row gap-4">

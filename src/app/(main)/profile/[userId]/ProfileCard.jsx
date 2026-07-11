@@ -135,6 +135,25 @@ export function ProfileCard({
                   Edit Profile
                 </button>
               )}
+              {canEdit && isEditing && (
+                <div className="flex flex-shrink-0 gap-2">
+                  <Button
+                    type="submit"
+                    disabled={profileUpdating}
+                    className="!bg-gradient-to-r !from-[#FFD700] !to-[#FDB931] !text-black font-bold border-none hover:shadow-lg disabled:opacity-70 text-sm px-4 py-2"
+                  >
+                    {profileUpdating ? 'Saving...' : 'Save'}
+                  </Button>
+                  <Button
+                    type="button"
+                    disabled={profileUpdating}
+                    className="bg-[rgba(255,255,255,0.1)] text-white hover:bg-[rgba(255,255,255,0.2)] border-none text-sm px-4 py-2"
+                    onClick={onCancelEdit}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              )}
             </div>
 
             {/* Bio */}
@@ -158,7 +177,7 @@ export function ProfileCard({
                 />
               ) : (
                 <p className="text-[#A0A0A0] text-sm leading-relaxed whitespace-pre-wrap">
-                  {profileUser?.about || 'No bio available'}
+                  {profileUser?.about || 'Add a brief overview of your company…'}
                 </p>
               )}
             </div>
@@ -209,7 +228,7 @@ export function ProfileCard({
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="+1 234 567 8900"
-                  className="w-full bg-[rgba(255,255,255,0.05)] text-white font-semibold text-lg focus:outline-none focus:border-[#FFD700] border-2 border-[#FFD700]/50 rounded-xl px-3 py-2 shadow-[0_0_15px_rgba(255,215,0,0.2)] animate-pulse-glow"
+                  className={`w-full bg-[rgba(255,255,255,0.05)] text-white font-semibold text-lg focus:outline-none focus:border-[#FFD700] rounded-xl px-3 py-2 ${phone ? 'border border-[rgba(255,255,255,0.15)]' : 'border-2 border-[#FFD700]/50 shadow-[0_0_15px_rgba(255,215,0,0.2)] animate-pulse-glow'}`}
                 />
               ) : (
                 <p className="text-white font-semibold text-lg truncate">{profileUser?.phone || 'Not set'}</p>
@@ -266,26 +285,6 @@ export function ProfileCard({
           </div>
         </div>
 
-        {/* Save/Cancel Buttons */}
-        {isEditing && (
-          <div className="flex gap-3 mt-6 pt-4 border-t border-[rgba(255,255,255,0.1)]">
-            <Button
-              type="submit"
-              disabled={profileUpdating}
-              className="!bg-gradient-to-r !from-[#FFD700] !to-[#FDB931] !text-black font-bold border-none hover:shadow-lg disabled:opacity-70 text-sm px-6"
-            >
-              {profileUpdating ? 'Saving...' : 'Save Changes'}
-            </Button>
-            <Button
-              type="button"
-              disabled={profileUpdating}
-              className="bg-[rgba(255,255,255,0.1)] text-white hover:bg-[rgba(255,255,255,0.2)] border-none text-sm"
-              onClick={onCancelEdit}
-            >
-              Cancel
-            </Button>
-          </div>
-        )}
       </form>
     </div>
   );

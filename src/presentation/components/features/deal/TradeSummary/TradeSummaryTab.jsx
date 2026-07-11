@@ -18,6 +18,7 @@
 import { Printer } from 'lucide-react';
 import { useTradeSummary } from '@/presentation/hooks/deal/useTradeSummary';
 import { LegalBanner } from '@/presentation/components/features/legal/LegalBanner/LegalBanner';
+import { LEGAL_SUPPORT_ENABLED } from '@/core/constants/featureFlags';
 import { Tooltip } from '@/presentation/components/common/Tooltip/Tooltip';
 import { SummaryHeroBanner } from './SummaryHeroBanner';
 import { TradeInfoBar } from './TradeInfoBar';
@@ -148,12 +149,16 @@ export function TradeSummaryTab({ dealId, currentUserUid }) {
             );
           })()}
           <DocumentsSection deal={deal} contract={contract} />
-          <LegalConsultingSection
-            legalEngagement={legalEngagement}
-            currentUserUid={currentUserUid}
-            dealId={dealId}
-          />
-          <LegalBanner dealId={dealId} currentUserUid={currentUserUid} />
+          {LEGAL_SUPPORT_ENABLED && (
+            <>
+              <LegalConsultingSection
+                legalEngagement={legalEngagement}
+                currentUserUid={currentUserUid}
+                dealId={dealId}
+              />
+              <LegalBanner dealId={dealId} currentUserUid={currentUserUid} />
+            </>
+          )}
         </div>
 
         {/* Right sidebar — map + order timeline */}

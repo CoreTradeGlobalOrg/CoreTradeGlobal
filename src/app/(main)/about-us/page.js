@@ -59,7 +59,7 @@ export default function AboutUsPage() {
     return (
         <main className="pt-[calc(var(--navbar-height)+24px)] pb-20 bg-radial-navy">
             {/* Hero Section */}
-            <section className="relative w-full flex flex-col justify-center items-center text-center px-5 pb-20 overflow-hidden">
+            <section className="relative w-full flex flex-col justify-center items-center text-center px-5 overflow-hidden">
                 <h1
                     className="text-5xl md:text-[64px] font-extrabold leading-[1.1] tracking-[-2px] max-w-[900px] mb-5 text-white"
                 >
@@ -141,7 +141,7 @@ export default function AboutUsPage() {
             </section>
 
             {/* Why CoreTradeGlobal Section */}
-            <section className="px-5 pb-20 flex justify-center">
+            <section className="px-5 flex justify-center">
                 <div className="w-full max-w-[1200px]">
                     <div className="relative overflow-hidden rounded-[20px] p-10 border border-[rgba(255,215,0,0.15)] bg-gradient-to-br from-[rgba(26,28,32,0.6)] to-[rgba(15,27,43,0.8)]">
                         <h2 className="text-[32px] font-bold mb-5 relative z-10" style={{ color: '#ffffff' }}>Why CoreTradeGlobal?</h2>

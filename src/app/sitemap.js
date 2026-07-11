@@ -2,7 +2,11 @@ import { db } from '@/core/config/firebase.config';
 import { collection, query, where, getDocs, limit } from 'firebase/firestore';
 import { COLLECTIONS } from '@/core/constants/collections';
 
-const BASE_URL = 'https://coretradeglobal.com';
+// Canonical host matches the metadataBase in src/app/layout.js. Using the
+// `www.` variant everywhere (robots.txt Sitemap directive, per-page
+// alternates.canonical, and openGraph.url) keeps Google + Bing + social
+// scrapers from treating apex + www as duplicate hosts.
+const BASE_URL = 'https://www.coretradeglobal.com';
 
 async function getActiveProducts() {
   try {
@@ -104,11 +108,15 @@ export default async function sitemap() {
     { url: `${BASE_URL}/news`, lastModified: new Date(), changeFrequency: 'daily', priority: 0.8 },
     { url: `${BASE_URL}/categories`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.7 },
     { url: `${BASE_URL}/companies`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.7 },
+    { url: `${BASE_URL}/join`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
+    { url: `${BASE_URL}/login`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.4 },
     { url: `${BASE_URL}/about-us`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.5 },
     { url: `${BASE_URL}/contact`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.5 },
     { url: `${BASE_URL}/faq`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.4 },
     { url: `${BASE_URL}/privacy-policy`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.3 },
-    { url: `${BASE_URL}/terms-of-service`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.3 },
+    { url: `${BASE_URL}/terms`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.3 },
+    { url: `${BASE_URL}/cookie-policy`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.3 },
+    { url: `${BASE_URL}/product-listing-policy`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.3 },
   ];
 
   // Fetch dynamic content in parallel

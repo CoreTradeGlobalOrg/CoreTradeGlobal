@@ -25,6 +25,7 @@ import {
   ChevronDown,
 } from 'lucide-react';
 import { ROLES } from '@/core/constants/roles';
+import { LEGAL_SUPPORT_ENABLED } from '@/core/constants/featureFlags';
 import toast from 'react-hot-toast';
 import { usePathname } from 'next/navigation';
 
@@ -65,8 +66,13 @@ const getNavGroups = (user) => [
     items: [
       { label: 'Logistics', href: '/provider/dashboard', roles: [ROLES.LOGISTICS_PROVIDER, ROLES.INSURANCE_PROVIDER, ROLES.ADMIN] },
       { label: 'Insurance', href: '/provider/dashboard', roles: [ROLES.INSURANCE_PROVIDER, ROLES.LOGISTICS_PROVIDER, ROLES.ADMIN] },
-      { label: 'Legal Support', href: '/lawyer/dashboard', roles: [ROLES.LAWYER, ROLES.ADMIN] },
-      { label: 'Deal Review', href: '/lawyer/deals', roles: [ROLES.LAWYER, ROLES.ADMIN] },
+      // Legal Support entries hidden while LEGAL_SUPPORT_ENABLED is off.
+      ...(LEGAL_SUPPORT_ENABLED
+        ? [
+            { label: 'Legal Support', href: '/lawyer/dashboard', roles: [ROLES.LAWYER, ROLES.ADMIN] },
+            { label: 'Deal Review', href: '/lawyer/deals', roles: [ROLES.LAWYER, ROLES.ADMIN] },
+          ]
+        : []),
     ],
   },
   {
@@ -88,7 +94,9 @@ const getNavGroups = (user) => [
     items: [
       { label: 'My Deals', href: '/deals', roles: [ROLES.MEMBER, ROLES.ADMIN] },
       { label: 'Messages', href: '/messages' },
-      { label: 'Lawyer Dashboard', href: '/lawyer/dashboard', roles: [ROLES.LAWYER, ROLES.ADMIN] },
+      ...(LEGAL_SUPPORT_ENABLED
+        ? [{ label: 'Lawyer Dashboard', href: '/lawyer/dashboard', roles: [ROLES.LAWYER, ROLES.ADMIN] }]
+        : []),
       { label: 'Provider Dashboard', href: '/provider/dashboard', roles: [ROLES.LOGISTICS_PROVIDER, ROLES.INSURANCE_PROVIDER] },
       { label: 'Settings', href: '/settings' },
     ],

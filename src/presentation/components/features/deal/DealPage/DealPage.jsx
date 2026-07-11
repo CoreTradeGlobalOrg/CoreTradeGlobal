@@ -27,6 +27,7 @@ import { CountdownTimer } from '../CountdownTimer/CountdownTimer';
 import { TradeSummaryTab } from '../TradeSummary/TradeSummaryTab';
 import { DEAL_STATUS } from '@/core/constants/dealConstants';
 import { LegalBanner } from '@/presentation/components/features/legal/LegalBanner/LegalBanner';
+import { LEGAL_SUPPORT_ENABLED } from '@/core/constants/featureFlags';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Terminal State Banner
@@ -254,8 +255,12 @@ export function DealPage({ deal, offers, currentUserUid, actions, otherPartyView
         {/* Terminal banner (when deal is closed) */}
         {isTerminal && <TerminalBanner status={deal.status} deal={deal} />}
 
-        {/* Legal banner — visible at ALL deal stages; manages its own show/hide logic */}
-        <LegalBanner dealId={deal.id} currentUserUid={currentUserUid} />
+        {/* Legal banner — gated behind LEGAL_SUPPORT_ENABLED flag while
+            the Legal Support feature is paused. Manages its own visibility
+            when the flag is back on. */}
+        {LEGAL_SUPPORT_ENABLED && (
+          <LegalBanner dealId={deal.id} currentUserUid={currentUserUid} />
+        )}
 
         {/* Tab switcher — only shown when summary tab is available */}
         {showSummaryTab && (

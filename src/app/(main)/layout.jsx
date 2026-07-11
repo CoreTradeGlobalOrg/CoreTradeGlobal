@@ -48,9 +48,19 @@ export default function MainLayout({ children }) {
 
   // OAuth users without a completed profile must finish onboarding before using
   // the app (role is required). Send them to /complete-profile.
+  //
+  // Guard uses BOTH profileComplete === false AND absence of concrete profile
+  // fields (companyName, role, firstName). A transient Firestore read that
+  // returns null bounces the AuthContext into "profileComplete: false" even
+  // for fully-onboarded users; without the field check those users get
+  // wrongly redirected mid-session. If any of the concrete fields exist the
+  // profile is real — trust it and skip the redirect regardless of the flag.
   useEffect(() => {
     if (loading || profileLoading) return;
-    if (user && user.profileComplete === false && pathname !== '/complete-profile') {
+    if (!user) return;
+    if (pathname === '/complete-profile') return;
+    const hasProfileEvidence = !!(user.companyName || user.role || user.firstName);
+    if (user.profileComplete === false && !hasProfileEvidence) {
       router.replace('/complete-profile');
     }
   }, [user, loading, profileLoading, pathname, router]);

@@ -46,19 +46,10 @@ html {
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
     color: var(--text-white);
     overflow-x: hidden;
-    min-height: 6500px;
-}
-
-@media (max-width: 1024px) {
-    .homepage {
-        min-height: 5000px;
-    }
-}
-
-@media (max-width: 640px) {
-    .homepage {
-        min-height: auto;
-    }
+    /* Parent min-height removed. Was set as a CLS backstop when
+       individual sections weren't reserving their heights; with per-
+       section reservations in place the parent-level clamp only
+       created dead space when the sum was overestimated. */
 }
 
 /* --- ERİŞİLEBİLİRLİK (Reduced Motion) --- */
@@ -1065,7 +1056,7 @@ html {
     gap: 24px;
     overflow-x: auto;
     align-items: flex-start;
-    padding: 10px 60px 30px 60px;
+    padding: 10px 60px 20px 60px;
     scrollbar-width: none;
     scroll-behavior: smooth;
     width: 100%;
@@ -1285,8 +1276,8 @@ html {
 .categories-section {
     width: 100%;
     background: transparent;
-    padding: 60px 0;
-    min-height: 500px;
+    padding: 5px 0;
+    min-height: 240px;
     contain: layout;
 }
 
@@ -1299,7 +1290,7 @@ html {
 .cat-grid {
     display: flex;
     gap: 16px;
-    padding: 10px 60px 30px 60px;
+    padding: 10px 60px 20px 60px;
 }
 
 @media (max-width: 640px) {
@@ -1428,12 +1419,23 @@ html {
 .featured-products-section {
     width: 100%;
     background: transparent;
-    padding: 60px 0;
-    /* Actual desktop-rendered height is 788px (measured with real cards).
-       Reserve 800px so the section never grows past its lock and shifts
-       the footer down during throttled loads. */
-    min-height: 800px;
+    /* Products keeps top-60 for hero breathing; drop bottom to 5 so
+       the transition into RFQs is a tight 5 + 5 = 10 px gap. */
+    padding: 60px 0 5px;
+    /* Reservation was 800 (padding-inclusive) for 60+60 padding + 668
+       content. With bottom padding now 5 the box is ~733; 740 keeps a
+       thin buffer without adding dead space. */
+    min-height: 740px;
     contain: layout;
+}
+
+/* Companies section reuses .featured-products-section — in the new
+   order it sits directly after Showcase, so target it via the
+   adjacent sibling of .showcase-section. Tight 5 px band on both
+   sides; company card row ~420 px tall so 460 gives a thin buffer. */
+.showcase-section + .featured-products-section {
+    padding: 5px 0;
+    min-height: 460px;
 }
 
 .featured-products-container {
@@ -1485,8 +1487,10 @@ html {
 .featured-rfqs-section {
     width: 100%;
     background: transparent;
-    padding: 60px 0;
-    min-height: 720px;
+    padding: 5px 0;
+    /* RFQ card row + title ≈ 530-540 px; buffer trimmed hard so any
+       remaining gap has to come from real content, not reservation. */
+    min-height: 540px;
     contain: layout;
 }
 
@@ -1528,7 +1532,7 @@ html {
     display: flex;
     gap: 24px;
     overflow-x: auto;
-    padding: 10px 60px 30px 60px;
+    padding: 10px 60px 20px 60px;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
 }
@@ -1768,7 +1772,7 @@ html {
     gap: 24px;
     overflow-x: auto;
     background: transparent;
-    padding: 10px 60px 30px 60px;
+    padding: 10px 60px 20px 60px;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
 }
@@ -1809,7 +1813,7 @@ html {
     gap: 24px;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
-    padding: 10px 60px 30px 60px;
+    padding: 10px 60px 20px 60px;
 }
 
 /* Company Card - New Layout */
@@ -1861,14 +1865,16 @@ html {
    because showcase's 40vh (504px) reservation and news's 640px undershot
    the real 842px and 702px content, so the footer sat higher on first
    paint and shifted down once the sections mounted. */
-.fair-section,
-.fairs-wrapper {
-    min-height: 640px;
+.fair-section {
+    min-height: 710px;
     contain: layout;
 }
 
 .news-section {
-    min-height: 710px;
+    /* Real content = 594 (pad 3 + header 51 + hdr margin 30 + wrap pad
+       10 + card 400 + wrap pad 40 + pad 60). 620 buffers ~26 px so
+       CLS doesn't shift the footer during throttled loads. */
+    min-height: 620px;
     contain: layout;
 }
 
@@ -1882,9 +1888,14 @@ html {
     background: transparent;
     display: flex;
     justify-content: center;
-    padding: 60px 0;
+    padding: 60px 0 2px;
     border-top: 1px solid rgba(255, 255, 255, 0.05);
-    min-height: 640px;
+    /* Real rendered content = 557 (border 1 + pad 60 + header 54 + hdr
+       margin 30 + row pad 10 + card 380 + row pad 20 + pad 2). 585
+       leaves a 28 px buffer without the 83 px dead space the old 640
+       reservation was creating between the fair cards and the news
+       section. */
+    min-height: 585px;
     contain: layout;
 }
 
@@ -1923,7 +1934,7 @@ html {
     display: flex;
     gap: 24px;
     overflow-x: auto;
-    padding: 10px 60px 30px 60px;
+    padding: 10px 60px 20px 60px;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
 }
@@ -2004,15 +2015,15 @@ html {
 
 /* --- 12. SHOWCASE (3D CAROUSEL) --- */
 .showcase-section {
-    /* Locked to the actual desktop height so throttled loads don't shift
-       the footer when the carousel mounts. Was 40vh (~504px) which caused
-       a ~340px CLS on Lighthouse. */
-    min-height: 850px;
+    /* Header (~100) + carousel (450) + padding (10) ≈ 560; 580 gives a
+       thin buffer without leaving 280 px of dead space under the
+       carousel like the old 850 lock did. */
+    min-height: 580px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 4rem 2rem;
+    padding: 5px 2rem;
     position: relative;
     background-color: #05080f;
     background-image: radial-gradient(at 50% 0%, rgba(20, 40, 70, 0.4) 0%, transparent 60%), linear-gradient(to bottom, #0e1c2f 0%, #050608 100%);
@@ -2028,9 +2039,12 @@ html {
 
 .section-header {
     text-align: center;
-    margin-bottom: 3rem;
+    margin-bottom: 1rem;
     z-index: 10;
-    margin-top: 80px;
+    /* Carousel below scales to 0.9, leaving ~22 px of visual
+       whitespace under it. Add the same on top so the header sits
+       symmetrically inside the showcase frame. */
+    margin-top: 22px;
 }
 
 .section-title {
@@ -2040,7 +2054,7 @@ html {
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    margin-bottom: 1rem;
+    margin-bottom: 0.25rem;
     letter-spacing: -0.02em;
 }
 
@@ -2458,7 +2472,7 @@ html {
 
 /* --- 14. NEWS SECTION (HABERLER) --- */
 .news-section {
-    padding: 80px 0;
+    padding: 3px 0 60px;
     background: transparent;
     position: relative;
     overflow: hidden;
@@ -2688,115 +2702,6 @@ html {
     border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-/* --- 15. STRATEGIC CTA SECTION V2 --- */
-.strategic-cta-v2 {
-    padding: 80px 20px;
-    display: flex;
-    justify-content: center;
-    background: transparent;
-    /* Actual desktop height is 606px; reserve 620 so early paint locks
-       the correct footer position. */
-    min-height: 620px;
-    contain: layout;
-}
-
-.cta-container-v2 {
-    display: flex;
-    background-color: rgba(255, 255, 255, 0.05);
-    border-radius: 24px;
-    overflow: hidden;
-    max-width: 950px;
-    width: 95%;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.cta-card-v2 {
-    flex: 1;
-    background-color: #1e293b;
-    padding: 60px 40px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    transition: all 0.3s ease;
-    cursor: default;
-}
-
-.cta-card-v2:hover {
-    background-color: #263349;
-}
-
-.cta-icon-box {
-    width: 60px;
-    height: 60px;
-    background-color: rgba(255, 255, 255, 0.03);
-    border-radius: 16px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin-bottom: 24px;
-    border: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.cta-card-v2 h2 {
-    color: white;
-    font-size: 28px;
-    margin-bottom: 16px;
-    font-weight: 700;
-}
-
-.cta-card-v2 p {
-    color: #94a3b8;
-    font-size: 16px;
-    line-height: 1.6;
-    margin-bottom: 36px;
-    min-height: 90px;
-}
-
-.cta-action-highlight {
-    display: block;
-    margin-top: 15px;
-    color: #ffffff;
-    font-weight: 600;
-    font-size: 15px;
-    letter-spacing: 0.3px;
-}
-
-.cta-btn {
-    padding: 16px 36px;
-    border-radius: 50px;
-    font-weight: 700;
-    text-decoration: none;
-    font-size: 16px;
-    border: none;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.cta-btn-sell {
-    background-color: #facc15;
-    color: #000;
-}
-
-.cta-btn-sell:hover {
-    background-color: #ffffff;
-    color: #000;
-    transform: translateY(-3px);
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
-}
-
-.cta-btn-buy {
-    background-color: #3b82f6;
-    color: #ffffff;
-}
-
-.cta-btn-buy:hover {
-    background-color: #60a5fa;
-    color: #ffffff;
-    box-shadow: 0 0 25px rgba(59, 130, 246, 0.6);
-    transform: translateY(-3px);
-}
-
 /* --- FIX: HORIZONTAL PRODUCT CARDS --- */
 /* Ensure the products container uses a horizontal, non-wrapping flex row */
 #products {
@@ -2848,20 +2753,6 @@ html {
     overflow: visible;
 }
 
-/* CTA V2 Responsive */
-@media (max-width: 768px) {
-    .cta-container-v2 {
-        flex-direction: column;
-    }
-    .cta-card-v2 {
-        padding: 45px 25px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    }
-    .cta-card-v2:last-child {
-        border-bottom: none;
-    }
-}
-
 /* --- 16. FOOTER BÖLÜMÜ --- */
 /* Footer styles moved to globals.css */
 
@@ -2897,8 +2788,7 @@ html {
     .hp-section,
     .categories-section,
     .news-section,
-    .fair-section,
-    .strategic-cta-v2 {
+    .fair-section {
         padding: 30px 0 !important;
     }
 

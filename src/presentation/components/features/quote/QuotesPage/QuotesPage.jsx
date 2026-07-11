@@ -22,6 +22,7 @@ import { QuotesSidebar } from '../QuotesSidebar/QuotesSidebar';
 import { TRANSPORT_MODE } from '@/core/constants/quoteConstants';
 import { QuoteGrid } from './QuoteGrid';
 import { LegalBanner } from '@/presentation/components/features/legal/LegalBanner/LegalBanner';
+import { LEGAL_SUPPORT_ENABLED } from '@/core/constants/featureFlags';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants
@@ -266,8 +267,10 @@ export function QuotesPage({
           </div>
         </div>
 
-        {/* Legal banner — below quote grids */}
-        <LegalBanner dealId={deal.id} currentUserUid={currentUserUid} />
+        {/* Legal banner — below quote grids, gated behind LEGAL_SUPPORT_ENABLED */}
+        {LEGAL_SUPPORT_ENABLED && (
+          <LegalBanner dealId={deal.id} currentUserUid={currentUserUid} />
+        )}
       </div>
     </div>
   );

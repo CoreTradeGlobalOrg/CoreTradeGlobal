@@ -97,7 +97,7 @@ export function CookieConsent() {
     <>
       {/* Main Banner */}
       {showBanner && (
-      <div className="fixed bottom-0 left-0 right-0 z-[9999] p-4 md:p-6 pointer-events-none">
+      <div className="fixed bottom-0 left-0 right-0 z-[9999] p-2 md:p-6 pointer-events-none">
         <style jsx>{`
           @keyframes slideUp {
             from { transform: translateY(100%); opacity: 0; }
@@ -109,19 +109,19 @@ export function CookieConsent() {
         `}</style>
 
         <div className="max-w-2xl mx-auto pointer-events-auto animate-slideUp">
-          <div className="glass-card p-6 border border-[rgba(255,255,255,0.1)] shadow-2xl">
-            <div className="flex flex-col items-center text-center gap-4">
+          <div className="glass-card p-3 md:p-6 border border-[rgba(255,255,255,0.1)] shadow-2xl">
+            <div className="flex flex-col items-center text-center gap-2 md:gap-4">
               {/* Icon */}
-              <div className="w-14 h-14 rounded-full bg-[#FFD700]/10 flex items-center justify-center">
-                <Cookie className="w-7 h-7 text-[#FFD700]" />
+              <div className="w-8 h-8 md:w-14 md:h-14 rounded-full bg-[#FFD700]/10 flex items-center justify-center">
+                <Cookie className="w-4 h-4 md:w-7 md:h-7 text-[#FFD700]" />
               </div>
 
               {/* Text */}
               <div>
-                <h3 className="text-white font-bold text-lg mb-2">
+                <h3 className="text-white font-bold text-sm md:text-lg mb-1 md:mb-2">
                   We value your privacy
                 </h3>
-                <p className="text-gray-400 text-sm leading-relaxed">
+                <p className="text-gray-400 text-xs md:text-sm leading-relaxed">
                   We use cookies to improve your experience and analyze site traffic.{' '}
                   <Link href="/cookie-policy" className="text-[#FFD700] hover:underline">
                     Learn more
@@ -130,23 +130,23 @@ export function CookieConsent() {
               </div>
 
               {/* Buttons */}
-              <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+              <div className="flex flex-col sm:flex-row gap-2 md:gap-3 w-full sm:w-auto">
                 <button
                   onClick={handleRejectAll}
-                  className="px-5 py-2.5 rounded-xl border border-[rgba(255,255,255,0.2)] text-white font-medium hover:bg-[rgba(255,255,255,0.05)] transition-colors text-sm"
+                  className="px-3 py-1.5 md:px-5 md:py-2.5 rounded-lg md:rounded-xl border border-[rgba(255,255,255,0.2)] text-white font-medium hover:bg-[rgba(255,255,255,0.05)] transition-colors text-xs md:text-sm"
                 >
                   Decline
                 </button>
                 <button
                   onClick={() => setShowSettings(true)}
-                  className="px-5 py-2.5 rounded-xl border border-[#FFD700]/50 text-[#FFD700] font-medium hover:bg-[#FFD700]/10 transition-colors text-sm flex items-center justify-center gap-2"
+                  className="px-3 py-1.5 md:px-5 md:py-2.5 rounded-lg md:rounded-xl border border-[#FFD700]/50 text-[#FFD700] font-medium hover:bg-[#FFD700]/10 transition-colors text-xs md:text-sm flex items-center justify-center gap-1.5 md:gap-2"
                 >
-                  <Settings className="w-4 h-4" />
+                  <Settings className="w-3 h-3 md:w-4 md:h-4" />
                   Customize
                 </button>
                 <button
                   onClick={handleAcceptAll}
-                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#FFD700] to-[#FDB931] text-[#0F1B2B] font-bold hover:shadow-[0_0_20px_rgba(255,215,0,0.3)] transition-all text-sm"
+                  className="px-3 py-1.5 md:px-5 md:py-2.5 rounded-lg md:rounded-xl bg-gradient-to-r from-[#FFD700] to-[#FDB931] text-[#0F1B2B] font-bold hover:shadow-[0_0_20px_rgba(255,215,0,0.3)] transition-all text-xs md:text-sm"
                 >
                   Accept All
                 </button>

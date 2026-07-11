@@ -8,14 +8,28 @@
 
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import Link from 'next/link';
-import { Star } from 'lucide-react';
+import { Star, MessageSquarePlus } from 'lucide-react';
 import { container } from '@/core/di/container';
 import { COUNTRIES } from '@/core/constants/countries';
 import { CountryFlag } from '@/presentation/components/common/CountryFlag/CountryFlag';
 import { useCategories } from '@/presentation/hooks/category/useCategories';
 import { useFavoriteProduct } from '@/presentation/hooks/product/useFavoriteProduct';
+import { useTrackEvent } from '@/presentation/hooks/analytics';
+
+// Sort helper — products with an image come first (visual browsing beats a
+// wall of placeholder tiles), tie-broken by newest createdAt. Applied at
+// fetch time AND after every filter pass so search-results, category-only
+// views, and the fallback suggestion pool all inherit the same rule.
+const sortByImageThenDate = (a, b) => {
+    const aImg = !!(a.images && a.images[0]);
+    const bImg = !!(b.images && b.images[0]);
+    if (aImg !== bImg) return bImg - aImg;
+    const dA = a.createdAt?.toDate?.() || new Date(a.createdAt || 0);
+    const dB = b.createdAt?.toDate?.() || new Date(b.createdAt || 0);
+    return dB - dA;
+};
 
 // Helper to get country name from ISO code
 const getCountryName = (countryCode) => {
@@ -135,6 +149,7 @@ export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter, cou
     const gridTopRef = useRef(null);
     const { categories } = useCategories();
     const { isFavorited, toggleFavorite } = useFavoriteProduct();
+    const { track } = useTrackEvent();
 
     // Fetch Products
     useEffect(() => {
@@ -164,11 +179,7 @@ export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter, cou
                         active.forEach(p => { if (!p.country && userCountryMap[p.userId]) p.country = userCountryMap[p.userId]; });
                     }
 
-                    const sorted = active.sort((a, b) => {
-                        const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
-                        const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
-                        return dateB - dateA;
-                    });
+                    const sorted = active.sort(sortByImageThenDate);
 
                     if (sorted.length > 0) {
                         setProducts(sorted);
@@ -217,7 +228,7 @@ export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter, cou
             result = result.filter(p => p.country === countryFilter);
         }
 
-        setFilteredProducts(result);
+        setFilteredProducts([...result].sort(sortByImageThenDate));
 
     }, [products, searchQuery, categoryFilter, categoryIdFilter, countryFilter]);
 
@@ -238,6 +249,50 @@ export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter, cou
         ? 'grid-cols-1 sm:grid-cols-2 xl:grid-cols-3'
         : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4';
 
+    // Netflix-style suggestions when the current filter combo returns zero.
+    // Priority ladder: keep whatever narrow filter the user set (category or
+    // country) and drop the search string; fall through to the whole
+    // catalog. `products` is already image-first + newest-first sorted so
+    // we just take the head.
+    const suggestedProducts = useMemo(() => {
+        if (!searchQuery) return [];
+        const inCategory = (p) => {
+            if (categoryFilter && !(p.category && p.category.toLowerCase() === categoryFilter.toLowerCase())) return false;
+            if (categoryIdFilter && p.categoryId !== categoryIdFilter) return false;
+            return true;
+        };
+        const inCountry = (p) => (countryFilter ? p.country === countryFilter : true);
+
+        if (categoryFilter || categoryIdFilter) {
+            const scoped = products.filter((p) => inCategory(p) && inCountry(p));
+            if (scoped.length > 0) return scoped;
+        }
+        if (countryFilter) {
+            const scoped = products.filter(inCountry);
+            if (scoped.length > 0) return scoped;
+        }
+        return products;
+    }, [products, searchQuery, categoryFilter, categoryIdFilter, countryFilter]);
+
+    // Fire zero_result_search once per (query, filter combo) so the same
+    // empty result set doesn't spam analytics on every re-render.
+    const lastZeroKeyRef = useRef('');
+    useEffect(() => {
+        if (loading) return;
+        if (filteredProducts.length !== 0) return;
+        if (!searchQuery) return;
+        const key = `${searchQuery}|${categoryFilter}|${categoryIdFilter}|${countryFilter}`;
+        if (lastZeroKeyRef.current === key) return;
+        lastZeroKeyRef.current = key;
+        track('zero_result_search', {
+            search_term: searchQuery,
+            category: categoryFilter || null,
+            category_id: categoryIdFilter || null,
+            country: countryFilter || null,
+            suggestions_count: suggestedProducts.length,
+        });
+    }, [loading, filteredProducts.length, searchQuery, categoryFilter, categoryIdFilter, countryFilter, suggestedProducts.length, track]);
+
     if (loading) {
         return (
             <div className={`grid ${gridColsClass} gap-6`}>
@@ -249,11 +304,58 @@ export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter, cou
     }
 
     if (filteredProducts.length === 0) {
+        const suggested = suggestedProducts.slice(0, 12);
+        const rfqHref = searchQuery
+            ? `/request/new?title=${encodeURIComponent(searchQuery)}`
+            : '/request/new';
         return (
-            <div className="text-center py-20">
-                <div className="text-6xl mb-4">🔍</div>
-                <h3 className="text-xl font-bold text-white mb-2">No products found</h3>
-                <p className="text-[#A0A0A0]">Try adjusting your search or filters.</p>
+            <div>
+                <div className="text-center py-10 px-4">
+                    <h3 className="text-xl font-bold text-white mb-2">
+                        {searchQuery
+                            ? <>No exact matches for <span className="text-[#FFD700]">&ldquo;{searchQuery}&rdquo;</span></>
+                            : 'No products found'}
+                    </h3>
+                    <p className="text-[#A0A0A0] mb-5">
+                        {searchQuery
+                            ? "Can't find what you're looking for? Post an RFQ and let sellers come to you."
+                            : 'Try adjusting your filters.'}
+                    </p>
+                    <Link
+                        href={rfqHref}
+                        style={{ color: '#ffffff' }}
+                        className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#3b82f6] font-bold text-sm hover:bg-[#60a5fa] hover:shadow-[0_0_25px_rgba(59,130,246,0.55)] transition-all no-underline"
+                        onClick={() => track('rfq_cta_from_zero_search', { search_term: searchQuery })}
+                    >
+                        <MessageSquarePlus className="w-4 h-4" />
+                        {searchQuery
+                            ? <>Post an RFQ for &ldquo;{searchQuery}&rdquo;</>
+                            : 'Post an RFQ'}
+                    </Link>
+                </div>
+
+                {suggested.length > 0 && (
+                    <>
+                        <div className="flex items-center gap-3 mb-5 mt-4">
+                            <div className="flex-1 h-px bg-[rgba(255,255,255,0.1)]" />
+                            <span className="text-xs uppercase tracking-wider text-[#A0A0A0] font-semibold">
+                                You might also like
+                            </span>
+                            <div className="flex-1 h-px bg-[rgba(255,255,255,0.1)]" />
+                        </div>
+                        <div className={`grid ${gridColsClass} gap-6`}>
+                            {suggested.map((product) => (
+                                <ProductCard
+                                    key={product.id}
+                                    product={product}
+                                    categories={categories}
+                                    isFavorited={isFavorited(product.id)}
+                                    onToggleFavorite={toggleFavorite}
+                                />
+                            ))}
+                        </div>
+                    </>
+                )}
             </div>
         );
     }

@@ -16,7 +16,6 @@ import { HeroSection } from '@/presentation/components/homepage/Hero/HeroSection
 import { FeaturedProducts } from '@/presentation/components/homepage/Products/FeaturedProducts';
 import { FeaturedRFQs } from '@/presentation/components/homepage/RFQs/FeaturedRFQs';
 import { CategoriesSection } from '@/presentation/components/homepage/Categories/CategoriesSection';
-import { StrategicCTA } from '@/presentation/components/homepage/StrategicCTA/StrategicCTA';
 import { CompaniesSection } from '@/presentation/components/homepage/Companies/CompaniesSection';
 
 // Only the *last three* sections are dynamic — they sit well below the
@@ -28,15 +27,15 @@ import { CompaniesSection } from '@/presentation/components/homepage/Companies/C
 // which was ~200px shorter than the real content).
 const ShowcaseSection = dynamic(
   () => import('@/presentation/components/homepage/Showcase/ShowcaseSection').then((m) => m.ShowcaseSection),
-  { loading: () => <section className="showcase-section" style={{ minHeight: 850 }} /> }
+  { loading: () => <section className="showcase-section" style={{ minHeight: 580 }} /> }
 );
 const FairsSection = dynamic(
   () => import('@/presentation/components/homepage/Fairs/FairsSection').then((m) => m.FairsSection),
-  { loading: () => <div className="fairs-wrapper" style={{ minHeight: 640 }} /> }
+  { loading: () => <div className="fairs-wrapper" style={{ minHeight: 585 }} /> }
 );
 const NewsSection = dynamic(
   () => import('@/presentation/components/homepage/News/NewsSection').then((m) => m.NewsSection),
-  { loading: () => <section className="news-section" style={{ minHeight: 710 }} /> }
+  { loading: () => <section className="news-section" style={{ minHeight: 620 }} /> }
 );
 
 export default function Home() {
@@ -55,17 +54,14 @@ export default function Home() {
       {/* Featured RFQ Requests */}
       <FeaturedRFQs />
 
-      {/* Categories Section */}
-      <CategoriesSection />
-
-      {/* Strategic CTA (for non-authenticated users) */}
-      <StrategicCTA />
+      {/* 3D Carousel - Featured Companies Showcase */}
+      <ShowcaseSection />
 
       {/* Companies Section (Grid) */}
       <CompaniesSection />
 
-      {/* 3D Carousel - Featured Companies Showcase */}
-      <ShowcaseSection />
+      {/* Categories Section */}
+      <CategoriesSection />
 
       {/* Upcoming Fairs */}
       <FairsSection />
