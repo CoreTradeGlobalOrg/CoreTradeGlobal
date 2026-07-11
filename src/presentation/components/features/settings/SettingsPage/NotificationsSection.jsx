@@ -10,6 +10,7 @@
 import { Bell } from 'lucide-react';
 import { useAuth } from '@/presentation/contexts/AuthContext';
 import { useNotificationPreferences } from '@/presentation/hooks/settings/useNotificationPreferences';
+import { LEGAL_SUPPORT_ENABLED } from '@/core/constants/featureFlags';
 
 const CATEGORIES = [
   {
@@ -22,11 +23,13 @@ const CATEGORIES = [
     label: 'Messages',
     description: 'New messages in conversations',
   },
-  {
-    key: 'legal',
-    label: 'Legal',
-    description: 'Engagement requests and draft updates',
-  },
+  ...(LEGAL_SUPPORT_ENABLED
+    ? [{
+        key: 'legal',
+        label: 'Legal',
+        description: 'Engagement requests and draft updates',
+      }]
+    : []),
   {
     key: 'providers',
     label: 'Providers',

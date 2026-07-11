@@ -231,18 +231,36 @@ export function RegisterFormFields({ step, register, errors, loading, setValue, 
     return (
       <div key="register-step-3" className="space-y-4">
         <div>
-          <label htmlFor="companyType" className="block text-xs text-[#A0A0A0] font-semibold tracking-wider uppercase mb-1.5">
+          <label className="block text-xs text-[#A0A0A0] font-semibold tracking-wider uppercase mb-1.5">
             Company Type <span className="text-red-400">*</span>
           </label>
-          <SearchableSelect
-            options={COMPANY_TYPES}
-            value={companyType}
-            onChange={(value) => setValue('companyType', value, { shouldValidate: true })}
-            placeholder="Select company type"
-            disabled={loading}
-            error={!!errors.companyType}
-            className="dark-select"
-          />
+          <div
+            role="radiogroup"
+            aria-label="Company Type"
+            aria-invalid={!!errors.companyType}
+            className="grid grid-cols-3 gap-2"
+          >
+            {COMPANY_TYPES.map((opt) => {
+              const selected = companyType === opt.value;
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  role="radio"
+                  aria-checked={selected}
+                  disabled={loading}
+                  onClick={() => setValue('companyType', opt.value, { shouldValidate: true })}
+                  className={`px-3 py-3 rounded-lg border text-sm font-semibold transition-all focus:outline-none focus:ring-2 focus:ring-[#FFD700] disabled:opacity-60 ${
+                    selected
+                      ? 'bg-[rgba(255,215,0,0.15)] border-[#FFD700] text-[#FFD700]'
+                      : 'bg-[rgba(255,255,255,0.04)] border-[rgba(255,255,255,0.12)] text-white hover:border-[rgba(255,215,0,0.5)]'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              );
+            })}
+          </div>
           {errors.companyType && (
             <p className="mt-1 text-xs text-red-400">{errors.companyType.message}</p>
           )}

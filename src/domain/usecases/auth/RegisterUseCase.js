@@ -81,36 +81,43 @@ export class RegisterUseCase {
         updatedAt: new Date(),
       };
 
-      // 3. Create user account
+      // 3. Create user account (blocking — user object required to return)
       const user = await this.authRepository.register(
         email,
         password,
         profileData
       );
 
-      // 4. Upload company logo if provided
+      // 4. Logo upload + email verification run in the background so the
+      //    UI can navigate away as soon as the auth account exists. Logo
+      //    can be multi-MB; verification email adds another network hop.
+      //    Neither is required to have finished before the user lands on
+      //    the homepage — the logo streams into the profile as soon as
+      //    the upload completes.
       if (companyLogoFile && user.uid) {
-        try {
-          const logoUrl = await this.authRepository.uploadCompanyLogo(
-            user.uid,
-            companyLogoFile
-          );
-
-          // Update user profile with logo URL
-          if (logoUrl) {
-            await this.authRepository.updateUserProfile(user.uid, {
+        this.authRepository
+          .uploadCompanyLogo(user.uid, companyLogoFile)
+          .then((logoUrl) => {
+            if (!logoUrl) return null;
+            return this.authRepository.updateUserProfile(user.uid, {
               companyLogo: logoUrl,
               updatedAt: new Date(),
             });
-          }
-        } catch (logoError) {
-          console.error('❌ [RegisterUseCase] Failed to upload company logo:', logoError.message);
-          // Don't fail registration if logo upload fails
-        }
+          })
+          .catch((logoError) => {
+            console.error(
+              '❌ [RegisterUseCase] Background logo upload failed:',
+              logoError.message
+            );
+          });
       }
 
-      // 5. Send email verification
-      await this.authRepository.sendEmailVerification();
+      this.authRepository.sendEmailVerification().catch((verifyError) => {
+        console.error(
+          '❌ [RegisterUseCase] Background sendEmailVerification failed:',
+          verifyError.message
+        );
+      });
 
       return user;
     } catch (error) {

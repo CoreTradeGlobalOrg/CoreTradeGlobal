@@ -139,10 +139,17 @@ export default function RootLayout({ children }) {
           body{display:flex;flex-direction:column;min-height:100vh}
           body>*{flex-shrink:0}
           .footer-section{margin-top:auto}
-          .main-content-reservation{min-height:6500px}
-          .homepage{min-height:6500px}
-          @media (max-width:1024px){.main-content-reservation,.homepage{min-height:5000px}}
-          @media (max-width:600px){.main-content-reservation,.homepage{min-height:0}}
+          /* Homepage reservation — React 19 streams (main)/page via a
+             BAILOUT_TO_CLIENT_SIDE_RENDERING placeholder that ships an
+             empty <div hidden> in the SSR HTML; without this clamp the
+             footer paints at ~y=396 during hydration and only settles
+             at ~y=4600 once the client tree renders (~0.4 CLS). Value =
+             hero 780 + products 740 + rfqs 540 + showcase 580 +
+             companies 460 + categories 240 + fairs 585 + news 620 =
+             4545, rounded up to 4600 with a thin buffer. */
+          .main-content-reservation{min-height:4600px}
+          @media (max-width:1024px){.main-content-reservation{min-height:4000px}}
+          @media (max-width:600px){.main-content-reservation{min-height:0}}
         ` }} />
         {/* Analytics stack moved to strategy="lazyOnload" — the browser
             defers fetch/eval until the window load event, so gtag.js

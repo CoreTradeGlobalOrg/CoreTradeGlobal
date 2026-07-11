@@ -20,6 +20,7 @@ import { useAuth } from '@/presentation/contexts/AuthContext';
 import { container } from '@/core/di/container';
 import { ENGAGEMENT_STATUS } from '@/core/constants/legalConstants';
 import { Scale, ShieldOff, Clock, ArrowLeft } from 'lucide-react';
+import { LEGAL_SUPPORT_ENABLED } from '@/core/constants/featureFlags';
 
 const LegalChannel = dynamic(
   () => import('@/presentation/components/features/legal/LegalChannel/LegalChannel').then(m => ({ default: m.LegalChannel })),
@@ -59,12 +60,22 @@ function LegalChannelPageInner() {
   const [engagement, setEngagement] = useState(null);
   const [loadingData, setLoadingData] = useState(true);
 
+  // ── Feature flag guard: Legal Support is paused ──────────────────────────────
+  useEffect(() => {
+    if (!LEGAL_SUPPORT_ENABLED) {
+      router.replace('/');
+    }
+  }, [router]);
+
   // ── Auth guard ──────────────────────────────────────────────────────────────
   useEffect(() => {
+    if (!LEGAL_SUPPORT_ENABLED) return;
     if (!authLoading && !isAuthenticated) {
       router.replace('/login');
     }
   }, [authLoading, isAuthenticated, router]);
+
+  if (!LEGAL_SUPPORT_ENABLED) return null;
 
   // ── Load deal and engagement ─────────────────────────────────────────────────
   useEffect(() => {

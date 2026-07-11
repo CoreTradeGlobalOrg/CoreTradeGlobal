@@ -75,17 +75,27 @@ export function GlobeCanvas({ className = '', onReady }) {
     const clampedDpr = Math.min(dpr, maxDpr);
 
     // Physical pixel intrinsic size for the canvas backing store.
+    // Setting canvas.width/height AFTER transferControlToOffscreen throws
+    // InvalidStateError — React StrictMode's double-effect in dev makes
+    // this reachable because the same canvas ref survives the cleanup +
+    // remount. Wrap the intrinsic-size setter in try/catch and fall back
+    // to the R3F path for the rest of the session if we hit it.
     const physicalWidth = Math.floor(cssWidth * clampedDpr);
     const physicalHeight = Math.floor(cssHeight * clampedDpr);
-    canvas.width = physicalWidth;
-    canvas.height = physicalHeight;
+    try {
+      canvas.width = physicalWidth;
+      canvas.height = physicalHeight;
+    } catch {
+      setPathMode(false);
+      return;
+    }
     canvas.style.width = `${cssWidth}px`;
     canvas.style.height = `${cssHeight}px`;
 
     let offscreen;
     try {
       offscreen = canvas.transferControlToOffscreen();
-    } catch (err) {
+    } catch {
       // A canvas can only be transferred once. If a stale one is passed
       // (StrictMode double-effect in dev), fall back for this session.
       setPathMode(false);

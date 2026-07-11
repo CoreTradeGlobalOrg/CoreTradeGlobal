@@ -3,13 +3,12 @@ User-agent: *
 Allow: /
 
 # Sitemap
-Sitemap: https://coretradeglobal.com/sitemap.xml
+Sitemap: https://www.coretradeglobal.com/sitemap.xml
 
 # Disallow admin and auth pages
 Disallow: /admin
 Disallow: /api/
 Disallow: /auth/
-Disallow: /login
 Disallow: /register
 Disallow: /forgot-password
 Disallow: /reset-password

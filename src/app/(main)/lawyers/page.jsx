@@ -14,6 +14,7 @@ import { Suspense, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/presentation/contexts/AuthContext';
 import { LawyerDirectory } from '@/presentation/components/features/legal/LawyerDirectory/LawyerDirectory';
+import { LEGAL_SUPPORT_ENABLED } from '@/core/constants/featureFlags';
 
 function LawyersPageContent() {
   const { isAuthenticated, loading: authLoading } = useAuth();
@@ -21,12 +22,23 @@ function LawyersPageContent() {
   const searchParams = useSearchParams();
   const dealId = searchParams.get('dealId');
 
+  // Feature paused — bounce anyone landing here (bookmark, external link)
+  // back to the homepage instead of exposing an in-progress screen.
+  useEffect(() => {
+    if (!LEGAL_SUPPORT_ENABLED) {
+      router.replace('/');
+    }
+  }, [router]);
+
   // Redirect to login if not authenticated
   useEffect(() => {
+    if (!LEGAL_SUPPORT_ENABLED) return;
     if (!authLoading && !isAuthenticated) {
       router.replace('/login?redirect=/lawyers');
     }
   }, [authLoading, isAuthenticated, router]);
+
+  if (!LEGAL_SUPPORT_ENABLED) return null;
 
   if (authLoading) {
     return (

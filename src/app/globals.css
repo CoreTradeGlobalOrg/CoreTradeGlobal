@@ -843,14 +843,7 @@ a:hover {
 }
 
 /* --- FAIRS SECTION (from HTML template) --- */
-.fairs-wrapper {
-  width: 100%;
-  background: transparent;
-  display: flex;
-  justify-content: center;
-  padding: 60px 0;
-  border-top: 1px solid rgba(255,255,255,0.05);
-}
+/* .fairs-wrapper defined in (main)/homepage.css — duplicate removed */
 
 .exhibitions-container {
   width: 100%;

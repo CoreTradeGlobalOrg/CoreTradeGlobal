@@ -57,8 +57,17 @@ export default function FairsPage() {
         const fetchFairs = async () => {
             try {
                 const fairsRepo = container.getFairsRepository();
-                const fetchedFairs = await fairsRepo.getAll();
-                setFairs(fetchedFairs);
+                // getAll orders by startDate ASC with limit 50 — with a
+                // long history of past fairs upcoming ones get cut off
+                // and never reach this page. Fetch active (ongoing +
+                // upcoming) and past through their dedicated queries
+                // (both filter by the cron-maintained `status` field)
+                // and merge for the client-side partitioner below.
+                const [active, past] = await Promise.all([
+                    fairsRepo.getActive({ limit: 200 }),
+                    fairsRepo.getPast({ limit: 100 }),
+                ]);
+                setFairs([...active, ...past]);
             } catch (error) {
                 console.error('Error fetching fairs:', error);
             } finally {

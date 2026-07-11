@@ -189,7 +189,7 @@ function buildWelcomeEmailHtml(displayName, userID) {
                     <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px;">
                       <tr>
                         <td valign="middle" width="110" style="padding: 12px 0 12px 12px; text-align: center;">
-                          <a href="https://www.coretradeglobal.com/products" target="_blank" class="step-btn">
+                          <a href="https://www.coretradeglobal.com/product/new" target="_blank" class="step-btn">
                             <table border="0" cellpadding="0" cellspacing="0" width="100%">
                               <tr>
                                 <td width="16" style="font-size: 1px; line-height: 1;">&nbsp;</td>
@@ -220,7 +220,7 @@ function buildWelcomeEmailHtml(displayName, userID) {
                     <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px;">
                       <tr>
                         <td valign="middle" width="110" style="padding: 12px 0 12px 12px; text-align: center;">
-                          <a href="https://www.coretradeglobal.com/requests" target="_blank" class="step-btn">
+                          <a href="https://www.coretradeglobal.com/request/new" target="_blank" class="step-btn">
                             <table border="0" cellpadding="0" cellspacing="0" width="100%">
                               <tr>
                                 <td width="16" style="font-size: 1px; line-height: 1;">&nbsp;</td>
@@ -1401,6 +1401,48 @@ exports.sendWelcomeOnRegister = onDocumentCreated(
       } catch (err) {
         console.error(`sendWelcomeOnRegister: failed to create verify-email notification for ${uid}:`, err);
       }
+    }
+
+    // Fan out an "awaiting approval" notification to every admin so they
+    // can review + approve the new user. Previously this ran client-side
+    // during registration (querying `where role == admin` + one write per
+    // admin), which added noticeable latency to the register-to-homepage
+    // hop and also exposed the admin roster to any authenticated client.
+    // Moving it here removes both problems.
+    try {
+      const companyName = userData.companyName || '—';
+      const adminsSnap = await db
+        .collection('users')
+        .where('role', '==', 'admin')
+        .limit(50)
+        .get();
+      if (!adminsSnap.empty) {
+        const batch = db.batch();
+        const notification = {
+          type: 'new_user_approval',
+          title: 'New User Awaiting Approval',
+          body: `${displayName} from "${companyName}" has registered and needs approval`,
+          data: {
+            userId: uid,
+            userName: displayName,
+            companyName,
+            email,
+          },
+          isRead: false,
+          createdAt: Timestamp.now(),
+        };
+        adminsSnap.docs.forEach((adminDoc) => {
+          const ref = db
+            .collection('users')
+            .doc(adminDoc.id)
+            .collection('notifications')
+            .doc();
+          batch.set(ref, notification);
+        });
+        await batch.commit();
+      }
+    } catch (err) {
+      console.error(`sendWelcomeOnRegister: failed to fan out admin approval notifications for ${uid}:`, err);
     }
 
     return null;

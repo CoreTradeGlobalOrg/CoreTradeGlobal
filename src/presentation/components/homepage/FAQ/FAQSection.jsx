@@ -61,7 +61,7 @@ const getFaqSections = (onAddProduct) => [
             <span className="block">CoreTradeGlobal provides your business with a seamless, digital infrastructure for continuous growth in global markets:</span>
             <span className="block pl-4"><strong className="text-white">Zero-Cost Start:</strong> Creating a company profile, uploading your catalogs, and listing your products is completely free.</span>
             <span className="block pl-4"><strong className="text-white">24/7 Global Digital Visibility:</strong> Without spending thousands of dollars on physical trade fairs and international travel, you can showcase your products to target buyers worldwide 24/7, securing a permanent export channel in the digital space.</span>
-            <span className="block pl-4"><strong className="text-white">Flexible Operations:</strong> By directly accessing global logistics, cargo insurance, and legal support solutions through a single platform, you can manage your foreign trade operations much faster and more cost-effectively.</span>
+            <span className="block pl-4"><strong className="text-white">Flexible Operations:</strong> By directly accessing global logistics and cargo insurance solutions through a single platform, you can manage your foreign trade operations much faster and more cost-effectively.</span>
           </span>
         ),
       },
@@ -159,14 +159,7 @@ const getFaqSections = (onAddProduct) => [
         id: 16,
         question: 'What does the platform do in case of a buyer-seller dispute?',
         answer: (
-          <>CoreTradeGlobal is a global trade ecosystem that brings buyers and sellers together; therefore, any potential disputes arising from transactions executed between parties are strictly the responsibility of the participating companies. However, in such scenarios, businesses can choose to utilize the professional advisory legal services available within our platform to safely resolve the issue within legal frameworks.</>
-        ),
-      },
-      {
-        id: 17,
-        question: 'What does the legal support cover?',
-        answer: (
-          <>The advisory legal services accessible through our platform provide professional guidance across all critical legal stages of foreign trade. This includes compliance with international trade law regulations, drafting or reviewing cross-border agreements, correct application of Incoterms rules, and managing legal procedures during potential commercial disputes.</>
+          <>CoreTradeGlobal is a global trade ecosystem that brings buyers and sellers together; therefore, any potential disputes arising from transactions executed between parties are strictly the responsibility of the participating companies. We recommend that parties resolve any issues in good faith or, where necessary, through their own legal advisors within the appropriate jurisdiction.</>
         ),
       },
       {

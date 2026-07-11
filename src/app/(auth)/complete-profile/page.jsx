@@ -18,14 +18,21 @@ export default function CompleteProfilePage() {
   const { user, loading, profileLoading } = useAuth();
   const router = useRouter();
 
+  // Trust `profileComplete: true` outright; also treat presence of concrete
+  // profile fields (companyName / role / firstName) as completed so a
+  // legacy or stale doc where the flag was never set doesn't leave a
+  // returning user stuck on this form.
+  const hasProfileEvidence = !!(user && (user.companyName || user.role || user.firstName));
+  const isCompleted = !!user && (user.profileComplete === true || hasProfileEvidence);
+
   useEffect(() => {
     if (loading || profileLoading) return;
     if (!user) {
       router.push('/login');
-    } else if (user.profileComplete) {
+    } else if (isCompleted) {
       router.push('/');
     }
-  }, [user, loading, profileLoading, router]);
+  }, [user, loading, profileLoading, router, isCompleted]);
 
   if (loading || profileLoading) {
     return (
@@ -36,7 +43,7 @@ export default function CompleteProfilePage() {
     );
   }
 
-  if (!user || user.profileComplete) {
+  if (!user || isCompleted) {
     return null;
   }
 

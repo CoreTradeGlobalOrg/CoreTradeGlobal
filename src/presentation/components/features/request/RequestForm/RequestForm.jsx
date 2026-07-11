@@ -25,7 +25,11 @@ export function RequestForm({ request, onSubmit, onCancel, userId }) {
   const [submitting, setSubmitting] = useState(false);
   const { trackCreateRequest } = useTrackEvent();
 
-  const isEditing = !!request;
+  // Edit mode is triggered ONLY when the caller passes an existing RFQ
+  // (identified by `id`). A prop like `{ productName: 'x' }` is a
+  // prefill seed — those are new RFQs, not edits, so isEditing stays
+  // false and the submit button / toast copy stay on "Create".
+  const isEditing = !!request?.id;
 
   const {
     register,

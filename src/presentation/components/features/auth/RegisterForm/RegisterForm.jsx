@@ -146,16 +146,23 @@ export function RegisterForm() {
       await registerUser(registerData);
       trackSignUp('email');
 
+      // Provider role claim + forced token refresh run in the background.
+      // Cold-start on setRoleClaimOnRegistration can add 3-5 s; we don't
+      // need the claim until the user hits a role-gated route, and
+      // AuthContext refreshes the ID token on its next natural cycle.
+      // Firing this after router.push lets the homepage paint immediately.
       if (role !== 'member') {
-        try {
-          const setRoleClaim = httpsCallable(getFunctionsInstance(), 'setRoleClaimOnRegistration');
-          await setRoleClaim({ role });
-          if (auth.currentUser) {
-            await auth.currentUser.getIdToken(true);
+        (async () => {
+          try {
+            const setRoleClaim = httpsCallable(getFunctionsInstance(), 'setRoleClaimOnRegistration');
+            await setRoleClaim({ role });
+            if (auth.currentUser) {
+              await auth.currentUser.getIdToken(true);
+            }
+          } catch (claimErr) {
+            console.error('setRoleClaimOnRegistration failed (non-critical):', claimErr);
           }
-        } catch (claimErr) {
-          console.error('setRoleClaimOnRegistration failed (non-critical):', claimErr);
-        }
+        })();
       }
 
       toast.success(
