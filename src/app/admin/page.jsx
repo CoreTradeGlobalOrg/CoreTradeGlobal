@@ -77,6 +77,14 @@ const TestimonialsManager = dynamic(
   () => import('@/presentation/components/features/admin/TestimonialsManager/TestimonialsManager').then(m => ({ default: m.TestimonialsManager })),
   { loading: () => <AdminTabSkeleton />, ssr: false }
 );
+const ResendBackfillCard = dynamic(
+  () => import('@/presentation/components/features/admin/ResendBackfill/ResendBackfillCard').then(m => ({ default: m.ResendBackfillCard })),
+  { ssr: false }
+);
+const AdInquiriesManager = dynamic(
+  () => import('@/presentation/components/features/admin/AdInquiriesManager/AdInquiriesManager').then(m => ({ default: m.AdInquiriesManager })),
+  { loading: () => <AdminTabSkeleton />, ssr: false }
+);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Trade Overview Stats
@@ -166,7 +174,7 @@ function AdminPageContent() {
   const searchParams = useSearchParams();
   const { user, loading: authLoading, profileLoading, isAuthenticated } = useAuth();
   const { users, loading, error, refetch } = useGetAllUsers();
-  const validTabs = ['users', 'trades', 'messages', 'categories', 'fairs', 'news', 'testimonials', 'announcements', 'product-requests'];
+  const validTabs = ['users', 'trades', 'messages', 'categories', 'fairs', 'news', 'testimonials', 'announcements', 'product-requests', 'ad-inquiries'];
   const tabFromUrl = searchParams.get('tab');
   const [activeTab, setActiveTab] = useState(
     validTabs.includes(tabFromUrl) ? tabFromUrl : 'users'
@@ -242,7 +250,7 @@ function AdminPageContent() {
       {/* Tabs - Scrollable on mobile */}
       <div className="mb-6 md:mb-8 border-b border-[rgba(255,255,255,0.1)] -mx-4 px-4 md:mx-0 md:px-0">
         <nav className="-mb-px flex space-x-4 md:space-x-8 overflow-x-auto scrollbar-hide pb-px">
-          {['users', 'trades', 'messages', 'categories', 'fairs', 'news', 'testimonials', 'announcements', 'product-requests'].map((tab) => {
+          {['users', 'trades', 'messages', 'categories', 'fairs', 'news', 'testimonials', 'announcements', 'product-requests', 'ad-inquiries'].map((tab) => {
             const tabLabels = {
               users: 'Users',
               trades: 'Trades',
@@ -253,6 +261,7 @@ function AdminPageContent() {
               testimonials: 'Testimonials',
               announcements: 'Announcements',
               'product-requests': 'Product Requests',
+              'ad-inquiries': 'Ad Inquiries',
             };
             return (
               <button
@@ -284,6 +293,9 @@ function AdminPageContent() {
 
           {/* Users Table */}
           <UsersTable users={users} onRefresh={refetch} />
+
+          {/* Resend Audience Backfill — one-off admin utility */}
+          <ResendBackfillCard />
 
           {/* Refresh Button */}
           <div className="mt-6 flex justify-end">
@@ -351,6 +363,13 @@ function AdminPageContent() {
       {activeTab === 'product-requests' && (
         <div className="text-white">
           <ProductUploadRequestsManager users={users} />
+        </div>
+      )}
+
+      {/* Ad Inquiries Tab */}
+      {activeTab === 'ad-inquiries' && (
+        <div className="text-white">
+          <AdInquiriesManager />
         </div>
       )}
     </div>

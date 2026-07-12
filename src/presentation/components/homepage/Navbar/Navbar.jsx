@@ -59,6 +59,7 @@ const getNavGroups = (user) => [
       { label: 'Products', href: '/products' },
       { label: 'RFQs', href: '/requests' },
       { label: 'Categories', href: '/categories' },
+      { label: 'Freight Estimator', href: '/freight-estimator' },
     ],
   },
   {
@@ -83,9 +84,9 @@ const getNavGroups = (user) => [
     ],
   },
   {
-    label: 'Tools',
+    label: 'Pricing',
     items: [
-      { label: 'Freight Estimator', href: '/freight-estimator' },
+      { label: 'Pricing', href: '/pricing' },
     ],
   },
   {
@@ -105,7 +106,6 @@ const getNavGroups = (user) => [
     label: 'About',
     items: [
       { label: 'About Us', href: '/about-us' },
-      // { label: 'Pricing', href: '/pricing' },
       { label: 'FAQ', href: '/faq' },
       { label: 'Contact', href: '/contact' },
     ],

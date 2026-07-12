@@ -11,8 +11,8 @@ import { db } from '@/core/config/firebase.config';
 const STATS = [
   {
     icon: Users,
-    title: 'Join Free & Fast',
-    desc: 'Create your profile in minutes with zero setup fees',
+    title: 'No Fees, No Commission',
+    desc: 'Completely free. Trade free. No hidden costs at any step.',
   },
   {
     icon: Globe,
@@ -208,7 +208,10 @@ export default function JoinPage() {
         </div>
 
         {/* Register Form */}
-        <div className="w-full max-w-[500px]">
+        <div
+          id="register-form"
+          className="w-full max-w-[500px] scroll-mt-[calc(var(--navbar-height)+16px)]"
+        >
           <Suspense fallback={<div className="h-64 rounded-2xl bg-[rgba(255,255,255,0.04)] animate-pulse" />}>
             <RegisterForm />
           </Suspense>
@@ -301,8 +304,13 @@ export default function JoinPage() {
             Free to join. No setup fees. Start connecting with verified partners today.
           </p>
           <a
-            href="#top"
-            onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+            href="#register-form"
+            onClick={(e) => {
+              e.preventDefault();
+              document
+                .getElementById('register-form')
+                ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }}
             style={{ color: '#000', WebkitTextFillColor: '#000' }}
             className="inline-block px-10 py-4 bg-gradient-to-r from-[#FFD700] to-[#FDB931] font-bold text-lg rounded-full shadow-[0_0_20px_rgba(255,215,0,0.3)] hover:shadow-[0_0_30px_rgba(255,215,0,0.5)] hover:-translate-y-1 transition-all duration-300 no-underline"
           >

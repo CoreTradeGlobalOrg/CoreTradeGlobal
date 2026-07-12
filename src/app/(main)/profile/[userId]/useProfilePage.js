@@ -138,7 +138,27 @@ export function useProfilePage({ userId, currentUser, authLoading, isAuthenticat
         const ext = logoFile.name.split('.').pop();
         logoUrl = await container.getFirebaseStorageDataSource().uploadFile(`users/${userId}/company-logo/image.${ext}`, logoFile);
       }
-      await repo.update(userId, { phone, about, linkedinProfile, companyWebsite, companyLogo: logoUrl, updatedAt: new Date() });
+      // Users routinely type `example.com` without the scheme — Firebase
+      // stores it as-is and Link/anchor rendering treats it as a relative
+      // URL, breaking the outbound click. Auto-prepend `https://` when
+      // the input is non-empty and doesn't already carry a scheme; leave
+      // an already-prefixed `http://` alone in case someone explicitly
+      // pointed at a non-TLS host.
+      const normalizeUrl = (raw) => {
+        const trimmed = (raw || '').trim();
+        if (!trimmed) return '';
+        return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+      };
+      const normalizedWebsite = normalizeUrl(companyWebsite);
+      const normalizedLinkedIn = normalizeUrl(linkedinProfile);
+      await repo.update(userId, {
+        phone,
+        about,
+        linkedinProfile: normalizedLinkedIn,
+        companyWebsite: normalizedWebsite,
+        companyLogo: logoUrl,
+        updatedAt: new Date(),
+      });
       const updated = await repo.getById(userId);
       setProfileUser(updated); setLogoPreview(updated.companyLogo || null);
       toast.success('Profile updated successfully!');

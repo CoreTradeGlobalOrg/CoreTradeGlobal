@@ -240,10 +240,14 @@ export function ProfileCard({
             <p className="text-sm font-semibold uppercase tracking-wider mb-2 bg-gradient-to-r from-[#C0C0C0] via-[#FFFFFF] to-[#C0C0C0] bg-clip-text text-transparent">LinkedIn</p>
             {canEdit && isEditing ? (
               <input
-                type="url"
+                type="text"
+                inputMode="url"
+                autoCapitalize="off"
+                autoCorrect="off"
+                spellCheck={false}
                 value={linkedinProfile}
                 onChange={(e) => setLinkedinProfile(e.target.value)}
-                placeholder="https://linkedin.com/in/yourprofile"
+                placeholder="linkedin.com/in/yourprofile"
                 className="w-full bg-[rgba(255,255,255,0.05)] text-white font-semibold text-base focus:outline-none focus:border-[#FFD700] border-2 border-[#FFD700]/50 rounded-xl px-3 py-2 shadow-[0_0_15px_rgba(255,215,0,0.2)] animate-pulse-glow"
               />
             ) : profileUser?.linkedinProfile ? (
@@ -264,10 +268,14 @@ export function ProfileCard({
             <p className="text-sm font-semibold uppercase tracking-wider mb-2 bg-gradient-to-r from-[#C0C0C0] via-[#FFFFFF] to-[#C0C0C0] bg-clip-text text-transparent">Website</p>
             {canEdit && isEditing ? (
               <input
-                type="url"
+                type="text"
+                inputMode="url"
+                autoCapitalize="off"
+                autoCorrect="off"
+                spellCheck={false}
                 value={companyWebsite}
                 onChange={(e) => setCompanyWebsite(e.target.value)}
-                placeholder="https://www.company.com"
+                placeholder="www.company.com"
                 className="w-full bg-[rgba(255,255,255,0.05)] text-white font-semibold text-base focus:outline-none focus:border-[#FFD700] border-2 border-[#FFD700]/50 rounded-xl px-3 py-2 shadow-[0_0_15px_rgba(255,215,0,0.2)] animate-pulse-glow"
               />
             ) : profileUser?.companyWebsite ? (

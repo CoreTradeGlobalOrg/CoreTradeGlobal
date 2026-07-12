@@ -67,7 +67,7 @@ function RequestNotFound({ onBack }) {
  */
 function QuoteDetailContent({ params }) {
   const router = useRouter();
-  const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const { user, isAuthenticated, loading: authLoading, profileLoading } = useAuth();
 
   // Unwrap async params using React.use() per Next.js app router convention
   const resolvedParams = React.use(params);
@@ -82,12 +82,21 @@ function QuoteDetailContent({ params }) {
     }
   }, [authLoading, isAuthenticated, router, requestId]);
 
-  // Role guard: redirect to forbidden if not a provider or admin
+  // Role guard: redirect to forbidden if not a provider or admin.
+  // Waits for `profileLoading` — otherwise on hard refresh `user.role`
+  // is briefly `undefined` (Firestore hydration hasn't finished) and the
+  // provider/admin user gets wrongly bounced to /forbidden.
   useEffect(() => {
-    if (!authLoading && isAuthenticated && user && !PROVIDER_ROLES.includes(user.role)) {
+    if (
+      !authLoading &&
+      !profileLoading &&
+      isAuthenticated &&
+      user &&
+      !PROVIDER_ROLES.includes(user.role)
+    ) {
       router.push('/forbidden');
     }
-  }, [authLoading, isAuthenticated, user, router]);
+  }, [authLoading, profileLoading, isAuthenticated, user, router]);
 
   const { request, loading: requestLoading, error: requestError } = useQuoteRequest(
     isAuthenticated && user ? requestId : null
@@ -100,8 +109,9 @@ function QuoteDetailContent({ params }) {
 
   const handleBack = () => router.push('/provider/dashboard');
 
-  // Show skeleton while auth or request data is loading
-  if (authLoading || !isAuthenticated || !user || requestLoading) {
+  // Show skeleton while auth, profile, or request data is loading — do
+  // not render content while role is unresolved.
+  if (authLoading || profileLoading || !isAuthenticated || !user || requestLoading) {
     return <DetailSkeleton />;
   }
 

@@ -301,7 +301,7 @@ export function ShowcaseSection() {
       <div className="section-header">
         <h2 className="section-title">Featured Companies</h2>
         <Link
-          href="/contact?subject=advertising"
+          href="/pricing#advertising"
           className="link-hero-blue"
           style={{ justifyContent: 'center', marginTop: '10px', color: '#0066FF' }}
         >
@@ -322,7 +322,7 @@ export function ShowcaseSection() {
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
-        style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
+        style={{ cursor: isDragging ? 'grabbing' : 'grab', marginTop: '30px' }}
       >
         {/* Decorative Elements */}
         <div className="spotlight" />

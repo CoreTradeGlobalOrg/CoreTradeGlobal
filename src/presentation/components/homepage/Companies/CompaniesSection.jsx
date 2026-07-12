@@ -355,7 +355,7 @@ export function CompaniesSection() {
           {/* Header */}
           <div className="featured-products-header">
             <div>
-              <h2>Latest Companies</h2>
+              <h2 style={{ paddingTop: '20px' }}>Latest Companies</h2>
               <p>Connect with verified suppliers worldwide.</p>
             </div>
             {/* TODO: View All Companies butonu daha sonra açılacaktır

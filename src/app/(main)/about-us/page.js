@@ -156,7 +156,7 @@ export default function AboutUsPage() {
             </section>
 
             {/* CTA Section */}
-            <section className="px-5 pb-10 flex justify-center">
+            <section className="px-5 pt-10 pb-10 flex justify-center">
                 <div className="w-full max-w-[600px] text-center">
                     <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">Ready to Grow Your Business?</h2>
                     <p className="text-gray-200 mb-8">Join thousands of businesses already trading on CoreTradeGlobal.</p>

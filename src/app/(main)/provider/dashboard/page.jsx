@@ -97,7 +97,7 @@ function DashboardSkeleton() {
  */
 function ProviderDashboardContent() {
   const router = useRouter();
-  const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const { user, isAuthenticated, loading: authLoading, profileLoading } = useAuth();
   const [activeTab, setActiveTab] = useState('quoteRequests');
 
   const PROVIDER_ROLES = [ROLES.INSURANCE_PROVIDER, ROLES.LOGISTICS_PROVIDER, ROLES.ADMIN];
@@ -109,19 +109,34 @@ function ProviderDashboardContent() {
     }
   }, [authLoading, isAuthenticated, router]);
 
-  // Role guard: redirect to forbidden if not a provider or admin
+  // Role guard: redirect to forbidden if not a provider or admin.
+  //
+  // Must wait for `profileLoading` too. AuthContext flips `authLoading`
+  // to false as soon as Firebase Auth resolves, but the Firestore user
+  // doc (which carries `role`) hydrates on a second async pass — so on
+  // hard refresh `user.role` is briefly `undefined` and the naive
+  // `!PROVIDER_ROLES.includes(undefined)` check kicks the user to
+  // /forbidden even when they ARE a provider/admin.
   useEffect(() => {
-    if (!authLoading && isAuthenticated && user && !PROVIDER_ROLES.includes(user.role)) {
+    if (
+      !authLoading &&
+      !profileLoading &&
+      isAuthenticated &&
+      user &&
+      !PROVIDER_ROLES.includes(user.role)
+    ) {
       router.push('/forbidden');
     }
-  }, [authLoading, isAuthenticated, user, router]);
+  }, [authLoading, profileLoading, isAuthenticated, user, router]);
 
   const { columns, loading: requestsLoading } = useQuoteRequests(
     isAuthenticated && user ? user.uid : null
   );
 
-  // Show skeleton while auth or data is loading
-  if (authLoading || !isAuthenticated || !user) {
+  // Show skeleton until profile hydration finishes — otherwise a first
+  // paint with an unresolved role flashes dashboard content that the
+  // guard is about to redirect away from.
+  if (authLoading || profileLoading || !isAuthenticated || !user) {
     return <DashboardSkeleton />;
   }
 

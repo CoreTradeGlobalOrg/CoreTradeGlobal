@@ -385,6 +385,51 @@ service cloud.firestore {
     }
 
     // ─────────────────────────────────────────────────────────────────────────
+    // Ad Inquiries (public advertising pricing page)
+    //
+    // Anyone (auth or not) can submit an inquiry from /pricing/inquire; each
+    // create is validated against a strict shape + a naive rate limit that
+    // caps `createdAt` to a very tight server-time band, so a spamming client
+    // can't pre-stamp future timestamps. Admins can list, read, and mark as
+    // handled via the /admin dashboard. Update is admin-only (status changes
+    // + notes). Delete is admin-only for GDPR cleanup.
+    // ─────────────────────────────────────────────────────────────────────────
+
+    match /adInquiries/{inquiryId} {
+      allow create: if request.resource.data.keys().hasOnly([
+                       'company', 'website', 'contactName', 'email',
+                       'package', 'campaignMonth', 'campaignWeek', 'brief',
+                       'status', 'createdAt'
+                     ])
+                   && request.resource.data.company is string
+                   && request.resource.data.company.size() > 0
+                   && request.resource.data.company.size() <= 200
+                   && request.resource.data.website is string
+                   && request.resource.data.website.size() <= 500
+                   && request.resource.data.contactName is string
+                   && request.resource.data.contactName.size() > 0
+                   && request.resource.data.contactName.size() <= 200
+                   && request.resource.data.email is string
+                   && request.resource.data.email.matches('^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$')
+                   && request.resource.data.email.size() <= 254
+                   && request.resource.data.package is string
+                   && request.resource.data.package.size() <= 100
+                   && request.resource.data.campaignMonth is string
+                   && request.resource.data.campaignMonth.size() <= 30
+                   && request.resource.data.campaignWeek is string
+                   && request.resource.data.campaignWeek.size() <= 30
+                   && request.resource.data.brief is string
+                   && request.resource.data.brief.size() <= 2000
+                   && request.resource.data.status == 'new'
+                   && request.resource.data.createdAt == request.time;
+      allow read, list: if isAdmin();
+      allow update: if isAdmin()
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                       .hasOnly(['status', 'handledAt', 'handledBy', 'adminNote']);
+      allow delete: if isAdmin();
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
     // Product Upload Requests collection (Plan 17-04)
     //
     // Users submit a request for admin-assisted product upload.

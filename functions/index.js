@@ -314,6 +314,245 @@ function buildWelcomeEmailHtml(displayName, userID) {
 }
 
 /**
+ * Build the "Upload Your Products" reminder email HTML.
+ *
+ * Sent 24 hours after registration by the sendProductUploadReminder
+ * scheduled function. Only dynamic value is the recipient's displayName;
+ * everything else is baked in (buttons deep-link to /product/new, bulk
+ * upload instructions, standard footer).
+ */
+function buildProductUploadEmailHtml(displayName) {
+  const safeName = String(displayName || 'there').replace(/[<>]/g, '');
+  return `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Upload Your Products on CoreTradeGlobal</title>
+<style type="text/css">
+  body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+  table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+  img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+  table { border-collapse: collapse !important; }
+  body { height: 100% !important; margin: 0 !important; padding: 0 !important; width: 100% !important; background-color: #0f1b2b; }
+  a[x-apple-data-detectors] { color: inherit !important; text-decoration: none !important; font-size: inherit !important; font-family: inherit !important; font-weight: inherit !important; line-height: inherit !important; }
+  .btn-cta:hover { background: #fdb931 !important; }
+  .step-btn { display: inline-block; width: 90px; padding: 0; background-color: rgba(255, 215, 0, 0.07); border: 1px solid rgba(255, 215, 0, 0.28); border-radius: 10px; text-decoration: none; box-sizing: border-box; vertical-align: middle; }
+  .step-btn:hover { background-color: rgba(255, 215, 0, 0.18) !important; border-color: rgba(255, 215, 0, 0.6) !important; box-shadow: 0 0 14px rgba(255, 215, 0, 0.18) !important; }
+  @media only screen and (max-width: 599px) {
+    .menu-item { display: inline-block !important; padding: 6px 10px !important; }
+    .menu-bullet { display: none !important; }
+  }
+</style>
+</head>
+<body style="margin: 0; padding: 0; background-color: #0f1b2b; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+  <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #0f1b2b; table-layout: fixed;">
+    <tr>
+      <td align="center" style="padding: 30px 10px 20px 10px;">
+        <table border="0" cellpadding="0" cellspacing="0" width="600" style="max-width: 600px; background-color: #1a283b; border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.25);">
+          <tr>
+            <td style="padding: 30px 40px 15px 40px; text-align: center;">
+              <h1 style="color: #ffffff; font-size: 30px; font-weight: 800; margin: 0 0 15px 0; line-height: 1.35;">
+                Showcase Your<br /><span style="color: #ffd700;">Products Globally!</span>
+              </h1>
+              <p style="color: #e2e8f0; font-size: 16px; line-height: 1.6; margin: 0; text-align: left;">
+                Hey ${safeName},<br /><br />
+                Your profile is active, but you need to list your products so all our members can see them and start sending you direct quote invitations.
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 10px 40px 10px 40px;">
+              <h3 style="color: #ffffff; font-size: 22px; font-weight: 700; margin: 0; text-align: center; text-transform: uppercase; letter-spacing: 0.05em;">Quick &amp; Easy 3-Step Listing</h3>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 10px 40px 15px 40px;">
+              <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                <tr>
+                  <td style="padding-bottom: 10px;">
+                    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px;">
+                      <tr>
+                        <td valign="middle" width="110" style="padding: 12px 0 12px 12px; text-align: center;">
+                          <a href="https://www.coretradeglobal.com/product/new" target="_blank" class="step-btn">
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                              <tr>
+                                <td width="16" style="font-size: 1px; line-height: 1;">&nbsp;</td>
+                                <td align="center" style="padding-top: 8px; font-size: 1px; line-height: 1;">
+                                  <img src="https://cdn.jsdelivr.net/npm/material-design-icons@3.0.1/action/drawable-xxhdpi/ic_description_white_24dp.png" alt="Details" width="20" height="20" style="display: block; margin: 0 auto; width: 20px; height: 20px; border: 0;" />
+                                </td>
+                                <td width="16" align="right" valign="top" style="padding: 4px 4px 0 0; font-size: 10px; line-height: 1; color: #ffd700;">&#x2197;</td>
+                              </tr>
+                              <tr>
+                                <td colspan="3" align="center" style="color: #ffd700; font-size: 11px; font-weight: 700; text-transform: uppercase; padding: 6px 4px 8px 4px; line-height: 1.2;">Details</td>
+                              </tr>
+                            </table>
+                          </a>
+                        </td>
+                        <td valign="middle" style="padding: 12px 16px;">
+                          <div style="color: #ffd700; font-size: 17px; font-weight: 800; margin-bottom: 6px;">1. Basic Information</div>
+                          <p style="color: #f1f5f9; font-size: 15px; line-height: 1.6; margin: 0;">Enter your product's name, select a category, and write a quick description. It's that simple!</p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding-bottom: 10px;">
+                    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px;">
+                      <tr>
+                        <td valign="middle" width="110" style="padding: 12px 0 12px 12px; text-align: center;">
+                          <a href="https://www.coretradeglobal.com/product/new" target="_blank" class="step-btn">
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                              <tr>
+                                <td width="16" style="font-size: 1px; line-height: 1;">&nbsp;</td>
+                                <td align="center" style="padding-top: 8px; font-size: 1px; line-height: 1;">
+                                  <img src="https://cdn.jsdelivr.net/npm/material-design-icons@3.0.1/editor/drawable-xxhdpi/ic_attach_money_white_24dp.png" alt="Pricing" width="20" height="20" style="display: block; margin: 0 auto; width: 20px; height: 20px; border: 0;" />
+                                </td>
+                                <td width="16" align="right" valign="top" style="padding: 4px 4px 0 0; font-size: 10px; line-height: 1; color: #ffd700;">&#x2197;</td>
+                              </tr>
+                              <tr>
+                                <td colspan="3" align="center" style="color: #ffd700; font-size: 11px; font-weight: 700; text-transform: uppercase; padding: 6px 4px 8px 4px; line-height: 1.2;">Pricing</td>
+                              </tr>
+                            </table>
+                          </a>
+                        </td>
+                        <td valign="middle" style="padding: 12px 16px;">
+                          <div style="color: #ffd700; font-size: 17px; font-weight: 800; margin-bottom: 6px;">2. Pricing &amp; Stock</div>
+                          <p style="color: #f1f5f9; font-size: 15px; line-height: 1.6; margin: 0;">Specify stock levels and price. If you prefer to negotiate or provide custom quotes, simply set the price to 0.</p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding-bottom: 10px;">
+                    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px;">
+                      <tr>
+                        <td valign="middle" width="110" style="padding: 12px 0 12px 12px; text-align: center;">
+                          <a href="https://www.coretradeglobal.com/product/new" target="_blank" class="step-btn">
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                              <tr>
+                                <td width="16" style="font-size: 1px; line-height: 1;">&nbsp;</td>
+                                <td align="center" style="padding-top: 8px; font-size: 1px; line-height: 1;">
+                                  <img src="https://cdn.jsdelivr.net/npm/material-design-icons@3.0.1/image/drawable-xxhdpi/ic_image_white_24dp.png" alt="Images" width="20" height="20" style="display: block; margin: 0 auto; width: 20px; height: 20px; border: 0;" />
+                                </td>
+                                <td width="16" align="right" valign="top" style="padding: 4px 4px 0 0; font-size: 10px; line-height: 1; color: #ffd700;">&#x2197;</td>
+                              </tr>
+                              <tr>
+                                <td colspan="3" align="center" style="color: #ffd700; font-size: 11px; font-weight: 700; text-transform: uppercase; padding: 6px 4px 8px 4px; line-height: 1.2;">Images</td>
+                              </tr>
+                            </table>
+                          </a>
+                        </td>
+                        <td valign="middle" style="padding: 12px 16px;">
+                          <div style="color: #ffd700; font-size: 17px; font-weight: 800; margin-bottom: 6px;">3. Product Images</div>
+                          <p style="color: #f1f5f9; font-size: 15px; line-height: 1.6; margin: 0;">Drag and drop up to 5 clear photos of your product. High-quality visuals increase buyer engagement by up to 80%!</p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td align="center" style="padding: 10px 40px 25px 40px;">
+              <table border="0" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td align="center" bgcolor="#ffd700" style="border-radius: 99px;">
+                    <a href="https://www.coretradeglobal.com/product/new" target="_blank" class="btn-cta" style="display: inline-block; padding: 16px 36px; font-size: 18px; font-weight: 700; color: #0f1b2b; text-decoration: none; border-radius: 99px; background-color: #ffd700;">Upload Your First Product &rarr;</a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 0 40px 30px 40px;">
+              <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: rgba(255, 215, 0, 0.03); border: 1px dashed rgba(255, 215, 0, 0.35); border-radius: 12px;">
+                <tr>
+                  <td style="padding: 20px;">
+                    <h4 style="color: #ffd700; font-size: 15px; font-weight: 800; margin: 0 0 10px 0; text-transform: uppercase; letter-spacing: 0.05em;">&#9889; Have multiple products? Upload in bulk!</h4>
+                    <p style="color: #e2e8f0; font-size: 13px; line-height: 1.5; margin: 0 0 12px 0;">If you have a large inventory, you don't need to add them one by one. You can upload all your products at once via CSV in a few simple steps:</p>
+                    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom: 12px;">
+                      <tr>
+                        <td valign="top" width="20" style="color: #ffd700; font-size: 13px; line-height: 1.5; font-weight: bold;">1.</td>
+                        <td style="color: #f1f5f9; font-size: 13px; line-height: 1.5; padding-bottom: 4px;">Go to the <strong style="color: #ffffff;">MY PROFILE</strong> page.</td>
+                      </tr>
+                      <tr>
+                        <td valign="top" width="20" style="color: #ffd700; font-size: 13px; line-height: 1.5; font-weight: bold;">2.</td>
+                        <td style="color: #f1f5f9; font-size: 13px; line-height: 1.5; padding-bottom: 4px;">Scroll to the bulk upload assistant and click <strong style="color: #ffd700;">Download CSV Template</strong>.</td>
+                      </tr>
+                      <tr>
+                        <td valign="top" width="20" style="color: #ffd700; font-size: 13px; line-height: 1.5; font-weight: bold;">3.</td>
+                        <td style="color: #f1f5f9; font-size: 13px; line-height: 1.5;">Fill out the template with your product details and upload the file back!</td>
+                      </tr>
+                    </table>
+                    <div style="background-color: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 10px; color: #ffd700; font-size: 12px; line-height: 1.45;">
+                      <strong>&#128161; We can help you!</strong> If you prefer, simply reply to this email with your catalog file (Excel or PDF), and our support team will handle the uploading and optimization for you&mdash;completely free.
+                    </div>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td align="center" style="padding: 20px 40px 20px 40px; border-top: 1px solid rgba(255, 255, 255, 0.08);">
+              <div style="color: #64748b; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px; text-align: center;">Explore the Platform</div>
+              <table border="0" cellpadding="0" cellspacing="0" class="explore-menu" style="margin: 0 auto; text-align: center;">
+                <tr>
+                  <td class="menu-item" style="padding: 0 8px;"><a href="https://www.coretradeglobal.com/products" target="_blank" style="color: #ffd700; text-decoration: none; font-size: 13px; font-weight: 600;">Browse Products</a></td>
+                  <td class="menu-bullet" style="color: #64748b; font-size: 13px;">&bull;</td>
+                  <td class="menu-item" style="padding: 0 8px;"><a href="https://www.coretradeglobal.com/requests" target="_blank" style="color: #ffd700; text-decoration: none; font-size: 13px; font-weight: 600;">Browse RFQs</a></td>
+                  <td class="menu-bullet" style="color: #64748b; font-size: 13px;">&bull;</td>
+                  <td class="menu-item" style="padding: 0 8px;"><a href="https://www.coretradeglobal.com/about-us" target="_blank" style="color: #ffd700; text-decoration: none; font-size: 13px; font-weight: 600;">About Us</a></td>
+                  <td class="menu-bullet" style="color: #64748b; font-size: 13px;">&bull;</td>
+                  <td class="menu-item" style="padding: 0 8px;"><a href="https://www.coretradeglobal.com/faq" target="_blank" style="color: #ffd700; text-decoration: none; font-size: 13px; font-weight: 600;">FAQ</a></td>
+                  <td class="menu-bullet" style="color: #64748b; font-size: 13px;">&bull;</td>
+                  <td class="menu-item" style="padding: 0 8px;"><a href="https://www.coretradeglobal.com/fairs" target="_blank" style="color: #ffd700; text-decoration: none; font-size: 13px; font-weight: 600;">Trade Fairs</a></td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+    <tr>
+      <td align="center" style="padding: 0 10px 40px 10px;">
+        <table border="0" cellpadding="0" cellspacing="0" width="600" style="max-width: 600px; text-align: center;">
+          <tr>
+            <td align="center" style="padding-bottom: 20px;">
+              <a href="https://linkedin.com/company/coretradeglobal" target="_blank" style="color: #94a3b8; text-decoration: none;">
+                <img src="https://img.icons8.com/ios-filled/50/94a3b8/linkedin.png" alt="LinkedIn" width="20" style="display: inline-block; width: 20px; height: auto;" />
+              </a>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding-bottom: 15px; color: #ffd700; font-size: 16px;">
+              <a href="mailto:info@coretradeglobal.com" style="color: #ffd700; text-decoration: none; font-weight: 500;">info@coretradeglobal.com</a>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 0 20px 15px 20px; color: #64748b; font-size: 14px; line-height: 1.5;">You are receiving this email because you signed up for CoreTradeGlobal.</td>
+          </tr>
+          <tr>
+            <td style="color: #64748b; font-size: 14px; line-height: 1.5; padding: 0 20px;">
+              &copy; 2026 CoreTradeGlobal Inc. All rights reserved.
+              <br /><br />
+              <a href="https://coretradeglobal.com/privacy-policy" target="_blank" style="color: #64748b; text-decoration: underline;">Privacy Policy</a>
+              &nbsp;&nbsp;|&nbsp;&nbsp;
+              <a href="https://coretradeglobal.com/terms" target="_blank" style="color: #64748b; text-decoration: underline;">Terms of Service</a>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+}
+
+/**
  * Send a welcome email via Resend. Non-blocking — failure does not fail the CF.
  */
 async function sendWelcomeEmail(to, displayName, userID) {
@@ -332,6 +571,29 @@ async function sendWelcomeEmail(to, displayName, userID) {
     console.log(`sendWelcomeEmail: sent welcome to ${to}`);
   } catch (err) {
     console.error(`sendWelcomeEmail: failed to send to ${to}:`, err);
+  }
+}
+
+/**
+ * Send the 24-hour "Upload Your Products" reminder via Resend.
+ * Non-blocking — failure does not fail the CF.
+ */
+async function sendProductUploadEmail(to, displayName) {
+  const resend = getResend();
+  if (!resend) {
+    console.warn('sendProductUploadEmail: RESEND_API_KEY not set, skipping email.');
+    return;
+  }
+  try {
+    await resend.emails.send({
+      from: 'CoreTradeGlobal <noreply@coretradeglobal.com>',
+      to,
+      subject: 'Upload your products and start receiving quotes',
+      html: buildProductUploadEmailHtml(displayName),
+    });
+    console.log(`sendProductUploadEmail: sent to ${to}`);
+  } catch (err) {
+    console.error(`sendProductUploadEmail: failed to send to ${to}:`, err);
   }
 }
 
@@ -1386,6 +1648,48 @@ exports.sendWelcomeOnRegister = onDocumentCreated(
     const displayName = userData.displayName || userData.firstName || 'there';
     await sendWelcomeEmail(email, displayName, uid);
 
+    // Mirror the new user into Resend so broadcasts (dashboard-scheduled
+    // newsletters, campaigns) can reach them later.
+    //
+    // AWAITED (not fire-and-forget): GCF v2 tears down containers as
+    // soon as the trigger promise resolves, so a dangling
+    // resend.contacts.create() request can be cancelled mid-flight —
+    // that's exactly what we saw during rollout, function metrics
+    // showed 3 invocations with zero errors while the Resend audience
+    // stayed at zero contacts. A ~200 ms delay per trigger is fine.
+    //
+    // `RESEND_AUDIENCE_ID` is optional: if set we push into that
+    // specific audience/segment; if unset the contact still lands in
+    // the workspace's default audience so no one is lost.
+    try {
+      const resendClient = getResend();
+      if (resendClient) {
+        const contactPayload = {
+          email,
+          firstName: userData.firstName || null,
+          lastName: userData.lastName || null,
+          unsubscribed: false,
+        };
+        if (process.env.RESEND_AUDIENCE_ID) {
+          contactPayload.audienceId = process.env.RESEND_AUDIENCE_ID;
+        }
+        const result = await resendClient.contacts.create(contactPayload);
+        if (result?.error) {
+          const status = result.error?.statusCode ?? result.error?.status;
+          if (status !== 409) {
+            console.warn(`sendWelcomeOnRegister: Resend contacts.create returned error for ${email}:`, result.error);
+          }
+        } else {
+          console.log(`sendWelcomeOnRegister: Resend contact created for ${email} (id=${result?.data?.id ?? 'unknown'})`);
+        }
+      }
+    } catch (err) {
+      const status = err?.statusCode ?? err?.status;
+      if (status !== 409) {
+        console.warn(`sendWelcomeOnRegister: Resend contacts.create threw for ${email}:`, err.message || err);
+      }
+    }
+
     // Seed an in-app notification prompting the user to verify their email.
     // Skip for OAuth users (Google/LinkedIn) whose email is already verified.
     if (!userData.emailVerified) {
@@ -1443,6 +1747,354 @@ exports.sendWelcomeOnRegister = onDocumentCreated(
       }
     } catch (err) {
       console.error(`sendWelcomeOnRegister: failed to fan out admin approval notifications for ${uid}:`, err);
+    }
+
+    return null;
+  }
+);
+
+/**
+ * sendProductUploadReminder
+ *
+ * Hourly cron. Sends the "Upload Your Products" nudge exactly 24 hours
+ * after a user registered, once per user.
+ *
+ * Selection window: users whose `createdAt` is between
+ * PRODUCT_UPLOAD_REMINDER_BASELINE (feature-launch cutoff — protects
+ * legacy accounts from a mass-blast) and (now - 24h). Second-pass
+ * client-side filtering skips:
+ *   - users we already reminded (`productUploadReminderSentAt` set)
+ *   - invited users (`invitedBy` / `inviteStatus` — they have a
+ *     different onboarding email)
+ *   - deleted / suspended accounts
+ *   - accounts without an email address
+ * After a successful send the user doc is stamped with
+ * `productUploadReminderSentAt` so a subsequent tick can't re-send.
+ *
+ * Query note: two range constraints on `createdAt` need a single-field
+ * ascending index (Firestore auto-provisions). No composite index
+ * required.
+ */
+const PRODUCT_UPLOAD_REMINDER_BASELINE = new Date('2026-07-12T00:00:00Z');
+
+exports.sendProductUploadReminder = onSchedule(
+  {
+    schedule: 'every 60 minutes',
+    timeZone: 'UTC',
+    retryCount: 3,
+  },
+  async () => {
+    const cutoff24h = Timestamp.fromMillis(Date.now() - 24 * 60 * 60 * 1000);
+    const baseline = Timestamp.fromDate(PRODUCT_UPLOAD_REMINDER_BASELINE);
+
+    try {
+      const snap = await db.collection('users')
+        .where('createdAt', '>=', baseline)
+        .where('createdAt', '<=', cutoff24h)
+        .orderBy('createdAt', 'asc')
+        .limit(200)
+        .get();
+
+      if (snap.empty) {
+        console.log('sendProductUploadReminder: no candidates.');
+        return null;
+      }
+
+      let sent = 0;
+      let skipped = 0;
+      for (const doc of snap.docs) {
+        const data = doc.data();
+        if (data.productUploadReminderSentAt) { skipped++; continue; }
+        if (data.invitedBy || data.inviteStatus) { skipped++; continue; }
+        if (data.isDeleted === true || data.isSuspended === true) { skipped++; continue; }
+        if (!data.email) { skipped++; continue; }
+
+        const displayName = data.displayName || data.firstName || 'there';
+        try {
+          await sendProductUploadEmail(data.email, displayName);
+          await doc.ref.update({ productUploadReminderSentAt: Timestamp.now() });
+          sent++;
+        } catch (err) {
+          console.error(`sendProductUploadReminder: failed for ${doc.id}:`, err);
+        }
+      }
+      console.log(`sendProductUploadReminder: sent=${sent}, skipped=${skipped}`);
+    } catch (err) {
+      console.error('sendProductUploadReminder: query/loop failed:', err);
+      throw err;
+    }
+
+    return null;
+  }
+);
+
+/**
+ * syncUnsubscribeToResend
+ *
+ * When a user unsubscribes via our own endpoint (public API creates a
+ * doc under `unsubscribes/{sha256-of-email}`), mirror the state into
+ * Resend so broadcasts scheduled from the dashboard also honour the
+ * opt-out and we don't get spam-reported.
+ *
+ * Runs on doc CREATE only — repeat unsubscribes idempotently re-write
+ * the same doc so the trigger doesn't fire again, but a re-created doc
+ * (rare) would still land here.
+ */
+exports.syncUnsubscribeToResend = onDocumentCreated(
+  'unsubscribes/{docId}',
+  async (event) => {
+    const snapshot = event.data;
+    if (!snapshot) return null;
+
+    const data = snapshot.data();
+    const email = data?.email || data?.emailLower;
+    if (!email) {
+      console.log('syncUnsubscribeToResend: no email in doc, skipping');
+      return null;
+    }
+
+    const resendClient = getResend();
+    if (!resendClient) {
+      console.warn('syncUnsubscribeToResend: RESEND_API_KEY unset, skipping');
+      return null;
+    }
+
+    // audienceId is optional — pushed only when set. See
+    // sendWelcomeOnRegister for the same flex.
+    const audienceId = process.env.RESEND_AUDIENCE_ID || null;
+
+    try {
+      const updatePayload = { email, unsubscribed: true };
+      if (audienceId) updatePayload.audienceId = audienceId;
+      await resendClient.contacts.update(updatePayload);
+      console.log(`syncUnsubscribeToResend: marked ${email} as unsubscribed in Resend`);
+    } catch (err) {
+      // 404 = contact never existed in Resend (unsubscribed before we
+      // ever emailed them). Create as pre-suppressed so future adds
+      // still respect the opt-out.
+      const status = err?.statusCode ?? err?.status;
+      if (status === 404) {
+        try {
+          const createPayload = { email, unsubscribed: true };
+          if (audienceId) createPayload.audienceId = audienceId;
+          await resendClient.contacts.create(createPayload);
+          console.log(`syncUnsubscribeToResend: pre-created ${email} as unsubscribed in Resend`);
+        } catch (createErr) {
+          console.warn(`syncUnsubscribeToResend: fallback create failed for ${email}:`, createErr.message || createErr);
+        }
+      } else {
+        console.warn(`syncUnsubscribeToResend: update failed for ${email}:`, err.message || err);
+      }
+    }
+
+    return null;
+  }
+);
+
+/**
+ * backfillResendContacts
+ *
+ * Admin-only, run-once helper to load every existing user into the
+ * Resend Audience. Skips deleted / no-email records and swallows
+ * duplicate-contact errors so re-runs are safe. Rate-limited at 10
+ * req/sec to stay under Resend's default throughput.
+ *
+ * Invoke from a client while signed in as admin:
+ *   httpsCallable(functions, 'backfillResendContacts')({ limit: 1000 })
+ */
+exports.backfillResendContacts = onCall(
+  { region: 'us-central1' },
+  async (request) => {
+    if (!(await isUserAdmin(request.auth?.uid))) {
+      throw new HttpsError('permission-denied', 'Admin only.');
+    }
+    const resendClient = getResend();
+    if (!resendClient) {
+      throw new HttpsError('failed-precondition', 'RESEND_API_KEY is not set.');
+    }
+
+    const limit = Math.min(Math.max(parseInt(request.data?.limit, 10) || 1000, 1), 5000);
+    // audienceId is optional. When unset the contact still lands in the
+    // workspace's default audience — safe fallback for Resend accounts
+    // whose UI no longer exposes a distinct Audience ID to grab.
+    const audienceId = process.env.RESEND_AUDIENCE_ID || null;
+
+    // Also honour our own unsubscribe list — anyone already opted out
+    // should land in Resend as `unsubscribed: true`.
+    let unsubscribedEmails = new Set();
+    try {
+      const unsubSnap = await db.collection('unsubscribes').limit(5000).get();
+      unsubSnap.docs.forEach((d) => {
+        const em = d.data()?.emailLower || d.data()?.email;
+        if (em) unsubscribedEmails.add(String(em).toLowerCase());
+      });
+    } catch (err) {
+      console.warn('backfillResendContacts: failed to load unsubscribes list, proceeding without it:', err.message);
+    }
+
+    const snap = await db.collection('users').limit(limit).get();
+    let added = 0;
+    let alreadyIn = 0;
+    let skipped = 0;
+    const errors = [];
+
+    for (const doc of snap.docs) {
+      const d = doc.data();
+      if (!d.email || d.isDeleted === true) {
+        skipped++;
+        continue;
+      }
+      const emailLower = String(d.email).toLowerCase();
+      try {
+        const payload = {
+          email: d.email,
+          firstName: d.firstName || null,
+          lastName: d.lastName || null,
+          unsubscribed: unsubscribedEmails.has(emailLower),
+        };
+        if (audienceId) payload.audienceId = audienceId;
+        await resendClient.contacts.create(payload);
+        added++;
+      } catch (err) {
+        const status = err?.statusCode ?? err?.status;
+        if (status === 409) {
+          alreadyIn++;
+        } else {
+          errors.push({ email: d.email, message: err.message || String(err) });
+          console.warn(`backfillResendContacts: contacts.create failed for ${d.email}:`, err.message || err);
+        }
+      }
+      // Rate-limit: ~10 req/sec.
+      await new Promise((resolve) => setTimeout(resolve, 110));
+    }
+
+    const summary = { scanned: snap.size, added, alreadyIn, skipped, errorCount: errors.length };
+    console.log('backfillResendContacts: done', summary);
+    return { ...summary, errors: errors.slice(0, 10) };
+  }
+);
+
+/**
+ * Build the "New Advertising Inquiry" admin email HTML.
+ *
+ * Compact one-column card showing the inquiry summary + a CTA link into
+ * the /admin dashboard's Ad Inquiries tab. Palette matches the other
+ * transactional emails.
+ */
+function buildAdInquiryAdminEmailHtml(inquiry) {
+  const esc = (v) => String(v ?? '').replace(/[<>]/g, '');
+  const briefHtml = (inquiry.brief || '').trim()
+    ? `<tr><td style="padding:6px 0;color:#94a3b8;font-size:12px;text-transform:uppercase;letter-spacing:0.05em;">Brief</td></tr>
+       <tr><td style="padding:0 0 12px 0;color:#f1f5f9;font-size:14px;line-height:1.6;white-space:pre-wrap;">${esc(inquiry.brief).replace(/\n/g, '<br />')}</td></tr>`
+    : '';
+  return `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html lang="en"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>New Advertising Inquiry</title></head>
+<body style="margin:0;padding:0;background-color:#0f1b2b;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+<table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#0f1b2b;">
+  <tr><td align="center" style="padding:30px 10px 20px 10px;">
+    <table border="0" cellpadding="0" cellspacing="0" width="600" style="max-width:600px;background-color:#1a283b;border:1px solid rgba(255,255,255,0.08);border-radius:16px;">
+      <tr><td style="padding:28px 32px 8px 32px;">
+        <div style="color:#ffd700;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">New Advertising Inquiry</div>
+        <h1 style="color:#ffffff;font-size:22px;font-weight:800;margin:0 0 4px 0;line-height:1.35;">${esc(inquiry.company)}</h1>
+        <p style="color:#94a3b8;font-size:14px;margin:0;">${esc(inquiry.package)}</p>
+      </td></tr>
+      <tr><td style="padding:8px 32px 24px 32px;">
+        <table border="0" cellpadding="0" cellspacing="0" width="100%">
+          <tr><td style="padding:6px 0;color:#94a3b8;font-size:12px;text-transform:uppercase;letter-spacing:0.05em;">Contact</td></tr>
+          <tr><td style="padding:0 0 8px 0;color:#f1f5f9;font-size:15px;">${esc(inquiry.contactName)} &middot; <a href="mailto:${esc(inquiry.email)}" style="color:#ffd700;text-decoration:none;">${esc(inquiry.email)}</a></td></tr>
+          <tr><td style="padding:6px 0;color:#94a3b8;font-size:12px;text-transform:uppercase;letter-spacing:0.05em;">Website</td></tr>
+          <tr><td style="padding:0 0 8px 0;color:#f1f5f9;font-size:15px;"><a href="${esc(inquiry.website)}" target="_blank" style="color:#ffd700;text-decoration:none;">${esc(inquiry.website)}</a></td></tr>
+          <tr><td style="padding:6px 0;color:#94a3b8;font-size:12px;text-transform:uppercase;letter-spacing:0.05em;">Campaign Window</td></tr>
+          <tr><td style="padding:0 0 12px 0;color:#f1f5f9;font-size:15px;">${esc(inquiry.campaignMonth)} &middot; ${esc(inquiry.campaignWeek)}</td></tr>
+          ${briefHtml}
+        </table>
+      </td></tr>
+      <tr><td align="center" style="padding:0 32px 28px 32px;">
+        <a href="https://www.coretradeglobal.com/admin?tab=ad-inquiries" target="_blank" style="display:inline-block;padding:14px 28px;font-size:14px;font-weight:700;color:#0f1b2b;text-decoration:none;border-radius:99px;background-color:#ffd700;">Review in Admin Dashboard &rarr;</a>
+      </td></tr>
+      <tr><td style="padding:16px 32px 24px 32px;border-top:1px solid rgba(255,255,255,0.06);color:#64748b;font-size:12px;line-height:1.5;text-align:center;">
+        Sent because you're an admin on CoreTradeGlobal.
+      </td></tr>
+    </table>
+  </td></tr>
+</table>
+</body></html>`;
+}
+
+/**
+ * notifyAdminsOnAdInquiry
+ *
+ * Fires when a public inquiry lands in `adInquiries`. Fans out an
+ * in-app notification (subcollection `users/{adminUid}/notifications`)
+ * for each admin so the bell + admin dashboard both show it, and
+ * emails every admin via Resend so nothing gets lost when they're
+ * away from the app.
+ */
+exports.notifyAdminsOnAdInquiry = onDocumentCreated(
+  'adInquiries/{inquiryId}',
+  async (event) => {
+    const snapshot = event.data;
+    if (!snapshot) return null;
+    const inquiryId = event.params.inquiryId;
+    const data = snapshot.data() || {};
+
+    // In-app notification fan-out to every admin.
+    try {
+      const adminsSnap = await db.collection('users').where('role', '==', 'admin').limit(50).get();
+      if (!adminsSnap.empty) {
+        const batch = db.batch();
+        const notification = {
+          type: 'ad_inquiry',
+          title: 'New Advertising Inquiry',
+          body: `${data.company || 'A company'} inquired about ${data.package || 'an ad placement'}`,
+          data: {
+            inquiryId,
+            company: data.company || null,
+            email: data.email || null,
+            package: data.package || null,
+          },
+          isRead: false,
+          createdAt: Timestamp.now(),
+          link: '/admin?tab=ad-inquiries',
+        };
+        adminsSnap.docs.forEach((adminDoc) => {
+          const ref = db.collection('users').doc(adminDoc.id).collection('notifications').doc();
+          batch.set(ref, notification);
+        });
+        await batch.commit();
+      }
+    } catch (err) {
+      console.error(`notifyAdminsOnAdInquiry: in-app fan-out failed for ${inquiryId}:`, err);
+    }
+
+    // Email every admin via Resend (best-effort — Resend hiccup must
+    // not block, admins still have the in-app notification).
+    try {
+      const resend = getResend();
+      if (!resend) {
+        console.warn('notifyAdminsOnAdInquiry: RESEND_API_KEY unset, skipping admin email.');
+      } else {
+        const adminsSnap = await db.collection('users').where('role', '==', 'admin').limit(50).get();
+        const adminEmails = adminsSnap.docs
+          .map((d) => d.data()?.email)
+          .filter((e) => typeof e === 'string' && e.includes('@'));
+        if (adminEmails.length > 0) {
+          const html = buildAdInquiryAdminEmailHtml(data);
+          const subject = `New Ad Inquiry: ${data.company || 'Unknown company'}`;
+          // Resend caps `to` at 50 addresses per call — we're well under that.
+          await resend.emails.send({
+            from: 'CoreTradeGlobal <noreply@coretradeglobal.com>',
+            to: adminEmails,
+            subject,
+            html,
+            reply_to: data.email || undefined,
+          });
+          console.log(`notifyAdminsOnAdInquiry: emailed ${adminEmails.length} admin(s) for ${inquiryId}`);
+        }
+      }
+    } catch (err) {
+      console.error(`notifyAdminsOnAdInquiry: email fan-out failed for ${inquiryId}:`, err);
     }
 
     return null;
