@@ -16,14 +16,14 @@ export const metadata = {
     url: CANONICAL_URL,
     title: 'Trade News — CoreTradeGlobal',
     description:
-      'Global trade news, regulation updates, and market insights for B2B professionals.',
+      'Global trade news, regulation updates, market moves, and industry insights for B2B professionals — curated for exporters, importers, and logistics providers worldwide.',
     siteName: 'CoreTradeGlobal',
     images: [{ url: 'https://www.coretradeglobal.com/og-image.png', width: 1200, height: 630 }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Trade News — CoreTradeGlobal',
-    description: 'Global trade news and market insights.',
+    description: 'Global trade news, regulation updates, and market insights curated for B2B exporters, importers, and logistics providers.',
     images: ['https://www.coretradeglobal.com/og-image.png'],
   },
 };

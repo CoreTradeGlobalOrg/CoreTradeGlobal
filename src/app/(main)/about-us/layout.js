@@ -27,7 +27,7 @@ export const metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'About CoreTradeGlobal',
-    description: 'The mission and vision behind CoreTradeGlobal.',
+    description: 'The people, mission, and vision behind CoreTradeGlobal — the B2B trade network for verified buyers and suppliers worldwide.',
     images: ['https://www.coretradeglobal.com/og-image.png'],
   },
 };

@@ -22,7 +22,7 @@ export const metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'Trade Fairs Calendar — CoreTradeGlobal',
-    description: 'Upcoming international trade fairs and B2B events.',
+    description: 'Discover upcoming, ongoing, and past international trade fairs, expos, and B2B events — filtered by date, location, and industry.',
     images: ['https://www.coretradeglobal.com/og-image.png'],
   },
 };

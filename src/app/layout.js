@@ -39,7 +39,7 @@ const inter = Inter({
 export const metadata = {
   metadataBase: new URL('https://www.coretradeglobal.com'),
   title: 'CoreTradeGlobal | B2B Trading Platform',
-  description: 'B2B Trading Platform - Connect with businesses, manage products, and trade globally',
+  description: 'CoreTradeGlobal is the end-to-end B2B trade network for verified buyers and suppliers worldwide — source products, publish RFQs, and manage logistics, insurance, and payments from a single platform.',
   keywords: ['B2B', 'trading', 'platform', 'business', 'products', 'requests'],
   authors: [{ name: 'CoreTradeGlobal' }],
   creator: 'CoreTradeGlobal',
@@ -72,7 +72,7 @@ export const metadata = {
     locale: 'en_US',
     url: 'https://www.coretradeglobal.com',
     title: 'CoreTradeGlobal | B2B Trading Platform',
-    description: 'B2B Trading Platform - Connect with businesses worldwide',
+    description: 'CoreTradeGlobal connects verified B2B buyers and suppliers worldwide — source products, publish RFQs, and manage deals, logistics, insurance, and payments in one platform.',
     siteName: 'CoreTradeGlobal',
     images: [
       {
@@ -86,7 +86,7 @@ export const metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'CoreTradeGlobal | B2B Trading Platform',
-    description: 'B2B Trading Platform - Connect with businesses worldwide',
+    description: 'CoreTradeGlobal connects verified B2B buyers and suppliers worldwide — source products, publish RFQs, and manage deals, logistics, insurance, and payments in one platform.',
     creator: '@CoreTradeGlobal',
     images: ['https://www.coretradeglobal.com/og-image.png'],
   },

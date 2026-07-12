@@ -19,14 +19,14 @@ export const metadata = {
     url: CANONICAL_URL,
     title: 'Sign in — CoreTradeGlobal',
     description:
-      'Sign in to your CoreTradeGlobal account and continue on the B2B trade platform.',
+      'Sign in to CoreTradeGlobal to manage your products, RFQs, deals, logistics, insurance, and payments on the trusted B2B trade network for global buyers and suppliers.',
     siteName: 'CoreTradeGlobal',
     images: [{ url: 'https://www.coretradeglobal.com/og-image.png', width: 1200, height: 630 }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Sign in — CoreTradeGlobal',
-    description: 'Sign in to CoreTradeGlobal.',
+    description: 'Sign in to CoreTradeGlobal — the end-to-end B2B trade network for verified buyers and suppliers worldwide.',
     images: ['https://www.coretradeglobal.com/og-image.png'],
   },
 };

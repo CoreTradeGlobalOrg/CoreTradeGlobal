@@ -27,7 +27,7 @@ export const metadata = {
     url: CANONICAL_URL,
     title: 'Join CoreTradeGlobal — Grow your B2B trade globally',
     description:
-      'Sign up to CoreTradeGlobal and connect with verified buyers and suppliers worldwide.',
+      'Sign up to CoreTradeGlobal and connect with verified B2B buyers and suppliers worldwide — showcase products, receive RFQs, and manage deals, logistics, and payments in one platform.',
     siteName: 'CoreTradeGlobal',
     images: [
       {
@@ -42,7 +42,7 @@ export const metadata = {
     card: 'summary_large_image',
     title: 'Join CoreTradeGlobal — Grow your B2B trade globally',
     description:
-      'Sign up to CoreTradeGlobal and connect with verified buyers and suppliers worldwide.',
+      'Sign up to CoreTradeGlobal and connect with verified B2B buyers and suppliers worldwide — showcase products, receive RFQs, and manage deals, logistics, and payments in one platform.',
     images: ['https://www.coretradeglobal.com/og-image.png'],
   },
 };
