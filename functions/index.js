@@ -6441,3 +6441,197 @@ exports.processScheduledAnnouncements = onSchedule(
   }
 );
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Advertising: expireAds cron + impression/click tracking (Task 18)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * expireAds
+ *
+ * Runs hourly. Advances every ad doc to the correct status based on the
+ * current time vs. its startDate/endDate window:
+ *   - now <  startDate → 'scheduled'
+ *   - startDate ≤ now ≤ endDate → 'active'
+ *   - now >  endDate → 'expired'
+ *
+ * PAUSED ads are intentionally left alone — the admin has to un-pause them
+ * from the dashboard. Mirrors the `updateFairStatuses` pattern above.
+ */
+exports.expireAds = onSchedule(
+  {
+    schedule: 'every 1 hours',
+    timeZone: 'UTC',
+    retryCount: 3,
+  },
+  async () => {
+    console.log('expireAds: running...');
+
+    try {
+      const adsSnap = await db.collection('ads').get();
+      if (adsSnap.empty) {
+        console.log('expireAds: no ads.');
+        return;
+      }
+
+      const nowMs = Date.now();
+      const batch = db.batch();
+      let updatedCount = 0;
+
+      adsSnap.forEach((doc) => {
+        const data = doc.data();
+        // Skip paused — admin controls resume.
+        if (data.status === 'paused') return;
+
+        const startMs = data.startDate?.toDate ? data.startDate.toDate().getTime() : 0;
+        const endMs = data.endDate?.toDate ? data.endDate.toDate().getTime() : 0;
+        if (!startMs || !endMs) return;
+
+        let correctStatus;
+        if (nowMs < startMs) correctStatus = 'scheduled';
+        else if (nowMs <= endMs) correctStatus = 'active';
+        else correctStatus = 'expired';
+
+        if (data.status !== correctStatus) {
+          console.log(`expireAds: "${data.badgeText || doc.id}" ${data.status} → ${correctStatus}`);
+          batch.update(doc.ref, { status: correctStatus, updatedAt: Timestamp.now() });
+          updatedCount++;
+        }
+      });
+
+      if (updatedCount > 0) {
+        await batch.commit();
+        console.log(`expireAds: updated ${updatedCount} ad(s).`);
+      } else {
+        console.log('expireAds: all ad statuses correct.');
+      }
+    } catch (err) {
+      console.error('expireAds: unexpected error:', err);
+      throw err;
+    }
+  }
+);
+
+/**
+ * Ad tracking helper: cheap in-Firestore rate-limit so a refresh spam or
+ * a bot in a tight loop can't inflate counters.
+ *
+ * Uses a synthetic doc id from (adId, kind, clientHash). If the doc's
+ * lastAt is within the cooldown window, we skip the increment. Otherwise
+ * upsert and count. clientHash is a truncated SHA-1 of ip+userAgent so
+ * we don't persist raw PII.
+ *
+ * @param {string} adId
+ * @param {'impression'|'click'} kind
+ * @param {string} clientHash
+ * @param {number} cooldownMs
+ * @returns {Promise<boolean>} true if the event should be counted
+ */
+async function shouldCountAdEvent(adId, kind, clientHash, cooldownMs) {
+  const key = `${adId}_${kind}_${clientHash}`;
+  const ref = db.collection('adTracking').doc(key);
+  const nowMs = Date.now();
+
+  try {
+    return await db.runTransaction(async (t) => {
+      const snap = await t.get(ref);
+      if (snap.exists) {
+        const last = snap.data().lastAt?.toDate?.().getTime?.() ?? 0;
+        if (nowMs - last < cooldownMs) return false;
+        t.update(ref, { lastAt: Timestamp.now(), hits: FieldValue.increment(1) });
+      } else {
+        t.set(ref, {
+          adId,
+          kind,
+          clientHash,
+          lastAt: Timestamp.now(),
+          firstAt: Timestamp.now(),
+          hits: 1,
+        });
+      }
+      return true;
+    });
+  } catch (err) {
+    console.warn('shouldCountAdEvent: tx failed, allowing event:', err.message);
+    return true;
+  }
+}
+
+function hashClient(ip, userAgent) {
+  const crypto = require('crypto');
+  const raw = `${ip || 'noip'}|${userAgent || 'noua'}`;
+  return crypto.createHash('sha1').update(raw).digest('hex').slice(0, 16);
+}
+
+/**
+ * trackAdImpression — onCall
+ *
+ * Client fires this once when the ad actually enters the viewport (the
+ * hook is responsible for the IntersectionObserver). Per-client cooldown
+ * = 30 minutes so refresh spam / tab restore doesn't over-count.
+ *
+ * @param {Object} data - { adId }
+ * @returns {Promise<{ counted: boolean }>}
+ */
+exports.trackAdImpression = onCall(async (request) => {
+  const { adId } = request.data || {};
+  if (!adId || typeof adId !== 'string') {
+    throw new HttpsError('invalid-argument', 'adId is required.');
+  }
+
+  const ip = request.rawRequest?.ip || request.rawRequest?.headers?.['x-forwarded-for'] || '';
+  const ua = request.rawRequest?.headers?.['user-agent'] || '';
+  const clientHash = hashClient(String(ip).split(',')[0].trim(), ua);
+
+  const IMPRESSION_COOLDOWN_MS = 30 * 60 * 1000;
+  const counted = await shouldCountAdEvent(adId, 'impression', clientHash, IMPRESSION_COOLDOWN_MS);
+  if (!counted) return { counted: false };
+
+  try {
+    await db.collection('ads').doc(adId).update({
+      impressions: FieldValue.increment(1),
+      lastImpressionAt: Timestamp.now(),
+    });
+  } catch (err) {
+    // Ad may have been deleted between snapshot render and impression fire.
+    console.warn(`trackAdImpression: could not increment ${adId}:`, err.message);
+    return { counted: false };
+  }
+  return { counted: true };
+});
+
+/**
+ * trackAdClick — onCall
+ *
+ * Client fires this when the user actually clicks/taps the ad. Cooldown
+ * is shorter (5 min) since a genuine repeat click is more meaningful
+ * than a repeat impression, but we still don't want tap spam.
+ *
+ * @param {Object} data - { adId }
+ * @returns {Promise<{ counted: boolean }>}
+ */
+exports.trackAdClick = onCall(async (request) => {
+  const { adId } = request.data || {};
+  if (!adId || typeof adId !== 'string') {
+    throw new HttpsError('invalid-argument', 'adId is required.');
+  }
+
+  const ip = request.rawRequest?.ip || request.rawRequest?.headers?.['x-forwarded-for'] || '';
+  const ua = request.rawRequest?.headers?.['user-agent'] || '';
+  const clientHash = hashClient(String(ip).split(',')[0].trim(), ua);
+
+  const CLICK_COOLDOWN_MS = 5 * 60 * 1000;
+  const counted = await shouldCountAdEvent(adId, 'click', clientHash, CLICK_COOLDOWN_MS);
+  if (!counted) return { counted: false };
+
+  try {
+    await db.collection('ads').doc(adId).update({
+      clicks: FieldValue.increment(1),
+      lastClickAt: Timestamp.now(),
+    });
+  } catch (err) {
+    console.warn(`trackAdClick: could not increment ${adId}:`, err.message);
+    return { counted: false };
+  }
+  return { counted: true };
+});
+

@@ -17,6 +17,9 @@ import { CountryFlag } from '@/presentation/components/common/CountryFlag/Countr
 import { useCategories } from '@/presentation/hooks/category/useCategories';
 import { useFavoriteProduct } from '@/presentation/hooks/product/useFavoriteProduct';
 import { useTrackEvent } from '@/presentation/hooks/analytics';
+import { useActiveAd } from '@/presentation/hooks/ads/useActiveAd';
+import { useTrackAd } from '@/presentation/hooks/ads/useTrackAd';
+import { AD_TYPES } from '@/core/constants/adTypes';
 
 // Sort helper — products with an image come first (visual browsing beats a
 // wall of placeholder tiles), tie-broken by newest createdAt. Applied at
@@ -150,6 +153,9 @@ export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter, cou
     const { categories } = useCategories();
     const { isFavorited, toggleFavorite } = useFavoriteProduct();
     const { track } = useTrackEvent();
+    // Featured advertising slot — takes the first grid tile on page 1
+    // when a campaign is live. See useActiveAd for the selection rules.
+    const { ad: featuredAd } = useActiveAd(AD_TYPES.FEATURED);
 
     // Fetch Products
     useEffect(() => {
@@ -379,6 +385,9 @@ export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter, cou
         <>
             <div ref={gridTopRef} className="scroll-mt-28" />
             <div className={`grid ${gridColsClass} gap-6`}>
+                {featuredAd && safePage === 1 && (
+                    <SponsoredProductCard ad={featuredAd} />
+                )}
                 {pageProducts.map((product) => (
                     <ProductCard
                         key={product.id}
@@ -525,6 +534,85 @@ function ProductCard({ product, categories, isFavorited, onToggleFavorite }) {
                     </div>
                     <div className="px-5 py-2 bg-gradient-to-r from-[#FFD700] to-[#FDB931] text-[#0F1B2B] font-bold rounded-full text-center text-sm hover:brightness-110 transition-all">
                         View
+                    </div>
+                </div>
+            </div>
+        </Link>
+    );
+}
+
+/**
+ * SponsoredProductCard — visual sibling of ProductCard with a
+ * gold-tinted border + "Sponsored" badge. Rendered as the very first
+ * tile on page 1 whenever a Featured ad is active. Clicks are treated
+ * as external nav when the link is a full URL.
+ */
+function SponsoredProductCard({ ad }) {
+    const isExternal = /^https?:\/\//i.test(ad.linkUrl || '');
+    const { setRef, trackClick } = useTrackAd(ad.id);
+    // Mirror ProductCard's DOM/classes so grid rows stay aligned. The
+    // ad-specific styling is layered as a gold outline + badge; internal
+    // structure (aspect ratio, spacing, footer) is identical.
+    return (
+        <Link
+            ref={setRef}
+            onClick={trackClick}
+            href={ad.linkUrl || '#'}
+            target={isExternal ? '_blank' : undefined}
+            rel={isExternal ? 'noopener noreferrer' : undefined}
+            className="product-grid-card group relative"
+            style={{
+                border: '2px solid rgba(255,215,0,0.6)',
+                boxShadow: '0 10px 30px rgba(255,215,0,0.15)',
+                textDecoration: 'none',
+            }}
+        >
+            <span
+                className="absolute top-2 left-2 z-20 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider"
+                style={{ background: '#FFD700', color: '#0F1B2B' }}
+            >
+                {ad.badgeText || 'Sponsored'}
+            </span>
+
+            {/* Image Area — matches ProductCard aspect + wrapper */}
+            <div className="aspect-[4/3] w-full bg-[#1A283B] rounded-xl mb-4 overflow-hidden relative flex items-center justify-center">
+                {ad.companyLogo ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                        src={ad.companyLogo}
+                        alt={ad.companyName || 'Sponsored'}
+                        className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110"
+                    />
+                ) : (
+                    <div
+                        className="w-full h-full flex items-center justify-center text-2xl font-extrabold"
+                        style={{
+                            background: 'linear-gradient(135deg, rgba(255,215,0,0.2), rgba(15,27,43,0.9))',
+                            color: '#FFD700',
+                        }}
+                    >
+                        {(ad.companyName || 'AD').slice(0, 2).toUpperCase()}
+                    </div>
+                )}
+            </div>
+
+            {/* Content — matches ProductCard layout */}
+            <div className="flex flex-col flex-1">
+                <div className="flex items-center gap-2 mb-2 text-[#A0A0A0] text-sm">
+                    <span className="uppercase tracking-wider text-[10px] text-[#FFD700] font-bold">Ad</span>
+                    <span className="truncate">{ad.companyName}</span>
+                </div>
+
+                <h3 className="text-lg font-bold text-white mb-1 leading-tight line-clamp-2 min-h-[44px]">
+                    {ad.description || ad.companyName || 'Featured Placement'}
+                </h3>
+
+                <div className="mt-auto pt-4 border-t border-[rgba(255,255,255,0.05)] flex justify-between items-center">
+                    <div className="text-[#FFD700] font-bold text-sm uppercase tracking-wider">
+                        Sponsored
+                    </div>
+                    <div className="px-5 py-2 bg-gradient-to-r from-[#FFD700] to-[#FDB931] text-[#0F1B2B] font-bold rounded-full text-center text-sm hover:brightness-110 transition-all">
+                        Visit
                     </div>
                 </div>
             </div>

@@ -25,36 +25,12 @@
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Timestamp, addDoc, collection } from 'firebase/firestore';
-import { ArrowRight, ChevronLeft, Send, Loader2 } from 'lucide-react';
+import { addDoc, collection, query, where, getDocs, serverTimestamp } from 'firebase/firestore';
+import { ArrowRight, ChevronLeft, Send, Loader2, Check } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { db } from '@/core/config/firebase.config';
-
-const PACKAGES = [
-  { value: 'Featured Product Directory Spot', short: 'Featured Products', price: 100, unit: '/week' },
-  { value: 'Hero Section Spotlight Ad', short: 'Hero Spotlight', price: 100, unit: '/week' },
-  { value: 'Carousel Banner Placement', short: 'Carousel Brand', price: 100, unit: '/week' },
-  { value: 'Combined Multi-Placement Package', short: 'Combined Multi-Placement', price: 200, unit: '/week' },
-];
-
-// Map ?type= query param to a package value so pricing-page tile CTAs
-// land the user on this form with their choice already selected.
-const TYPE_TO_PACKAGE = {
-  featured: 'Featured Product Directory Spot',
-  hero: 'Hero Section Spotlight Ad',
-  carousel: 'Carousel Banner Placement',
-  combined: 'Combined Multi-Placement Package',
-};
-
-// Rolling six-month window starting on the current month. Simpler to
-// hard-code + label from Date than to run a full i18n locale-aware
-// picker for a marketing form.
-const CAMPAIGN_WEEKS = [
-  'Week 1 (01-07)',
-  'Week 2 (08-14)',
-  'Week 3 (15-21)',
-  'Week 4 (22-28)',
-];
+import { AD_PACKAGES as PACKAGES, TYPE_TO_PACKAGE, CAMPAIGN_WEEKS, AD_TYPES } from '@/core/constants/adTypes';
+import { useAuth } from '@/presentation/contexts/AuthContext';
 
 const RATE_LIMIT_KEY = 'ad_inquiry_last_submit_at';
 const RATE_LIMIT_WINDOW_MS = 60 * 1000;
@@ -81,6 +57,7 @@ function normalizeUrl(raw) {
 function InquirePageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { user } = useAuth();
   const initialPackage = TYPE_TO_PACKAGE[searchParams.get('type')] || PACKAGES[0].value;
   const months = useMemo(() => computeMonths(), []);
 
@@ -95,6 +72,79 @@ function InquirePageInner() {
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
   const firstErrorRef = useRef(null);
+
+  // Product picker state — only used when the Featured tier is chosen and
+  // the visitor is signed in. Stores the raw product docs + which one the
+  // user selected. `productsLoading` prevents the "no products" empty
+  // state from flashing on first render.
+  const [myProducts, setMyProducts] = useState([]);
+  const [productsLoading, setProductsLoading] = useState(false);
+  const [selectedProductId, setSelectedProductId] = useState('');
+
+  const pkgMeta = useMemo(() => PACKAGES.find((p) => p.value === pkg), [pkg]);
+  const isFeatured = pkgMeta?.type === AD_TYPES.FEATURED;
+  const userTouchedFields = useRef({ company: false, website: false, contactName: false, email: false });
+
+  // Autofill from the signed-in user's profile. We only overwrite fields
+  // the visitor hasn't manually edited yet, so hitting an old draft in
+  // this session doesn't stomp their input.
+  useEffect(() => {
+    if (!user) return;
+    if (!userTouchedFields.current.company && user.companyName) {
+      setCompany(user.companyName);
+    }
+    if (!userTouchedFields.current.contactName && user.displayName) {
+      setContactName(user.displayName);
+    }
+    if (!userTouchedFields.current.email && user.email) {
+      setEmail(user.email);
+    }
+    // Profile stores the URL as `companyWebsite`; fall back to plain
+    // `website` in case an older schema still surfaces it.
+    const site = user.companyWebsite || user.website;
+    if (!userTouchedFields.current.website && site) {
+      setWebsite(site);
+    }
+  }, [user]);
+
+  // Load the signed-in user's own product catalog when Featured is picked.
+  // We do NOT preselect one — the user must actively click a tile so the
+  // choice is intentional. Empty catalog is fine; admin will pick manually.
+  useEffect(() => {
+    if (!user?.uid || !isFeatured) {
+      setMyProducts([]);
+      setSelectedProductId('');
+      return;
+    }
+    let cancelled = false;
+    setProductsLoading(true);
+    (async () => {
+      try {
+        // Single equality filter on `userId` — no composite index needed.
+        // We filter to active status client-side because most sellers
+        // have only a handful of products; keeps the query trivial and
+        // avoids depending on an admin-managed composite index.
+        const snap = await getDocs(
+          query(collection(db, 'products'), where('userId', '==', user.uid))
+        );
+        if (cancelled) return;
+        const items = snap.docs
+          .map((d) => ({ id: d.id, ...d.data() }))
+          .filter((p) => (p.status || 'active') === 'active');
+        setMyProducts(items);
+      } catch (err) {
+        if (!cancelled) {
+          console.warn('inquire: product fetch failed:', err);
+          setMyProducts([]);
+        }
+      } finally {
+        if (!cancelled) setProductsLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.uid, isFeatured]);
 
   // Keep the package field in sync when the user changes ?type= via nav.
   useEffect(() => {
@@ -144,7 +194,20 @@ function InquirePageInner() {
 
     setSubmitting(true);
     try {
-      await addDoc(collection(db, 'adInquiries'), {
+      const selectedProduct = isFeatured && selectedProductId
+        ? myProducts.find((p) => p.id === selectedProductId)
+        : null;
+      const productSnapshot = selectedProduct
+        ? {
+            name: String(selectedProduct.name || '').slice(0, 200),
+            image: String(selectedProduct.images?.[0] || '').slice(0, 1000),
+            price: Number.isFinite(Number(selectedProduct.price)) ? Number(selectedProduct.price) : 0,
+            currency: String(selectedProduct.currency || 'USD').slice(0, 10),
+            description: String(selectedProduct.description || '').slice(0, 500),
+          }
+        : null;
+
+      const payload = {
         company: company.trim(),
         website: normalizeUrl(website),
         contactName: contactName.trim(),
@@ -154,8 +217,18 @@ function InquirePageInner() {
         campaignWeek,
         brief: brief.trim(),
         status: 'new',
-        createdAt: Timestamp.now(),
-      });
+        // MUST be serverTimestamp() — the Firestore rule enforces
+        // `createdAt == request.time` which only matches server-issued
+        // timestamps. Client-side `Timestamp.now()` never lines up with
+        // `request.time` (network latency) and the write is rejected.
+        createdAt: serverTimestamp(),
+      };
+      if (user?.uid) payload.userId = user.uid;
+      if (selectedProduct) {
+        payload.productId = selectedProduct.id;
+        payload.productSnapshot = productSnapshot;
+      }
+      await addDoc(collection(db, 'adInquiries'), payload);
       try {
         window.localStorage.setItem(RATE_LIMIT_KEY, String(Date.now()));
       } catch {
@@ -187,9 +260,6 @@ function InquirePageInner() {
         </Link>
 
         <div className="mb-6 text-center">
-          <span className="inline-block px-3 py-1 rounded-full bg-[rgba(255,215,0,0.08)] border border-[rgba(255,215,0,0.2)] text-[#FFD700] text-xs uppercase tracking-wider font-semibold mb-3">
-            Advertising Inquiry
-          </span>
           <h1 className="text-3xl md:text-4xl font-extrabold mb-2 tracking-tight">Submit Placement Inquiry</h1>
           <p className="text-[#c8d3e0] text-base max-w-xl mx-auto">
             Tell us about your campaign and our team will get back to you within 1 business day.
@@ -213,7 +283,7 @@ function InquirePageInner() {
               <input
                 type="text"
                 value={company}
-                onChange={(e) => setCompany(e.target.value)}
+                onChange={(e) => { userTouchedFields.current.company = true; setCompany(e.target.value); }}
                 placeholder="e.g. CoreTrade International"
                 maxLength={200}
                 className={fieldClasses(errors.company)}
@@ -231,7 +301,7 @@ function InquirePageInner() {
                 autoCorrect="off"
                 spellCheck={false}
                 value={website}
-                onChange={(e) => setWebsite(e.target.value)}
+                onChange={(e) => { userTouchedFields.current.website = true; setWebsite(e.target.value); }}
                 placeholder="www.mycompany.com"
                 maxLength={500}
                 className={fieldClasses(errors.website)}
@@ -249,7 +319,7 @@ function InquirePageInner() {
               <input
                 type="text"
                 value={contactName}
-                onChange={(e) => setContactName(e.target.value)}
+                onChange={(e) => { userTouchedFields.current.contactName = true; setContactName(e.target.value); }}
                 placeholder="e.g. John Doe"
                 maxLength={200}
                 className={fieldClasses(errors.contactName)}
@@ -266,7 +336,7 @@ function InquirePageInner() {
                 autoCorrect="off"
                 spellCheck={false}
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => { userTouchedFields.current.email = true; setEmail(e.target.value); }}
                 placeholder="marketing@mycompany.com"
                 maxLength={254}
                 className={fieldClasses(errors.email)}
@@ -293,6 +363,84 @@ function InquirePageInner() {
             </select>
             {errors.pkg && <p className="text-xs text-red-400 mt-1">{errors.pkg}</p>}
           </div>
+
+          {/* Product picker — Featured tier only. Signed-in visitors can
+              pin one of their own active products to the placement; that
+              product's image + name flow into the ad creative when an
+              admin converts the inquiry. Not signed in → prompt to sign
+              in. No active products → hint to add one first. */}
+          {isFeatured && (
+            <div>
+              <label className="block text-xs uppercase tracking-wider text-[#A0A0A0] font-semibold mb-1.5">
+                Pin One Of Your Products <span className="text-[#A0A0A0] normal-case font-normal">(optional)</span>
+              </label>
+              {!user ? (
+                <div className="rounded-xl border border-dashed border-[rgba(255,215,0,0.35)] bg-[rgba(255,215,0,0.04)] px-4 py-3 text-sm text-[#c8d3e0]">
+                  <Link href="/login" className="text-[#FFD700] underline">Sign in</Link>{' '}
+                  to pick a product from your catalog — otherwise our team will help pick the creative after you submit.
+                </div>
+              ) : productsLoading ? (
+                <div className="rounded-xl border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.03)] px-4 py-3 text-sm text-[#A0A0A0] flex items-center gap-2">
+                  <Loader2 className="w-4 h-4 animate-spin" /> Loading your products…
+                </div>
+              ) : myProducts.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-[rgba(255,255,255,0.15)] bg-[rgba(255,255,255,0.03)] px-4 py-3 text-sm text-[#c8d3e0]">
+                  You don&apos;t have any active products yet. You can still submit and our team will help you choose the creative later — or{' '}
+                  <Link href="/product/new" className="text-[#FFD700] underline">add a product</Link> first.
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 max-h-[340px] overflow-y-auto pr-1">
+                  {myProducts.map((p) => {
+                    const selected = selectedProductId === p.id;
+                    const img = p.images?.[0];
+                    return (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => setSelectedProductId(selected ? '' : p.id)}
+                        className={`relative rounded-xl overflow-hidden border text-left transition-all ${
+                          selected
+                            ? 'border-[#FFD700] shadow-[0_0_0_2px_rgba(255,215,0,0.35)]'
+                            : 'border-[rgba(255,255,255,0.1)] hover:border-[rgba(255,215,0,0.5)]'
+                        }`}
+                        style={{ background: 'rgba(255,255,255,0.04)' }}
+                      >
+                        <div className="aspect-square bg-[rgba(255,255,255,0.05)] flex items-center justify-center overflow-hidden">
+                          {img ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={img} alt={p.name || 'Product'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          ) : (
+                            <span className="text-[#A0A0A0] text-xs">No image</span>
+                          )}
+                        </div>
+                        <div className="p-2">
+                          <p className="text-xs text-white font-semibold truncate">{p.name || 'Untitled'}</p>
+                          {Number.isFinite(Number(p.price)) && p.price > 0 && (
+                            <p className="text-[10px] text-[#FFD700] mt-0.5">
+                              {p.currency || 'USD'} {Number(p.price).toLocaleString()}
+                            </p>
+                          )}
+                        </div>
+                        {selected && (
+                          <span
+                            className="absolute top-2 right-2 flex items-center justify-center w-6 h-6 rounded-full"
+                            style={{ background: '#FFD700', color: '#0F1B2B' }}
+                          >
+                            <Check className="w-4 h-4" strokeWidth={3} />
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+              {selectedProductId && (
+                <p className="text-xs text-[#FFD700] mt-2">
+                  Selected. This product&apos;s image and title will pre-fill the ad creative on admin approval.
+                </p>
+              )}
+            </div>
+          )}
 
           {/* Campaign Month — pill tab picker */}
           <div>

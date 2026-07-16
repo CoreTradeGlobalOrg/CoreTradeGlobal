@@ -42,23 +42,21 @@ function NewRequestPageInner() {
     );
   }
 
-  const profileHref = `/profile/${user.uid}`;
-
   const handleSubmit = async (data) => {
     try {
       await createRequest(data);
       toast.success('Request created!');
-      router.push(profileHref);
+      router.push('/');
     } catch {
       /* hook surfaces the error */
     }
   };
 
   return (
-    <FormPageShell title="Create New Request" backHref={profileHref} backLabel="Back to profile">
+    <FormPageShell title="Create New Request" onBack={() => router.back()} backLabel="Back">
       <RequestForm
         onSubmit={handleSubmit}
-        onCancel={() => router.push(profileHref)}
+        onCancel={() => router.back()}
         userId={user.uid}
         request={prefillTitle ? { productName: prefillTitle } : undefined}
       />

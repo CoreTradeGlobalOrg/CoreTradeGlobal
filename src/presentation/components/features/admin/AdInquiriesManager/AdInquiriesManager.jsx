@@ -20,18 +20,21 @@ import {
   deleteDoc,
   serverTimestamp,
 } from 'firebase/firestore';
-import { Mail, ExternalLink, RefreshCw, Trash2, Check, Archive, Search, Copy, MessageSquare } from 'lucide-react';
+import { Mail, ExternalLink, RefreshCw, Trash2, Check, Archive, Search, Copy, MessageSquare, Megaphone } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { db } from '@/core/config/firebase.config';
 import { useAuth } from '@/presentation/contexts/AuthContext';
+import { AD_PACKAGES } from '@/core/constants/adTypes';
+import { AdCampaignForm } from '../AdCampaignsManager/AdCampaignForm';
 
 const STATUS_META = {
   new: { label: 'New', bg: 'bg-[#FFD700]/15', border: 'border-[#FFD700]/40', text: 'text-[#FFD700]' },
   handled: { label: 'Handled', bg: 'bg-emerald-500/15', border: 'border-emerald-500/40', text: 'text-emerald-300' },
+  converted: { label: 'Converted', bg: 'bg-blue-500/15', border: 'border-blue-500/40', text: 'text-blue-300' },
   archived: { label: 'Archived', bg: 'bg-gray-500/15', border: 'border-gray-500/40', text: 'text-gray-300' },
 };
 
-const STATUS_FILTERS = ['all', 'new', 'handled', 'archived'];
+const STATUS_FILTERS = ['all', 'new', 'converted', 'handled', 'archived'];
 
 function fmtDate(ts) {
   if (!ts) return '—';
@@ -48,6 +51,7 @@ export function AdInquiriesManager() {
   const [expandedId, setExpandedId] = useState(null);
   const [savingId, setSavingId] = useState(null);
   const [notes, setNotes] = useState({});
+  const [convertingInquiry, setConvertingInquiry] = useState(null);
 
   useEffect(() => {
     const q = query(collection(db, 'adInquiries'), orderBy('createdAt', 'desc'));
@@ -199,7 +203,14 @@ export function AdInquiriesManager() {
                         {meta.label}
                       </span>
                     </div>
-                    <p className="text-sm text-[#c8d3e0] mb-1">{inq.package || '—'}</p>
+                    <p className="text-sm text-[#c8d3e0] mb-1 flex items-center gap-2 flex-wrap">
+                      <span>{inq.package || '—'}</span>
+                      {inq.productSnapshot?.name && (
+                        <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[rgba(255,215,0,0.12)] border border-[rgba(255,215,0,0.35)] text-[#FFD700]">
+                          Pinned: {inq.productSnapshot.name}
+                        </span>
+                      )}
+                    </p>
                     <p className="text-xs text-[#A0A0A0]">
                       {inq.contactName || '—'} · {inq.campaignMonth || '—'} · {inq.campaignWeek || '—'} · {fmtDate(inq.createdAt)}
                     </p>
@@ -276,6 +287,42 @@ export function AdInquiriesManager() {
                       )}
                     </div>
 
+                    {inq.productSnapshot && (
+                      <div>
+                        <p className="text-xs uppercase tracking-wider text-[#A0A0A0] font-semibold mb-1.5">Pinned Product</p>
+                        <div className="rounded-lg bg-[rgba(255,215,0,0.06)] border border-[rgba(255,215,0,0.25)] p-3 flex items-center gap-3">
+                          {inq.productSnapshot.image ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={inq.productSnapshot.image}
+                              alt={inq.productSnapshot.name || 'Product'}
+                              style={{ width: 64, height: 64, objectFit: 'cover', borderRadius: 8 }}
+                            />
+                          ) : (
+                            <div style={{ width: 64, height: 64, borderRadius: 8, background: 'rgba(255,255,255,0.05)' }} />
+                          )}
+                          <div className="min-w-0">
+                            <p className="text-white text-sm font-semibold truncate">{inq.productSnapshot.name || '—'}</p>
+                            {Number.isFinite(Number(inq.productSnapshot.price)) && inq.productSnapshot.price > 0 && (
+                              <p className="text-[#FFD700] text-xs">
+                                {inq.productSnapshot.currency || 'USD'} {Number(inq.productSnapshot.price).toLocaleString()}
+                              </p>
+                            )}
+                            {inq.productId && (
+                              <a
+                                href={`/product/${inq.productId}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-[10px] text-[#A0A0A0] hover:text-[#FFD700] inline-flex items-center gap-1 mt-0.5"
+                              >
+                                <ExternalLink className="w-3 h-3" /> Open product
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     {inq.brief && (
                       <div>
                         <p className="text-xs uppercase tracking-wider text-[#A0A0A0] font-semibold mb-1.5">Brief</p>
@@ -298,6 +345,18 @@ export function AdInquiriesManager() {
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2">
+                      {status !== 'converted' && (
+                        <button
+                          type="button"
+                          onClick={() => setConvertingInquiry(inq)}
+                          disabled={isSaving}
+                          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-gradient-to-r from-[#FFD700] to-[#FDB931] font-bold text-xs hover:shadow-[0_6px_16px_rgba(255,215,0,0.3)] disabled:opacity-60 transition-all"
+                          style={{ color: '#0F1B2B', WebkitTextFillColor: '#0F1B2B' }}
+                        >
+                          <Megaphone className="w-3.5 h-3.5" />
+                          Convert to Ad
+                        </button>
+                      )}
                       {status !== 'handled' && (
                         <button
                           type="button"
@@ -347,8 +406,56 @@ export function AdInquiriesManager() {
           })}
         </div>
       )}
+
+      {convertingInquiry && (
+        <AdCampaignForm
+          prefill={buildPrefillFromInquiry(convertingInquiry)}
+          onClose={() => setConvertingInquiry(null)}
+          onSaved={async (adId) => {
+            try {
+              await updateDoc(doc(db, 'adInquiries', convertingInquiry.id), {
+                status: 'converted',
+                linkedAdId: adId,
+                handledAt: serverTimestamp(),
+                handledBy: user?.uid || null,
+              });
+            } catch (err) {
+              console.error('inquiry -> converted patch failed:', err);
+              toast.error('Ad created but inquiry status update failed.');
+            } finally {
+              setConvertingInquiry(null);
+            }
+          }}
+        />
+      )}
     </div>
   );
+}
+
+// Map an inquiry doc into the AdCampaignForm's `prefill` shape. Package
+// name -> ad type via AD_PACKAGES; combined packages have no direct
+// type so the form defaults to Featured and the admin picks manually.
+function buildPrefillFromInquiry(inq) {
+  const match = AD_PACKAGES.find((p) => p.value === inq.package);
+  // If the visitor pinned a product, wire the ad creative to that product:
+  // the ad link deep-links into the product page, the logo becomes the
+  // first product image, and the description falls back to the product
+  // name/description so the admin usually just clicks Save.
+  const hasProduct = !!inq.productId && !!inq.productSnapshot;
+  return {
+    type: match?.type || null,
+    companyName: inq.company || '',
+    linkUrl: hasProduct ? `/product/${inq.productId}` : (inq.website || ''),
+    companyLogo: hasProduct ? (inq.productSnapshot.image || '') : '',
+    description: hasProduct
+      ? (inq.productSnapshot.description || inq.productSnapshot.name || '')
+      : '',
+    badgeText: hasProduct ? 'Featured' : '',
+    productId: hasProduct ? inq.productId : null,
+    inquiryId: inq.id,
+    campaignMonth: inq.campaignMonth || null,
+    campaignWeek: inq.campaignWeek || null,
+  };
 }
 
 function Row({ label, children }) {

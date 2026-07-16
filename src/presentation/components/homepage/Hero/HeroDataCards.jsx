@@ -12,6 +12,9 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { CountryFlag } from '@/presentation/components/common/CountryFlag/CountryFlag';
 import { COUNTRIES } from '@/core/constants/countries';
+import { useActiveAd } from '@/presentation/hooks/ads/useActiveAd';
+import { useTrackAd } from '@/presentation/hooks/ads/useTrackAd';
+import { AD_TYPES } from '@/core/constants/adTypes';
 
 // Helper to get country name from ISO code
 const getCountryName = (countryCode) => {
@@ -97,6 +100,11 @@ function Shimmer({ width = '100%', height = '14px', className = '' }) {
 export function HeroDataCards({ fetchData, dataLoading, latestProduct, latestRequest, latestFair, latestSupplier }) {
   // Show skeleton when fetchData is enabled but data hasn't arrived yet
   const showSkeleton = fetchData && dataLoading;
+  // Optional paid slot — when a hero ad is currently active, it takes
+  // over the fourth card. Falls back to the "Advertise Here" placeholder
+  // when no ad is live.
+  const { ad: heroAd } = useActiveAd(AD_TYPES.HERO);
+  const { setRef: setHeroAdRef, trackClick: trackHeroAdClick } = useTrackAd(heroAd?.id);
   return (
     <>
       {/* Left Side Info Cards */}
@@ -235,48 +243,73 @@ export function HeroDataCards({ fetchData, dataLoading, latestProduct, latestReq
           </div>
         </Link>
 
-        {/* Supplier Card */}
-        <Link href={fetchData && latestSupplier ? `/profile/${latestSupplier.id}` : '/companies'} className="hero-info-card hero-supplier-card">
-          <div className="card-icon">
-            {showSkeleton ? (
-              <Shimmer width="100%" height="100%" className="rounded-lg" />
-            ) : fetchData && (latestSupplier?.companyLogo || latestSupplier?.photoURL) ? (
-              <Image
-                src={latestSupplier.companyLogo || latestSupplier.photoURL}
-                alt={latestSupplier.companyName}
-                fill
-                sizes="64px"
-                className="object-cover rounded-lg"
-              />
-            ) : '🏭'}
-          </div>
-          <div className="card-content" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-            <h3>{fetchData ? 'Latest Supplier' : 'Suppliers'}</h3>
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-              {showSkeleton ? (
-                <>
-                  <p className="card-product-name"><Shimmer width="65%" /></p>
-                  <p className="card-specs"><Shimmer width="45%" /></p>
-                </>
+        {/* Fourth card: paid Hero spot when an ad is live, otherwise the
+            "Advertise Here" placeholder pointing at the pricing inquiry
+            form (same tier the pricing page CTAs use). */}
+        {heroAd ? (
+          <Link
+            ref={setHeroAdRef}
+            onClick={trackHeroAdClick}
+            href={heroAd.linkUrl || '#'}
+            target={/^https?:\/\//i.test(heroAd.linkUrl || '') ? '_blank' : undefined}
+            rel="noopener noreferrer"
+            className="hero-info-card hero-supplier-card hero-ad-slot-card"
+            aria-label={`Sponsored: ${heroAd.companyName}`}
+          >
+            <div className="card-icon" style={{ position: 'relative', overflow: 'hidden' }}>
+              {heroAd.companyLogo ? (
+                <Image
+                  src={heroAd.companyLogo}
+                  alt={heroAd.companyName || 'Sponsored'}
+                  fill
+                  sizes="64px"
+                  className="object-cover rounded-lg"
+                />
               ) : (
-                <>
-                  <p className="card-product-name" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    {fetchData && latestSupplier ? (
-                      <>
-                        <CountryFlag countryCode={latestSupplier.country} size={18} />
-                        <span>{latestSupplier.companyName}</span>
-                      </>
-                    ) : 'Verified Companies'}
-                  </p>
-                  <p className="card-specs" style={gradientTextStyle}>
-                    {fetchData && latestSupplier ? (latestSupplier.industry || '') : 'Worldwide network'}
-                  </p>
-                </>
+                <span style={{ fontSize: '24px' }}>✨</span>
               )}
             </div>
-            {!fetchData && <p className="card-budget">Browse →</p>}
-          </div>
-        </Link>
+            <div className="card-content" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+              <h3 style={{ color: '#FFD700' }}>{heroAd.badgeText || 'Sponsored'}</h3>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                <p className="card-product-name">{heroAd.companyName}</p>
+                <p className="card-specs" style={{ color: '#ffffff' }}>
+                  {heroAd.description}
+                </p>
+              </div>
+              <p className="card-budget" style={{ color: '#FFD700' }}>Visit →</p>
+            </div>
+          </Link>
+        ) : (
+          <Link
+            href="/pricing/inquire?type=featured"
+            className="hero-info-card hero-supplier-card hero-ad-slot-card"
+            aria-label="Your company here — inquire about featured advertising"
+          >
+            <div className="card-icon" style={{
+              background: 'linear-gradient(135deg, rgba(255,215,0,0.18), rgba(253,185,49,0.06))',
+              border: '1px dashed rgba(255,215,0,0.55)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#FFD700',
+              fontSize: '28px',
+              fontWeight: 800,
+            }}>
+              +
+            </div>
+            <div className="card-content" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+              <h3 style={{ color: '#FFD700' }}>Advertise Here</h3>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                <p className="card-product-name">Your Company Here</p>
+                <p className="card-specs" style={{ color: '#ffffff' }}>
+                  Featured spot
+                </p>
+              </div>
+              <p className="card-budget" style={{ color: '#FFD700' }}>Book Spot →</p>
+            </div>
+          </Link>
+        )}
       </div>
     </>
   );

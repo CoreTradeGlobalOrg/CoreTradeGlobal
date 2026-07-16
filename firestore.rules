@@ -395,11 +395,37 @@ service cloud.firestore {
     // + notes). Delete is admin-only for GDPR cleanup.
     // ─────────────────────────────────────────────────────────────────────────
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // Ads collection (paid placements on Hero, ProductGrid, and Showcase).
+    //
+    // Public read + list so unauthenticated visitors see live ads. Only
+    // admins may create / update / delete records. Impression + click
+    // counters are updated server-side by the trackAdImpression /
+    // trackAdClick callables (Admin SDK bypasses rules) so a malicious
+    // client can't inflate metrics or overwrite the copy fields.
+    // ─────────────────────────────────────────────────────────────────────────
+
+    match /ads/{adId} {
+      allow read, list: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    // adTracking: server-only. Cloud Functions write here to record
+    // per-client cooldown state for trackAdImpression/trackAdClick.
+    // Clients have no reason to read it (would leak fingerprint hashes).
+    match /adTracking/{key} {
+      allow read, write: if false;
+    }
+
     match /adInquiries/{inquiryId} {
+      // Required fields plus optional userId/productId/productSnapshot for
+      // signed-in submissions that link a specific product from their own
+      // catalog (Featured Product tier flow).
       allow create: if request.resource.data.keys().hasOnly([
                        'company', 'website', 'contactName', 'email',
                        'package', 'campaignMonth', 'campaignWeek', 'brief',
-                       'status', 'createdAt'
+                       'status', 'createdAt',
+                       'userId', 'productId', 'productSnapshot'
                      ])
                    && request.resource.data.company is string
                    && request.resource.data.company.size() > 0
@@ -421,11 +447,24 @@ service cloud.firestore {
                    && request.resource.data.brief is string
                    && request.resource.data.brief.size() <= 2000
                    && request.resource.data.status == 'new'
-                   && request.resource.data.createdAt == request.time;
+                   && request.resource.data.createdAt == request.time
+                   && (!('userId' in request.resource.data)
+                       || (request.resource.data.userId is string
+                           && request.resource.data.userId.size() <= 128
+                           && request.auth != null
+                           && request.resource.data.userId == request.auth.uid))
+                   && (!('productId' in request.resource.data)
+                       || (request.resource.data.productId is string
+                           && request.resource.data.productId.size() <= 128))
+                   && (!('productSnapshot' in request.resource.data)
+                       || (request.resource.data.productSnapshot is map
+                           && request.resource.data.productSnapshot.keys().hasOnly(
+                                ['name', 'image', 'price', 'currency', 'description']
+                              )));
       allow read, list: if isAdmin();
       allow update: if isAdmin()
                     && request.resource.data.diff(resource.data).affectedKeys()
-                       .hasOnly(['status', 'handledAt', 'handledBy', 'adminNote']);
+                       .hasOnly(['status', 'handledAt', 'handledBy', 'adminNote', 'linkedAdId']);
       allow delete: if isAdmin();
     }
 

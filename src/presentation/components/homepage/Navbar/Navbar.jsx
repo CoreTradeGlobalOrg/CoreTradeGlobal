@@ -85,6 +85,11 @@ const getNavGroups = (user) => [
   },
   {
     label: 'Pricing',
+    // Single-item groups can opt into "render as a plain top-level link"
+    // — no dropdown, no chevron. Consumed by DesktopDropdown /
+    // MobileAccordion below.
+    direct: true,
+    href: '/pricing',
     items: [
       { label: 'Pricing', href: '/pricing' },
     ],
@@ -133,6 +138,28 @@ function DesktopDropdown({ group, isActive, onNavigate }) {
   }, []);
 
   const hasActiveChild = group.items.some((item) => isActive(item.href));
+
+  // Direct-link mode — the group is rendered as a plain top-level link
+  // with no dropdown or chevron. Used when a group is a single-target
+  // shortcut (e.g. Pricing) rather than a category of related routes.
+  if (group.direct && group.href) {
+    const active = isActive(group.href);
+    return (
+      <Link
+        href={group.href}
+        onClick={onNavigate}
+        className="nav-link"
+        aria-current={active ? 'page' : undefined}
+        style={{
+          color: active ? '#FFD700' : undefined,
+          fontWeight: active ? 700 : undefined,
+          opacity: active ? 1 : undefined,
+        }}
+      >
+        {group.label}
+      </Link>
+    );
+  }
 
   return (
     <div
@@ -194,6 +221,26 @@ function DesktopDropdown({ group, isActive, onNavigate }) {
  */
 function MobileAccordion({ group, isActive, onNavigate }) {
   const [open, setOpen] = useState(false);
+
+  // Direct-link mode — mirror DesktopDropdown so single-target groups
+  // stay clickable in the mobile menu too.
+  if (group.direct && group.href) {
+    const active = isActive(group.href);
+    return (
+      <Link
+        href={group.href}
+        onClick={onNavigate}
+        className="block py-3 text-white hover:text-[#FFD700] transition-colors"
+        aria-current={active ? 'page' : undefined}
+        style={{
+          color: active ? '#FFD700' : undefined,
+          fontWeight: active ? 600 : 500,
+        }}
+      >
+        {group.label}
+      </Link>
+    );
+  }
 
   return (
     <div>

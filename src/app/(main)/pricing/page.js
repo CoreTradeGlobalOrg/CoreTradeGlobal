@@ -23,16 +23,12 @@ import Link from 'next/link';
 import {
   Check,
   X,
-  Truck,
-  Shield,
-  Lock,
-  BadgeCheck,
   ArrowRight,
   ChevronDown,
-  Sparkles,
   Search,
   Image as ImageIcon,
 } from 'lucide-react';
+import { AD_TIERS } from '@/core/constants/adTypes';
 
 const COMPARISON_ROWS = [
   { feature: 'Annual Membership Fee', ctg: '$0 (Free Forever)', trad: '$3,000 – $10,000+' },
@@ -41,77 +37,6 @@ const COMPARISON_ROWS = [
   { feature: 'Direct Messaging & Contact', ctg: 'Unlocked', trad: 'Paywalled' },
   { feature: 'RFQ Posting & Bidding', ctg: 'Free & Unlimited', trad: 'Credit-based' },
   { feature: 'Manual Trust Verification', ctg: 'Included', trad: 'Add-on / paid' },
-];
-
-const BIZ_MODEL_TILES = [
-  {
-    icon: Truck,
-    title: 'Logistics Support',
-    desc: 'Optional freight quotes from vetted partners with a small placement fee.',
-  },
-  {
-    icon: Shield,
-    title: 'Cargo Insurance',
-    desc: 'Optional coverage that funds the platform via referral partnerships.',
-  },
-  {
-    icon: Lock,
-    title: 'Advanced Security',
-    desc: '2FA + audit trails included; enterprise tiers subsidize the base platform.',
-  },
-  {
-    icon: BadgeCheck,
-    title: 'Verification Vetting',
-    desc: 'Manual trust badging is free for members; enterprise deep-vetting is paid.',
-  },
-];
-
-const AD_TIERS = [
-  {
-    id: 'featured',
-    tag: 'Featured Products',
-    title: 'Featured Product Ads',
-    price: '$100',
-    priceSuffix: '/week',
-    desc: 'Top-of-directory placement in front of active B2B buyers actively searching for direct trade listings.',
-    features: [
-      'Featured at the top of the B2B product directory',
-      '1,500–2,500 active weekly B2B buyers',
-      'Shown across 25+ global shipping routes and markets',
-    ],
-    cta: 'Inquire About Featured Ads',
-    mockup: 'featured',
-  },
-  {
-    id: 'hero',
-    tag: 'Hero Spotlight',
-    title: 'Hero Section Spotlights',
-    price: '$100',
-    priceSuffix: '/week',
-    desc: 'Prime attention slot on the homepage and category search results — the highest-conversion surface on the platform.',
-    features: [
-      '3,000+ daily decision-makers and trade executives',
-      'Reach sourcing agents from 35+ countries',
-      'Highest-conversion spotlight on home and search pages',
-    ],
-    cta: 'Inquire About Hero Ads',
-    mockup: 'hero',
-  },
-  {
-    id: 'carousel',
-    tag: 'Carousel Brand',
-    title: 'Carousel Brand Spotlights',
-    price: '$100',
-    priceSuffix: '/week',
-    desc: 'Interactive horizontal brand showcase on the landing pages — great for brand awareness campaigns.',
-    features: [
-      '2,000–3,000 direct B2B importers & exporters weekly',
-      'Shown to active traders across 30+ countries',
-      'Interactive carousel showcase on the landing pages',
-    ],
-    cta: 'Inquire About Carousel Ads',
-    mockup: 'carousel',
-  },
 ];
 
 const FAQ_ITEMS = [
@@ -131,10 +56,6 @@ const FAQ_ITEMS = [
     q: 'Is manual trust verification mandatory?',
     a: 'Yes. To keep the B2B network clear of anonymous listings and potential fraud vectors, every registered company undergoes manual vetting by our team. Vetting is completed quickly and once approved, a "Verified Badge" is appended to your profile.',
   },
-  {
-    q: 'Am I forced to use the logistics or insurance tools?',
-    a: 'Not at all. The logistics quotes, cargo insurance, and legal support are optional conveniences. You are welcome to use your own external shipping brokers and consultants for deals made on our platform.',
-  },
 ];
 
 export default function PricingPage() {
@@ -142,7 +63,6 @@ export default function PricingPage() {
     <main className="pt-[calc(var(--navbar-height)+24px)] pb-16 bg-radial-navy min-h-screen text-white">
       <Hero />
       <Comparison />
-      <BizModel />
       <Advertising />
       <FAQ />
       <BottomCTA />
@@ -197,49 +117,22 @@ function Comparison() {
         <div className="rounded-2xl overflow-hidden border border-[rgba(255,255,255,0.08)] bg-gradient-to-br from-[rgba(26,40,59,0.85)] to-[rgba(15,27,43,0.95)] shadow-[0_25px_50px_rgba(0,0,0,0.3)]">
           <div className="grid grid-cols-1 sm:grid-cols-[1.4fr_1fr_1fr] text-sm md:text-base">
             <div className="hidden sm:block px-5 py-4 bg-[rgba(255,255,255,0.03)] font-semibold text-[#A0A0A0] uppercase tracking-wider text-xs">Feature</div>
-            <div className="hidden sm:block px-5 py-4 bg-[rgba(255,255,255,0.03)] font-semibold text-[#FFD700] uppercase tracking-wider text-xs text-center">CoreTradeGlobal</div>
-            <div className="hidden sm:block px-5 py-4 bg-[rgba(255,255,255,0.03)] font-semibold text-[#A0A0A0] uppercase tracking-wider text-xs text-center">Traditional B2B</div>
+            <div className="hidden sm:block px-5 py-4 bg-[rgba(255,255,255,0.03)] font-semibold text-[#FFD700] uppercase tracking-wider text-xs">CoreTradeGlobal</div>
+            <div className="hidden sm:block px-5 py-4 bg-[rgba(255,255,255,0.03)] font-semibold text-[#A0A0A0] uppercase tracking-wider text-xs">Traditional B2B</div>
             {COMPARISON_ROWS.map((row) => (
               <div key={row.feature} className="contents">
                 <div className="px-5 py-4 border-t border-[rgba(255,255,255,0.06)] font-semibold text-white">{row.feature}</div>
-                <div className="px-5 py-4 border-t border-[rgba(255,255,255,0.06)] text-center text-[#FFD700] font-semibold flex items-center justify-center gap-2">
+                <div className="px-5 py-4 border-t border-[rgba(255,255,255,0.06)] text-[#FFD700] font-semibold flex items-center gap-2">
                   <Check className="w-4 h-4 shrink-0" />
                   <span>{row.ctg}</span>
                 </div>
-                <div className="px-5 py-4 border-t border-[rgba(255,255,255,0.06)] text-center text-[#A0A0A0] flex items-center justify-center gap-2">
+                <div className="px-5 py-4 border-t border-[rgba(255,255,255,0.06)] text-[#A0A0A0] flex items-center gap-2">
                   <X className="w-4 h-4 shrink-0" />
                   <span>{row.trad}</span>
                 </div>
               </div>
             ))}
           </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function BizModel() {
-  return (
-    <section className="px-5 py-6 md:py-10">
-      <div className="max-w-5xl mx-auto">
-        <div className="text-center mb-6">
-          <h2 className="text-3xl md:text-4xl font-extrabold mb-2 tracking-tight">How is it free?</h2>
-          <p className="text-[#c8d3e0] text-base md:text-lg max-w-2xl mx-auto">
-            We sustain the platform through optional integrated services and advertising placements.
-            The core B2B experience stays free forever.
-          </p>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {BIZ_MODEL_TILES.map(({ icon: Icon, title, desc }) => (
-            <div key={title} className="rounded-2xl border border-[rgba(255,255,255,0.08)] bg-gradient-to-br from-[rgba(26,40,59,0.85)] to-[rgba(15,27,43,0.95)] p-5 text-center">
-              <div className="w-12 h-12 rounded-xl bg-[rgba(255,215,0,0.1)] flex items-center justify-center mx-auto mb-4">
-                <Icon className="w-6 h-6 text-[#FFD700]" />
-              </div>
-              <h3 className="text-lg font-bold text-white mb-2">{title}</h3>
-              <p className="text-sm text-[#A0A0A0] leading-relaxed">{desc}</p>
-            </div>
-          ))}
         </div>
       </div>
     </section>
@@ -267,9 +160,6 @@ function Advertising() {
                 className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 items-center rounded-2xl border border-[rgba(255,255,255,0.08)] bg-gradient-to-br from-[rgba(26,40,59,0.85)] to-[rgba(15,27,43,0.95)] p-6 md:p-8"
               >
                 <div className={reverse ? 'lg:order-2' : ''}>
-                  <span className="inline-block px-2.5 py-1 rounded-full bg-[rgba(255,215,0,0.08)] border border-[rgba(255,215,0,0.2)] text-[#FFD700] text-[10px] uppercase tracking-wider font-semibold mb-3">
-                    {tier.tag}
-                  </span>
                   <h3 className="text-2xl md:text-3xl font-extrabold text-white mb-3 tracking-tight">{tier.title}</h3>
                   <p className="text-sm md:text-base text-[#c8d3e0] leading-relaxed mb-4">{tier.desc}</p>
                   <ul className="space-y-2 mb-5">

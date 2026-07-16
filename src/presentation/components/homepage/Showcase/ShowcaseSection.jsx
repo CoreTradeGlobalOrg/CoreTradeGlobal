@@ -7,11 +7,14 @@
 
 'use client';
 
-import { useState, useEffect, useRef, useCallback, memo } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback, memo } from 'react';
 import Link from 'next/link';
 import { container } from '@/core/di/container';
 import { COUNTRIES } from '@/core/constants/countries';
 import { CountryFlag } from '@/presentation/components/common/CountryFlag/CountryFlag';
+import { useActiveAd } from '@/presentation/hooks/ads/useActiveAd';
+import { useTrackAd } from '@/presentation/hooks/ads/useTrackAd';
+import { AD_TYPES } from '@/core/constants/adTypes';
 
 // Helper to get country name from ISO code
 const getCountryName = (countryCode) => {
@@ -73,13 +76,59 @@ function CompanyCard({ company, isActive, style }) {
   // Check if logo is a URL
   const isLogoUrl = company.logo && (company.logo.startsWith('http') || company.logo.startsWith('/'));
 
+  // Sponsored slots point at their configured linkUrl (external URL or
+  // internal path); organic cards keep the existing /profile behavior.
+  const isSponsored = !!company.isSponsored;
+  const href = isSponsored
+    ? (company.linkUrl || '#')
+    : (company.id ? `/profile/${company.id}` : '#');
+  const isExternal = isSponsored && /^https?:\/\//i.test(company.linkUrl || '');
+
+  const { setRef: setAdRef, trackClick } = useTrackAd(company.sponsoredAdId);
+
+  // Sponsored outline must land on `.card-inner` (which owns the 24px
+  // border-radius) — the outer `.company-card` wrapper has no radius,
+  // so a box-shadow there renders as a hard rectangle around the
+  // rounded card. Same for the drop shadow.
+  const sponsoredInnerStyle = isSponsored
+    ? {
+        border: '2px solid rgba(255,215,0,0.6)',
+        boxShadow:
+          '0 0 0 1px rgba(255,215,0,0.35), 0 25px 60px -12px rgba(0, 0, 0, 0.8), 0 0 30px rgba(255,215,0,0.18)',
+      }
+    : {};
+
   return (
     <Link
-      href={company.id ? `/profile/${company.id}` : '#'}
+      ref={isSponsored ? setAdRef : undefined}
+      onClick={isSponsored ? trackClick : undefined}
+      href={href}
+      target={isExternal ? '_blank' : undefined}
+      rel={isExternal ? 'noopener noreferrer' : undefined}
       className={`company-card ${isActive ? 'active' : ''}`}
       style={style}
     >
-      <div className="card-inner">
+      <div className="card-inner" style={{ position: 'relative', ...sponsoredInnerStyle }}>
+        {isSponsored && (
+          <span
+            style={{
+              position: 'absolute',
+              top: 8,
+              left: 8,
+              zIndex: 4,
+              padding: '2px 8px',
+              borderRadius: 999,
+              background: '#FFD700',
+              color: '#0F1B2B',
+              fontSize: '9px',
+              fontWeight: 800,
+              letterSpacing: '0.06em',
+              textTransform: 'uppercase',
+            }}
+          >
+            {company.badgeText || 'Sponsored'}
+          </span>
+        )}
         {/* Card Header */}
         <div className="card-header">
           <div className="logo-box overflow-hidden flex items-center justify-center relative">
@@ -89,15 +138,17 @@ function CompanyCard({ company, isActive, style }) {
               company.logo
             )}
           </div>
-          <div className="country-flag" title={getCountryName(company.country)}>
-            <CountryFlag countryCode={company.country} size={24} />
-          </div>
+          {!isSponsored && (
+            <div className="country-flag" title={getCountryName(company.country)}>
+              <CountryFlag countryCode={company.country} size={24} />
+            </div>
+          )}
         </div>
 
         {/* Company Info */}
         <div className="company-info">
           <div className="name-row">
-            <VerifiedIcon />
+            {!isSponsored && <VerifiedIcon />}
             <h3 className="company-name">{company.name}</h3>
           </div>
           {company.category && company.category !== 'Global Trade' && (
@@ -111,7 +162,7 @@ function CompanyCard({ company, isActive, style }) {
 
           {/* View Profile Button - Inside Card */}
           <button className="card-profile-btn">
-            View Profile
+            {isSponsored ? 'Visit' : 'View Profile'}
           </button>
         </div>
       </div>
@@ -125,6 +176,11 @@ export function ShowcaseSection() {
 
   const [companies, setCompanies] = useState(DEFAULT_COMPANIES);
   const [loading, setLoading] = useState(true);
+  // Sponsored slot — when a Carousel ad campaign is running, prepend
+  // a sponsored card ahead of the organic featured companies. Uses the
+  // same visual shape as the organic cards so the 3D rotation math
+  // (angleStep, index-based transform) doesn't care that it's an ad.
+  const { ad: carouselAd } = useActiveAd(AD_TYPES.CAROUSEL);
 
   // Carousel state
   const [currentRotation, setCurrentRotation] = useState(0);
@@ -138,7 +194,25 @@ export function ShowcaseSection() {
   const dragStartRef = useRef({ x: 0, rotation: 0, lastX: 0, lastTime: 0 });
 
   const radius = 550;
-  const totalCards = companies.length; // Use dynamic length
+  const displayCompanies = useMemo(() => {
+    if (!carouselAd) return companies;
+    // Shape the ad doc to the company card contract so the render loop
+    // and 3D transform helpers don't need to branch.
+    const sponsored = {
+      id: `ad:${carouselAd.id}`,
+      sponsoredAdId: carouselAd.id,
+      isSponsored: true,
+      badgeText: carouselAd.badgeText || 'Sponsored',
+      linkUrl: carouselAd.linkUrl || null,
+      name: carouselAd.companyName || 'Sponsored',
+      logo: carouselAd.companyLogo || (carouselAd.companyName || 'AD').substring(0, 2).toUpperCase(),
+      country: '',
+      category: 'Sponsored',
+      description: carouselAd.description || '',
+    };
+    return [sponsored, ...companies];
+  }, [carouselAd, companies]);
+  const totalCards = displayCompanies.length; // Use dynamic length
   const angleStep = (2 * Math.PI) / (totalCards || 1); // Avoid division by zero
   const defaultSpeed = 0.002;
   const slowSpeed = 0.001;
@@ -330,9 +404,9 @@ export function ShowcaseSection() {
 
         {/* Carousel Scene */}
         <div className="carousel-scene" id="carouselScene">
-          {companies.map((company, index) => (
+          {displayCompanies.map((company, index) => (
             <CompanyCard
-              key={`${company.name}-${index}`}
+              key={`${company.id || company.name}-${index}`}
               company={company}
               isActive={isCardActive(index)}
               style={getCardStyle(index)}

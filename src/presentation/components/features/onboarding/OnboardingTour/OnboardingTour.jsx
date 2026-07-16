@@ -38,7 +38,7 @@ const TOUR_SEQUENCE = [
   {
     type: 'intro',
     part: 1,
-    title: 'Welcome to CoreTG Guide',
+    title: 'Welcome to CoreTradeGlobal Guide',
     description:
       'Follow the steps in our guide to complete your profile:',
   },
@@ -117,7 +117,7 @@ const TOUR_SEQUENCE = [
     partStep: 1,
     partTotal: 3,
     isLastInPart: false,
-    title: 'Welcome to CoreTG World',
+    title: 'Welcome to CoreTradeGlobal World',
     subtitle: null,
     description:
       "Follow the steps to upload your first product. You can start creating your digital showroom from the 'Add Product' panel.",
@@ -144,7 +144,7 @@ const TOUR_SEQUENCE = [
     title: 'Publish Your Product!',
     subtitle: "That's It!",
     description:
-      "If you've checked your information, press the 'Add Product' button. Your first product is now accessible to global buyers in the CoreTG world. Good luck!",
+      "If you've checked your information, press the 'Add Product' button. Your first product is now accessible to global buyers in the CoreTradeGlobal world. Good luck!",
     placement: 'center',
   },
 
@@ -158,7 +158,7 @@ const TOUR_SEQUENCE = [
     title: 'Publish Your Need',
     subtitle: null,
     description:
-      "Create an RFQ (Request) on CoreTG to receive offers from thousands of suppliers. Let's start by defining the product you need.",
+      "Create an RFQ (Request) on CoreTradeGlobal to receive offers from thousands of suppliers. Let's start by defining the product you need.",
     placement: 'anchor-buy',
   },
   {

@@ -42,17 +42,17 @@ export default function NewProductPage() {
     try {
       await createProduct(data, imageFiles);
       toast.success('Product created!');
-      router.push(profileHref);
+      router.push('/');
     } catch {
       /* hook surfaces the error */
     }
   };
 
   return (
-    <FormPageShell title="Add New Product" backHref={profileHref} backLabel="Back to profile">
+    <FormPageShell title="Add New Product" onBack={() => router.back()} backLabel="Back">
       <ProductForm
         onSubmit={handleSubmit}
-        onCancel={() => router.push(profileHref)}
+        onCancel={() => router.back()}
         userId={user.uid}
       />
     </FormPageShell>

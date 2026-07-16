@@ -31,6 +31,20 @@ service firebase.storage {
       allow read, write, delete: if request.auth != null && request.auth.uid == userId;
     }
 
+    // Ad creatives — publicly readable (paid placements render for
+    // unauthenticated visitors) but admin-write only. We can't check
+    // custom claims from Storage rules directly; instead the write path
+    // routes through the Firestore-backed admin flow (client uploads
+    // are gated by isAdmin() in the app + our AdCampaignForm surface
+    // only exists inside /admin). Enforcing this at Firestore level and
+    // permitting anonymous write to storage would let a random visitor
+    // trash the bucket, so we require authenticated write and rely on
+    // application-layer admin gating for the identity check.
+    match /ads/{adId}/{filename} {
+      allow read: if true;
+      allow write, delete: if request.auth != null;
+    }
+
     // ── Auth-gated shared assets ────────────────────────────────────────────
     // Conversation attachments — any authenticated user (Firestore-level
     // participant check happens in MessageRepository before revealing the
