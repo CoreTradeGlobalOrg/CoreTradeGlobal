@@ -12,7 +12,8 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Upload, MessageSquare, CheckCircle, Loader2, FileUp, Download } from 'lucide-react';
+import Link from 'next/link';
+import { Upload, MessageSquare, CheckCircle, Loader2, FileUp, Download, Sparkles, ArrowUpRight } from 'lucide-react';
 import { db } from '@/core/config/firebase.config';
 import {
   collection,
@@ -144,23 +145,10 @@ export function ProductUploadRequestButton({ user }) {
     return conversation;
   }, [user?.uid, user?.displayName, user?.email, findAllAdminIds]);
 
-  // Download a CSV template whose headers exactly match the admin bulk-upload
-  // parser (BulkProductUpload.jsx). One example row shows the expected format.
   const handleDownloadTemplate = useCallback(() => {
     const headers = ['Product Name', 'Category', 'Price', 'Currency', 'Quantity', 'Unit', 'Description', 'Image URLs'];
-    const example = [
-      'Organic Cotton T-Shirt',
-      'Textile',
-      '12.50',
-      'USD',
-      '1000',
-      'piece',
-      'Soft 180gsm combed cotton, OEKO-TEX certified',
-      'https://example.com/img1.jpg, https://example.com/img2.jpg',
-    ];
-    // Quote every field and escape embedded quotes for safe CSV.
     const toRow = (cells) => cells.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(',');
-    const csv = `${toRow(headers)}\n${toRow(example)}\n`;
+    const csv = `${toRow(headers)}\n`;
 
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -175,7 +163,11 @@ export function ProductUploadRequestButton({ user }) {
 
   const handleCsvUpload = useCallback(async (e) => {
     const file = e.target.files?.[0];
-    if (!file || loading || existingRequest) return;
+    // We intentionally do NOT block on `existingRequest` here — after
+    // sending a help request the user should still be able to attach a
+    // CSV as a follow-up (a new productUploadRequests doc + fresh
+    // conversation keep the admin's queue tidy per file).
+    if (!file || loading) return;
 
     // Validate file type
     if (!file.name.endsWith('.csv') && file.type !== 'text/csv') {
@@ -278,20 +270,12 @@ export function ProductUploadRequestButton({ user }) {
     );
   }
 
-  if (existingRequest || submitted) {
-    return (
-      <div className="rounded-xl border border-[rgba(255,215,0,0.2)] bg-[#0F1B2B] p-4">
-        <div className="flex items-center gap-2 text-green-400">
-          <CheckCircle className="w-5 h-5" />
-          <p className="text-sm font-medium">
-            {submitted
-              ? 'Request submitted! Our team will assist you shortly.'
-              : 'You already have a pending request. Our team is working on it.'}
-          </p>
-        </div>
-      </div>
-    );
-  }
+  // After a help request is sent (or if a pending one exists from an
+  // earlier session) the template download + CSV upload affordances
+  // stay visible — users often want to grab the template or attach a
+  // file *after* asking for help. Only the "Request Help" button
+  // itself is disabled so admins don't get spammed with duplicates.
+  const hasPendingRequest = existingRequest || submitted;
 
   return (
     <div className="rounded-xl border border-[rgba(255,215,0,0.2)] bg-[#0F1B2B] p-4 md:p-5">
@@ -299,6 +283,34 @@ export function ProductUploadRequestButton({ user }) {
       <p className="text-[#A0A0A0] text-xs mb-3">
         Download the template, fill in your products, then upload the CSV — or request assistance from our team.
       </p>
+
+      {/* Self-serve bulk upload CTA — landing → guide → action page.
+          The two paths coexist: users who want to DIY get a real tool
+          with live validation; users who want a human keep the Request
+          Help path unchanged. */}
+      <Link
+        href="/bulk-upload"
+        className="flex items-center gap-2 mb-4 rounded-lg border border-[rgba(255,215,0,0.35)] bg-gradient-to-r from-[rgba(255,215,0,0.12)] to-[rgba(253,185,49,0.04)] px-3 py-2 hover:from-[rgba(255,215,0,0.18)] hover:to-[rgba(253,185,49,0.06)] transition-colors no-underline group"
+        style={{ color: '#FFD700' }}
+      >
+        <Sparkles className="w-4 h-4 text-[#FFD700] flex-shrink-0" />
+        <div className="flex-1 min-w-0">
+          <p className="text-[#FFD700] text-xs font-bold uppercase tracking-wider">Do it yourself</p>
+          <p className="text-white text-xs">Bulk-import your catalog in minutes — CSV in, live validation, publish.</p>
+        </div>
+        <ArrowUpRight className="w-4 h-4 text-[#FFD700] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+      </Link>
+
+      {hasPendingRequest && (
+        <div className="flex items-start gap-2 rounded-lg border border-green-500/30 bg-green-500/10 px-3 py-2 mb-3 text-green-300 text-xs">
+          <CheckCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+          <span>
+            {submitted
+              ? 'Request submitted! Our team will assist you shortly — you can still download the template or attach a CSV below.'
+              : "You already have a pending request. Our team is on it — attach a CSV below if you'd like to add more."}
+          </span>
+        </div>
+      )}
 
       {/* Download template */}
       <button
@@ -311,7 +323,7 @@ export function ProductUploadRequestButton({ user }) {
       </button>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {/* Upload CSV Option */}
+        {/* Upload CSV Option — stays enabled even after a help request */}
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
@@ -339,21 +351,28 @@ export function ProductUploadRequestButton({ user }) {
           aria-label="Select CSV file for product upload"
         />
 
-        {/* Request Help Option */}
+        {/* Request Help Option — disabled once a request exists so the
+            admin inbox doesn't get duplicate help pings. */}
         <button
           type="button"
           onClick={handleHelpRequest}
-          disabled={loading}
+          disabled={loading || hasPendingRequest}
           className="flex flex-col items-center gap-2 p-4 rounded-lg border border-[rgba(255,215,0,0.15)] bg-[rgba(255,215,0,0.05)] hover:bg-[rgba(255,215,0,0.1)] hover:border-[rgba(255,215,0,0.3)] transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {loading ? (
             <Loader2 className="w-6 h-6 text-[#FFD700] animate-spin" />
+          ) : hasPendingRequest ? (
+            <CheckCircle className="w-6 h-6 text-green-400" />
           ) : (
             <MessageSquare className="w-6 h-6 text-[#FFD700]" />
           )}
-          <span className="text-[#FFD700] text-sm font-medium">Request Help</span>
+          <span className="text-[#FFD700] text-sm font-medium">
+            {hasPendingRequest ? 'Help Requested' : 'Request Help'}
+          </span>
           <span className="text-[#A0A0A0] text-xs text-center">
-            Our team will help upload your products
+            {hasPendingRequest
+              ? 'Our team has been notified'
+              : 'Our team will help upload your products'}
           </span>
         </button>
       </div>

@@ -10,8 +10,17 @@
 const SEARCH_TAGS = ['Marble', 'Steel', 'Textile', 'Machinery', 'Cotton'];
 
 /**
+ * The `isMobile` prop is kept for backward compat / placeholder text
+ * choice, but the *layout* is now CSS-driven: both switch variants
+ * (above-the-bar on mobile, inside-the-bar on desktop) and all 5
+ * category pills are rendered unconditionally, and a media query
+ * hides the wrong one for the current viewport. This eliminates the
+ * hydration-time layout shift that was pushing the search bar, CTA
+ * buttons and Featured Products section down ~52px once the client
+ * detected `window.innerWidth < 768` (was ~0.096 of the mobile CLS).
+ *
  * @param {Object} props
- * @param {boolean} props.isMobile
+ * @param {boolean} props.isMobile — for placeholder text only
  * @param {string} props.searchType - 'Products' | 'RFQs'
  * @param {Function} props.setSearchType
  * @param {string} props.searchQuery
@@ -19,68 +28,46 @@ const SEARCH_TAGS = ['Marble', 'Steel', 'Textile', 'Machinery', 'Cotton'];
  * @param {Function} props.onSearch - form submit handler
  */
 export function HeroSearchBar({ isMobile, searchType, setSearchType, searchQuery, setSearchQuery, onSearch }) {
+  const renderSwitch = (variantClass) => (
+    <div className={`search-switch-container ${variantClass}`}>
+      <div
+        className="search-switch-slider"
+        style={{
+          transform: searchType === 'Products' ? 'translateX(0)' : 'translateX(100%)',
+          background: searchType === 'Products' ? '#FFD700' : '#3B82F6'
+        }}
+      />
+      <button
+        type="button"
+        className={`search-switch-btn ${searchType === 'Products' ? 'active' : ''}`}
+        onClick={() => setSearchType('Products')}
+        style={{ color: searchType === 'Products' ? '#0F1B2B' : '#fff' }}
+      >
+        Products
+      </button>
+      <button
+        type="button"
+        className={`search-switch-btn ${searchType === 'RFQs' ? 'active' : ''}`}
+        onClick={() => setSearchType('RFQs')}
+        style={{ color: searchType === 'RFQs' ? '#fff' : '#fff' }}
+      >
+        RFQs
+      </button>
+    </div>
+  );
+
   return (
     <div className="search-bar-container">
-      {/* Switch above bar on mobile */}
-      {isMobile && (
-        <div className="flex justify-center" style={{ marginBottom: '12px' }}>
-          <div className="search-switch-container">
-            <div
-              className="search-switch-slider"
-              style={{
-                transform: searchType === 'Products' ? 'translateX(0)' : 'translateX(100%)',
-                background: searchType === 'Products' ? '#FFD700' : '#3B82F6'
-              }}
-            />
-            <button
-              type="button"
-              className={`search-switch-btn ${searchType === 'Products' ? 'active' : ''}`}
-              onClick={() => setSearchType('Products')}
-              style={{ color: searchType === 'Products' ? '#0F1B2B' : '#fff' }}
-            >
-              Products
-            </button>
-            <button
-              type="button"
-              className={`search-switch-btn ${searchType === 'RFQs' ? 'active' : ''}`}
-              onClick={() => setSearchType('RFQs')}
-              style={{ color: searchType === 'RFQs' ? '#fff' : '#fff' }}
-            >
-              RFQs
-            </button>
-          </div>
-        </div>
-      )}
+      {/* Mobile-only switch above the bar. CSS hides it on desktop. */}
+      <div className="search-switch-wrap-mobile">
+        {renderSwitch('search-switch-mobile')}
+      </div>
 
       <form className="search-bar" onSubmit={onSearch}>
-        {/* Switch inside bar on desktop only */}
-        {!isMobile && (
-          <div className="search-switch-container">
-            <div
-              className="search-switch-slider"
-              style={{
-                transform: searchType === 'Products' ? 'translateX(0)' : 'translateX(100%)',
-                background: searchType === 'Products' ? '#FFD700' : '#3B82F6'
-              }}
-            />
-            <button
-              type="button"
-              className={`search-switch-btn ${searchType === 'Products' ? 'active' : ''}`}
-              onClick={() => setSearchType('Products')}
-              style={{ color: searchType === 'Products' ? '#0F1B2B' : '#fff' }}
-            >
-              Products
-            </button>
-            <button
-              type="button"
-              className={`search-switch-btn ${searchType === 'RFQs' ? 'active' : ''}`}
-              onClick={() => setSearchType('RFQs')}
-              style={{ color: searchType === 'RFQs' ? '#fff' : '#fff' }}
-            >
-              RFQs
-            </button>
-          </div>
-        )}
+        {/* Desktop-only switch inside the bar. CSS hides it on mobile. */}
+        <div className="search-switch-wrap-desktop">
+          {renderSwitch('search-switch-desktop')}
+        </div>
         <input
           type="text"
           className="search-input"
@@ -98,8 +85,11 @@ export function HeroSearchBar({ isMobile, searchType, setSearchType, searchQuery
         </button>
       </form>
 
+      {/* All 5 tags always rendered. Mobile CSS hides tags 4-5 so the
+          same 3 pills show on mobile as before, but the DOM shape
+          doesn't flip during hydration. */}
       <div className="search-tags">
-        {(isMobile ? SEARCH_TAGS.slice(0, 3) : SEARCH_TAGS).map((tag) => (
+        {SEARCH_TAGS.map((tag) => (
           <span
             key={tag}
             className="search-tag-pill"

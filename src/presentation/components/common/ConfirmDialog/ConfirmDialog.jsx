@@ -6,6 +6,8 @@
 
 'use client';
 
+import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { X, AlertTriangle, Trash2, ShieldX, ShieldCheck } from 'lucide-react';
 
 const VARIANTS = {
@@ -47,7 +49,18 @@ export function ConfirmDialog({
   loading = false,
   children,
 }) {
-  if (!isOpen) return null;
+  // Portal to document.body so ancestor `backdrop-filter` / `transform`
+  // wrappers don't trap our `position: fixed` inside them (the admin
+  // Users table wrapper uses backdrop-blur, which was pushing the
+  // dialog down inside the table instead of centering it in the
+  // viewport). SSR-safe: mount flag delays the portal until the client
+  // has document.body available.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!isOpen || !mounted) return null;
 
   const config = VARIANTS[variant] || VARIANTS.danger;
   const Icon = config.icon;
@@ -56,7 +69,7 @@ export function ConfirmDialog({
     await onConfirm();
   };
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[10001] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
       <div className="relative w-full max-w-md bg-gradient-to-br from-[#1a283b] to-[#0f1b2b] border border-white/10 rounded-2xl shadow-2xl p-6 animate-scaleIn">
         {/* Close button */}
@@ -126,7 +139,8 @@ export function ConfirmDialog({
           animation: scaleIn 0.2s ease-out;
         }
       `}</style>
-    </div>
+    </div>,
+    document.body
   );
 }
 

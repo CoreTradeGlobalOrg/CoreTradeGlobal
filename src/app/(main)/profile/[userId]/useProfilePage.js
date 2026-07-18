@@ -173,6 +173,56 @@ export function useProfilePage({ userId, currentUser, authLoading, isAuthenticat
     setLogoPreview(profileUser?.companyLogo || null); setLogoFile(null); setLogoRemoved(false);
   };
 
+  /**
+   * handleFieldSave — save a single profile field.
+   *
+   * Used by the tap-to-edit cell pattern on the profile page so mobile
+   * users can update one field at a time without a global edit toggle.
+   * URL-shaped fields (linkedinProfile, companyWebsite) get the same
+   * https:// prefix normalization as the batch update path.
+   *
+   * On success: patches the local profileUser optimistically and shows
+   * a toast. On failure: reverts the corresponding local state to the
+   * profile's server value so the UI matches what's actually stored.
+   */
+  const handleFieldSave = async (field, rawValue) => {
+    if (!canEdit) return;
+    const normalizeUrl = (raw) => {
+      const trimmed = (raw || '').trim();
+      if (!trimmed) return '';
+      return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+    };
+    const normalized =
+      field === 'linkedinProfile' || field === 'companyWebsite'
+        ? normalizeUrl(rawValue)
+        : (rawValue ?? '');
+
+    setProfileUpdating(true);
+    try {
+      const repo = container.getUserRepository();
+      await repo.update(userId, { [field]: normalized, updatedAt: new Date() });
+      setProfileUser((prev) => (prev ? { ...prev, [field]: normalized } : prev));
+      // Keep local input state in sync with the persisted value so the
+      // next open of the cell shows the trimmed/normalized value.
+      if (field === 'phone') setPhone(normalized);
+      else if (field === 'about') setAbout(normalized);
+      else if (field === 'linkedinProfile') setLinkedinProfile(normalized);
+      else if (field === 'companyWebsite') setCompanyWebsite(normalized);
+      toast.success('Saved');
+      return true;
+    } catch {
+      toast.error('Failed to save');
+      // Revert the local input state to the last-known good value.
+      if (field === 'phone') setPhone(profileUser?.phone || '');
+      else if (field === 'about') setAbout(profileUser?.about || '');
+      else if (field === 'linkedinProfile') setLinkedinProfile(profileUser?.linkedinProfile || '');
+      else if (field === 'companyWebsite') setCompanyWebsite(profileUser?.companyWebsite || '');
+      return false;
+    } finally {
+      setProfileUpdating(false);
+    }
+  };
+
   const handleProductSubmit = async (data, imageFiles) => {
     try {
       if (editingProduct) await updateProduct(editingProduct.id, userId, data, imageFiles, { isAdmin });
@@ -237,7 +287,7 @@ export function useProfilePage({ userId, currentUser, authLoading, isAuthenticat
     // Computed
     isOwnProfile, canEdit, isAdmin,
     // Handlers
-    handleLogoChange, handleRemoveLogo, handleProfileUpdate, handleCancelEdit,
+    handleLogoChange, handleRemoveLogo, handleProfileUpdate, handleCancelEdit, handleFieldSave,
     handleProductSubmit, handleDeleteProduct, handleToggleProductStatus,
     handleRequestSubmit, handleDeleteRequest, handleCloseRequest, handleReopenRequest,
   };

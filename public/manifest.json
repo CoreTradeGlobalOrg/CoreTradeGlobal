@@ -1,6 +1,6 @@
 {
   "name": "CoreTradeGlobal",
-  "short_name": "CTG",
+  "short_name": "CoreTradeGlobal",
   "description": "B2B Trading Platform - Connect with businesses worldwide",
   "start_url": "/",
   "display": "standalone",

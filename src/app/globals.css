@@ -750,8 +750,37 @@ a:hover {
   /* Dark text on Gold background */
 }
 
+/* Desktop: hide the mobile-above-bar switch wrap. On desktop the
+   switch lives inside the search bar via .search-switch-wrap-desktop. */
+.search-switch-wrap-mobile {
+  display: none;
+}
+.search-switch-wrap-desktop {
+  display: contents;
+}
+
 /* Mobile: Search switch below bar - same style as desktop */
 @media (max-width: 768px) {
+  /* Both switch DOM wrappers are always rendered so the layout is
+     identical during SSR and after hydration. CSS media queries flip
+     which one is visible based on the actual viewport at parse time,
+     with no post-hydration JS-driven shift. */
+  .search-switch-wrap-mobile {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 12px;
+  }
+  .search-switch-wrap-desktop {
+    display: none;
+  }
+
+  /* Hide the 4th and 5th category pills — mobile shows the first 3
+     (Marble, Steel, Textile) same as the previous slice(0,3) behavior,
+     but the DOM ships all 5 so no shift on hydration. */
+  .search-tags .search-tag-pill:nth-child(n + 4) {
+    display: none;
+  }
+
   .search-switch-container {
     height: 48px;
     padding: 4px;
