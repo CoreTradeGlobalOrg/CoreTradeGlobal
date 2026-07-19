@@ -23,6 +23,7 @@ import { Modal } from '@/components/ui/Modal';
 import { useUpdateRequest } from '@/presentation/hooks/request/useUpdateRequest';
 import { useCategories } from '@/presentation/hooks/category/useCategories';
 import toast from 'react-hot-toast';
+import { QuantityUnit } from '@/presentation/components/common/QuantityUnit/QuantityUnit';
 
 export default function RequestDetailsPage() {
   const params = useParams();
@@ -220,7 +221,7 @@ export default function RequestDetailsPage() {
                   <span className="block text-xs text-[#A0A0A0] mb-1">Quantity/Volume</span>
                   <div className="flex items-center gap-2 text-white font-semibold">
                     <Package size={16} className="text-[#3B82F6]" />
-                    {request.quantity} {request.unit}
+                    <QuantityUnit quantity={request.quantity} unit={request.unit} />
                   </div>
                 </div>
                 <div className="bg-[rgba(255,255,255,0.05)] rounded-lg px-4 py-2 border border-[rgba(255,255,255,0.1)]">

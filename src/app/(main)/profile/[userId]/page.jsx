@@ -113,6 +113,7 @@ function ProfileContent() {
           onRemoveLogo={page.handleRemoveLogo}
           onProfileUpdate={page.handleProfileUpdate}
           onCancelEdit={page.handleCancelEdit}
+          onFieldSave={page.handleFieldSave}
           highlightFields={incompleteFields}
         />
 

@@ -14,6 +14,7 @@ import { container } from '@/core/di/container';
 import { ChevronLeft, ChevronRight, Package, Star } from 'lucide-react';
 import { useCategories } from '@/presentation/hooks/category/useCategories';
 import { useResponsiveLimit, useScrollLoadMore } from '@/presentation/hooks/useResponsiveLimit';
+import { getUnitByCode, getUnitName } from '@/core/constants/units';
 
 // Default products for initial display - country is ISO code
 const DEFAULT_PRODUCTS = [
@@ -232,19 +233,31 @@ export function ProductCard({ product, categories, isFavorited, onToggleFavorite
           {product.price ? (
             <>
               {currencySymbol} {product.price}
-              {product.unit && (
-                <span
-                  className="font-semibold text-sm ml-1"
-                  style={{
-                    background: 'linear-gradient(180deg, #ffffff 20%, #909090 100%)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text'
-                  }}
-                >
-                  / {product.unit.replace(/^\/\s*/, '')}
-                </span>
-              )}
+              {product.unit && (() => {
+                const raw = String(product.unit).replace(/^\/\s*/, '').trim();
+                const knownUnit = getUnitByCode(raw);
+                const displayName = knownUnit ? getUnitName(raw) : raw;
+                return (
+                  <>
+                    <span
+                      className="font-semibold text-sm ml-1"
+                      style={{
+                        background: 'linear-gradient(180deg, #ffffff 20%, #909090 100%)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        backgroundClip: 'text'
+                      }}
+                    >
+                      / {displayName}
+                    </span>
+                    {knownUnit && (
+                      <span className="inline-block ml-1 px-1.5 py-0.5 rounded-md text-[10px] font-mono font-semibold text-[#A0A0A0] bg-white/5 border border-white/10 align-middle">
+                        {raw}
+                      </span>
+                    )}
+                  </>
+                );
+              })()}
             </>
           ) : 'Negotiable'}
         </p>

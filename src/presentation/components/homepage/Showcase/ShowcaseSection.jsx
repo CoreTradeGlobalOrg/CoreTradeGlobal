@@ -217,38 +217,74 @@ export function ShowcaseSection() {
   const defaultSpeed = 0.002;
   const slowSpeed = 0.001;
 
-  // Fetch Featured Companies
+  // Fetch Featured Companies — mirrors the mobile card stack in
+  // CompaniesSection.jsx so users see the SAME brand set on both breakpoints.
+  // Source: owners of the newest active products (i.e. the companies whose
+  // products power the Featured Products section). Falls back to the legacy
+  // `featured == true` admin flag if there are no product owners yet, and
+  // finally to DEFAULT_COMPANIES so the carousel is never empty.
   useEffect(() => {
+    let cancelled = false;
+
+    const mapUserToCard = (user) => ({
+      id: user.id,
+      name: user.companyName || user.displayName || 'Unknown Company',
+      logo: user.companyLogo || user.photoURL || (user.companyName ? user.companyName.substring(0, 2).toUpperCase() : 'CO'),
+      country: user.country || '',
+      category: user.industry || '',
+      description: user.about || '',
+    });
+
     const fetchFeaturedCompanies = async () => {
       try {
         const firestoreDS = container.getFirestoreDataSource();
-        // Query users where featured == true
+
+        // 1. Pull the same newest-first product pool that FeaturedProducts
+        //    renders, then extract distinct owner userIds (up to 10).
+        const fetchedProducts = await firestoreDS.query('products', {
+          orderBy: [['createdAt', 'desc']],
+          limit: 35,
+        });
+        const activeProducts = (fetchedProducts || []).filter(p => p.status === 'active');
+        const seen = new Set();
+        const ownerIds = [];
+        for (const p of activeProducts) {
+          if (p.userId && !seen.has(p.userId)) {
+            seen.add(p.userId);
+            ownerIds.push(p.userId);
+            if (ownerIds.length >= 10) break;
+          }
+        }
+
+        if (ownerIds.length > 0) {
+          const owners = await Promise.all(
+            ownerIds.map(id => firestoreDS.getById('users', id).catch(() => null))
+          );
+          const valid = owners.filter(u => u && u.companyName && !u.isSuspended);
+          if (!cancelled && valid.length > 0) {
+            setCompanies(valid.map(mapUserToCard));
+            return;
+          }
+        }
+
+        // 2. Fallback — legacy admin `featured == true` flag.
         const featuredUsers = await firestoreDS.query('users', {
           where: [['featured', '==', true]],
-          limit: 10
+          limit: 10,
         });
-
-        if (featuredUsers && featuredUsers.length > 0) {
-          const mappedCompanies = featuredUsers.map(user => {
-            return {
-              id: user.id,
-              name: user.companyName || user.displayName || 'Unknown Company',
-              logo: user.companyLogo || user.photoURL || (user.companyName ? user.companyName.substring(0, 2).toUpperCase() : 'CO'),
-              country: user.country || '',
-              category: user.industry || '',
-              description: user.about || ''
-            };
-          });
-          setCompanies(mappedCompanies);
+        if (!cancelled && featuredUsers && featuredUsers.length > 0) {
+          setCompanies(featuredUsers.map(mapUserToCard));
         }
       } catch (error) {
         console.error('Error fetching featured companies:', error);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
 
     fetchFeaturedCompanies();
+
+    return () => { cancelled = true; };
   }, []);
 
   // Calculate card style based on rotation

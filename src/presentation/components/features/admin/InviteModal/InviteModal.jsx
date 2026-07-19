@@ -8,6 +8,8 @@
 
 'use client';
 
+import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -44,7 +46,13 @@ export function InviteModal({ isOpen, onClose, onSuccess }) {
     },
   });
 
-  if (!isOpen) return null;
+  // Portal to document.body — the ancestor UsersTable wrapper uses
+  // backdrop-blur which traps fixed positioning inside it.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  if (!isOpen || !mounted) return null;
 
   const handleClose = () => {
     reset();
@@ -62,7 +70,7 @@ export function InviteModal({ isOpen, onClose, onSuccess }) {
     }
   };
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[10001] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
       <div className="relative w-full max-w-lg bg-gradient-to-br from-[#1a283b] to-[#0f1b2b] border border-white/10 rounded-2xl shadow-2xl p-6">
         {/* Header */}
@@ -198,7 +206,8 @@ export function InviteModal({ isOpen, onClose, onSuccess }) {
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 

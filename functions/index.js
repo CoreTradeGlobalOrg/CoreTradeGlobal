@@ -6189,13 +6189,19 @@ exports.sendAnnouncement = onCall(async (request) => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * bulkUploadProducts (onCall, admin only)
+ * bulkUploadProducts (onCall)
  *
- * Accepts an array of pre-validated product rows and a target userId (member).
+ * Accepts an array of pre-validated product rows and a target userId.
  * For each row:
  *   1. Creates a product document in the `products` collection.
  *   2. Downloads each image URL (with 10s timeout) and stores in Firebase Storage.
  *   3. Updates the product's `images` array with successfully downloaded URLs.
+ *
+ * Two calling modes:
+ *   - Admin uploading on behalf of a member — `userId` can be any user id.
+ *   - Member self-serve — `userId` MUST equal `auth.uid`. Row cap tightens
+ *     to `MEMBER_SELF_ROW_CAP` to keep the CF's image-download work
+ *     within a single member's fair-use budget.
  *
  * Rows are processed sequentially with a concurrency limit of 3 to avoid
  * overwhelming external image servers.
@@ -6203,20 +6209,16 @@ exports.sendAnnouncement = onCall(async (request) => {
  * @param {{ userId: string, rows: Array<{name, categoryId, price, currency, quantity, unit, description, imageUrls}> }}
  * @returns {{ created: number, skipped: number, errors: Array<{row: number, reason: string}> }}
  */
+const MEMBER_SELF_ROW_CAP = 100;
+const ADMIN_ROW_CAP = 500;
+
 exports.bulkUploadProducts = onCall(
   { timeoutSeconds: 300 },
   async (request) => {
     const auth = request.auth;
 
-    // Auth check — admin only
     if (!auth) {
       throw new HttpsError('unauthenticated', 'You must be logged in.');
-    }
-    if (auth.token?.role !== 'admin') {
-      const adminCheck = await isUserAdmin(auth.uid);
-      if (!adminCheck) {
-        throw new HttpsError('permission-denied', 'Only administrators can bulk upload products.');
-      }
     }
 
     const { userId, rows } = request.data;
@@ -6227,8 +6229,28 @@ exports.bulkUploadProducts = onCall(
     if (!Array.isArray(rows) || rows.length === 0) {
       throw new HttpsError('invalid-argument', 'rows must be a non-empty array.');
     }
-    if (rows.length > 500) {
-      throw new HttpsError('invalid-argument', 'Maximum 500 rows per upload.');
+
+    // Admin path (any userId, higher cap) vs self-serve (userId must
+    // equal auth.uid, lower cap). We check admin first to give admin
+    // callers the full 500-row budget; non-admins fall through to the
+    // self-serve identity check.
+    let isAdminCaller = auth.token?.role === 'admin';
+    if (!isAdminCaller) {
+      isAdminCaller = await isUserAdmin(auth.uid);
+    }
+
+    if (!isAdminCaller) {
+      if (userId !== auth.uid) {
+        throw new HttpsError('permission-denied', 'You can only bulk-upload products to your own account.');
+      }
+      if (rows.length > MEMBER_SELF_ROW_CAP) {
+        throw new HttpsError(
+          'invalid-argument',
+          `Maximum ${MEMBER_SELF_ROW_CAP} rows per upload for self-serve. Split the file or ask an admin for help.`
+        );
+      }
+    } else if (rows.length > ADMIN_ROW_CAP) {
+      throw new HttpsError('invalid-argument', `Maximum ${ADMIN_ROW_CAP} rows per upload.`);
     }
 
     // Verify target user exists

@@ -8,6 +8,7 @@
 
 import Link from 'next/link';
 import { MapPin, Calendar, DollarSign, Package, Clock } from 'lucide-react';
+import { QuantityUnit } from '@/presentation/components/common/QuantityUnit/QuantityUnit';
 
 export function HomepageRFQCard({ rfq, isBlurred = false }) {
   const formatDate = (date) => {
@@ -70,7 +71,12 @@ export function HomepageRFQCard({ rfq, isBlurred = false }) {
         <div className="flex items-center gap-2 text-sm">
           <Package className="w-4 h-4 text-[var(--hp-gold)]" />
           <span className="text-[var(--hp-text-secondary)]">
-            Miktar: {rfq.quantity || '-'} {rfq.unit || 'adet'}
+            Miktar:{' '}
+            {rfq.quantity ? (
+              <QuantityUnit quantity={rfq.quantity} unit={rfq.unit || 'PCE'} />
+            ) : (
+              <>- {rfq.unit || 'adet'}</>
+            )}
           </span>
         </div>
         <div className="flex items-center gap-2 text-sm">

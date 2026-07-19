@@ -114,4 +114,41 @@ export const formatQuantityWithUnit = (quantity, unitCode) => {
   return unit ? `${quantity} ${unit.code}` : `${quantity}`;
 };
 
+// Pluralize an English unit name. Handles the few UNECE units where
+// a naive `+ 's'` would look wrong (Foot -> Feet, Inch -> Inches,
+// Box -> Boxes). Everything else falls through to `${name}s`.
+const IRREGULAR_PLURALS = {
+  Foot: 'Feet',
+  Inch: 'Inches',
+  Gross: 'Gross',
+  'Carton / Box': 'Cartons / Boxes',
+  'Bag / Sack': 'Bags / Sacks',
+};
+
+/**
+ * Get the human-readable unit name for a UNECE code.
+ * Falls back to the raw code if unknown so cards never render "".
+ * @param {string} code
+ * @returns {string}
+ */
+export const getUnitName = (code) => {
+  const unit = getUnitByCode(code);
+  return unit ? unit.name : (code || '');
+};
+
+/**
+ * Get the human-readable unit name, pluralized when quantity != 1.
+ * "1 Pallet", "500 Pallets", "10 Feet".
+ * @param {number} quantity
+ * @param {string} code
+ * @returns {string}
+ */
+export const getUnitNamePluralized = (quantity, code) => {
+  const name = getUnitName(code);
+  if (!name) return '';
+  const qty = Number(quantity);
+  if (!Number.isFinite(qty) || qty === 1) return name;
+  return IRREGULAR_PLURALS[name] || `${name}s`;
+};
+
 export default UNITS;

@@ -26,6 +26,7 @@ import { useFavoriteProduct } from '@/presentation/hooks/product/useFavoriteProd
 import toast from 'react-hot-toast';
 import { ProductGallery } from './ProductGallery';
 import { ProductSellerCard } from './ProductSellerCard';
+import { QuantityUnit } from '@/presentation/components/common/QuantityUnit/QuantityUnit';
 
 export default function ProductDetailPage() {
   const { user: currentUser } = useAuth();
@@ -215,8 +216,11 @@ export default function ProductDetailPage() {
               <div className="glass-card p-6 flex flex-col gap-2">
                 <div className="text-sm uppercase tracking-wider text-[#FFD700] font-semibold">Stock Quantity</div>
                 <div className="flex items-center gap-3">
-                  <span className={`text-2xl font-bold ${product.stockQuantity > 0 ? 'bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent' : 'text-red-400'}`}>{product.stockQuantity || 0} {product.unit || 'units'}</span>
-                  <span className="text-sm text-gray-400">available</span>
+                  <QuantityUnit
+                    quantity={product.stockQuantity || 0}
+                    unit={product.unit || 'PCE'}
+                    className={`text-2xl font-bold ${product.stockQuantity > 0 ? 'bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent' : 'text-red-400'}`}
+                  />
                 </div>
               </div>
             </div>

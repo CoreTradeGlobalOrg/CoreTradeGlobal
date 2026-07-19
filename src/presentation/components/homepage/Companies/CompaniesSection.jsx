@@ -17,6 +17,8 @@ import { COUNTRIES } from '@/core/constants/countries';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useCategories } from '@/presentation/hooks/category/useCategories';
 import { useResponsiveLimit, useScrollLoadMore } from '@/presentation/hooks/useResponsiveLimit';
+import { useActiveAd } from '@/presentation/hooks/ads/useActiveAd';
+import { AD_TYPES } from '@/core/constants/adTypes';
 import dynamic from 'next/dynamic';
 
 // Dynamically import mobile card stack to reduce initial bundle.
@@ -157,6 +159,14 @@ export function CompaniesSection() {
   const [companies, setCompanies] = useState([]);
   const [allCompanies, setAllCompanies] = useState([]); // Store all fetched companies (for Latest Companies)
   const [featuredCompanies, setFeaturedCompanies] = useState([]); // Featured companies for card stack
+  // Companies whose products appear in the Featured Products section. This is
+  // what powers the mobile Tinder-style card stack — users landing on mobile
+  // should see the same brands whose products are being showcased just above,
+  // not a random slice of the latest sign-ups.
+  const [productOwnerCompanies, setProductOwnerCompanies] = useState([]);
+  // Same carousel sponsored ad the desktop 3D ShowcaseSection prepends —
+  // mobile card stack should show it too, always pinned to the top of the deck.
+  const { ad: carouselAd } = useActiveAd(AD_TYPES.CAROUSEL);
   const [loading, setLoading] = useState(true);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(true);
@@ -265,6 +275,57 @@ export function CompaniesSection() {
     fetchCompanies();
   }, [isReady]);
 
+  // Populate the mobile card stack from the SAME product pool that
+  // Featured Products above renders. We pull the newest active products,
+  // extract their distinct owners, and fetch those user docs in parallel.
+  // Suspended users / deleted accounts are filtered out so a stale userId
+  // on a product never renders a broken card.
+  useEffect(() => {
+    if (!isReady || !isMobile) return; // Only mobile actually renders the stack
+
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const firestoreDS = container.getFirestoreDataSource();
+        const fetchedProducts = await firestoreDS.query('products', {
+          orderBy: [['createdAt', 'desc']],
+          limit: 35,
+        });
+
+        if (!fetchedProducts?.length) return;
+
+        const activeProducts = fetchedProducts.filter(p => p.status === 'active');
+        // De-duplicate userIds while preserving insertion order so the
+        // freshest product's owner appears first in the stack.
+        const seen = new Set();
+        const ownerIds = [];
+        for (const p of activeProducts) {
+          if (p.userId && !seen.has(p.userId)) {
+            seen.add(p.userId);
+            ownerIds.push(p.userId);
+            if (ownerIds.length >= 15) break; // Card stack shows max 15
+          }
+        }
+        if (!ownerIds.length) return;
+
+        const owners = await Promise.all(
+          ownerIds.map(id => firestoreDS.getById('users', id).catch(() => null))
+        );
+        if (cancelled) return;
+
+        const valid = owners.filter(
+          u => u && u.companyName && !u.isSuspended
+        );
+        setProductOwnerCompanies(valid);
+      } catch (error) {
+        console.error('Error fetching product-owner companies for card stack:', error);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [isReady, isMobile]);
+
   const handleScroll = () => {
     if (scrollRef.current) {
       const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
@@ -300,14 +361,46 @@ export function CompaniesSection() {
   }
 
   // Mobile: Show card stack (Featured Companies with swipe).
-  // Falls back to the latest companies when no company is explicitly marked
-  // featured, so the section is never empty on mobile.
+  // Source priority:
+  //   1. Companies whose products appear in the Featured Products section
+  //      (productOwnerCompanies) — keeps the stack in sync with what the
+  //      user just scrolled past above.
+  //   2. Explicitly flagged featuredCompanies — legacy admin toggle.
+  //   3. Latest sign-ups — last-resort so the section is never empty.
   const renderMobileCardStack = () => {
     if (!isMobile) return null;
 
-    const cardStackCompanies = featuredCompanies.length > 0
-      ? featuredCompanies.slice(0, 15)
-      : allCompanies.slice(0, 15);
+    let cardStackCompanies;
+    if (productOwnerCompanies.length > 0) {
+      cardStackCompanies = productOwnerCompanies.slice(0, 15);
+    } else if (featuredCompanies.length > 0) {
+      cardStackCompanies = featuredCompanies.slice(0, 15);
+    } else {
+      cardStackCompanies = allCompanies.slice(0, 15);
+    }
+
+    // Prepend the carousel sponsored ad (if any). Shape it to the User doc
+    // contract MobileCompanyCardStack expects. The `isSponsored` flag tells
+    // the stack to pin it as the first card (skip shuffle) and render a
+    // Sponsored badge + honor `linkUrl` on the CTA.
+    if (carouselAd) {
+      const sponsoredCard = {
+        id: `ad:${carouselAd.id}`,
+        isSponsored: true,
+        sponsoredAdId: carouselAd.id,
+        badgeText: carouselAd.badgeText || 'Sponsored',
+        linkUrl: carouselAd.linkUrl || null,
+        companyName: carouselAd.companyName || 'Sponsored',
+        companyLogo: carouselAd.companyLogo || '',
+        photoURL: '',
+        country: '',
+        companyCategory: 'Sponsored',
+        about: carouselAd.description || '',
+        emailVerified: false,
+        adminApproved: false,
+      };
+      cardStackCompanies = [sponsoredCard, ...cardStackCompanies];
+    }
 
     if (cardStackCompanies.length === 0) {
       if (loading) {

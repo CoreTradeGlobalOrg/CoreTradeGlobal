@@ -110,20 +110,75 @@ export function useProfilePage({ userId, currentUser, authLoading, isAuthenticat
 
   // ── Handlers ───────────────────────────────────────────────────────────────
 
-  const handleRemoveLogo = () => {
-    setLogoFile(null); setLogoPreview(null); setLogoRemoved(true);
+  // Immediately persist a logo remove. The global Save button is gone in
+  // the tap-to-edit refactor, so this handler has to upload/patch on its
+  // own — otherwise the user's tap does nothing on the backend and their
+  // photo comes back on refresh.
+  const handleRemoveLogo = async () => {
+    if (!canEdit) return;
+    setLogoLoading(true);
+    try {
+      const repo = container.getUserRepository();
+      await repo.update(userId, { companyLogo: null, updatedAt: new Date() });
+      const updated = await repo.getById(userId);
+      setProfileUser(updated);
+      setLogoPreview(null);
+      setLogoFile(null);
+      setLogoRemoved(true);
+      toast.success('Photo removed');
+    } catch {
+      toast.error('Failed to remove photo');
+    } finally {
+      setLogoLoading(false);
+    }
   };
 
-  const handleLogoChange = (e) => {
+  // Immediately upload + persist a new logo. Preview is shown instantly
+  // from the FileReader so the user sees something happen, but the
+  // logoLoading skeleton stays on until Storage+Firestore both confirm
+  // — that's the visual cue that the change actually landed.
+  const handleLogoChange = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (!canEdit) return;
     if (!file.type.startsWith('image/')) { toast.error('Please select an image file'); return; }
     if (file.size > 5 * 1024 * 1024) { toast.error('Image size must be less than 5MB'); return; }
-    setLogoFile(file); setLogoRemoved(false); setLogoLoading(true);
+
+    setLogoLoading(true);
+    setLogoRemoved(false);
+    setLogoFile(file);
+
+    // Optimistic preview so the empty spot doesn't sit blank while the
+    // upload round-trips.
     const reader = new FileReader();
-    reader.onloadend = () => { setLogoPreview(reader.result); setLogoLoading(false); };
-    reader.onerror = () => { toast.error('Failed to load image'); setLogoLoading(false); };
+    reader.onloadend = () => setLogoPreview(reader.result);
+    reader.onerror = () => toast.error('Failed to read image');
     reader.readAsDataURL(file);
+
+    try {
+      const ext = (file.name.split('.').pop() || 'png').toLowerCase();
+      const storagePath = `users/${userId}/company-logo/image.${ext}`;
+      const logoUrl = await container
+        .getFirebaseStorageDataSource()
+        .uploadFile(storagePath, file);
+
+      const repo = container.getUserRepository();
+      await repo.update(userId, { companyLogo: logoUrl, updatedAt: new Date() });
+      const updated = await repo.getById(userId);
+      setProfileUser(updated);
+      setLogoPreview(updated.companyLogo || null);
+      setLogoFile(null);
+      toast.success('Photo updated');
+    } catch {
+      toast.error('Failed to upload photo');
+      // Roll the preview back to whatever the server last knew about.
+      setLogoPreview(profileUser?.companyLogo || null);
+      setLogoFile(null);
+    } finally {
+      setLogoLoading(false);
+      // Reset the input so re-picking the same file still fires onChange.
+      if (e?.target) e.target.value = '';
+    }
   };
 
   const handleProfileUpdate = async (e) => {
@@ -171,6 +226,56 @@ export function useProfilePage({ userId, currentUser, authLoading, isAuthenticat
     setIsEditing(false); setPhone(profileUser?.phone || ''); setAbout(profileUser?.about || '');
     setLinkedinProfile(profileUser?.linkedinProfile || ''); setCompanyWebsite(profileUser?.companyWebsite || '');
     setLogoPreview(profileUser?.companyLogo || null); setLogoFile(null); setLogoRemoved(false);
+  };
+
+  /**
+   * handleFieldSave — save a single profile field.
+   *
+   * Used by the tap-to-edit cell pattern on the profile page so mobile
+   * users can update one field at a time without a global edit toggle.
+   * URL-shaped fields (linkedinProfile, companyWebsite) get the same
+   * https:// prefix normalization as the batch update path.
+   *
+   * On success: patches the local profileUser optimistically and shows
+   * a toast. On failure: reverts the corresponding local state to the
+   * profile's server value so the UI matches what's actually stored.
+   */
+  const handleFieldSave = async (field, rawValue) => {
+    if (!canEdit) return;
+    const normalizeUrl = (raw) => {
+      const trimmed = (raw || '').trim();
+      if (!trimmed) return '';
+      return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+    };
+    const normalized =
+      field === 'linkedinProfile' || field === 'companyWebsite'
+        ? normalizeUrl(rawValue)
+        : (rawValue ?? '');
+
+    setProfileUpdating(true);
+    try {
+      const repo = container.getUserRepository();
+      await repo.update(userId, { [field]: normalized, updatedAt: new Date() });
+      setProfileUser((prev) => (prev ? { ...prev, [field]: normalized } : prev));
+      // Keep local input state in sync with the persisted value so the
+      // next open of the cell shows the trimmed/normalized value.
+      if (field === 'phone') setPhone(normalized);
+      else if (field === 'about') setAbout(normalized);
+      else if (field === 'linkedinProfile') setLinkedinProfile(normalized);
+      else if (field === 'companyWebsite') setCompanyWebsite(normalized);
+      toast.success('Saved');
+      return true;
+    } catch {
+      toast.error('Failed to save');
+      // Revert the local input state to the last-known good value.
+      if (field === 'phone') setPhone(profileUser?.phone || '');
+      else if (field === 'about') setAbout(profileUser?.about || '');
+      else if (field === 'linkedinProfile') setLinkedinProfile(profileUser?.linkedinProfile || '');
+      else if (field === 'companyWebsite') setCompanyWebsite(profileUser?.companyWebsite || '');
+      return false;
+    } finally {
+      setProfileUpdating(false);
+    }
   };
 
   const handleProductSubmit = async (data, imageFiles) => {
@@ -237,7 +342,7 @@ export function useProfilePage({ userId, currentUser, authLoading, isAuthenticat
     // Computed
     isOwnProfile, canEdit, isAdmin,
     // Handlers
-    handleLogoChange, handleRemoveLogo, handleProfileUpdate, handleCancelEdit,
+    handleLogoChange, handleRemoveLogo, handleProfileUpdate, handleCancelEdit, handleFieldSave,
     handleProductSubmit, handleDeleteProduct, handleToggleProductStatus,
     handleRequestSubmit, handleDeleteRequest, handleCloseRequest, handleReopenRequest,
   };
