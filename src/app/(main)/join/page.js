@@ -3,8 +3,9 @@
 import { useRef, useEffect, useState, Suspense } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Users, Globe, TrendingUp, Handshake, Truck, Shield, Star, ChevronLeft, ChevronRight, Target, Eye, Zap } from 'lucide-react';
+import { Users, Globe, TrendingUp, Handshake, Truck, Shield, Star, ChevronLeft, ChevronRight } from 'lucide-react';
 import { RegisterForm } from '@/presentation/components/features/auth/RegisterForm/RegisterForm';
+import { FeaturedProducts } from '@/presentation/components/homepage/Products/FeaturedProducts';
 import { collection, getDocs, query, where, orderBy } from 'firebase/firestore';
 import { db } from '@/core/config/firebase.config';
 
@@ -23,24 +24,6 @@ const STATS = [
     icon: TrendingUp,
     title: 'Find New Customers',
     desc: 'Connect directly and grow your global business',
-  },
-];
-
-const ABOUT_CARDS = [
-  {
-    icon: Target,
-    title: 'Who We Are',
-    desc: 'Our motto is "Core of the B2B." This is a commitment that defines the essence of our platform. We enable businesses of all sizes to participate in global trade with confidence, speed, and without intermediaries.',
-  },
-  {
-    icon: Eye,
-    title: 'Our Vision',
-    desc: 'To eliminate the boundaries of trade by bringing all businesses worldwide together in a single digital core. We aim for companies of every scale to be visible, accessible, and trusted in the global market.',
-  },
-  {
-    icon: Zap,
-    title: 'Our Mission',
-    desc: 'To provide a secure, fast, and efficient digital environment. We enable companies to showcase products, request quotes, connect with the right partners, and manage the entire trade process seamlessly.',
   },
 ];
 
@@ -237,20 +220,13 @@ export default function JoinPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {ABOUT_CARDS.map((card) => (
-              <div
-                key={card.title}
-                className="rounded-[20px] p-8 border border-[rgba(255,255,255,0.08)] bg-gradient-to-br from-[rgba(26,28,32,0.6)] to-[rgba(15,27,43,0.8)] transition-all duration-300 hover:-translate-y-1 hover:border-[rgba(255,215,0,0.3)] hover:shadow-[0_15px_40px_rgba(0,0,0,0.2)] text-center"
-              >
-                <card.icon className="w-8 h-8 text-[#FFD700] mb-4 mx-auto" strokeWidth={1.5} />
-                <h3 className="text-lg font-bold mb-3" style={{ background: 'linear-gradient(180deg, #E8E8E8 0%, #C0C0C0 50%, #A0A0A0 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{card.title}</h3>
-                <p className="text-sm text-[#cbd5e1] leading-relaxed text-center">{card.desc}</p>
-              </div>
-            ))}
-          </div>
         </div>
       </section>
+
+      {/* Featured Products carousel — same component used on the homepage,
+          so visitors landing on /join immediately see what's actually
+          trading on the platform right below the platform pitch. */}
+      <FeaturedProducts />
 
       {/* ── Benefits Section ── */}
       <section className="px-5 py-8 flex justify-center">

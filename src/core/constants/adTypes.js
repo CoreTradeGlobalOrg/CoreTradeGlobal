@@ -15,12 +15,14 @@ export const AD_TYPES = {
   FEATURED: 'featured',
   HERO: 'hero',
   CAROUSEL: 'carousel',
+  FEATURED_COMPANY: 'featured_company',
 };
 
 export const AD_TYPE_LABELS = {
   [AD_TYPES.FEATURED]: 'Featured Product Ad',
   [AD_TYPES.HERO]: 'Hero Section Spotlight',
   [AD_TYPES.CAROUSEL]: 'Carousel Brand Spotlight',
+  [AD_TYPES.FEATURED_COMPANY]: 'Featured Company Spotlight',
 };
 
 export const AD_STATUSES = {
@@ -86,6 +88,21 @@ export const AD_TIERS = [
     cta: 'Inquire About Carousel Ads',
     mockup: 'carousel',
   },
+  {
+    id: AD_TYPES.FEATURED_COMPANY,
+    tag: 'Featured Company',
+    title: 'Featured Company Spotlights',
+    price: '$100',
+    priceSuffix: '/week',
+    desc: 'Brand-first slot pinned to the homepage hero and the mobile CTA row — the fastest way to put your company logo in front of every visitor.',
+    features: [
+      'Prime homepage hero placement on desktop',
+      'Dedicated mobile spotlight card above the fold',
+      '3,000+ daily visitors landing directly on the platform',
+    ],
+    cta: 'Inquire About Featured Company Ads',
+    mockup: 'featured',
+  },
 ];
 
 // Ad inquiry form uses these package labels; each maps to an ad type
@@ -95,6 +112,7 @@ export const AD_PACKAGES = [
   { value: 'Featured Product Directory Spot', short: 'Featured Products', type: AD_TYPES.FEATURED, price: 100, unit: '/week' },
   { value: 'Hero Section Spotlight Ad', short: 'Hero Spotlight', type: AD_TYPES.HERO, price: 100, unit: '/week' },
   { value: 'Carousel Banner Placement', short: 'Carousel Brand', type: AD_TYPES.CAROUSEL, price: 100, unit: '/week' },
+  { value: 'Featured Company Spotlight', short: 'Featured Company', type: AD_TYPES.FEATURED_COMPANY, price: 100, unit: '/week' },
   { value: 'Combined Multi-Placement Package', short: 'Combined Multi-Placement', type: null, price: 200, unit: '/week' },
 ];
 
@@ -104,6 +122,7 @@ export const TYPE_TO_PACKAGE = {
   [AD_TYPES.FEATURED]: 'Featured Product Directory Spot',
   [AD_TYPES.HERO]: 'Hero Section Spotlight Ad',
   [AD_TYPES.CAROUSEL]: 'Carousel Banner Placement',
+  [AD_TYPES.FEATURED_COMPANY]: 'Featured Company Spotlight',
   combined: 'Combined Multi-Placement Package',
 };
 

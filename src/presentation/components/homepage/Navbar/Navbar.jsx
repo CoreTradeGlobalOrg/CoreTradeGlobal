@@ -85,13 +85,9 @@ const getNavGroups = (user) => [
   },
   {
     label: 'Pricing',
-    // Single-item groups can opt into "render as a plain top-level link"
-    // — no dropdown, no chevron. Consumed by DesktopDropdown /
-    // MobileAccordion below.
-    direct: true,
-    href: '/pricing',
     items: [
       { label: 'Pricing', href: '/pricing' },
+      { label: 'Advertising', href: '/advertising' },
     ],
   },
   {

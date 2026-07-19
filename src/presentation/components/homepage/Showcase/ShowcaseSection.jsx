@@ -411,7 +411,7 @@ export function ShowcaseSection() {
       <div className="section-header">
         <h2 className="section-title">Featured Companies</h2>
         <Link
-          href="/pricing#advertising"
+          href="/advertising"
           className="link-hero-blue"
           style={{ justifyContent: 'center', marginTop: '10px', color: '#0066FF' }}
         >
