@@ -24,6 +24,15 @@ const shuffleArray = (array) => {
   return shuffled;
 };
 
+// Shuffle while keeping any sponsored card pinned to index 0. Sponsored
+// placements are a paid slot — they must always be the first card the user
+// sees on this stack, regardless of the random deck order below.
+const shuffleWithSponsoredFirst = (array) => {
+  const sponsored = array.filter((c) => c?.isSponsored);
+  const organic = array.filter((c) => !c?.isSponsored);
+  return [...sponsored, ...shuffleArray(organic)];
+};
+
 // Get abbreviation from company name
 const getAbbreviation = (name) => {
   if (!name) return '??';
@@ -225,23 +234,34 @@ const SwipeableCard = memo(({
           {truncateText(company.about, 120) || `${company.companyName} - Verified supplier from ${getCountryName(company.country)}`}
         </p>
 
-        {/* Verified Badge */}
-        {company.emailVerified && company.adminApproved && (
+        {/* Sponsored Badge (paid placement) or Verified Badge (organic) */}
+        {company.isSponsored ? (
           <div className="flex justify-center mb-4">
-            <span className="inline-flex items-center gap-1 bg-[rgba(16,185,129,0.15)] text-[#34d399] border border-[rgba(16,185,129,0.3)] px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider">
-              ✓ Verified Company
+            <span className="inline-flex items-center gap-1 bg-[rgba(255,215,0,0.15)] text-[#FFD700] border border-[rgba(255,215,0,0.5)] px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider">
+              ★ {company.badgeText || 'Sponsored'}
             </span>
           </div>
+        ) : (
+          company.emailVerified && company.adminApproved && (
+            <div className="flex justify-center mb-4">
+              <span className="inline-flex items-center gap-1 bg-[rgba(16,185,129,0.15)] text-[#34d399] border border-[rgba(16,185,129,0.3)] px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider">
+                ✓ Verified Company
+              </span>
+            </div>
+          )
         )}
 
-        {/* View Profile Button - Dark/Black style */}
+        {/* CTA Button — sponsored goes to the ad's linkUrl (external allowed);
+            organic goes to the company's profile. */}
         <Link
-          href={`/profile/${company.id}`}
+          href={company.isSponsored ? (company.linkUrl || '#') : `/profile/${company.id}`}
+          target={company.isSponsored && company.linkUrl?.startsWith('http') ? '_blank' : undefined}
+          rel={company.isSponsored && company.linkUrl?.startsWith('http') ? 'noopener noreferrer' : undefined}
           className="block w-full py-3.5 bg-[#0F1B2B] border border-[rgba(255,215,0,0.4)] text-[#FFD700] font-bold rounded-full text-center text-base shadow-[0_4px_20px_rgba(0,0,0,0.4)] hover:bg-[#1a283b] hover:border-[#FFD700] transition-all duration-200"
           onClick={(e) => e.stopPropagation()}
           onPointerDown={(e) => e.stopPropagation()}
         >
-          View Profile
+          {company.isSponsored ? 'Learn More' : 'View Profile'}
         </Link>
       </div>
     </motion.div>
@@ -251,13 +271,13 @@ SwipeableCard.displayName = 'SwipeableCard';
 
 export function MobileCompanyCardStack({ companies: initialCompanies, categories }) {
   // Shuffle companies on mount for random starting order
-  const [shuffledCompanies, setShuffledCompanies] = useState(() => shuffleArray(initialCompanies));
+  const [shuffledCompanies, setShuffledCompanies] = useState(() => shuffleWithSponsoredFirst(initialCompanies));
   const [currentIndex, setCurrentIndex] = useState(0);
   const visibleCards = 3;
 
   // Re-shuffle when initial companies change
   useEffect(() => {
-    setShuffledCompanies(shuffleArray(initialCompanies));
+    setShuffledCompanies(shuffleWithSponsoredFirst(initialCompanies));
     setCurrentIndex(0);
   }, [initialCompanies]);
 
@@ -267,7 +287,7 @@ export function MobileCompanyCardStack({ companies: initialCompanies, categories
       // Auto shuffle when reaching the end
       if (next >= shuffledCompanies.length) {
         setTimeout(() => {
-          setShuffledCompanies(shuffleArray(initialCompanies));
+          setShuffledCompanies(shuffleWithSponsoredFirst(initialCompanies));
           setCurrentIndex(0);
         }, 300);
       }

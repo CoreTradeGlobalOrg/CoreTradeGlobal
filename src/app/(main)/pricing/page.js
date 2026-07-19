@@ -75,7 +75,7 @@ function Hero() {
     <section className="px-5 pt-6 pb-8 md:pt-10 md:pb-12">
       <div className="max-w-5xl mx-auto text-center">
         <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold leading-tight mb-4 tracking-tight">
-          Completely Free —
+          Completely Free.
           <br />
           <span className="bg-gradient-to-br from-[#FFD700] to-[#FDB931] bg-clip-text text-transparent">
             No Commissions. No Limits.

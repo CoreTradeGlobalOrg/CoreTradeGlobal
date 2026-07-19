@@ -12,6 +12,7 @@ import Link from 'next/link';
 import { container } from '@/core/di/container';
 import { ChevronLeft, ChevronRight, FileText } from 'lucide-react';
 import { COUNTRIES } from '@/core/constants/countries';
+import { QuantityUnit } from '@/presentation/components/common/QuantityUnit/QuantityUnit';
 import { CountryFlag } from '@/presentation/components/common/CountryFlag/CountryFlag';
 import { useCategories } from '@/presentation/hooks/category/useCategories';
 import { useResponsiveLimit, useScrollLoadMore } from '@/presentation/hooks/useResponsiveLimit';
@@ -131,7 +132,7 @@ function RFQCard({ rfq }) {
       <div className="bg-[rgba(255,255,255,0.03)] rounded-xl p-4 mb-4 flex flex-col gap-2">
         <div className="flex justify-between text-[13px]">
           <span className="text-[var(--text-grey)]">Quantity:</span>
-          <span className="text-white font-semibold">{rfq.quantity} {rfq.unit || 'PCE'}</span>
+          <QuantityUnit quantity={rfq.quantity} unit={rfq.unit || 'PCE'} className="text-white font-semibold" />
         </div>
         <div className="flex justify-between text-[13px]">
           <span className="text-[var(--text-grey)]">Budget:</span>

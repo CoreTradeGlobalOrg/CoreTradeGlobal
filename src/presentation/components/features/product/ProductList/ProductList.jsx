@@ -11,6 +11,7 @@ import Link from 'next/link';
 import { Package, MoreVertical, Edit, Trash2, Eye, EyeOff } from 'lucide-react';
 import { useState, memo } from 'react';
 import { useCategories } from '@/presentation/hooks/category/useCategories';
+import { getUnitByCode, getUnitName } from '@/core/constants/units';
 
 // Map codes to symbols
 const CURRENCY_SYMBOLS = {
@@ -223,19 +224,31 @@ export function ProductList({ products = [], loading, isOwnProfile, onEdit, onDe
                   {product.price ? (
                     <>
                       {currencySymbol} {product.price}
-                      {product.unit && (
-                        <span
-                          className="font-semibold text-sm ml-1"
-                          style={{
-                            background: 'linear-gradient(180deg, #ffffff 20%, #909090 100%)',
-                            WebkitBackgroundClip: 'text',
-                            WebkitTextFillColor: 'transparent',
-                            backgroundClip: 'text'
-                          }}
-                        >
-                          / {product.unit.replace(/^\/\s*/, '')}
-                        </span>
-                      )}
+                      {product.unit && (() => {
+                        const raw = String(product.unit).replace(/^\/\s*/, '').trim();
+                        const knownUnit = getUnitByCode(raw);
+                        const displayName = knownUnit ? getUnitName(raw) : raw;
+                        return (
+                          <>
+                            <span
+                              className="font-semibold text-sm ml-1"
+                              style={{
+                                background: 'linear-gradient(180deg, #ffffff 20%, #909090 100%)',
+                                WebkitBackgroundClip: 'text',
+                                WebkitTextFillColor: 'transparent',
+                                backgroundClip: 'text'
+                              }}
+                            >
+                              / {displayName}
+                            </span>
+                            {knownUnit && (
+                              <span className="inline-block ml-1 px-1.5 py-0.5 rounded-md text-[10px] font-mono font-semibold text-[#A0A0A0] bg-white/5 border border-white/10 align-middle">
+                                {raw}
+                              </span>
+                            )}
+                          </>
+                        );
+                      })()}
                     </>
                   ) : (
                     <span>Negotiable</span>

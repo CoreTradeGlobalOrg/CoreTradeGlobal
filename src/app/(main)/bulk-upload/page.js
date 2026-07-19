@@ -74,12 +74,8 @@ export default function BulkUploadGuidePage() {
       <div className="max-w-5xl mx-auto px-5">
         {/* Hero */}
         <section className="text-center mb-14">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[rgba(255,215,0,0.35)] bg-[rgba(255,215,0,0.08)] text-[#FFD700] text-xs font-semibold uppercase tracking-wider mb-5">
-            <Sparkles className="w-3.5 h-3.5" />
-            Self-serve bulk import
-          </div>
           <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-4 leading-tight">
-            Add hundreds of products in seconds — <span className="bg-gradient-to-r from-[#FFD700] to-[#FDB931] bg-clip-text text-transparent">not hours.</span>
+            Add hundreds of products in seconds. <span className="bg-gradient-to-r from-[#FFD700] to-[#FDB931] bg-clip-text text-transparent">Not hours.</span>
           </h1>
           <p className="text-[#c8d3e0] text-lg max-w-2xl mx-auto mb-8">
             Skip the one-by-one form. Upload a CSV, we validate every row in your browser, you fix anything red and hit publish.

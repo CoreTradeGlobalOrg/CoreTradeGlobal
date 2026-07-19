@@ -15,6 +15,7 @@ import { COUNTRIES } from '@/core/constants/countries';
 import { useActiveAd } from '@/presentation/hooks/ads/useActiveAd';
 import { useTrackAd } from '@/presentation/hooks/ads/useTrackAd';
 import { AD_TYPES } from '@/core/constants/adTypes';
+import { getUnitByCode, getUnitName, getUnitNamePluralized } from '@/core/constants/units';
 
 // Helper to get country name from ISO code
 const getCountryName = (countryCode) => {
@@ -144,7 +145,7 @@ export function HeroDataCards({ fetchData, dataLoading, latestProduct, latestReq
                     latestProduct.price ? (
                       <>
                         {CURRENCY_SYMBOLS[latestProduct.currency] || latestProduct.currency || '$'} {latestProduct.price}
-                        {latestProduct.unit && ` / ${latestProduct.unit}`}
+                        {latestProduct.unit && ` / ${getUnitByCode(latestProduct.unit) ? getUnitName(latestProduct.unit) : latestProduct.unit}`}
                       </>
                     ) : 'Price on request'
                   ) : 'From verified suppliers'}
@@ -183,7 +184,7 @@ export function HeroDataCards({ fetchData, dataLoading, latestProduct, latestReq
                   {fetchData && latestRequest ? (
                     <>
                       {latestRequest.targetCountry && <CountryFlag countryCode={latestRequest.targetCountry} size={14} />}
-                      <span>Qty: {latestRequest.quantity || '-'} {latestRequest.unit && `${latestRequest.unit}`}</span>
+                      <span>Qty: {latestRequest.quantity || '-'} {latestRequest.unit && (getUnitByCode(latestRequest.unit) ? getUnitNamePluralized(latestRequest.quantity, latestRequest.unit) : latestRequest.unit)}</span>
                     </>
                   ) : 'Find business opportunities'}
                 </p>
