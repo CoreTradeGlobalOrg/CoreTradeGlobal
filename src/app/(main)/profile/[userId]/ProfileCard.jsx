@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Pencil, Check, X as XIcon } from 'lucide-react';
+import { Pencil, Check, X as XIcon, ImagePlus, Trash2, Upload } from 'lucide-react';
 import { RoleBadge } from '@/presentation/components/common/RoleBadge/RoleBadge';
 import { COUNTRIES } from '@/core/constants/countries';
 
@@ -251,6 +251,126 @@ function BioEditor({ canEdit, value, draft, setDraft, saving, onSave, onReset, h
 }
 
 /**
+ * LogoActionMenu — pencil button pinned to the bottom-right corner of the
+ * profile logo. Opens a small popover with Change / Remove actions (or a
+ * single Upload action when no logo is set yet).
+ *
+ * Replaces the always-visible Change/Remove/Upload pills the card used to
+ * show — those got easy to miss on mobile after the global Save button
+ * was removed. A pencil is the universal "edit" affordance so users don't
+ * have to hunt for it.
+ */
+function LogoActionMenu({ hasLogo, disabled, onChangeFile, onRemove }) {
+  const [open, setOpen] = useState(false);
+  const menuRef = useRef(null);
+  const buttonRef = useRef(null);
+  const fileInputRef = useRef(null);
+
+  // Close on outside click OR ESC. Both are captured at the document level
+  // so the menu never gets stuck open behind another interaction.
+  useEffect(() => {
+    if (!open) return;
+    const onDocClick = (e) => {
+      if (
+        menuRef.current?.contains(e.target) ||
+        buttonRef.current?.contains(e.target)
+      ) return;
+      setOpen(false);
+    };
+    const onKey = (e) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('mousedown', onDocClick);
+    document.addEventListener('touchstart', onDocClick);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDocClick);
+      document.removeEventListener('touchstart', onDocClick);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+
+  const triggerFilePick = () => {
+    setOpen(false);
+    fileInputRef.current?.click();
+  };
+
+  const handleRemove = () => {
+    setOpen(false);
+    onRemove?.();
+  };
+
+  return (
+    <>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        onChange={onChangeFile}
+        className="sr-only"
+        disabled={disabled}
+      />
+      <button
+        ref={buttonRef}
+        type="button"
+        aria-label="Edit photo"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        disabled={disabled}
+        onClick={() => setOpen((v) => !v)}
+        className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-[#FFD700] text-[#0F1B2B] shadow-[0_2px_8px_rgba(0,0,0,0.4)] hover:bg-white hover:scale-105 active:scale-95 transition-all flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed z-10"
+      >
+        <Pencil className="w-4 h-4" />
+      </button>
+
+      {open && (
+        <div
+          ref={menuRef}
+          role="menu"
+          className="absolute top-full mt-2 right-0 min-w-[180px] rounded-xl border border-[rgba(255,215,0,0.3)] bg-[#0F1B2B] shadow-[0_10px_30px_rgba(0,0,0,0.5)] overflow-hidden z-20"
+        >
+          {hasLogo ? (
+            <>
+              <button
+                type="button"
+                role="menuitem"
+                onClick={triggerFilePick}
+                disabled={disabled}
+                className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-white hover:bg-[rgba(255,215,0,0.1)] transition-colors disabled:opacity-50"
+              >
+                <ImagePlus className="w-4 h-4 text-[#FFD700]" />
+                Change photo
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                onClick={handleRemove}
+                disabled={disabled}
+                className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-red-400 hover:bg-[rgba(239,68,68,0.1)] transition-colors border-t border-[rgba(255,255,255,0.06)] disabled:opacity-50"
+              >
+                <Trash2 className="w-4 h-4" />
+                Remove photo
+              </button>
+            </>
+          ) : (
+            <button
+              type="button"
+              role="menuitem"
+              onClick={triggerFilePick}
+              disabled={disabled}
+              className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-white hover:bg-[rgba(255,215,0,0.1)] transition-colors disabled:opacity-50"
+            >
+              <Upload className="w-4 h-4 text-[#FFD700]" />
+              Upload photo
+            </button>
+          )}
+        </div>
+      )}
+    </>
+  );
+}
+
+/**
  * ProfileCard - The main profile info card with logo, bio, and editable fields.
  * Covers: logo, name, bio, and the 2x2 detail grid.
  */
@@ -291,63 +411,44 @@ export function ProfileCard({
         <div className="flex flex-col sm:flex-row items-start gap-6 mb-6">
           {/* Logo Section */}
           <div className={`flex-shrink-0 rounded-2xl${hl('companyLogo')}`}>
-            {logoLoading ? (
-              <div className="w-24 h-24 rounded-2xl border-2 border-dashed border-[#FFD700] bg-[rgba(255,215,0,0.1)] flex items-center justify-center">
-                <div className="w-6 h-6 border-2 border-[#FFD700] border-t-transparent rounded-full animate-spin"></div>
-              </div>
-            ) : (logoPreview || profileUser?.companyLogo) ? (
-              <div className="relative">
+            <div className="relative">
+              {(logoPreview || profileUser?.companyLogo) ? (
                 <img
                   src={logoPreview || profileUser?.companyLogo}
                   alt="Company logo"
                   width={96}
                   height={96}
-                  className="w-24 h-24 object-cover rounded-2xl border-2 border-[rgba(255,215,0,0.3)]"
+                  className={`w-24 h-24 object-cover rounded-2xl border-2 border-[rgba(255,215,0,0.3)] transition-opacity ${logoLoading ? 'opacity-40' : 'opacity-100'}`}
                 />
-                {canEdit && (
-                  <div className="absolute -bottom-2 left-0 right-0 flex justify-center gap-2">
-                    <label className="cursor-pointer bg-[#FFD700] text-[#0F1B2B] text-xs px-2 py-1 rounded font-medium hover:bg-white transition-colors">
-                      Change
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={onLogoChange}
-                        className="sr-only"
-                        disabled={profileUpdating}
-                      />
-                    </label>
-                    <button
-                      type="button"
-                      onClick={onRemoveLogo}
-                      disabled={profileUpdating}
-                      className="bg-red-500 text-white text-xs px-2 py-1 rounded font-medium hover:bg-red-400 transition-colors"
-                    >
-                      Remove
-                    </button>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="relative">
-                <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-[#1c304a] to-[#0F1B2B] border border-[rgba(255,255,255,0.1)] flex items-center justify-center">
+              ) : (
+                <div className={`w-24 h-24 rounded-2xl bg-gradient-to-br from-[#1c304a] to-[#0F1B2B] border border-[rgba(255,255,255,0.1)] flex items-center justify-center transition-opacity ${logoLoading ? 'opacity-40' : 'opacity-100'}`}>
                   <span className="text-4xl">🏭</span>
                 </div>
-                {canEdit && (
-                  <label className="absolute -bottom-2 left-0 right-0 flex justify-center cursor-pointer">
-                    <span className="bg-[#FFD700] text-[#0F1B2B] text-xs px-3 py-1 rounded font-medium hover:bg-white transition-colors">
-                      Upload
-                    </span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={onLogoChange}
-                      className="sr-only"
-                      disabled={profileUpdating}
-                    />
-                  </label>
-                )}
-              </div>
-            )}
+              )}
+
+              {/* Upload skeleton overlay — sits on top of the preview so the
+                  user sees the picked image dimmed with a clear "in progress"
+                  cue. Shimmer + spinner + label together, so it can't be
+                  missed on mobile. */}
+              {logoLoading && (
+                <div className="absolute inset-0 rounded-2xl border-2 border-dashed border-[#FFD700] bg-[rgba(15,27,43,0.55)] backdrop-blur-[2px] overflow-hidden flex flex-col items-center justify-center gap-1 pointer-events-none">
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[rgba(255,215,0,0.15)] to-transparent -translate-x-full animate-shimmer" />
+                  <div className="w-6 h-6 border-2 border-[#FFD700] border-t-transparent rounded-full animate-spin" />
+                  <span className="text-[10px] font-semibold text-[#FFD700] uppercase tracking-wider">
+                    Uploading
+                  </span>
+                </div>
+              )}
+
+              {canEdit && !logoLoading && (
+                <LogoActionMenu
+                  hasLogo={!!(logoPreview || profileUser?.companyLogo)}
+                  disabled={profileUpdating}
+                  onChangeFile={onLogoChange}
+                  onRemove={onRemoveLogo}
+                />
+              )}
+            </div>
           </div>
 
           {/* Name & Bio Section */}

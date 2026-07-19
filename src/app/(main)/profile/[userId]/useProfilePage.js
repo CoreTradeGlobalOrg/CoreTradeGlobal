@@ -110,20 +110,75 @@ export function useProfilePage({ userId, currentUser, authLoading, isAuthenticat
 
   // ── Handlers ───────────────────────────────────────────────────────────────
 
-  const handleRemoveLogo = () => {
-    setLogoFile(null); setLogoPreview(null); setLogoRemoved(true);
+  // Immediately persist a logo remove. The global Save button is gone in
+  // the tap-to-edit refactor, so this handler has to upload/patch on its
+  // own — otherwise the user's tap does nothing on the backend and their
+  // photo comes back on refresh.
+  const handleRemoveLogo = async () => {
+    if (!canEdit) return;
+    setLogoLoading(true);
+    try {
+      const repo = container.getUserRepository();
+      await repo.update(userId, { companyLogo: null, updatedAt: new Date() });
+      const updated = await repo.getById(userId);
+      setProfileUser(updated);
+      setLogoPreview(null);
+      setLogoFile(null);
+      setLogoRemoved(true);
+      toast.success('Photo removed');
+    } catch {
+      toast.error('Failed to remove photo');
+    } finally {
+      setLogoLoading(false);
+    }
   };
 
-  const handleLogoChange = (e) => {
+  // Immediately upload + persist a new logo. Preview is shown instantly
+  // from the FileReader so the user sees something happen, but the
+  // logoLoading skeleton stays on until Storage+Firestore both confirm
+  // — that's the visual cue that the change actually landed.
+  const handleLogoChange = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (!canEdit) return;
     if (!file.type.startsWith('image/')) { toast.error('Please select an image file'); return; }
     if (file.size > 5 * 1024 * 1024) { toast.error('Image size must be less than 5MB'); return; }
-    setLogoFile(file); setLogoRemoved(false); setLogoLoading(true);
+
+    setLogoLoading(true);
+    setLogoRemoved(false);
+    setLogoFile(file);
+
+    // Optimistic preview so the empty spot doesn't sit blank while the
+    // upload round-trips.
     const reader = new FileReader();
-    reader.onloadend = () => { setLogoPreview(reader.result); setLogoLoading(false); };
-    reader.onerror = () => { toast.error('Failed to load image'); setLogoLoading(false); };
+    reader.onloadend = () => setLogoPreview(reader.result);
+    reader.onerror = () => toast.error('Failed to read image');
     reader.readAsDataURL(file);
+
+    try {
+      const ext = (file.name.split('.').pop() || 'png').toLowerCase();
+      const storagePath = `users/${userId}/company-logo/image.${ext}`;
+      const logoUrl = await container
+        .getFirebaseStorageDataSource()
+        .uploadFile(storagePath, file);
+
+      const repo = container.getUserRepository();
+      await repo.update(userId, { companyLogo: logoUrl, updatedAt: new Date() });
+      const updated = await repo.getById(userId);
+      setProfileUser(updated);
+      setLogoPreview(updated.companyLogo || null);
+      setLogoFile(null);
+      toast.success('Photo updated');
+    } catch {
+      toast.error('Failed to upload photo');
+      // Roll the preview back to whatever the server last knew about.
+      setLogoPreview(profileUser?.companyLogo || null);
+      setLogoFile(null);
+    } finally {
+      setLogoLoading(false);
+      // Reset the input so re-picking the same file still fires onChange.
+      if (e?.target) e.target.value = '';
+    }
   };
 
   const handleProfileUpdate = async (e) => {
