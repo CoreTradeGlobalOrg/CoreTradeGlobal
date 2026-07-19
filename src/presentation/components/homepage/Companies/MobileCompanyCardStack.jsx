@@ -306,7 +306,7 @@ export function MobileCompanyCardStack({ companies: initialCompanies, categories
       <div className="section-header" style={{ marginTop: 0, marginBottom: '1.5rem' }}>
         <h2 className="section-title">Featured Companies</h2>
         <Link
-          href="/contact?subject=advertising"
+          href="/advertising"
           className="link-hero-blue"
           style={{ justifyContent: 'center', marginTop: '10px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
         >

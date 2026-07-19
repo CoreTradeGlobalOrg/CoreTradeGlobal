@@ -18,6 +18,7 @@ import { container } from '@/core/di/container';
 import { HeroGlobe } from './HeroGlobe';
 import { HeroStats } from './HeroStats';
 import { HeroDataCards } from './HeroDataCards';
+import { HeroMobileAdCards } from './HeroMobileAdCards';
 import { HeroSearchBar } from './HeroSearchBar';
 
 /**
@@ -226,6 +227,11 @@ export function HeroSection({ fetchData = false }) {
               </>
             )}
           </div>
+
+          {/* Mobile-only ad slots (Featured Product + Featured Company).
+              Sits directly under the CTA row; desktop hides via CSS since
+              the same ad types show up in HeroDataCards / Showcase. */}
+          <HeroMobileAdCards />
         </div>
 
         <HeroStats />

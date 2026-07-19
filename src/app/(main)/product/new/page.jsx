@@ -10,7 +10,9 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import toast from 'react-hot-toast';
+import { Upload } from 'lucide-react';
 import { useAuth } from '@/presentation/contexts/AuthContext';
 import { useCreateProduct } from '@/presentation/hooks/product/useCreateProduct';
 import { ProductForm } from '@/presentation/components/features/product/ProductForm/ProductForm';
@@ -48,8 +50,24 @@ export default function NewProductPage() {
     }
   };
 
+  const bulkUploadButton = (
+    <Link
+      href="/product/bulk"
+      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-dashed border-[#FFD700] bg-[rgba(255,215,0,0.08)] hover:bg-[rgba(255,215,0,0.16)] hover:border-[#FDB931] transition-all no-underline text-xs sm:text-sm font-semibold whitespace-nowrap"
+      style={{ color: '#FFD700', WebkitTextFillColor: '#FFD700' }}
+    >
+      <Upload className="w-3.5 h-3.5" />
+      Bulk Upload
+    </Link>
+  );
+
   return (
-    <FormPageShell title="Add New Product" onBack={() => router.back()} backLabel="Back">
+    <FormPageShell
+      title="Add New Product"
+      onBack={() => router.back()}
+      backLabel="Back"
+      headerRight={bulkUploadButton}
+    >
       <ProductForm
         onSubmit={handleSubmit}
         onCancel={() => router.back()}

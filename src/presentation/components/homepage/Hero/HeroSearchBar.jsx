@@ -7,17 +7,13 @@
 
 'use client';
 
-const SEARCH_TAGS = ['Marble', 'Steel', 'Textile', 'Machinery', 'Cotton'];
-
 /**
  * The `isMobile` prop is kept for backward compat / placeholder text
- * choice, but the *layout* is now CSS-driven: both switch variants
- * (above-the-bar on mobile, inside-the-bar on desktop) and all 5
- * category pills are rendered unconditionally, and a media query
- * hides the wrong one for the current viewport. This eliminates the
- * hydration-time layout shift that was pushing the search bar, CTA
- * buttons and Featured Products section down ~52px once the client
- * detected `window.innerWidth < 768` (was ~0.096 of the mobile CLS).
+ * choice, but the *layout* is CSS-driven. The switch renders inside
+ * the search bar at every viewport, and the "quick tags" row (Marble
+ * / Steel / …) that used to live below the bar was removed at the
+ * product owner's request — the switch already communicates the
+ * search mode and tags were pushing the CTAs too far down.
  *
  * @param {Object} props
  * @param {boolean} props.isMobile — for placeholder text only
@@ -58,13 +54,10 @@ export function HeroSearchBar({ isMobile, searchType, setSearchType, searchQuery
 
   return (
     <div className="search-bar-container">
-      {/* Mobile-only switch above the bar. CSS hides it on desktop. */}
-      <div className="search-switch-wrap-mobile">
-        {renderSwitch('search-switch-mobile')}
-      </div>
-
       <form className="search-bar" onSubmit={onSearch}>
-        {/* Desktop-only switch inside the bar. CSS hides it on mobile. */}
+        {/* Switch sits inside the bar on every viewport now — mobile used
+            to render it above the bar but the design moved it inline so
+            the Products/RFQ chip and the hint text share one pill. */}
         <div className="search-switch-wrap-desktop">
           {renderSwitch('search-switch-desktop')}
         </div>
@@ -84,21 +77,6 @@ export function HeroSearchBar({ isMobile, searchType, setSearchType, searchQuery
           </svg>
         </button>
       </form>
-
-      {/* All 5 tags always rendered. Mobile CSS hides tags 4-5 so the
-          same 3 pills show on mobile as before, but the DOM shape
-          doesn't flip during hydration. */}
-      <div className="search-tags">
-        {SEARCH_TAGS.map((tag) => (
-          <span
-            key={tag}
-            className="search-tag-pill"
-            onClick={() => setSearchQuery(tag)}
-          >
-            {tag}
-          </span>
-        ))}
-      </div>
     </div>
   );
 }

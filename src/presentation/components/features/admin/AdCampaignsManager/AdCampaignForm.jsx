@@ -278,7 +278,7 @@ export function AdCampaignForm({
             <label className="block text-xs uppercase tracking-wider text-[#A0A0A0] font-semibold mb-1.5">
               Ad Type <span className="text-red-400">*</span>
             </label>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {Object.values(AD_TYPES).map((t) => {
                 const selected = type === t;
                 return (

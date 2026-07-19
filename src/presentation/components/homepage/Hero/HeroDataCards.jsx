@@ -106,55 +106,78 @@ export function HeroDataCards({ fetchData, dataLoading, latestProduct, latestReq
   // when no ad is live.
   const { ad: heroAd } = useActiveAd(AD_TYPES.HERO);
   const { setRef: setHeroAdRef, trackClick: trackHeroAdClick } = useTrackAd(heroAd?.id);
+  // Featured Product slot in the top-left hero corner. Falls back to
+  // a dashed "Spot Here" placeholder that routes to the pricing inquiry
+  // form pre-selected with the featured product tier.
+  const { ad: productAd } = useActiveAd(AD_TYPES.FEATURED);
+  const { setRef: setProductAdRef, trackClick: trackProductAdClick } = useTrackAd(productAd?.id);
   return (
     <>
       {/* Left Side Info Cards */}
       <div className="hero-left-cards">
-        {/* Product Card */}
-        <Link href={fetchData && latestProduct ? `/product/${latestProduct.id}` : '/products'} className="hero-info-card hero-product-card">
-          <div className="card-icon">
-            {showSkeleton ? (
-              <Shimmer width="48px" height="48px" className="rounded" />
-            ) : fetchData && latestProduct?.images?.[0] ? (
-              <div className="relative w-12 h-12 rounded overflow-hidden">
+        {/* Featured Product slot (replaces the old Latest Product card).
+            Ad live → renders the sponsored card, no ad → dashed "Spot
+            Here" placeholder that opens the inquiry form. */}
+        {productAd ? (
+          <Link
+            ref={setProductAdRef}
+            onClick={trackProductAdClick}
+            href={productAd.linkUrl || '#'}
+            target={/^https?:\/\//i.test(productAd.linkUrl || '') ? '_blank' : undefined}
+            rel="noopener noreferrer"
+            className="hero-info-card hero-product-card hero-ad-slot-card"
+            aria-label={`Sponsored: ${productAd.companyName}`}
+          >
+            <div className="card-icon" style={{ position: 'relative', overflow: 'hidden' }}>
+              {productAd.companyLogo ? (
                 <Image
-                  src={latestProduct.images[0]}
-                  alt={latestProduct.name}
+                  src={productAd.companyLogo}
+                  alt={productAd.companyName || 'Sponsored'}
                   fill
                   sizes="48px"
-                  className="object-cover"
+                  className="object-cover rounded"
                 />
-              </div>
-            ) : '📦'}
-          </div>
-          <div className="card-content">
-            <h3>{fetchData ? 'Latest Product' : 'Products'}</h3>
-            {showSkeleton ? (
-              <>
-                <p className="card-product-name"><Shimmer width="80%" /></p>
-                <p className="card-specs"><Shimmer width="60%" /></p>
-                <p className="card-price"><Shimmer width="40%" /></p>
-              </>
-            ) : (
-              <>
-                <p className="card-product-name">
-                  {fetchData && latestProduct ? latestProduct.name : 'Browse Products'}
-                </p>
-                <p className="card-specs" style={gradientTextStyle}>
-                  {fetchData && latestProduct ? (
-                    latestProduct.price ? (
-                      <>
-                        {CURRENCY_SYMBOLS[latestProduct.currency] || latestProduct.currency || '$'} {latestProduct.price}
-                        {latestProduct.unit && ` / ${getUnitByCode(latestProduct.unit) ? getUnitName(latestProduct.unit) : latestProduct.unit}`}
-                      </>
-                    ) : 'Price on request'
-                  ) : 'From verified suppliers'}
-                </p>
-                <p className="card-price">{fetchData ? 'See Details ▼' : 'Explore →'}</p>
-              </>
-            )}
-          </div>
-        </Link>
+              ) : (
+                <span style={{ fontSize: '24px' }}>✨</span>
+              )}
+            </div>
+            <div className="card-content">
+              <h3 style={{ color: '#FFD700' }}>{productAd.badgeText || 'Featured Product'}</h3>
+              <p className="card-product-name">{productAd.companyName}</p>
+              <p className="card-specs" style={{ color: '#ffffff' }}>
+                {productAd.description}
+              </p>
+              <p className="card-price" style={{ color: '#FFD700' }}>Visit →</p>
+            </div>
+          </Link>
+        ) : (
+          <Link
+            href="/pricing/inquire?type=featured"
+            className="hero-info-card hero-product-card hero-ad-slot-card"
+            aria-label="Feature your product here — inquire about the Featured Product placement"
+          >
+            <div className="card-icon" style={{
+              background: 'linear-gradient(135deg, rgba(255,215,0,0.18), rgba(253,185,49,0.06))',
+              border: '1px dashed rgba(255,215,0,0.55)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#FFD700',
+              fontSize: '24px',
+              fontWeight: 800,
+            }}>
+              +
+            </div>
+            <div className="card-content">
+              <h3 style={{ color: '#FFD700' }}>Spot Here</h3>
+              <p className="card-product-name">Your Product Here</p>
+              <p className="card-specs" style={{ color: '#ffffff' }}>
+                Front-page product spotlight
+              </p>
+              <p className="card-price" style={{ color: '#FFD700' }}>Book Spot →</p>
+            </div>
+          </Link>
+        )}
 
         {/* RFQ Card */}
         <Link href={fetchData && latestRequest ? `/request/${latestRequest.id}` : '/requests'} className="hero-info-card hero-rfq-card">

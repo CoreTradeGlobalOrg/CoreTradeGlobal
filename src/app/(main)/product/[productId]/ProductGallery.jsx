@@ -1,8 +1,14 @@
 'use client';
 
-import { memo, useState } from 'react';
+import { memo, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { ProductImageZoom } from './ProductImageZoom';
+
+// Minimum horizontal travel to count as a swipe. Anything smaller is
+// treated as a tap so the ProductImageZoom hover/tap interaction still
+// works. Vertical dominance (|dy| > |dx|) also cancels the swipe so
+// the page can still scroll naturally on mobile.
+const SWIPE_THRESHOLD = 40;
 
 const ThumbnailImage = memo(function ThumbnailImage({ src, alt }) {
   const [loading, setLoading] = useState(true);
@@ -24,11 +30,43 @@ const ThumbnailImage = memo(function ThumbnailImage({ src, alt }) {
 export function ProductGallery({ images, currentImageIndex, imageLoading, onNext, onPrev, onThumbnailClick, onImageLoad, productName }) {
   const hasImages = images.length > 0;
 
+  // Touch swipe state — refs (not state) so the handlers don't re-render.
+  const touchStartRef = useRef(null);
+
+  const handleTouchStart = (e) => {
+    if (!hasImages || images.length < 2) return;
+    const t = e.touches[0];
+    touchStartRef.current = { x: t.clientX, y: t.clientY };
+  };
+
+  const handleTouchEnd = (e) => {
+    const start = touchStartRef.current;
+    if (!start) return;
+    touchStartRef.current = null;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - start.x;
+    const dy = t.clientY - start.y;
+    // Ignore mostly-vertical drags so the page still scrolls freely.
+    if (Math.abs(dy) > Math.abs(dx)) return;
+    if (Math.abs(dx) < SWIPE_THRESHOLD) return;
+    if (dx < 0) onNext?.(); // swipe left → next
+    else onPrev?.();        // swipe right → prev
+  };
+
   return (
     <>
       {/* Main Image — outer wrapper is relative+overflow-visible so the zoom panel can escape */}
-      <div className="relative group" style={{ height: '500px' }}>
-        {/* Inner glass-card clips the image itself but NOT the zoom panel */}
+      <div
+        className="relative group"
+        style={{ height: '500px' }}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
+        {/* Inner glass-card clips the image background but NOT the zoom panel.
+            Only the loading state + empty placeholder live in here — the
+            chevron controls and image counter chip moved OUT below so
+            they always sit on top of ProductImageZoom, which used to
+            cover them for tall/portrait images. */}
         <div className="absolute inset-0 glass-card rounded-2xl overflow-hidden">
           {hasImages ? (
             <>
@@ -44,19 +82,6 @@ export function ProductGallery({ images, currentImageIndex, imageLoading, onNext
                 className="hidden"
                 onLoad={onImageLoad}
               />
-              {images.length > 1 && (
-                <>
-                  <button onClick={onPrev} className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-[#FFD700] text-white hover:text-[#0F1B2B] rounded-full p-3 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all transform hover:scale-110 z-10">
-                    <ChevronLeft className="w-6 h-6" />
-                  </button>
-                  <button onClick={onNext} className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-[#FFD700] text-white hover:text-[#0F1B2B] rounded-full p-3 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all transform hover:scale-110 z-10">
-                    <ChevronRight className="w-6 h-6" />
-                  </button>
-                  <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur-md text-white/90 text-sm font-medium px-4 py-1.5 rounded-full border border-white/10 z-10">
-                    {currentImageIndex + 1} / {images.length}
-                  </div>
-                </>
-              )}
             </>
           ) : (
             <div className="w-full h-full flex items-center justify-center text-gray-600 bg-[#0F1B2B]">
@@ -74,6 +99,31 @@ export function ProductGallery({ images, currentImageIndex, imageLoading, onNext
             alt={`${productName} - Image ${currentImageIndex + 1}`}
             className={`transition-all duration-300 ${imageLoading ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}`}
           />
+        )}
+
+        {/* Overlay controls — rendered AFTER ProductImageZoom so they sit
+            on top of the image regardless of its aspect ratio. z-20 keeps
+            them above the zoom lens indicator (z-10). */}
+        {hasImages && images.length > 1 && (
+          <>
+            <button
+              onClick={onPrev}
+              aria-label="Previous image"
+              className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-[#FFD700] text-white hover:text-[#0F1B2B] rounded-full p-3 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all transform hover:scale-110 z-20"
+            >
+              <ChevronLeft className="w-6 h-6" />
+            </button>
+            <button
+              onClick={onNext}
+              aria-label="Next image"
+              className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-[#FFD700] text-white hover:text-[#0F1B2B] rounded-full p-3 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all transform hover:scale-110 z-20"
+            >
+              <ChevronRight className="w-6 h-6" />
+            </button>
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/70 backdrop-blur-md text-white text-sm font-semibold px-4 py-1.5 rounded-full border border-white/20 shadow-[0_4px_12px_rgba(0,0,0,0.4)] z-20 pointer-events-none">
+              {currentImageIndex + 1} / {images.length}
+            </div>
+          </>
         )}
       </div>
 

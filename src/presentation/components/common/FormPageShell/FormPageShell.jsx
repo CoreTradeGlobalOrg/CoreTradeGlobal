@@ -12,6 +12,9 @@
  *                             form should return to the previous page instead
  *                             of a fixed route (e.g. product upload).
  *   backLabel{string}       - Optional back-link label. Defaults to 'Back'.
+ *   headerRight {ReactNode} - Optional element rendered on the right side of
+ *                             the header row (e.g. a small "Bulk Upload"
+ *                             shortcut on the Add Product page).
  *   children {ReactNode}    - Form content.
  */
 
@@ -20,7 +23,7 @@
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 
-export function FormPageShell({ title, backHref, onBack, backLabel = 'Back', children }) {
+export function FormPageShell({ title, backHref, onBack, backLabel = 'Back', headerRight, children }) {
   const backContent = (
     <>
       <ArrowLeft className="w-4 h-4" />
@@ -43,8 +46,9 @@ export function FormPageShell({ title, backHref, onBack, backLabel = 'Back', chi
         ) : null}
 
         <div className="bg-[#0F1B2B] rounded-2xl border border-[rgba(255,255,255,0.1)] shadow-2xl overflow-hidden">
-          <div className="border-b border-white/10 px-4 py-4 md:px-8 md:py-6">
+          <div className="border-b border-white/10 px-4 py-4 md:px-8 md:py-6 flex items-center justify-between gap-3">
             <h1 className="text-lg md:text-2xl font-bold text-white">{title}</h1>
+            {headerRight}
           </div>
           <div className="p-4 md:p-8">{children}</div>
         </div>

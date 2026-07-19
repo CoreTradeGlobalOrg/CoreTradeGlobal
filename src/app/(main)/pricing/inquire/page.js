@@ -251,12 +251,12 @@ function InquirePageInner() {
     <main className="pt-[calc(var(--navbar-height)+24px)] pb-16 bg-radial-navy min-h-screen text-white">
       <div className="max-w-3xl mx-auto px-5">
         <Link
-          href="/pricing#advertising"
+          href="/advertising"
           className="inline-flex items-center gap-2 text-[#A0A0A0] hover:text-white text-sm mb-6 transition-colors no-underline"
           style={{ color: '#A0A0A0' }}
         >
           <ChevronLeft className="w-4 h-4" />
-          Back to Pricing
+          Back to Advertising
         </Link>
 
         <div className="mb-6 text-center">
