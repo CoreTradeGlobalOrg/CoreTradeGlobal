@@ -116,7 +116,7 @@ export default function BulkUploadActionPage() {
           }
           if (results.data.length > MAX_ROWS) {
             setParseError(
-              `Self-serve uploads are capped at ${MAX_ROWS} rows per file. Your CSV has ${results.data.length} rows — please split it and upload separately.`
+              `Self-serve uploads are capped at ${MAX_ROWS} rows per file. Your CSV has ${results.data.length} rows. Please split it and upload separately.`
             );
             return;
           }
@@ -256,7 +256,7 @@ export default function BulkUploadActionPage() {
         <div className="mb-6">
           <h1 className="text-3xl md:text-4xl font-extrabold mb-1">Bulk Upload Products</h1>
           <p className="text-[#c8d3e0]">
-            Drop your CSV. We validate every row locally — nothing publishes until you confirm.
+            Drop your CSV. We validate every row locally. Nothing publishes until you confirm.
           </p>
           <p className="text-[#A0A0A0] text-xs mt-1">Self-serve limit: {MAX_ROWS} products per file.</p>
         </div>
@@ -289,7 +289,7 @@ export default function BulkUploadActionPage() {
               <UploadCloud className="w-8 h-8 text-[#FFD700]" />
             </div>
             <p className="text-white font-bold text-lg mb-1">Drop your CSV here</p>
-            <p className="text-[#A0A0A0] text-sm">or click to browse — up to {MAX_ROWS} rows</p>
+            <p className="text-[#A0A0A0] text-sm">or click to browse. Up to {MAX_ROWS} rows.</p>
             <input
               ref={fileInputRef}
               type="file"
@@ -404,7 +404,7 @@ export default function BulkUploadActionPage() {
                               className="bg-[rgba(255,255,255,0.05)] border border-[#FFD700]/50 rounded-lg px-2 py-1 text-white text-xs focus:outline-none focus:border-[#FFD700]"
                             >
                               <option value="" className="bg-[#0F1B2B]">
-                                — pick —
+                                Pick a category
                               </option>
                               {categoryOptions.map((opt) => (
                                 <option key={opt.value} value={opt.value} className="bg-[#0F1B2B]">
@@ -417,14 +417,14 @@ export default function BulkUploadActionPage() {
                               {categoryOptions.find((o) => o.value === r.category)?.label || r.category}
                             </span>
                           ) : (
-                            <span className="text-[#A0A0A0] text-xs">—</span>
+                            <span className="text-[#A0A0A0] text-xs">-</span>
                           )}
                         </td>
                         <td className="px-3 py-3 text-white text-xs">
-                          {r.price !== null ? `${r.currency || ''} ${r.price}` : '—'}
+                          {r.price !== null ? `${r.currency || ''} ${r.price}` : '-'}
                         </td>
                         <td className="px-3 py-3 text-white text-xs">
-                          {r.quantity !== null ? `${r.quantity} ${r.unit || ''}`.trim() : r.unit || '—'}
+                          {r.quantity !== null ? `${r.quantity} ${r.unit || ''}`.trim() : r.unit || '-'}
                         </td>
                         <td className="px-3 py-3">
                           {status === 'valid' && (
@@ -480,7 +480,7 @@ export default function BulkUploadActionPage() {
                 {uploadResult.skipped > 0 && (
                   <p className="text-[#c8d3e0] text-sm mb-2">
                     {uploadResult.skipped} row{uploadResult.skipped !== 1 && 's'} skipped
-                    {uploadResult.errors?.length > 0 && ' — see details below'}
+                    {uploadResult.errors?.length > 0 && '. See details below.'}
                   </p>
                 )}
                 {uploadResult.errors?.length > 0 && (

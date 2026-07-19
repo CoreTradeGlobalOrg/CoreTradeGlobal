@@ -18,10 +18,7 @@ import {
   ArrowRight,
   Download,
   FileSpreadsheet,
-  ShieldCheck,
-  Timer,
   UploadCloud,
-  Sparkles,
   ChevronDown,
 } from 'lucide-react';
 
@@ -41,12 +38,6 @@ const STEPS = [
     title: '3. Upload and review',
     body: 'Drop the file back on the upload page. We parse it in your browser and show a row-by-row check — valid ✅, needs-category ⚠️, invalid ❌. Fix any issues inline, then hit Publish.',
   },
-];
-
-const BENEFITS = [
-  { icon: Timer, title: 'Minutes, not hours', body: 'A 100-product catalog goes live in about a minute of your time.' },
-  { icon: ShieldCheck, title: 'Nothing publishes broken', body: 'Every row is validated in-browser before anything hits our database.' },
-  { icon: Sparkles, title: 'Images auto-fetched', body: 'Give us public image URLs — we download, store and attach them to each product.' },
 ];
 
 const FAQ = [
@@ -75,7 +66,7 @@ export default function BulkUploadGuidePage() {
         {/* Hero */}
         <section className="text-center mb-14">
           <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-4 leading-tight">
-            Add hundreds of products in seconds. <span className="bg-gradient-to-r from-[#FFD700] to-[#FDB931] bg-clip-text text-transparent">Not hours.</span>
+            Add hundreds of products in seconds.
           </h1>
           <p className="text-[#c8d3e0] text-lg max-w-2xl mx-auto mb-8">
             Skip the one-by-one form. Upload a CSV, we validate every row in your browser, you fix anything red and hit publish.
@@ -98,22 +89,6 @@ export default function BulkUploadGuidePage() {
               <ChevronDown className="w-4 h-4" />
             </a>
           </div>
-        </section>
-
-        {/* Benefits row */}
-        <section className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-16">
-          {BENEFITS.map((b) => {
-            const Icon = b.icon;
-            return (
-              <div key={b.title} className="rounded-2xl border border-[rgba(255,255,255,0.08)] bg-gradient-to-br from-[rgba(26,40,59,0.6)] to-[rgba(15,27,43,0.85)] p-5">
-                <div className="w-10 h-10 rounded-xl bg-[rgba(255,215,0,0.12)] border border-[rgba(255,215,0,0.3)] flex items-center justify-center mb-3">
-                  <Icon className="w-5 h-5 text-[#FFD700]" />
-                </div>
-                <h3 className="text-white font-bold text-base mb-1">{b.title}</h3>
-                <p className="text-[#A0A0A0] text-sm">{b.body}</p>
-              </div>
-            );
-          })}
         </section>
 
         {/* Steps */}
