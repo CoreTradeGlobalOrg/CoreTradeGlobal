@@ -25,7 +25,7 @@ export const AD_TYPES = {
 export const AD_TYPE_LABELS = {
   [AD_TYPES.FEATURED]: 'Hero Product Ad',
   [AD_TYPES.HERO]: 'Hero Company Ad',
-  [AD_TYPES.SPONSORED_PRODUCT]: 'Sponsorlu Ürün',
+  [AD_TYPES.SPONSORED_PRODUCT]: 'Sponsored Product Ad',
   [AD_TYPES.CAROUSEL]: 'Carousel Company Ad',
 };
 
@@ -60,8 +60,8 @@ export function computeMonthlyDiscount(weekly, monthly) {
 export const AD_TIERS = [
   {
     id: 'hero-cards',
-    tag: 'Hero Kartları',
-    title: 'Hero Kartları',
+    tag: 'Hero Cards',
+    title: 'Hero Cards',
     // Two slots because the hero has one Sponsored Product card (left)
     // and one Sponsored Company card (right). Both priced identically.
     slotCount: 2,
@@ -86,15 +86,15 @@ export const AD_TIERS = [
   },
   {
     id: 'sponsored-product',
-    tag: 'Sponsorlu Ürün',
-    title: 'Sponsorlu Ürün',
+    tag: 'Sponsored Product',
+    title: 'Sponsored Product',
     slotCount: 1,
     slotLabel: '1 slot',
     weeklyPrice: 29,
     monthlyPrice: 99,
     priceUnit: '',
     typeOptions: [
-      { id: AD_TYPES.SPONSORED_PRODUCT, label: 'Sponsorlu Ürün — /products top slot' },
+      { id: AD_TYPES.SPONSORED_PRODUCT, label: 'Sponsored Product Ad — /products top slot' },
     ],
     desc: 'Top-of-directory placement in front of buyers actively browsing the products catalogue.',
     features: [
@@ -107,7 +107,7 @@ export const AD_TIERS = [
   },
   {
     id: 'carousel',
-    tag: 'Karusel',
+    tag: 'Carousel',
     title: 'Carousel Company Ad',
     slotCount: 8,
     slotLabel: '8 slots (rotating)',
@@ -135,7 +135,7 @@ export const AD_TIERS = [
 export const AD_PACKAGES = [
   { value: 'Hero Product Ad', short: 'Hero Product Ad', type: AD_TYPES.FEATURED, weekly: 49, monthly: 149 },
   { value: 'Hero Company Ad', short: 'Hero Company Ad', type: AD_TYPES.HERO, weekly: 49, monthly: 149 },
-  { value: 'Sponsorlu Ürün', short: 'Sponsorlu Ürün', type: AD_TYPES.SPONSORED_PRODUCT, weekly: 29, monthly: 99 },
+  { value: 'Sponsored Product Ad', short: 'Sponsored Product Ad', type: AD_TYPES.SPONSORED_PRODUCT, weekly: 29, monthly: 99 },
   { value: 'Carousel Company Ad', short: 'Carousel Company Ad', type: AD_TYPES.CAROUSEL, weekly: 19, monthly: 59 },
   { value: 'Combined Multi-Placement Package', short: 'Combined', type: null, weekly: 89, monthly: 299 },
 ];
@@ -153,7 +153,7 @@ export const AD_DURATIONS = [
 export const TYPE_TO_PACKAGE = {
   [AD_TYPES.FEATURED]: 'Hero Product Ad',
   [AD_TYPES.HERO]: 'Hero Company Ad',
-  [AD_TYPES.SPONSORED_PRODUCT]: 'Sponsorlu Ürün',
+  [AD_TYPES.SPONSORED_PRODUCT]: 'Sponsored Product Ad',
   [AD_TYPES.CAROUSEL]: 'Carousel Company Ad',
   combined: 'Combined Multi-Placement Package',
 };

@@ -17,10 +17,9 @@
 
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
 import { Check, ArrowRight, Search, Image as ImageIcon } from 'lucide-react';
-import { AD_TIERS, AD_TYPES, computeMonthlyDiscount } from '@/core/constants/adTypes';
+import { AD_TIERS } from '@/core/constants/adTypes';
 
 export default function AdvertisingPage() {
   return (
@@ -32,86 +31,29 @@ export default function AdvertisingPage() {
 }
 
 function Advertising() {
-  // Weekly (default) ↔ Monthly toggle. Monthly bundles 4 weeks at a
-  // discount that varies per tier — computed live from
-  // (4×weeklyPrice - monthlyPrice) / (4×weeklyPrice).
-  const [duration, setDuration] = useState('weekly');
-  const isMonthly = duration === 'monthly';
-
   return (
     <section id="advertising" className="px-5 pt-2 pb-6 md:pt-4 md:pb-10 scroll-mt-[calc(var(--navbar-height)+16px)]">
       <div className="max-w-6xl mx-auto">
-        <div className="text-center mb-6">
+        <div className="text-center mb-8">
           <h2 className="text-3xl md:text-4xl font-extrabold mb-2 tracking-tight">Grow Your Brand Globally</h2>
           <p className="text-[#c8d3e0] text-base md:text-lg max-w-2xl mx-auto">
             Optional advertising placements to reach our qualified global B2B audience.
           </p>
         </div>
 
-        {/* Weekly / Monthly toggle. Monthly = 4 weeks bundled with the
-            discount % shown per tier below. */}
-        <div className="flex justify-center mb-8">
-          <div className="inline-flex items-center gap-1 p-1 rounded-full bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)]">
-            {[
-              { id: 'weekly', label: 'Weekly' },
-              { id: 'monthly', label: 'Monthly' },
-            ].map((opt) => {
-              const active = duration === opt.id;
-              return (
-                <button
-                  key={opt.id}
-                  type="button"
-                  onClick={() => setDuration(opt.id)}
-                  className={`px-5 py-2 rounded-full text-sm font-semibold transition-all ${
-                    active
-                      ? 'bg-gradient-to-r from-[#FFD700] to-[#FDB931] shadow-[0_4px_12px_rgba(255,215,0,0.3)]'
-                      : 'text-[#c8d3e0] hover:text-white'
-                  }`}
-                  style={active ? { color: '#0F1B2B', WebkitTextFillColor: '#0F1B2B' } : undefined}
-                  aria-pressed={active}
-                >
-                  {opt.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Alternating rows: text ↔ mockup */}
+        {/* Alternating rows: text ↔ mockup. Prices intentionally NOT
+            shown here — visitors see pricing on the inquiry form after
+            clicking the tier CTA. */}
         <div className="space-y-8 md:space-y-10">
           {AD_TIERS.map((tier, idx) => {
             const reverse = idx % 2 === 1;
-            const price = isMonthly ? tier.monthlyPrice : tier.weeklyPrice;
-            const unit = isMonthly ? '/month' : '/week';
-            const discount = computeMonthlyDiscount(tier.weeklyPrice, tier.monthlyPrice);
             return (
               <div
                 key={tier.id}
                 className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 items-center rounded-2xl border border-[rgba(255,255,255,0.08)] bg-gradient-to-br from-[rgba(26,40,59,0.85)] to-[rgba(15,27,43,0.95)] p-6 md:p-8"
               >
                 <div className={reverse ? 'lg:order-2' : ''}>
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#FFD700] bg-[rgba(255,215,0,0.12)] border border-[rgba(255,215,0,0.35)] px-2 py-0.5 rounded-full">
-                      {tier.slotLabel}
-                    </span>
-                  </div>
                   <h3 className="text-2xl md:text-3xl font-extrabold text-white mb-3 tracking-tight">{tier.title}</h3>
-
-                  {/* Price block */}
-                  <div className="flex items-baseline flex-wrap gap-x-2 gap-y-1 mb-4">
-                    <span className="text-4xl md:text-5xl font-extrabold bg-gradient-to-br from-[#FFD700] to-[#FDB931] bg-clip-text text-transparent">
-                      ${price}
-                    </span>
-                    <span className="text-sm text-[#A0A0A0] font-medium">
-                      {unit}{tier.priceUnit || ''}
-                    </span>
-                    {isMonthly && discount > 0 && (
-                      <span className="ml-2 inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-[#0F1B2B] bg-gradient-to-r from-[#FFD700] to-[#FDB931] px-2 py-1 rounded-full shadow-[0_4px_12px_rgba(255,215,0,0.35)]">
-                        Save {discount}%
-                      </span>
-                    )}
-                  </div>
-
                   <p className="text-sm md:text-base text-[#c8d3e0] leading-relaxed mb-4">{tier.desc}</p>
                   <ul className="space-y-2 mb-5">
                     {tier.features.map((f) => (
@@ -122,7 +64,7 @@ function Advertising() {
                     ))}
                   </ul>
                   <Link
-                    href={`/pricing/inquire?type=${tier.typeOptions?.[0]?.id ?? tier.id}&duration=${duration}`}
+                    href={`/pricing/inquire?type=${tier.typeOptions?.[0]?.id ?? tier.id}`}
                     style={{ color: '#0F1B2B', WebkitTextFillColor: '#0F1B2B' }}
                     className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-full bg-gradient-to-r from-[#FFD700] to-[#FDB931] font-bold text-sm hover:shadow-[0_10px_25px_rgba(255,215,0,0.3)] transition-all no-underline"
                   >
