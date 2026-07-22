@@ -423,7 +423,7 @@ service cloud.firestore {
       // catalog (Featured Product tier flow).
       allow create: if request.resource.data.keys().hasOnly([
                        'company', 'website', 'contactName', 'email',
-                       'package', 'campaignMonth', 'campaignWeek', 'brief',
+                       'package', 'duration', 'campaignMonth', 'campaignWeek', 'brief',
                        'status', 'createdAt',
                        'userId', 'productId', 'productSnapshot'
                      ])

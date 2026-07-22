@@ -142,6 +142,10 @@ const DEFAULT_PRODUCTS = [
     }
 ];
 
+// Every page renders exactly 12 tiles total. When a Featured Product
+// ad is live on page 1 it eats one of those 12 slots, so we drop 11
+// organic products alongside it; the remainder of the catalog picks up
+// on page 2 with 12 organic products each.
 const PAGE_SIZE = 12;
 
 export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter, countryFilter, sidebarVisible = false }) {
@@ -155,7 +159,9 @@ export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter, cou
     const { track } = useTrackEvent();
     // Featured advertising slot — takes the first grid tile on page 1
     // when a campaign is live. See useActiveAd for the selection rules.
-    const { ad: featuredAd } = useActiveAd(AD_TYPES.FEATURED);
+    // Products directory sponsored slot — separate ad tier from the
+    // hero placements (FEATURED / HERO), priced independently.
+    const { ad: featuredAd } = useActiveAd(AD_TYPES.SPONSORED_PRODUCT);
 
     // Fetch Products
     useEffect(() => {
@@ -239,9 +245,21 @@ export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter, cou
     }, [products, searchQuery, categoryFilter, categoryIdFilter, countryFilter]);
 
     // Numbered pagination (client-side over the filtered set).
-    const totalPages = Math.max(1, Math.ceil(filteredProducts.length / PAGE_SIZE));
+    // When a Featured Product ad renders on page 1 it consumes one tile,
+    // so page 1 shows PAGE_SIZE-1 organic products. Subsequent pages
+    // shift their slice window by that missing product so nothing is
+    // skipped or duplicated.
+    const showSponsoredOnFirstPage = !!featuredAd;
+    const firstPageOrganicCount = showSponsoredOnFirstPage ? PAGE_SIZE - 1 : PAGE_SIZE;
+    const remainingProducts = Math.max(0, filteredProducts.length - firstPageOrganicCount);
+    const extraPages = Math.ceil(remainingProducts / PAGE_SIZE);
+    const totalPages = Math.max(1, 1 + extraPages);
     const safePage = Math.min(currentPage, totalPages);
-    const pageProducts = filteredProducts.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+    const pageStart = safePage === 1
+        ? 0
+        : firstPageOrganicCount + (safePage - 2) * PAGE_SIZE;
+    const pageLength = safePage === 1 ? firstPageOrganicCount : PAGE_SIZE;
+    const pageProducts = filteredProducts.slice(pageStart, pageStart + pageLength);
 
     const goToPage = useCallback((page) => {
         const clamped = Math.min(Math.max(1, page), totalPages);

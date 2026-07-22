@@ -8,11 +8,15 @@
  * Behaviour:
  * - Always visible regardless of completion percentage (never auto-hides at 100%)
  * - Dismissable per browser session via sessionStorage (comes back on next login/visit)
- * - "Complete Profile" button links to /profile/[uid] (< 100%)
- * - "View Profile" button links to /profile/[uid] (= 100%)
+ * - Live: subscribes to users/{uid} via onSnapshot so filling a field on
+ *   the profile page ticks the checkbox and grows the bar without a refresh.
+ * - Each checklist row is a clickable link — jumps to the profile page,
+ *   highlights the field, and scrolls it into the middle of the viewport.
+ * - "Complete Profile" button links to /profile/[uid]?highlight=incomplete
  *
  * Props:
- *   user {object} — user object from AuthContext (includes uid, role, and profile fields)
+ *   user {object} — user object from AuthContext (only .uid is required here;
+ *                   real-time field values come from the Firestore snapshot)
  */
 
 'use client';
@@ -20,24 +24,33 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { CheckCircle, Circle, X } from 'lucide-react';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { db } from '@/core/config/firebase.config';
 
 /**
  * Fields checked for profile completion.
  * Each field is weighted equally (1 / total).
+ * `focus` is the value passed via `?focus=` so the profile page can
+ * scroll to the matching element and center it in the viewport.
  */
 const COMPLETION_FIELDS = [
-  { key: 'companyName', label: 'Company name' },
-  { key: 'companyLogo', label: 'Company logo' },
-  { key: 'country', label: 'Country' },
-  { key: 'phone', label: 'Phone number' },
-  { key: 'about', label: 'Company description' },
-  { key: 'companyWebsite', label: 'Website' },
-  { key: 'companyDocuments', label: 'Company documents' },
+  { key: 'companyName', label: 'Company name', focus: 'companyName' },
+  { key: 'companyLogo', label: 'Company logo', focus: 'companyLogo' },
+  { key: 'country', label: 'Country', focus: 'country' },
+  { key: 'phone', label: 'Phone number', focus: 'phone' },
+  { key: 'about', label: 'Company description', focus: 'about' },
+  { key: 'companyWebsite', label: 'Website', focus: 'companyWebsite' },
+  { key: 'companyDocuments', label: 'Company documents', focus: 'companyDocuments' },
 ];
 
 export function ProfileCompletionCard({ user }) {
   const [dismissed, setDismissed] = useState(false);
   const [hydrated, setHydrated] = useState(false);
+  // Live user doc from Firestore. AuthContext only fetches once at
+  // login, so we can't rely on its `user` prop to reflect edits made
+  // on /profile without a refresh. A cheap per-user onSnapshot here
+  // keeps the checklist ticking in real time.
+  const [liveUser, setLiveUser] = useState(null);
 
   // Read sessionStorage after mount to avoid SSR hydration mismatch
   useEffect(() => {
@@ -50,11 +63,39 @@ export function ProfileCompletionCard({ user }) {
     setHydrated(true);
   }, [user?.uid]);
 
+  // Real-time subscription to users/{uid}. Cleans up on unmount and on
+  // uid change. If Firestore reads fail (auth loss, transient error)
+  // we fall back to the prop-provided user so the card degrades to
+  // its old one-shot behaviour instead of blanking.
+  useEffect(() => {
+    if (!user?.uid) {
+      setLiveUser(null);
+      return undefined;
+    }
+    const ref = doc(db, 'users', user.uid);
+    const unsub = onSnapshot(
+      ref,
+      (snap) => {
+        if (snap.exists()) {
+          setLiveUser({ uid: user.uid, ...snap.data() });
+        }
+      },
+      (err) => {
+        console.warn('ProfileCompletionCard snapshot error:', err);
+      }
+    );
+    return () => unsub();
+  }, [user?.uid]);
+
   if (!user) return null;
+
+  // Use live snapshot data when we have it; fall back to the AuthContext
+  // user object during the first paint / on subscription failure.
+  const source = liveUser || user;
 
   // Calculate completion percentage (arrays must have length > 0)
   const completedCount = COMPLETION_FIELDS.filter((f) => {
-    const val = user[f.key];
+    const val = source[f.key];
     return Array.isArray(val) ? val.length > 0 : !!val;
   }).length;
   const total = COMPLETION_FIELDS.length;
@@ -76,10 +117,13 @@ export function ProfileCompletionCard({ user }) {
     setDismissed(true);
   };
 
+  const buildFieldHref = (focus) =>
+    user?.uid
+      ? `/profile/${user.uid}?highlight=incomplete&focus=${focus}`
+      : '/profile';
+
   const profileHref = user?.uid
-    ? percent === 100
-      ? `/profile/${user.uid}`
-      : `/profile/${user.uid}?highlight=incomplete`
+    ? `/profile/${user.uid}?highlight=incomplete`
     : '/profile';
 
   return (
@@ -118,23 +162,36 @@ export function ProfileCompletionCard({ user }) {
         />
       </div>
 
-      {/* Field checklist */}
+      {/* Field checklist — each row is a link that jumps to the
+          matching field on the profile page and centers it. */}
       <ul className="space-y-2 mb-5">
         {COMPLETION_FIELDS.map((field) => {
-          const val = user[field.key];
+          const val = source[field.key];
           const done = Array.isArray(val) ? val.length > 0 : !!val;
           return (
-            <li key={field.key} className="flex items-center gap-2.5">
-              {done ? (
-                <CheckCircle className="w-4 h-4 text-green-400 shrink-0" aria-hidden="true" />
-              ) : (
-                <Circle className="w-4 h-4 text-gray-600 shrink-0" aria-hidden="true" />
-              )}
-              <span
-                className={`text-sm ${done ? 'text-gray-400 line-through' : 'text-gray-300'}`}
+            <li key={field.key}>
+              <Link
+                href={buildFieldHref(field.focus)}
+                onClick={handleDismiss}
+                className={`group flex items-center gap-2.5 rounded-md px-1 py-0.5 transition-colors ${
+                  done ? 'hover:bg-white/[0.03]' : 'hover:bg-[rgba(255,215,0,0.06)]'
+                }`}
               >
-                {field.label}
-              </span>
+                {done ? (
+                  <CheckCircle className="w-4 h-4 text-green-400 shrink-0" aria-hidden="true" />
+                ) : (
+                  <Circle className="w-4 h-4 text-gray-600 group-hover:text-[#FFD700] transition-colors shrink-0" aria-hidden="true" />
+                )}
+                <span
+                  className={`text-sm transition-colors ${
+                    done
+                      ? 'text-gray-400 line-through'
+                      : 'text-gray-300 group-hover:text-white'
+                  }`}
+                >
+                  {field.label}
+                </span>
+              </Link>
             </li>
           );
         })}

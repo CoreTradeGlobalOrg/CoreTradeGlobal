@@ -6,7 +6,7 @@
  */
 'use client';
 
-import { Suspense } from 'react';
+import { Suspense, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { useAuth } from '@/presentation/contexts/AuthContext';
 import { useLogout } from '@/presentation/hooks/auth/useLogout';
@@ -65,8 +65,23 @@ function ProfileContent() {
   const { userId } = useParams();
   const searchParams = useSearchParams();
   const highlightIncomplete = searchParams.get('highlight') === 'incomplete';
+  const focusField = searchParams.get('focus');
 
   const page = useProfilePage({ userId, currentUser, authLoading, isAuthenticated, logout });
+
+  // Scroll to the requested field (from ?focus=<key>) once the profile
+  // loads. Waits one frame so React has painted the target element,
+  // then centers it in the viewport with a smooth scroll.
+  useEffect(() => {
+    if (!focusField || page.loading || !page.profileUser) return;
+    const raf = requestAnimationFrame(() => {
+      const el = document.querySelector(`[data-field="${focusField}"]`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [focusField, page.loading, page.profileUser]);
 
   if (authLoading || page.loading) return SPINNER;
   if (!isAuthenticated || !page.profileUser) return null;
@@ -156,7 +171,10 @@ function ProfileContent() {
 
         {page.profileUser?.role !== 'lawyer' && (
           <>
-            <div className={`glass-card p-6${incompleteFields.has('companyDocuments') ? ' animate-highlight-incomplete border-2' : ''}`}>
+            <div
+              data-field="companyDocuments"
+              className={`glass-card p-6${incompleteFields.has('companyDocuments') ? ' animate-highlight-incomplete border-2' : ''}`}
+            >
               <CompanyDocuments userId={userId} documents={page.profileUser?.companyDocuments || []}
                 isOwnProfile={page.isOwnProfile}
                 onDocumentsChange={(docs) => page.setProfileUser((p) => ({ ...p, companyDocuments: docs }))} />

@@ -43,6 +43,7 @@ function EditableCell({
   renderDisplay,
   renderInput,
   multiline = false,
+  field, // data-field attribute for scroll-into-view targeting
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value ?? '');
@@ -83,6 +84,7 @@ function EditableCell({
 
   return (
     <div
+      data-field={field}
       className={`bg-[rgba(255,255,255,0.04)] rounded-2xl p-5 border border-[rgba(255,255,255,0.05)] transition-colors ${
         canEdit && !editing ? 'cursor-pointer hover:border-[rgba(255,215,0,0.3)] active:bg-[rgba(255,255,255,0.06)] group' : ''
       }${highlightClass}`}
@@ -156,7 +158,7 @@ function EditableCell({
  * grid cells (full-width paragraph under the display name) so it gets
  * its own tap-to-edit shell instead of the card-shaped EditableCell.
  */
-function BioEditor({ canEdit, value, draft, setDraft, saving, onSave, onReset, highlight }) {
+function BioEditor({ canEdit, value, draft, setDraft, saving, onSave, onReset, highlight, field }) {
   const [editing, setEditing] = useState(false);
   const textareaRef = useRef(null);
 
@@ -185,7 +187,10 @@ function BioEditor({ canEdit, value, draft, setDraft, saving, onSave, onReset, h
 
   if (editing) {
     return (
-      <div className={`mt-4 rounded-xl${highlight ? ' animate-highlight-incomplete border-2' : ''}`}>
+      <div
+        data-field={field}
+        className={`mt-4 rounded-xl${highlight ? ' animate-highlight-incomplete border-2' : ''}`}
+      >
         <textarea
           ref={textareaRef}
           value={draft}
@@ -226,6 +231,7 @@ function BioEditor({ canEdit, value, draft, setDraft, saving, onSave, onReset, h
 
   return (
     <div
+      data-field={field}
       className={`mt-4 rounded-xl px-2 py-2 -mx-2 ${
         canEdit ? 'cursor-pointer hover:bg-[rgba(255,255,255,0.03)] group' : ''
       }${highlight ? ' animate-highlight-incomplete border-2' : ''}`}
@@ -410,7 +416,10 @@ export function ProfileCard({
         {/* Header Row: Logo + Name + Edit Button */}
         <div className="flex flex-col sm:flex-row items-start gap-6 mb-6">
           {/* Logo Section */}
-          <div className={`flex-shrink-0 rounded-2xl${hl('companyLogo')}`}>
+          <div
+            data-field="companyLogo"
+            className={`flex-shrink-0 rounded-2xl${hl('companyLogo')}`}
+          >
             <div className="relative">
               {(logoPreview || profileUser?.companyLogo) ? (
                 <img
@@ -473,6 +482,7 @@ export function ProfileCard({
             {/* Bio — tap to edit inline (no card wrapper to preserve
                 the airier look under the display name). */}
             <BioEditor
+              field="about"
               canEdit={canEdit}
               value={profileUser?.about}
               draft={about}
@@ -487,7 +497,10 @@ export function ProfileCard({
 
         {/* Details Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-6 border-t border-[rgba(255,255,255,0.1)]">
-          <div className={`bg-[rgba(255,255,255,0.04)] rounded-2xl p-5 border border-[rgba(255,255,255,0.05)]${hl('companyName')}`}>
+          <div
+            data-field="companyName"
+            className={`bg-[rgba(255,255,255,0.04)] rounded-2xl p-5 border border-[rgba(255,255,255,0.05)]${hl('companyName')}`}
+          >
             <p className="text-sm font-semibold uppercase tracking-wider mb-2 bg-gradient-to-r from-[#C0C0C0] via-[#FFFFFF] to-[#C0C0C0] bg-clip-text text-transparent">Company</p>
             <p className="text-white font-semibold text-lg truncate">{profileUser?.companyName || 'Not set'}</p>
           </div>
@@ -502,7 +515,10 @@ export function ProfileCard({
             <RoleBadge role={profileUser?.role} size="md" />
           </div>
 
-          <div className={`bg-[rgba(255,255,255,0.04)] rounded-2xl p-5 border border-[rgba(255,255,255,0.05)]${hl('country')}`}>
+          <div
+            data-field="country"
+            className={`bg-[rgba(255,255,255,0.04)] rounded-2xl p-5 border border-[rgba(255,255,255,0.05)]${hl('country')}`}
+          >
             <p className="text-sm font-semibold uppercase tracking-wider mb-2 bg-gradient-to-r from-[#C0C0C0] via-[#FFFFFF] to-[#C0C0C0] bg-clip-text text-transparent">Country</p>
             <p className="text-white font-semibold text-lg truncate">{getCountryLabel(profileUser?.country)}</p>
           </div>
@@ -519,6 +535,7 @@ export function ProfileCard({
 
           {canEdit && (
             <EditableCell
+              field="phone"
               label="Phone"
               privateBadge
               value={profileUser?.phone}
@@ -542,6 +559,7 @@ export function ProfileCard({
           )}
 
           <EditableCell
+            field="linkedinProfile"
             label="LinkedIn"
             value={profileUser?.linkedinProfile}
             emptyHint="Not set — tap to add LinkedIn"
@@ -577,6 +595,7 @@ export function ProfileCard({
           />
 
           <EditableCell
+            field="companyWebsite"
             label="Website"
             value={profileUser?.companyWebsite}
             emptyHint="Not set — tap to add website"

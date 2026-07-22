@@ -18,6 +18,7 @@ import { SearchableSelect } from '@/presentation/components/common/SearchableSel
 import { CURRENCIES } from '@/core/constants/currencies';
 import { UNIT_CATEGORIES, getUnitsByCategory } from '@/core/constants/units';
 import { toTitleCase } from '@/core/utils/nameCase';
+import { Zap } from 'lucide-react';
 import { useCategories } from '@/presentation/hooks/category/useCategories';
 
 export function ProductForm({ product, onSubmit, onCancel, userId }) {
@@ -345,9 +346,18 @@ export function ProductForm({ product, onSubmit, onCancel, userId }) {
 
       {/* Images */}
       <div>
-        <label className="block text-sm font-medium text-gray-300 mb-2">
-          Product Images (max 5)
-        </label>
+        <div className="flex items-center justify-between flex-wrap gap-2 mb-2">
+          <label className="block text-sm font-medium text-gray-300">
+            Product Images (max 5)
+          </label>
+          {/* Persistent nudge — dashed gold chip on the right of the
+              label. Mirrors the site's gold-accent brand cue so it feels
+              native, not like an alert. */}
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-dashed border-[#FFD700] bg-[rgba(255,215,0,0.06)] text-xs font-semibold text-[#FFD700] whitespace-nowrap">
+            <Zap className="w-3.5 h-3.5 flex-shrink-0" />
+            Products With Images Get 80% More Views
+          </span>
+        </div>
 
         {/* Preview */}
         {(imagePreviews.length > 0 || imageLoadingCount > 0) && (

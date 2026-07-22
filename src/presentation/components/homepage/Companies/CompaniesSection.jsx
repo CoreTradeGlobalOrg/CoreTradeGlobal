@@ -17,7 +17,7 @@ import { COUNTRIES } from '@/core/constants/countries';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useCategories } from '@/presentation/hooks/category/useCategories';
 import { useResponsiveLimit, useScrollLoadMore } from '@/presentation/hooks/useResponsiveLimit';
-import { useActiveAd } from '@/presentation/hooks/ads/useActiveAd';
+import { useActiveAds } from '@/presentation/hooks/ads/useActiveAd';
 import { AD_TYPES } from '@/core/constants/adTypes';
 import dynamic from 'next/dynamic';
 
@@ -157,7 +157,8 @@ export function CompaniesSection() {
   const [productOwnerCompanies, setProductOwnerCompanies] = useState([]);
   // Same carousel sponsored ad the desktop 3D ShowcaseSection prepends —
   // mobile card stack should show it too, always pinned to the top of the deck.
-  const { ad: carouselAd } = useActiveAd(AD_TYPES.CAROUSEL);
+  // Up to 8 carousel-tier ads share the same week (matches admin cap).
+  const { ads: carouselAds } = useActiveAds(AD_TYPES.CAROUSEL, { limit: 8 });
   const [loading, setLoading] = useState(true);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(true);
@@ -370,27 +371,28 @@ export function CompaniesSection() {
       cardStackCompanies = allCompanies.slice(0, 15);
     }
 
-    // Prepend the carousel sponsored ad (if any). Shape it to the User doc
-    // contract MobileCompanyCardStack expects. The `isSponsored` flag tells
-    // the stack to pin it as the first card (skip shuffle) and render a
-    // Sponsored badge + honor `linkUrl` on the CTA.
-    if (carouselAd) {
-      const sponsoredCard = {
-        id: `ad:${carouselAd.id}`,
+    // Prepend every active carousel-tier sponsored ad. Shape them to
+    // the User doc contract MobileCompanyCardStack expects. The
+    // `isSponsored` flag tells the stack to pin them at the top of the
+    // deck (skip shuffle) and render the Sponsored badge + honor
+    // linkUrl on the CTA.
+    if (carouselAds && carouselAds.length > 0) {
+      const sponsoredCards = carouselAds.map((ad) => ({
+        id: `ad:${ad.id}`,
         isSponsored: true,
-        sponsoredAdId: carouselAd.id,
-        badgeText: carouselAd.badgeText || 'Sponsored',
-        linkUrl: carouselAd.linkUrl || null,
-        companyName: carouselAd.companyName || 'Sponsored',
-        companyLogo: carouselAd.companyLogo || '',
+        sponsoredAdId: ad.id,
+        badgeText: ad.badgeText || 'Sponsored',
+        linkUrl: ad.linkUrl || null,
+        companyName: ad.companyName || 'Sponsored',
+        companyLogo: ad.companyLogo || '',
         photoURL: '',
         country: '',
         companyCategory: 'Sponsored',
-        about: carouselAd.description || '',
+        about: ad.description || '',
         emailVerified: false,
         adminApproved: false,
-      };
-      cardStackCompanies = [sponsoredCard, ...cardStackCompanies];
+      }));
+      cardStackCompanies = [...sponsoredCards, ...cardStackCompanies];
     }
 
     if (cardStackCompanies.length === 0) {
