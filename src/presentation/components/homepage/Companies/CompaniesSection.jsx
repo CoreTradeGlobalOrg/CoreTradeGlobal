@@ -136,15 +136,6 @@ function CompanyCard({ company, categories }) {
 
         {/* Bottom Section - Always at bottom */}
         <div className="mt-auto">
-          {/* Verified Badge */}
-          {company.emailVerified && company.adminApproved && (
-            <div className="flex items-center gap-2 mb-3">
-              <span className="inline-flex items-center gap-1 bg-[rgba(16,185,129,0.15)] text-[#34d399] border border-[rgba(16,185,129,0.3)] px-2.5 py-1 rounded-full text-[11px] font-semibold uppercase tracking-wider">
-                ✓ Verified
-              </span>
-            </div>
-          )}
-
           {/* CTA Button */}
           <div className="w-full py-2.5 bg-gradient-to-r from-[#FFD700] to-[#FDB931] text-[#0F1B2B] font-bold rounded-full text-center text-sm">
             View Profile
@@ -466,6 +457,7 @@ export function CompaniesSection() {
               className={`scroll-arrow-btn scroll-left ${showLeftArrow ? 'visible' : ''}`}
               id="dash-left-companies"
               onClick={() => scroll('left')}
+              aria-label="Scroll companies left"
             >
               <ChevronLeft className="w-6 h-6" />
             </button>
@@ -473,6 +465,7 @@ export function CompaniesSection() {
               className={`scroll-arrow-btn scroll-right ${showRightArrow ? 'visible' : ''}`}
               id="dash-right-companies"
               onClick={() => scroll('right')}
+              aria-label="Scroll companies right"
             >
               <ChevronRight className="w-6 h-6" />
             </button>

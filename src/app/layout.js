@@ -96,7 +96,11 @@ export const viewport = {
   themeColor: '#FFD700',
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
+  // `maximumScale: 1` used to be set here to stop iOS Safari from
+  // auto-zooming form inputs, but PageSpeed / WCAG flag it as an
+  // accessibility failure — low-vision users lose the pinch-to-zoom
+  // affordance. Dropped; form-input font-size ≥ 16px handles the iOS
+  // auto-zoom case without disabling user zoom.
 };
 
 export default function RootLayout({ children }) {

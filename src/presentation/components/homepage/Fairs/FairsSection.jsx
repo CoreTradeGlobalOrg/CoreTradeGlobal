@@ -274,6 +274,7 @@ export function FairsSection() {
           className={`scroll-arrow-btn scroll-left ${showLeftArrow ? 'visible' : ''}`}
           id="fair-left"
           onClick={() => scroll('left')}
+          aria-label="Scroll fairs left"
         >
           <ChevronLeft className="w-6 h-6" />
         </button>
@@ -281,6 +282,7 @@ export function FairsSection() {
           className={`scroll-arrow-btn scroll-right ${showRightArrow ? 'visible' : ''}`}
           id="fair-right"
           onClick={() => scroll('right')}
+          aria-label="Scroll fairs right"
         >
           <ChevronRight className="w-6 h-6" />
         </button>

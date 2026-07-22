@@ -24,6 +24,7 @@ import { useCategories } from '@/presentation/hooks/category/useCategories';
 import { useAuth } from '@/presentation/contexts/AuthContext';
 import { container } from '@/core/di/container';
 import { auth, getFunctionsInstance } from '@/core/config/firebase.config';
+import { toTitleCase } from '@/core/utils/nameCase';
 
 export function CompleteProfileForm() {
   const router = useRouter();
@@ -104,18 +105,22 @@ export function CompleteProfileForm() {
     }
     setLoading(true);
     try {
-      const displayName = `${data.firstName} ${data.lastName}`.trim();
+      // Normalize human-typed names to Title Case at save time.
+      const firstName = toTitleCase(data.firstName);
+      const lastName = toTitleCase(data.lastName);
+      const companyName = toTitleCase(data.companyName);
+      const displayName = `${firstName} ${lastName}`.trim();
       const role = COMPANY_TYPE_TO_ROLE[data.companyType] || 'member';
 
       const authRepo = container.getAuthRepository();
       await authRepo.createUserProfile(user.uid, {
         email: user.email,
         displayName,
-        firstName: data.firstName,
-        lastName: data.lastName,
+        firstName,
+        lastName,
         phone: data.phone,
         position: data.position,
-        companyName: data.companyName,
+        companyName,
         companyCategory: data.companyCategory,
         country: data.country,
         role,

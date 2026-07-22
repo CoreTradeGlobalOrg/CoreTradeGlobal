@@ -29,13 +29,6 @@ const getCountryName = (countryCode) => {
 // No default fallback companies
 const DEFAULT_COMPANIES = [];
 
-// Verified icon SVG
-const VerifiedIcon = () => (
-  <svg className="verified-badge" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z" />
-  </svg>
-);
-
 // Company logo image with loading state
 const CompanyLogoImage = memo(function CompanyLogoImage({ src, alt, fallback }) {
   const [loading, setLoading] = useState(true);
@@ -148,7 +141,6 @@ function CompanyCard({ company, isActive, style }) {
         {/* Company Info */}
         <div className="company-info">
           <div className="name-row">
-            {!isSponsored && <VerifiedIcon />}
             <h3 className="company-name">{company.name}</h3>
           </div>
           {company.category && company.category !== 'Global Trade' && (

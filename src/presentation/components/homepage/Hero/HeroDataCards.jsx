@@ -123,8 +123,6 @@ export function HeroDataCards({ fetchData, dataLoading, latestProduct, latestReq
             ref={setProductAdRef}
             onClick={trackProductAdClick}
             href={productAd.linkUrl || '#'}
-            target={/^https?:\/\//i.test(productAd.linkUrl || '') ? '_blank' : undefined}
-            rel="noopener noreferrer"
             className="hero-info-card hero-product-card hero-ad-slot-card"
             aria-label={`Sponsored: ${productAd.companyName}`}
           >
@@ -142,7 +140,7 @@ export function HeroDataCards({ fetchData, dataLoading, latestProduct, latestReq
               )}
             </div>
             <div className="card-content">
-              <h3 style={{ color: '#FFD700' }}>{productAd.badgeText || 'Featured Product'}</h3>
+              <span className="card-tag" style={{ color: '#FFD700' }}>{productAd.badgeText || 'Featured Product'}</span>
               <p className="card-product-name">{productAd.companyName}</p>
               <p className="card-specs" style={{ color: '#ffffff' }}>
                 {productAd.description}
@@ -169,7 +167,7 @@ export function HeroDataCards({ fetchData, dataLoading, latestProduct, latestReq
               +
             </div>
             <div className="card-content">
-              <h3 style={{ color: '#FFD700' }}>Spot Here</h3>
+              <span className="card-tag" style={{ color: '#FFD700' }}>Spot Here</span>
               <p className="card-product-name">Your Product Here</p>
               <p className="card-specs" style={{ color: '#ffffff' }}>
                 Front-page product spotlight
@@ -183,7 +181,7 @@ export function HeroDataCards({ fetchData, dataLoading, latestProduct, latestReq
         <Link href={fetchData && latestRequest ? `/request/${latestRequest.id}` : '/requests'} className="hero-info-card hero-rfq-card">
           <div className="card-icon">{showSkeleton ? <Shimmer width="32px" height="32px" className="rounded" /> : '📋'}</div>
           <div className="card-content">
-            <h3>{fetchData ? 'Latest RFQ' : 'RFQs'}</h3>
+            <span className="card-tag">{fetchData ? 'Latest RFQ' : 'RFQs'}</span>
             {showSkeleton ? (
               <>
                 <p className="card-product-name"><Shimmer width="75%" /></p>
@@ -245,7 +243,7 @@ export function HeroDataCards({ fetchData, dataLoading, latestProduct, latestReq
             ) : '🎪'}
           </div>
           <div className="card-content">
-            <h3>{fetchData ? 'Latest Fair' : 'Trade Fairs'}</h3>
+            <span className="card-tag">{fetchData ? 'Latest Fair' : 'Trade Fairs'}</span>
             {showSkeleton ? (
               <>
                 <p className="card-product-name"><Shimmer width="70%" /></p>
@@ -275,8 +273,6 @@ export function HeroDataCards({ fetchData, dataLoading, latestProduct, latestReq
             ref={setHeroAdRef}
             onClick={trackHeroAdClick}
             href={heroAd.linkUrl || '#'}
-            target={/^https?:\/\//i.test(heroAd.linkUrl || '') ? '_blank' : undefined}
-            rel="noopener noreferrer"
             className="hero-info-card hero-supplier-card hero-ad-slot-card"
             aria-label={`Sponsored: ${heroAd.companyName}`}
           >
@@ -294,7 +290,7 @@ export function HeroDataCards({ fetchData, dataLoading, latestProduct, latestReq
               )}
             </div>
             <div className="card-content" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-              <h3 style={{ color: '#FFD700' }}>{heroAd.badgeText || 'Sponsored'}</h3>
+              <span className="card-tag" style={{ color: '#FFD700' }}>{heroAd.badgeText || 'Sponsored'}</span>
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                 <p className="card-product-name">{heroAd.companyName}</p>
                 <p className="card-specs" style={{ color: '#ffffff' }}>
@@ -323,7 +319,7 @@ export function HeroDataCards({ fetchData, dataLoading, latestProduct, latestReq
               +
             </div>
             <div className="card-content" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-              <h3 style={{ color: '#FFD700' }}>Advertise Here</h3>
+              <span className="card-tag" style={{ color: '#FFD700' }}>Advertise Here</span>
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                 <p className="card-product-name">Your Company Here</p>
                 <p className="card-specs" style={{ color: '#ffffff' }}>

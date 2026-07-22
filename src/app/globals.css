@@ -637,7 +637,10 @@ a:hover {
   justify-content: space-between;
   align-items: center;
   font-size: 12px;
-  color: #64748b;
+  /* WCAG AA — the previous #64748b landed at ~3.2:1 against the deep
+     navy footer bg and failed the PageSpeed contrast audit. #94a3b8
+     (slate-400) clears 4.5:1 for normal text on the same bg. */
+  color: #94a3b8;
 }
 
 .footer-legal {
@@ -645,9 +648,21 @@ a:hover {
   gap: 20px;
 }
 
-.footer-legal a {
-  color: #64748b;
+.footer-legal a,
+.footer-legal button {
+  color: #94a3b8;
   text-decoration: none;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-size: inherit;
+  font-family: inherit;
+}
+
+.footer-legal a:hover,
+.footer-legal button:hover {
+  color: #FFD700;
 }
 
 /* --- MOBILE RESPONSIVENESS --- */
@@ -910,17 +925,26 @@ a:hover {
   .hero-mobile-ad-card-media {
     position: relative;
     width: 100%;
-    aspect-ratio: 5 / 2;
+    height: 72px;
+    max-height: 72px;
     border-radius: 8px;
     overflow: hidden;
     background: rgba(255, 215, 0, 0.08);
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
+  }
+  .hero-mobile-ad-card-media > img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
   }
   .hero-mobile-ad-card-plus {
     width: 100%;
-    aspect-ratio: 5 / 2;
+    height: 72px;
+    max-height: 72px;
     border-radius: 8px;
     background: linear-gradient(135deg, rgba(255,215,0,0.18), rgba(253,185,49,0.06));
     border: 1px dashed rgba(255, 215, 0, 0.55);
@@ -930,6 +954,7 @@ a:hover {
     color: #FFD700;
     font-size: 22px;
     font-weight: 800;
+    flex-shrink: 0;
   }
   .hero-mobile-ad-card-body {
     display: flex;

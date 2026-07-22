@@ -171,7 +171,7 @@ const SwipeableCard = memo(({
 
           {/* Description */}
           <p className="text-xs text-[#94a3b8] text-center leading-relaxed mb-3 px-2 line-clamp-3">
-            {truncateText(company.about, 120) || `${company.companyName} - Verified supplier from ${getCountryName(company.country)}`}
+            {truncateText(company.about, 120) || `${company.companyName} - Supplier from ${getCountryName(company.country)}`}
           </p>
         </div>
       </motion.div>
@@ -234,29 +234,20 @@ const SwipeableCard = memo(({
           {truncateText(company.about, 120) || `${company.companyName} - Verified supplier from ${getCountryName(company.country)}`}
         </p>
 
-        {/* Sponsored Badge (paid placement) or Verified Badge (organic) */}
-        {company.isSponsored ? (
+        {/* Sponsored Badge (paid placement) — only on sponsored cards.
+            Organic cards no longer render a Verified badge. */}
+        {company.isSponsored && (
           <div className="flex justify-center mb-4">
             <span className="inline-flex items-center gap-1 bg-[rgba(255,215,0,0.15)] text-[#FFD700] border border-[rgba(255,215,0,0.5)] px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider">
               ★ {company.badgeText || 'Sponsored'}
             </span>
           </div>
-        ) : (
-          company.emailVerified && company.adminApproved && (
-            <div className="flex justify-center mb-4">
-              <span className="inline-flex items-center gap-1 bg-[rgba(16,185,129,0.15)] text-[#34d399] border border-[rgba(16,185,129,0.3)] px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider">
-                ✓ Verified Company
-              </span>
-            </div>
-          )
         )}
 
         {/* CTA Button — sponsored goes to the ad's linkUrl (external allowed);
             organic goes to the company's profile. */}
         <Link
           href={company.isSponsored ? (company.linkUrl || '#') : `/profile/${company.id}`}
-          target={company.isSponsored && company.linkUrl?.startsWith('http') ? '_blank' : undefined}
-          rel={company.isSponsored && company.linkUrl?.startsWith('http') ? 'noopener noreferrer' : undefined}
           className="block w-full py-3.5 bg-[#0F1B2B] border border-[rgba(255,215,0,0.4)] text-[#FFD700] font-bold rounded-full text-center text-base shadow-[0_4px_20px_rgba(0,0,0,0.4)] hover:bg-[#1a283b] hover:border-[#FFD700] transition-all duration-200"
           onClick={(e) => e.stopPropagation()}
           onPointerDown={(e) => e.stopPropagation()}

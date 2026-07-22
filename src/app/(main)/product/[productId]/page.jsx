@@ -167,9 +167,9 @@ export default function ProductDetailPage() {
           <div className="flex flex-col gap-6">
             <div className="glass-card p-8 relative overflow-hidden">
               <div className="flex flex-col gap-4 relative z-10">
-                <div className="flex items-start justify-between gap-4">
-                  <h1 className="text-4xl font-bold text-white leading-tight">{product.name}</h1>
-                  <div className="flex items-center gap-2 flex-shrink-0">
+                <div className="flex items-start justify-between gap-3 flex-wrap">
+                  <h1 className="text-2xl sm:text-4xl font-bold text-white leading-tight min-w-0 flex-1">{product.name}</h1>
+                  <div className="flex items-center gap-2 flex-shrink-0 flex-wrap justify-end">
                     {product.createdByAdmin && currentUser?.role === 'admin' && (
                       <span className="px-3 py-1.5 text-xs uppercase tracking-wider font-bold rounded-full border bg-purple-500/10 border-purple-500/30 text-purple-400">Admin Created</span>
                     )}

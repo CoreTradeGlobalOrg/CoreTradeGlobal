@@ -17,6 +17,7 @@ import { Input } from '@/components/ui/Input';
 import { SearchableSelect } from '@/presentation/components/common/SearchableSelect/SearchableSelect';
 import { COUNTRIES } from '@/core/constants/countries';
 import { UNIT_CATEGORIES, getUnitsByCategory } from '@/core/constants/units';
+import { toTitleCase } from '@/core/utils/nameCase';
 import { useCategories } from '@/presentation/hooks/category/useCategories';
 import { useTrackEvent } from '@/presentation/hooks/analytics';
 
@@ -72,6 +73,8 @@ export function RequestForm({ request, onSubmit, onCancel, userId }) {
     try {
       const requestData = {
         ...data,
+        // Normalize RFQ title to Title Case so DB rows are consistent.
+        title: toTitleCase(data.title),
         userId,
       };
 

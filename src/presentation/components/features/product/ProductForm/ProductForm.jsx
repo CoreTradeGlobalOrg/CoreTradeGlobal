@@ -17,6 +17,7 @@ import { Input } from '@/components/ui/Input';
 import { SearchableSelect } from '@/presentation/components/common/SearchableSelect/SearchableSelect';
 import { CURRENCIES } from '@/core/constants/currencies';
 import { UNIT_CATEGORIES, getUnitsByCategory } from '@/core/constants/units';
+import { toTitleCase } from '@/core/utils/nameCase';
 import { useCategories } from '@/presentation/hooks/category/useCategories';
 
 export function ProductForm({ product, onSubmit, onCancel, userId }) {
@@ -161,6 +162,8 @@ export function ProductForm({ product, onSubmit, onCancel, userId }) {
 
       const productData = {
         ...data,
+        // Normalize product name to Title Case so DB rows are consistent.
+        name: toTitleCase(data.name),
         userId,
         // Pass remaining existing images so UseCase knows which ones to keep
         existingImages: remainingExistingImages,
