@@ -1,10 +1,10 @@
 import React from 'react';
 import Link from 'next/link';
-import { Package, Truck, Shield, Scale, BadgeCheck, Search, MessageSquare, CalendarDays, Newspaper } from 'lucide-react';
+import { Package, Truck, Shield, Ship, BadgeCheck, Search, MessageSquare, CalendarDays, Newspaper } from 'lucide-react';
 
 export const metadata = {
     title: 'About Us | CoreTradeGlobal',
-    description: 'CoreTradeGlobal — The Core of the B2B World. An end-to-end B2B trade ecosystem for exporters, importers, and international businesses.',
+    description: 'CoreTradeGlobal. The Core of the B2B World. An end-to-end B2B trade ecosystem for exporters, importers, and international businesses.',
 };
 
 const OFFERINGS = [
@@ -21,17 +21,18 @@ const OFFERINGS = [
     {
         icon: Shield,
         title: 'Insurance Support',
-        description: 'Insurance companies are automatically brought in for active trades and send relevant offers — including cargo insurance — directly through the platform.',
+        description: 'Insurance companies are automatically brought in for active trades and send relevant offers, including cargo insurance, directly through the platform.',
     },
     {
-        icon: Scale,
-        title: 'Legal Advisory',
-        description: 'Access expert legal advisors directly through the platform for export documentation, trade compliance, and contract disputes.',
+        icon: Ship,
+        title: 'Freight Estimator',
+        description: 'Get instant ocean, air, and road freight estimates between any two locations. Compare transit times and price ranges before you commit.',
+        href: '/freight-estimator',
     },
     {
         icon: BadgeCheck,
         title: 'Verified Badge',
-        description: 'Every company that joins the platform is manually reviewed by our team. Those that pass verification receive a Verified badge on their profile — guaranteeing every connection is with a real, legitimate business.',
+        description: 'Every company that joins the platform is manually reviewed by our team. Those that pass verification receive a Verified badge on their profile, guaranteeing every connection is with a real, legitimate business.',
     },
     {
         icon: Search,
@@ -41,7 +42,7 @@ const OFFERINGS = [
     {
         icon: MessageSquare,
         title: 'Secure Messaging',
-        description: 'Our encrypted communication channel supports file, photo, and document sharing — without needing to share personal contact information.',
+        description: 'Our encrypted communication channel supports file, photo, and document sharing without requiring you to share personal contact information.',
     },
     {
         icon: CalendarDays,
@@ -66,10 +67,10 @@ export default function AboutUsPage() {
                     CoreTradeGlobal
                 </h1>
                 <p className="text-xl text-[#FFD700] font-semibold mb-4">
-                    &ldquo;Core of the B2B&rdquo; — The Core of the B2B World
+                    &ldquo;Core of the B2B.&rdquo; The Core of the B2B World.
                 </p>
                 <p className="text-lg text-gray-200 max-w-[700px] leading-relaxed mb-16">
-                    CoreTradeGlobal is an end-to-end B2B trade ecosystem that brings exporters, importers, and businesses involved in international trade together on a single platform. We are not just a marketplace — we are an integrated solution that covers every step of trade: product listing, request for quotation, logistics, insurance, and legal support, all under one roof.
+                    CoreTradeGlobal is an end-to-end B2B trade ecosystem that brings exporters, importers, and businesses involved in international trade together on a single platform. We are more than a marketplace. We are an integrated solution that covers every step of trade, from product listing and request for quotation to logistics and insurance, all under one roof.
                 </p>
             </section>
 
@@ -79,7 +80,7 @@ export default function AboutUsPage() {
                     <div className="relative overflow-hidden rounded-[20px] p-10 border border-[rgba(255,255,255,0.08)] bg-gradient-to-br from-[rgba(26,28,32,0.6)] to-[rgba(15,27,43,0.8)]">
                         <h2 className="text-[28px] font-bold mb-5 relative z-10" style={{ color: '#ffffff' }}>Who We Are</h2>
                         <p className="text-base leading-[1.8] text-gray-200 relative z-10">
-                            Our motto is &ldquo;Core of the B2B.&rdquo; This is not just a slogan — it is a commitment that defines the essence of our platform. We are here to enable businesses of all sizes to participate in global trade with confidence, speed, and without intermediaries.
+                            Our motto is &ldquo;Core of the B2B.&rdquo; This is not just a slogan. It is a commitment that defines the essence of our platform. We are here to enable businesses of all sizes to participate in global trade with confidence, speed, and without intermediaries.
                         </p>
                     </div>
                 </div>
@@ -98,7 +99,7 @@ export default function AboutUsPage() {
                             Our Vision
                         </h2>
                         <p className="text-base leading-[1.8] text-gray-200 relative z-10">
-                            CoreTradeGlobal&apos;s vision is to eliminate the boundaries of trade by bringing all businesses worldwide together in a single digital core. We aim for companies of every scale to be visible, accessible, and trusted in the global market — and to become the beating heart of B2B commerce in a digitalizing world.
+                            CoreTradeGlobal&apos;s vision is to eliminate the boundaries of trade by bringing all businesses worldwide together in a single digital core. We aim for companies of every scale to be visible, accessible, and trusted in the global market, and to become the beating heart of B2B commerce in a digitalizing world.
                         </p>
                     </div>
 
@@ -111,7 +112,7 @@ export default function AboutUsPage() {
                             Our Mission
                         </h2>
                         <p className="text-base leading-[1.8] text-gray-200 relative z-10">
-                            Our mission is to provide businesses with a secure, fast, and efficient environment where they can trade with one another in the digital age. We enable companies to showcase their products, share their requests, connect with the right partners, and manage the entire process — from logistics to insurance, from legal support to communication — on a single platform.
+                            Our mission is to provide businesses with a secure, fast, and efficient environment where they can trade with one another in the digital age. We enable companies to showcase their products, share their requests, connect with the right partners, and manage the entire process on a single platform, from logistics and insurance to secure communication.
                         </p>
                     </div>
                 </div>
@@ -126,16 +127,30 @@ export default function AboutUsPage() {
                         What We Offer
                     </h2>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {OFFERINGS.map((item) => (
-                            <div
-                                key={item.title}
-                                className="relative overflow-hidden rounded-[16px] p-8 border border-[rgba(255,255,255,0.08)] bg-gradient-to-br from-[rgba(26,28,32,0.6)] to-[rgba(15,27,43,0.8)] transition-all duration-300 hover:-translate-y-1 hover:border-[rgba(255,215,0,0.3)] hover:shadow-[0_15px_40px_rgba(0,0,0,0.2)]"
-                            >
-                                <item.icon className="w-8 h-8 text-[#FFD700] mb-4" strokeWidth={1.5} />
-                                <h3 className="text-lg font-semibold text-white mb-3">{item.title}</h3>
-                                <p className="text-sm leading-[1.7] text-gray-200">{item.description}</p>
-                            </div>
-                        ))}
+                        {OFFERINGS.map((item) => {
+                            const cardClass = "relative overflow-hidden rounded-[16px] p-8 border border-[rgba(255,255,255,0.08)] bg-gradient-to-br from-[rgba(26,28,32,0.6)] to-[rgba(15,27,43,0.8)] transition-all duration-300 hover:-translate-y-1 hover:border-[rgba(255,215,0,0.3)] hover:shadow-[0_15px_40px_rgba(0,0,0,0.2)]";
+                            const inner = (
+                                <>
+                                    <item.icon className="w-8 h-8 text-[#FFD700] mb-4" strokeWidth={1.5} />
+                                    <h3 className="text-lg font-semibold text-white mb-3">{item.title}</h3>
+                                    <p className="text-sm leading-[1.7] text-gray-200">{item.description}</p>
+                                    {item.href && (
+                                        <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-[#FFD700]">
+                                            Try it →
+                                        </span>
+                                    )}
+                                </>
+                            );
+                            return item.href ? (
+                                <Link key={item.title} href={item.href} className={`${cardClass} no-underline`}>
+                                    {inner}
+                                </Link>
+                            ) : (
+                                <div key={item.title} className={cardClass}>
+                                    {inner}
+                                </div>
+                            );
+                        })}
                     </div>
                 </div>
             </section>
@@ -146,7 +161,7 @@ export default function AboutUsPage() {
                     <div className="relative overflow-hidden rounded-[20px] p-10 border border-[rgba(255,215,0,0.15)] bg-gradient-to-br from-[rgba(26,28,32,0.6)] to-[rgba(15,27,43,0.8)]">
                         <h2 className="text-[32px] font-bold mb-5 relative z-10" style={{ color: '#ffffff' }}>Why CoreTradeGlobal?</h2>
                         <p className="text-base leading-[1.8] text-gray-200 relative z-10 mb-6">
-                            International trade is full of friction — complex logistics, opaque insurance processes, legal requirements, and trust issues. CoreTradeGlobal solves all of these challenges on a single platform. You can trade without relying on intermediaries, endless email threads, or business partners whose credibility is uncertain.
+                            International trade is full of friction: complex logistics, opaque insurance processes, and trust issues. CoreTradeGlobal solves all of these challenges on a single platform. You can trade without relying on intermediaries, endless email threads, or business partners whose credibility is uncertain.
                         </p>
                         <p className="text-base leading-[1.8] text-[#FFD700] font-medium relative z-10">
                             Joining the platform does not require any payment. Create your company profile, list your products, and become part of a global trade network.
