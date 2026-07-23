@@ -9,7 +9,6 @@
 
 import { useState, useEffect, useMemo, useRef, useCallback, memo } from 'react';
 import Link from 'next/link';
-import { container } from '@/core/di/container';
 import { COUNTRIES } from '@/core/constants/countries';
 import { CountryFlag } from '@/presentation/components/common/CountryFlag/CountryFlag';
 import { useActiveAds } from '@/presentation/hooks/ads/useActiveAd';
@@ -26,8 +25,22 @@ const getCountryName = (countryCode) => {
   return countryCode;
 };
 
-// No default fallback companies
-const DEFAULT_COMPANIES = [];
+// Baseline placeholder cards that fill the carousel when there aren't
+// enough active Carousel-tier ads. Each one links to the ad inquiry
+// form so a click on an empty slot becomes a sales lead. Kept
+// identical (per product owner's spec — A1) so all four read as
+// "reserved for you" spots rather than fake brands.
+const PLACEHOLDER_COUNT = 4;
+const PLACEHOLDER_CARDS = Array.from({ length: PLACEHOLDER_COUNT }, (_, i) => ({
+  id: `placeholder-${i}`,
+  isPlaceholder: true,
+  name: 'Your Brand Here',
+  logo: '+',
+  country: '',
+  category: 'Available',
+  description: 'Book this spot to feature your company in the carousel.',
+  linkUrl: '/advertising',
+}));
 
 // Company logo image with loading state
 const CompanyLogoImage = memo(function CompanyLogoImage({ src, alt, fallback }) {
@@ -70,11 +83,15 @@ function CompanyCard({ company, isActive, style }) {
   const isLogoUrl = company.logo && (company.logo.startsWith('http') || company.logo.startsWith('/'));
 
   // Sponsored slots point at their configured linkUrl (external URL or
-  // internal path); organic cards keep the existing /profile behavior.
+  // internal path); organic cards keep the existing /profile behavior;
+  // placeholders route to the ad inquiry form.
   const isSponsored = !!company.isSponsored;
-  const href = isSponsored
-    ? (company.linkUrl || '#')
-    : (company.id ? `/profile/${company.id}` : '#');
+  const isPlaceholder = !!company.isPlaceholder;
+  const href = isPlaceholder
+    ? (company.linkUrl || '/advertising')
+    : isSponsored
+      ? (company.linkUrl || '#')
+      : (company.id ? `/profile/${company.id}` : '#');
   const isExternal = isSponsored && /^https?:\/\//i.test(company.linkUrl || '');
 
   const { setRef: setAdRef, trackClick } = useTrackAd(company.sponsoredAdId);
@@ -90,6 +107,14 @@ function CompanyCard({ company, isActive, style }) {
           '0 0 0 1px rgba(255,215,0,0.35), 0 25px 60px -12px rgba(0, 0, 0, 0.8), 0 0 30px rgba(255,215,0,0.18)',
       }
     : {};
+  // Placeholders get a dashed gold outline + subtle gold tint so they
+  // read as "book this slot" rather than an organic company card.
+  const placeholderInnerStyle = isPlaceholder
+    ? {
+        border: '2px dashed rgba(255,215,0,0.55)',
+        background: 'linear-gradient(180deg, rgba(255,215,0,0.05), rgba(15,27,43,0.85))',
+      }
+    : {};
 
   return (
     <Link
@@ -101,7 +126,7 @@ function CompanyCard({ company, isActive, style }) {
       className={`company-card ${isActive ? 'active' : ''}`}
       style={style}
     >
-      <div className="card-inner" style={{ position: 'relative', ...sponsoredInnerStyle }}>
+      <div className="card-inner" style={{ position: 'relative', ...sponsoredInnerStyle, ...placeholderInnerStyle }}>
         {isSponsored && (
           <span
             style={{
@@ -122,16 +147,40 @@ function CompanyCard({ company, isActive, style }) {
             {company.badgeText || 'Sponsored'}
           </span>
         )}
+        {isPlaceholder && (
+          <span
+            style={{
+              position: 'absolute',
+              top: 8,
+              left: 8,
+              zIndex: 4,
+              padding: '2px 8px',
+              borderRadius: 999,
+              background: 'rgba(255,215,0,0.15)',
+              color: '#FFD700',
+              border: '1px dashed rgba(255,215,0,0.55)',
+              fontSize: '9px',
+              fontWeight: 800,
+              letterSpacing: '0.06em',
+              textTransform: 'uppercase',
+            }}
+          >
+            Available
+          </span>
+        )}
         {/* Card Header */}
         <div className="card-header">
-          <div className="logo-box overflow-hidden flex items-center justify-center relative">
+          <div
+            className="logo-box overflow-hidden flex items-center justify-center relative"
+            style={isPlaceholder ? { color: '#FFD700', fontSize: '48px', fontWeight: 800 } : undefined}
+          >
             {isLogoUrl ? (
               <CompanyLogoImage src={company.logo} alt={company.name} fallback={company.name?.substring(0, 2).toUpperCase() || 'CO'} />
             ) : (
               company.logo
             )}
           </div>
-          {!isSponsored && (
+          {!isSponsored && !isPlaceholder && (
             <div className="country-flag" title={getCountryName(company.country)}>
               <CountryFlag countryCode={company.country} size={24} />
             </div>
@@ -152,9 +201,10 @@ function CompanyCard({ company, isActive, style }) {
             </p>
           )}
 
-          {/* View Profile Button - Inside Card */}
+          {/* CTA — Book This Spot on placeholders, Visit on sponsored,
+              View Profile on organic (though organic no longer renders). */}
           <button className="card-profile-btn">
-            {isSponsored ? 'Visit' : 'View Profile'}
+            {isPlaceholder ? 'Book This Spot' : isSponsored ? 'Visit' : 'View Profile'}
           </button>
         </div>
       </div>
@@ -166,15 +216,11 @@ export function ShowcaseSection() {
   const containerRef = useRef(null);
   const animationRef = useRef(null);
 
-  const [companies, setCompanies] = useState(DEFAULT_COMPANIES);
-  const [loading, setLoading] = useState(true);
-  // Sponsored slot — when a Carousel ad campaign is running, prepend
-  // a sponsored card ahead of the organic featured companies. Uses the
-  // same visual shape as the organic cards so the 3D rotation math
-  // (angleStep, index-based transform) doesn't care that it's an ad.
-  // Up to 8 carousel-tier ads can share the same week (matches the
-  // admin form's OVERLAP_CAP_BY_TYPE). Each one gets prepended as its
-  // own sponsored card in the 3D carousel below.
+  // Up to 8 Carousel-tier ads share the same week (matches the admin
+  // form's OVERLAP_CAP_BY_TYPE cap). The carousel is admin-curated
+  // only — no organic company fallback. When fewer than 4 real ads
+  // are active, the deck is topped up with "Your Brand Here"
+  // placeholders so the carousel never looks empty.
   const { ads: carouselAds } = useActiveAds(AD_TYPES.CAROUSEL, { limit: 8 });
 
   // Carousel state
@@ -190,10 +236,9 @@ export function ShowcaseSection() {
 
   const radius = 550;
   const displayCompanies = useMemo(() => {
-    if (!carouselAds || carouselAds.length === 0) return companies;
-    // Shape each ad doc to the company card contract so the render
-    // loop and 3D transform helpers don't need to branch per-card.
-    const sponsored = carouselAds.map((ad) => ({
+    // Real Carousel-tier ads mapped to the card contract used by the
+    // 3D render loop / transform helpers.
+    const sponsored = (carouselAds || []).map((ad) => ({
       id: `ad:${ad.id}`,
       sponsoredAdId: ad.id,
       isSponsored: true,
@@ -205,82 +250,17 @@ export function ShowcaseSection() {
       category: 'Sponsored',
       description: ad.description || '',
     }));
-    return [...sponsored, ...companies];
-  }, [carouselAds, companies]);
+    // Top up with identical placeholders so the deck always has at
+    // least PLACEHOLDER_COUNT (4) cards. Once real ads reach or
+    // exceed that count, placeholders drop out entirely.
+    const placeholderFill = Math.max(0, PLACEHOLDER_COUNT - sponsored.length);
+    const placeholders = PLACEHOLDER_CARDS.slice(0, placeholderFill);
+    return [...sponsored, ...placeholders];
+  }, [carouselAds]);
   const totalCards = displayCompanies.length; // Use dynamic length
   const angleStep = (2 * Math.PI) / (totalCards || 1); // Avoid division by zero
   const defaultSpeed = 0.002;
   const slowSpeed = 0.001;
-
-  // Fetch Featured Companies — mirrors the mobile card stack in
-  // CompaniesSection.jsx so users see the SAME brand set on both breakpoints.
-  // Source: owners of the newest active products (i.e. the companies whose
-  // products power the Featured Products section). Falls back to the legacy
-  // `featured == true` admin flag if there are no product owners yet, and
-  // finally to DEFAULT_COMPANIES so the carousel is never empty.
-  useEffect(() => {
-    let cancelled = false;
-
-    const mapUserToCard = (user) => ({
-      id: user.id,
-      name: user.companyName || user.displayName || 'Unknown Company',
-      logo: user.companyLogo || user.photoURL || (user.companyName ? user.companyName.substring(0, 2).toUpperCase() : 'CO'),
-      country: user.country || '',
-      category: user.industry || '',
-      description: user.about || '',
-    });
-
-    const fetchFeaturedCompanies = async () => {
-      try {
-        const firestoreDS = container.getFirestoreDataSource();
-
-        // 1. Pull the same newest-first product pool that FeaturedProducts
-        //    renders, then extract distinct owner userIds (up to 10).
-        const fetchedProducts = await firestoreDS.query('products', {
-          orderBy: [['createdAt', 'desc']],
-          limit: 35,
-        });
-        const activeProducts = (fetchedProducts || []).filter(p => p.status === 'active');
-        const seen = new Set();
-        const ownerIds = [];
-        for (const p of activeProducts) {
-          if (p.userId && !seen.has(p.userId)) {
-            seen.add(p.userId);
-            ownerIds.push(p.userId);
-            if (ownerIds.length >= 10) break;
-          }
-        }
-
-        if (ownerIds.length > 0) {
-          const owners = await Promise.all(
-            ownerIds.map(id => firestoreDS.getById('users', id).catch(() => null))
-          );
-          const valid = owners.filter(u => u && u.companyName && !u.isSuspended);
-          if (!cancelled && valid.length > 0) {
-            setCompanies(valid.map(mapUserToCard));
-            return;
-          }
-        }
-
-        // 2. Fallback — legacy admin `featured == true` flag.
-        const featuredUsers = await firestoreDS.query('users', {
-          where: [['featured', '==', true]],
-          limit: 10,
-        });
-        if (!cancelled && featuredUsers && featuredUsers.length > 0) {
-          setCompanies(featuredUsers.map(mapUserToCard));
-        }
-      } catch (error) {
-        console.error('Error fetching featured companies:', error);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    };
-
-    fetchFeaturedCompanies();
-
-    return () => { cancelled = true; };
-  }, []);
 
   // Calculate card style based on rotation
   const getCardStyle = useCallback((index) => {
@@ -395,10 +375,8 @@ export function ShowcaseSection() {
     currentSpeedRef.current = slowSpeed;
   };
 
-  // Hide section if no featured companies
-  if (!loading && companies.length === 0) {
-    return null;
-  }
+  // Section is never empty — placeholders fill in when there aren't
+  // enough Carousel ads (guaranteed >= PLACEHOLDER_COUNT cards).
 
   return (
     <section className="showcase-section" id="showcase-section">
