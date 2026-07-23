@@ -132,9 +132,12 @@ function ProfileContent() {
           highlightFields={incompleteFields}
         />
 
-        {/* Profile completion card — own profile only, hides at 100% */}
+        {/* Profile completion card — own profile only, hides at 100%.
+            Persistent so the X collapses (doesn't dismiss for session)
+            and prior dismissals from the floating layout copy are
+            ignored here. */}
         {page.isOwnProfile && currentUser && (
-          <ProfileCompletionCard user={currentUser} />
+          <ProfileCompletionCard user={currentUser} persistent />
         )}
 
         {/* Connected accounts — own profile only */}

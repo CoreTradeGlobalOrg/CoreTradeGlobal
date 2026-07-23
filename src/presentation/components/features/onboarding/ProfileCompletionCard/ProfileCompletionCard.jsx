@@ -17,6 +17,12 @@
  * Props:
  *   user {object} — user object from AuthContext (only .uid is required here;
  *                   real-time field values come from the Firestore snapshot)
+ *   persistent {boolean} — when true (used by the inline copy on the
+ *                          profile page), the X button collapses instead
+ *                          of dismissing, and prior sessionStorage
+ *                          dismissals are ignored. The floating instance
+ *                          in the layout still uses the default
+ *                          dismissable behavior.
  */
 
 'use client';
@@ -43,7 +49,7 @@ const COMPLETION_FIELDS = [
   { key: 'companyDocuments', label: 'Company documents', focus: 'companyDocuments' },
 ];
 
-export function ProfileCompletionCard({ user }) {
+export function ProfileCompletionCard({ user, persistent = false }) {
   const [dismissed, setDismissed] = useState(false);
   const [hydrated, setHydrated] = useState(false);
   // Collapsed state — dropdown-style, header stays visible so the
@@ -57,12 +63,17 @@ export function ProfileCompletionCard({ user }) {
   // keeps the checklist ticking in real time.
   const [liveUser, setLiveUser] = useState(null);
 
-  // Read sessionStorage after mount to avoid SSR hydration mismatch
+  // Read storage after mount to avoid SSR hydration mismatch.
+  // Persistent mode (profile-page inline copy) skips the dismiss
+  // check entirely — the card is always visible there, only its
+  // collapsed state is remembered.
   useEffect(() => {
     if (user?.uid) {
-      const dismissKey = `profileCardDismissed_${user.uid}`;
-      if (sessionStorage.getItem(dismissKey) === '1') {
-        setDismissed(true);
+      if (!persistent) {
+        const dismissKey = `profileCardDismissed_${user.uid}`;
+        if (sessionStorage.getItem(dismissKey) === '1') {
+          setDismissed(true);
+        }
       }
       const collapseKey = `profileCardCollapsed_${user.uid}`;
       if (localStorage.getItem(collapseKey) === '1') {
@@ -70,7 +81,7 @@ export function ProfileCompletionCard({ user }) {
       }
     }
     setHydrated(true);
-  }, [user?.uid]);
+  }, [user?.uid, persistent]);
 
   const toggleCollapsed = () => {
     setCollapsed((prev) => {
@@ -134,6 +145,14 @@ export function ProfileCompletionCard({ user }) {
   if (percent === 100) return null;
 
   const handleDismiss = () => {
+    // In persistent mode (profile page inline copy) the X becomes a
+    // "collapse" shortcut instead of a session-wide close, because the
+    // profile page is exactly where the user should stay aware of the
+    // remaining fields.
+    if (persistent) {
+      if (!collapsed) toggleCollapsed();
+      return;
+    }
     if (user?.uid) {
       sessionStorage.setItem(`profileCardDismissed_${user.uid}`, '1');
     }
