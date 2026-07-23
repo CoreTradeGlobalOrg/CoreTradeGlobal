@@ -32,7 +32,7 @@ export default function AdvertisingPage() {
 
 function Advertising() {
   return (
-    <section id="advertising" className="px-5 pt-2 pb-6 md:pt-4 md:pb-10 scroll-mt-[calc(var(--navbar-height)+16px)]">
+    <section id="promote" className="px-5 pt-2 pb-6 md:pt-4 md:pb-10 scroll-mt-[calc(var(--navbar-height)+16px)]">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-8">
           <h2 className="text-3xl md:text-4xl font-extrabold mb-2 tracking-tight">Grow Your Brand Globally</h2>
