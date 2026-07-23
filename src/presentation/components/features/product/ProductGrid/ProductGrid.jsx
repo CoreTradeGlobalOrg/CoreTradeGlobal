@@ -245,21 +245,15 @@ export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter, cou
     }, [products, searchQuery, categoryFilter, categoryIdFilter, countryFilter]);
 
     // Numbered pagination (client-side over the filtered set).
-    // When a Featured Product ad renders on page 1 it consumes one tile,
-    // so page 1 shows PAGE_SIZE-1 organic products. Subsequent pages
-    // shift their slice window by that missing product so nothing is
-    // skipped or duplicated.
-    const showSponsoredOnFirstPage = !!featuredAd;
-    const firstPageOrganicCount = showSponsoredOnFirstPage ? PAGE_SIZE - 1 : PAGE_SIZE;
-    const remainingProducts = Math.max(0, filteredProducts.length - firstPageOrganicCount);
-    const extraPages = Math.ceil(remainingProducts / PAGE_SIZE);
-    const totalPages = Math.max(1, 1 + extraPages);
+    // The Sponsored Product ad renders on EVERY page as the first
+    // tile, so every page reserves one slot for it and shows
+    // PAGE_SIZE-1 organic products. Total tiles per page stays at
+    // PAGE_SIZE regardless of which page you're on.
+    const perPageOrganic = featuredAd ? PAGE_SIZE - 1 : PAGE_SIZE;
+    const totalPages = Math.max(1, Math.ceil(filteredProducts.length / perPageOrganic));
     const safePage = Math.min(currentPage, totalPages);
-    const pageStart = safePage === 1
-        ? 0
-        : firstPageOrganicCount + (safePage - 2) * PAGE_SIZE;
-    const pageLength = safePage === 1 ? firstPageOrganicCount : PAGE_SIZE;
-    const pageProducts = filteredProducts.slice(pageStart, pageStart + pageLength);
+    const pageStart = (safePage - 1) * perPageOrganic;
+    const pageProducts = filteredProducts.slice(pageStart, pageStart + perPageOrganic);
 
     const goToPage = useCallback((page) => {
         const clamped = Math.min(Math.max(1, page), totalPages);
@@ -403,7 +397,7 @@ export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter, cou
         <>
             <div ref={gridTopRef} className="scroll-mt-28" />
             <div className={`grid ${gridColsClass} gap-6`}>
-                {featuredAd && safePage === 1 && (
+                {featuredAd && (
                     <SponsoredProductCard ad={featuredAd} />
                 )}
                 {pageProducts.map((product) => (
