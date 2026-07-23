@@ -393,6 +393,7 @@ export function FeaturedProducts() {
               className={`scroll-arrow-btn scroll-left ${showLeftArrow ? 'visible' : ''}`}
               id="dash-left"
               onClick={() => scroll('left')}
+              aria-label="Scroll products left"
             >
               <ChevronLeft className="w-6 h-6" />
             </button>
@@ -400,6 +401,7 @@ export function FeaturedProducts() {
               className={`scroll-arrow-btn scroll-right ${showRightArrow ? 'visible' : ''}`}
               id="dash-right"
               onClick={() => scroll('right')}
+              aria-label="Scroll products right"
             >
               <ChevronRight className="w-6 h-6" />
             </button>

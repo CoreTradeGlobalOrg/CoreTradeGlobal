@@ -12,7 +12,7 @@ import Link from 'next/link';
 import { container } from '@/core/di/container';
 import { COUNTRIES } from '@/core/constants/countries';
 import { CountryFlag } from '@/presentation/components/common/CountryFlag/CountryFlag';
-import { useActiveAd } from '@/presentation/hooks/ads/useActiveAd';
+import { useActiveAds } from '@/presentation/hooks/ads/useActiveAd';
 import { useTrackAd } from '@/presentation/hooks/ads/useTrackAd';
 import { AD_TYPES } from '@/core/constants/adTypes';
 
@@ -28,13 +28,6 @@ const getCountryName = (countryCode) => {
 
 // No default fallback companies
 const DEFAULT_COMPANIES = [];
-
-// Verified icon SVG
-const VerifiedIcon = () => (
-  <svg className="verified-badge" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z" />
-  </svg>
-);
 
 // Company logo image with loading state
 const CompanyLogoImage = memo(function CompanyLogoImage({ src, alt, fallback }) {
@@ -148,7 +141,6 @@ function CompanyCard({ company, isActive, style }) {
         {/* Company Info */}
         <div className="company-info">
           <div className="name-row">
-            {!isSponsored && <VerifiedIcon />}
             <h3 className="company-name">{company.name}</h3>
           </div>
           {company.category && company.category !== 'Global Trade' && (
@@ -180,7 +172,10 @@ export function ShowcaseSection() {
   // a sponsored card ahead of the organic featured companies. Uses the
   // same visual shape as the organic cards so the 3D rotation math
   // (angleStep, index-based transform) doesn't care that it's an ad.
-  const { ad: carouselAd } = useActiveAd(AD_TYPES.CAROUSEL);
+  // Up to 8 carousel-tier ads can share the same week (matches the
+  // admin form's OVERLAP_CAP_BY_TYPE). Each one gets prepended as its
+  // own sponsored card in the 3D carousel below.
+  const { ads: carouselAds } = useActiveAds(AD_TYPES.CAROUSEL, { limit: 8 });
 
   // Carousel state
   const [currentRotation, setCurrentRotation] = useState(0);
@@ -195,23 +190,23 @@ export function ShowcaseSection() {
 
   const radius = 550;
   const displayCompanies = useMemo(() => {
-    if (!carouselAd) return companies;
-    // Shape the ad doc to the company card contract so the render loop
-    // and 3D transform helpers don't need to branch.
-    const sponsored = {
-      id: `ad:${carouselAd.id}`,
-      sponsoredAdId: carouselAd.id,
+    if (!carouselAds || carouselAds.length === 0) return companies;
+    // Shape each ad doc to the company card contract so the render
+    // loop and 3D transform helpers don't need to branch per-card.
+    const sponsored = carouselAds.map((ad) => ({
+      id: `ad:${ad.id}`,
+      sponsoredAdId: ad.id,
       isSponsored: true,
-      badgeText: carouselAd.badgeText || 'Sponsored',
-      linkUrl: carouselAd.linkUrl || null,
-      name: carouselAd.companyName || 'Sponsored',
-      logo: carouselAd.companyLogo || (carouselAd.companyName || 'AD').substring(0, 2).toUpperCase(),
+      badgeText: ad.badgeText || 'Sponsored',
+      linkUrl: ad.linkUrl || null,
+      name: ad.companyName || 'Sponsored',
+      logo: ad.companyLogo || (ad.companyName || 'AD').substring(0, 2).toUpperCase(),
       country: '',
       category: 'Sponsored',
-      description: carouselAd.description || '',
-    };
-    return [sponsored, ...companies];
-  }, [carouselAd, companies]);
+      description: ad.description || '',
+    }));
+    return [...sponsored, ...companies];
+  }, [carouselAds, companies]);
   const totalCards = displayCompanies.length; // Use dynamic length
   const angleStep = (2 * Math.PI) / (totalCards || 1); // Avoid division by zero
   const defaultSpeed = 0.002;

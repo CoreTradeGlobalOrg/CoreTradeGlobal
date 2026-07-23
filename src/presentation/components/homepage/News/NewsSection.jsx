@@ -213,6 +213,7 @@ export function NewsSection() {
             className={`scroll-arrow-btn scroll-left ${showLeftArrow ? 'visible' : ''}`}
             id="dash-left-news"
             onClick={() => scroll('left')}
+            aria-label="Scroll news left"
           >
             <ChevronLeft className="w-6 h-6" />
           </button>
@@ -220,6 +221,7 @@ export function NewsSection() {
             className={`scroll-arrow-btn scroll-right ${showRightArrow ? 'visible' : ''}`}
             id="dash-right-news"
             onClick={() => scroll('right')}
+            aria-label="Scroll news right"
           >
             <ChevronRight className="w-6 h-6" />
           </button>

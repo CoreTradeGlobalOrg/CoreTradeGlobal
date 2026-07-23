@@ -29,7 +29,7 @@ import { addDoc, collection, query, where, getDocs, serverTimestamp } from 'fire
 import { ArrowRight, ChevronLeft, Send, Loader2, Check } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { db } from '@/core/config/firebase.config';
-import { AD_PACKAGES as PACKAGES, TYPE_TO_PACKAGE, CAMPAIGN_WEEKS, AD_TYPES } from '@/core/constants/adTypes';
+import { AD_PACKAGES as PACKAGES, TYPE_TO_PACKAGE, CAMPAIGN_WEEKS, AD_TYPES, AD_DURATIONS, computeMonthlyDiscount } from '@/core/constants/adTypes';
 import { useAuth } from '@/presentation/contexts/AuthContext';
 
 const RATE_LIMIT_KEY = 'ad_inquiry_last_submit_at';
@@ -59,6 +59,7 @@ function InquirePageInner() {
   const searchParams = useSearchParams();
   const { user } = useAuth();
   const initialPackage = TYPE_TO_PACKAGE[searchParams.get('type')] || PACKAGES[0].value;
+  const initialDuration = AD_DURATIONS.find((d) => d.id === searchParams.get('duration'))?.id || 'weekly';
   const months = useMemo(() => computeMonths(), []);
 
   const [company, setCompany] = useState('');
@@ -66,6 +67,7 @@ function InquirePageInner() {
   const [contactName, setContactName] = useState('');
   const [email, setEmail] = useState('');
   const [pkg, setPkg] = useState(initialPackage);
+  const [duration, setDuration] = useState(initialDuration);
   const [campaignMonth, setCampaignMonth] = useState(months[0]);
   const [campaignWeek, setCampaignWeek] = useState(CAMPAIGN_WEEKS[0]);
   const [brief, setBrief] = useState('');
@@ -213,6 +215,7 @@ function InquirePageInner() {
         contactName: contactName.trim(),
         email: email.trim().toLowerCase(),
         package: pkg,
+        duration, // 'weekly' | 'monthly'
         campaignMonth,
         campaignWeek,
         brief: brief.trim(),
@@ -267,7 +270,7 @@ function InquirePageInner() {
         </div>
 
         {/* Price banner reflecting the currently-selected package */}
-        <PriceBanner pkg={pkg} />
+        <PriceBanner pkg={pkg} duration={duration} onDurationChange={setDuration} />
 
 
         <form
@@ -546,20 +549,61 @@ function InquirePageInner() {
   );
 }
 
-function PriceBanner({ pkg }) {
+function PriceBanner({ pkg, duration, onDurationChange }) {
   const meta = PACKAGES.find((p) => p.value === pkg);
   if (!meta) return null;
+  const isMonthly = duration === 'monthly';
+  const weekly = meta.weekly ?? 0;
+  const monthly = meta.monthly ?? 0;
+  const price = isMonthly ? monthly : weekly;
+  const unit = isMonthly ? '/month' : '/week';
+  const discount = computeMonthlyDiscount(weekly, monthly);
   return (
-    <div className="mb-6 rounded-2xl border border-[rgba(255,215,0,0.3)] bg-gradient-to-br from-[rgba(255,215,0,0.08)] to-[rgba(253,185,49,0.03)] px-5 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-      <div>
-        <p className="text-xs uppercase tracking-wider text-[#FFD700] font-semibold mb-1">Selected placement</p>
-        <p className="text-white font-bold text-base">{meta.short}</p>
+    <div className="mb-6 rounded-2xl border border-[rgba(255,215,0,0.3)] bg-gradient-to-br from-[rgba(255,215,0,0.08)] to-[rgba(253,185,49,0.03)] px-5 py-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <p className="text-xs uppercase tracking-wider text-[#FFD700] font-semibold mb-1">Selected placement</p>
+          <p className="text-white font-bold text-base">{meta.short}</p>
+        </div>
+        <div className="flex items-baseline gap-1">
+          <span className="text-3xl md:text-4xl font-extrabold bg-gradient-to-br from-[#FFD700] to-[#FDB931] bg-clip-text text-transparent">
+            ${price}
+          </span>
+          <span className="text-[#A0A0A0] text-sm font-semibold">{unit}</span>
+          {isMonthly && discount > 0 && (
+            <span className="ml-2 inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-[#0F1B2B] bg-gradient-to-r from-[#FFD700] to-[#FDB931] px-2 py-1 rounded-full shadow-[0_4px_12px_rgba(255,215,0,0.35)]">
+              Save {discount}%
+            </span>
+          )}
+        </div>
       </div>
-      <div className="flex items-baseline gap-1">
-        <span className="text-3xl md:text-4xl font-extrabold bg-gradient-to-br from-[#FFD700] to-[#FDB931] bg-clip-text text-transparent">
-          ${meta.price}
+
+      {/* Weekly / Monthly toggle */}
+      <div className="mt-4 flex items-center gap-2 flex-wrap">
+        <span className="text-xs uppercase tracking-wider text-[#A0A0A0] font-semibold">
+          Duration
         </span>
-        <span className="text-[#A0A0A0] text-sm font-semibold">{meta.unit}</span>
+        <div className="inline-flex items-center gap-1 p-1 rounded-full bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)]">
+          {AD_DURATIONS.map((opt) => {
+            const active = duration === opt.id;
+            return (
+              <button
+                key={opt.id}
+                type="button"
+                onClick={() => onDurationChange(opt.id)}
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
+                  active
+                    ? 'bg-gradient-to-r from-[#FFD700] to-[#FDB931]'
+                    : 'text-[#c8d3e0] hover:text-white'
+                }`}
+                style={active ? { color: '#0F1B2B', WebkitTextFillColor: '#0F1B2B' } : undefined}
+                aria-pressed={active}
+              >
+                {opt.label}
+              </button>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

@@ -40,18 +40,9 @@ const cancelIdle = (id) => {
   }
 };
 
-// Daily slogans - changes based on day of week
-const DAILY_SLOGANS = {
-  0: "Global Trade, Simplified: Navigate the Complex Markets with Ease.",
-  1: "The Global Hub of Trust: Trade Exclusively with Verified Suppliers.",
-  2: "Scale Beyond Borders: Expand Your Business to Every Global Market.",
-  3: "Trading at the Speed of Light: Get Instant Quotes for Your RFQs.",
-  4: "The Intersection of Global Trade: Connecting Buyers and Sellers with Transparency.",
-  5: "The Operating System for Trade: A Future-Ready, Data-Driven B2B Experience.",
-  6: "Unlock New Opportunities: Find Your Next Strategic Partner Today.",
-};
-
-const getDailySlogan = () => DAILY_SLOGANS[new Date().getDay()];
+// Single evergreen hero headline. Replaced the day-of-week rotator
+// so the top of the funnel says one clear thing every visit.
+const HERO_HEADLINE = 'Trade Globally. Completely Free.';
 
 export function HeroSection({ fetchData = false }) {
   const { user, isAuthenticated, loading } = useAuth();
@@ -171,7 +162,7 @@ export function HeroSection({ fetchData = false }) {
         {/* Hero Overlay with Slogan and Search */}
         <div className="hero-overlay">
           <div className="slogan-container">
-            <h1 className="hero-slogan">{getDailySlogan()}</h1>
+            <h1 className="hero-slogan">{HERO_HEADLINE}</h1>
             <HeroSearchBar
               isMobile={isMobile}
               searchType={searchType}

@@ -7,11 +7,12 @@
 
 'use client';
 
-import { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
 import { container } from '@/core/di/container';
 import { useAuth } from '@/presentation/contexts/AuthContext';
 import { Conversation } from '@/domain/entities/Conversation';
 import { Message } from '@/domain/entities/Message';
+import { readNotificationSoundEnabled } from '@/presentation/hooks/settings/useNotificationSound';
 
 const MessagesContext = createContext(null);
 
@@ -70,16 +71,55 @@ export function MessagesProvider({ children }) {
     return () => unsubscribe();
   }, [isAuthenticated, user?.uid]);
 
+  // Notification chime — plays a short mp3 whenever the unread count
+  // goes UP (i.e. a brand-new notification arrived while the tab is
+  // open). Guarded so it never fires on the initial snapshot or on
+  // reads that only shrink the count (marking-as-read).
+  const audioRef = useRef(null);
+  const lastUnreadCountRef = useRef(null);
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const audio = new Audio('/sounds/notification.mp3');
+    audio.preload = 'auto';
+    audio.volume = 0.6;
+    audioRef.current = audio;
+    return () => {
+      audioRef.current = null;
+    };
+  }, []);
+
   // Subscribe to user's notifications
   useEffect(() => {
     if (!isAuthenticated || !user?.uid) {
       setNotifications([]);
+      lastUnreadCountRef.current = null;
       return;
     }
 
     const unsubscribe = notificationRepository.subscribeToUserNotifications(
       user.uid,
       (docs) => {
+        const nextUnread = docs.filter((n) => !n.isRead).length;
+        const prevUnread = lastUnreadCountRef.current;
+        // Skip the very first snapshot (initial load) so we don't chime
+        // for every unread notification the user hasn't opened yet.
+        // After that, only chime when the unread count strictly grew.
+        if (
+          prevUnread !== null &&
+          nextUnread > prevUnread &&
+          readNotificationSoundEnabled() &&
+          audioRef.current
+        ) {
+          try {
+            audioRef.current.currentTime = 0;
+            audioRef.current.play().catch(() => {
+              // Autoplay policy or missing user gesture — silent fail.
+            });
+          } catch {
+            // Some browsers throw synchronously; ignore.
+          }
+        }
+        lastUnreadCountRef.current = nextUnread;
         setNotifications(docs);
       },
       (err) => {

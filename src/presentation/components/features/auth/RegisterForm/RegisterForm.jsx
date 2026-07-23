@@ -24,6 +24,7 @@ import { useCategories } from '@/presentation/hooks/category/useCategories';
 import { useTrackEvent } from '@/presentation/hooks/analytics';
 import { auth, getFunctionsInstance } from '@/core/config/firebase.config';
 import { COMPANY_TYPE_TO_ROLE } from '@/core/constants/companyTypes';
+import { toTitleCase } from '@/core/utils/nameCase';
 import { RegisterFormFields } from './RegisterFormFields';
 import { SocialAuthButtons } from '@/presentation/components/features/auth/SocialAuthButtons/SocialAuthButtons';
 
@@ -122,7 +123,12 @@ export function RegisterForm() {
     }
 
     try {
-      const displayName = `${data.firstName} ${data.lastName}`.trim();
+      // Normalize human-typed names to Title Case at save time so
+      // DB rows are consistent regardless of how the user typed them.
+      const firstName = toTitleCase(data.firstName);
+      const lastName = toTitleCase(data.lastName);
+      const companyName = toTitleCase(data.companyName);
+      const displayName = `${firstName} ${lastName}`.trim();
       const role = COMPANY_TYPE_TO_ROLE[data.companyType] || 'member';
 
       const registerData = {
@@ -130,9 +136,9 @@ export function RegisterForm() {
         password: data.password,
         confirmPassword: data.confirmPassword,
         displayName,
-        companyName: data.companyName,
-        firstName: data.firstName,
-        lastName: data.lastName,
+        companyName,
+        firstName,
+        lastName,
         phone: data.phone,
         position: data.position,
         companyCategory: data.companyCategory,

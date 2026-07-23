@@ -50,6 +50,17 @@ const DEFAULT_STATUS_BY_DATE = (startMs, endMs) => {
   return AD_STATUSES.ACTIVE;
 };
 
+// How many ads can share the same week per ad type. Each of the three
+// single-slot placements (hero product, hero company, products directory)
+// is capped at 1. The 3D Featured Companies carousel rotates through
+// many cards, so up to 8 sponsored slots per week is allowed there.
+const OVERLAP_CAP_BY_TYPE = {
+  [AD_TYPES.FEATURED]: 1,
+  [AD_TYPES.HERO]: 1,
+  [AD_TYPES.SPONSORED_PRODUCT]: 1,
+  [AD_TYPES.CAROUSEL]: 8,
+};
+
 function normalizeUrl(raw) {
   const trimmed = (raw || '').trim();
   if (!trimmed) return '';
@@ -157,8 +168,9 @@ export function AdCampaignForm({
 
     setSubmitting(true);
     try {
-      // Overlap check — ensure no other active/scheduled ad of the same
-      // type covers any part of this new week.
+      // Overlap check — respect the per-type cap. Single-slot placements
+      // block on the first collision; the Carousel type allows up to 8
+      // sponsored cards per week (see OVERLAP_CAP_BY_TYPE).
       const conflictQuery = query(
         collection(db, 'ads'),
         where('type', '==', type),
@@ -167,7 +179,7 @@ export function AdCampaignForm({
       const conflictSnap = await getDocs(conflictQuery);
       const newStart = dates.startDate.getTime();
       const newEnd = dates.endDate.getTime();
-      const overlap = conflictSnap.docs.find((d) => {
+      const overlapping = conflictSnap.docs.filter((d) => {
         if (isEdit && d.id === editing.id) return false;
         const data = d.data();
         if (!data.startDate?.toDate || !data.endDate?.toDate) return false;
@@ -175,12 +187,20 @@ export function AdCampaignForm({
         const otherEnd = data.endDate.toDate().getTime();
         return otherStart <= newEnd && otherEnd >= newStart;
       });
-      if (overlap) {
-        const c = overlap.data();
-        toast.error(
-          `This week is already booked by "${c.companyName}" (${c.campaignMonth} · ${c.campaignWeek}).`,
-          { duration: 6000 }
-        );
+      const cap = OVERLAP_CAP_BY_TYPE[type] ?? 1;
+      if (overlapping.length >= cap) {
+        if (cap === 1) {
+          const c = overlapping[0].data();
+          toast.error(
+            `This week is already booked by "${c.companyName}" (${c.campaignMonth} · ${c.campaignWeek}).`,
+            { duration: 6000 }
+          );
+        } else {
+          toast.error(
+            `This week already has ${overlapping.length} of ${cap} slots booked for this ad type. Pick a different week or pause/expire an existing one.`,
+            { duration: 6000 }
+          );
+        }
         setSubmitting(false);
         return;
       }

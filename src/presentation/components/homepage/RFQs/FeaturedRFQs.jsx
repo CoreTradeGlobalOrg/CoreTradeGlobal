@@ -289,6 +289,7 @@ export function FeaturedRFQs() {
               className={`scroll-arrow-btn scroll-left ${showLeftArrow ? 'visible' : ''}`}
               id="dash-left-rfq"
               onClick={() => scroll('left')}
+              aria-label="Scroll RFQs left"
             >
               <ChevronLeft className="w-6 h-6" />
             </button>
@@ -296,6 +297,7 @@ export function FeaturedRFQs() {
               className={`scroll-arrow-btn scroll-right ${showRightArrow ? 'visible' : ''}`}
               id="dash-right-rfq"
               onClick={() => scroll('right')}
+              aria-label="Scroll RFQs right"
             >
               <ChevronRight className="w-6 h-6" />
             </button>

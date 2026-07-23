@@ -11,6 +11,7 @@ const { onSchedule } = require('firebase-functions/v2/scheduler');
 const admin = require('firebase-admin');
 const { Timestamp, FieldValue } = require('firebase-admin/firestore');
 const { Resend } = require('resend');
+const { toTitleCase } = require('./utils/nameCase');
 
 // Initialize Firebase Admin SDK
 admin.initializeApp();
@@ -6330,7 +6331,9 @@ exports.bulkUploadProducts = onCall(
         const productId = productRef.id;
 
         await productRef.set({
-          name: row.name,
+          // Normalize product name to Title Case so CSV rows go into
+          // the DB in the same shape as products created via the form.
+          name: toTitleCase(row.name),
           categoryId: row.categoryId,
           price: row.price,
           currency: row.currency,
@@ -6656,4 +6659,5 @@ exports.trackAdClick = onCall(async (request) => {
   }
   return { counted: true };
 });
+
 

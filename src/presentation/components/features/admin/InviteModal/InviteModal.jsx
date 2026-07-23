@@ -16,6 +16,7 @@ import { z } from 'zod';
 import { X, UserPlus, Loader2 } from 'lucide-react';
 import { useInviteUser } from '@/presentation/hooks/admin/useInviteUser';
 import { VALID_INVITE_ROLES, ROLE_DISPLAY_NAMES } from '@/core/constants/roles';
+import { toTitleCase } from '@/core/utils/nameCase';
 
 const inviteSchema = z.object({
   email: z.string().min(1, 'Email is required').email('Please enter a valid email address'),
@@ -61,7 +62,14 @@ export function InviteModal({ isOpen, onClose, onSuccess }) {
 
   const onSubmit = async (data) => {
     try {
-      await inviteUser(data);
+      // Normalize the invitee's name + company to Title Case before
+      // the doc is created so back-office data is consistent.
+      const normalized = {
+        ...data,
+        name: toTitleCase(data.name),
+        company: toTitleCase(data.company),
+      };
+      await inviteUser(normalized);
       reset();
       onClose();
       if (onSuccess) onSuccess();

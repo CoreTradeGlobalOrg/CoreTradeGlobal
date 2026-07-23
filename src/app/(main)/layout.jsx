@@ -90,8 +90,10 @@ export default function MainLayout({ children }) {
         <TourHelpButton onLaunch={() => setShowTourManual(true)} />
       )}
 
-      {/* Profile completion card — fixed top-right, visible on all pages */}
-      {!loading && user && (
+      {/* Profile completion card — fixed top-right on every route
+          EXCEPT /profile/*, where the profile page renders its own
+          inline persistent copy. Prevents the duplicate widget. */}
+      {!loading && user && !pathname?.startsWith('/profile') && (
         <div className="hidden lg:block fixed top-[110px] right-4 z-[999] w-[320px]">
           <ProfileCompletionCard user={user} />
         </div>

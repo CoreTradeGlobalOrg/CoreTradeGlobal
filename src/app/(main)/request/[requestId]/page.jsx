@@ -302,7 +302,7 @@ export default function RequestDetailsPage() {
                     </div>
                   )}
                   <div>
-                    <p className="font-bold text-white hover:text-[#3B82F6] transition-colors">{author?.companyName || 'Verified Buyer'}</p>
+                    <p className="font-bold text-white hover:text-[#3B82F6] transition-colors">{author?.companyName || 'Buyer'}</p>
                     <p className="text-xs text-[#A0A0A0] flex items-center gap-1 mt-1">
                       <CountryFlag countryCode={countryCode} size={14} />
                       {countryName}
@@ -314,18 +314,6 @@ export default function RequestDetailsPage() {
                   <div className="flex justify-between text-sm">
                     <span className="text-[#A0A0A0]">Member Since</span>
                     <span className="text-white">{getMemberYear(author?.createdAt)}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-[#A0A0A0]">Verified Status</span>
-                    {author?.emailVerified && author?.adminApproved ? (
-                      <span className="text-[#34d399] font-medium flex items-center gap-1">
-                        <span className="w-2 h-2 rounded-full bg-[#34d399]"></span> Verified
-                      </span>
-                    ) : (
-                      <span className="text-[#A0A0A0] font-medium flex items-center gap-1">
-                        <span className="w-2 h-2 rounded-full bg-[#A0A0A0]"></span> Unverified
-                      </span>
-                    )}
                   </div>
                 </div>
 
