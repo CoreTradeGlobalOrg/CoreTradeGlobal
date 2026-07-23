@@ -162,11 +162,15 @@ export default function JoinPage() {
 
       {/* ── Hero Section ── */}
       <section className="px-5 pb-6 flex flex-col items-center text-center">
-        <h1 className="text-4xl md:text-[56px] font-extrabold leading-[1.1] tracking-[-2px] max-w-[800px] mb-4 text-white">
-          The Global{' '}
-          <span className="bg-gradient-to-br from-[#FFD700] to-[#FDB931] bg-clip-text text-transparent">
-            B2B Trade Ecosystem
-          </span>
+        <h1
+          className="text-4xl md:text-[56px] font-extrabold leading-[1.1] tracking-[-2px] max-w-[800px] mb-4"
+          style={{
+            background: 'linear-gradient(180deg, #ffffff 20%, #909090 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+          }}
+        >
+          The Global B2B Trade Ecosystem
         </h1>
         <p className="text-lg text-[#A0A0A0] max-w-[600px] mb-10">
           Connecting importers and exporters with integrated logistics and transit insurance.
