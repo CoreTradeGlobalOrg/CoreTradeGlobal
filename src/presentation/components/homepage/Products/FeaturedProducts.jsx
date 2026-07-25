@@ -139,8 +139,22 @@ const CURRENCY_SYMBOLS = {
   'ZAR': 'R'
 };
 
+// Products created on/after this cutoff bypass Vercel's image
+// optimizer (unoptimized prop). Older products keep going through the
+// optimizer so their existing cache entries stay in use. Set to just
+// before the first upload that started hitting the monthly image
+// optimization quota. Change or remove this line to revert.
+const UNOPTIMIZED_AFTER = new Date('2026-07-25T00:00:00Z');
+
+function isUnoptimizedProduct(product) {
+  const raw = product?.createdAt;
+  if (!raw) return false;
+  const d = raw?.toDate ? raw.toDate() : new Date(raw);
+  return d instanceof Date && !isNaN(d) && d >= UNOPTIMIZED_AFTER;
+}
+
 // Image component with loading state
-const ProductCardImage = memo(function ProductCardImage({ src, alt }) {
+const ProductCardImage = memo(function ProductCardImage({ src, alt, unoptimized = false }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
@@ -161,6 +175,7 @@ const ProductCardImage = memo(function ProductCardImage({ src, alt }) {
         src={src}
         alt={alt}
         fill
+        unoptimized={unoptimized}
         // Lighthouse flagged these product card images as ~123 KiB
         // oversize (served 384px wide against actual displayed widths
         // of 98–254px). Tighten the sizes hint so Next/image picks the
@@ -193,7 +208,7 @@ export function ProductCard({ product, categories, isFavorited, onToggleFavorite
     <Link href={`/product/${product.id}`} className="product-card block no-underline text-inherit hover:no-underline">
       {/* Product Image */}
       <div className="product-card-image relative">
-        <ProductCardImage src={imageUrl} alt={product.name} />
+        <ProductCardImage src={imageUrl} alt={product.name} unoptimized={isUnoptimizedProduct(product)} />
         {onToggleFavorite && (
           <button
             onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleFavorite(product.id); }}
