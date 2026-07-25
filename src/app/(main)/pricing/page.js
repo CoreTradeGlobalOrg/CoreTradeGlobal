@@ -69,7 +69,7 @@ function Hero() {
           </span>
         </h1>
         <p className="text-lg md:text-xl text-[#c8d3e0] max-w-3xl mx-auto mb-6 leading-relaxed">
-          Say goodbye to thousands of dollars in membership fees, locked B2B directories, and transaction commissions. CoreTradeGlobal lets exporters, importers, and global brands connect, message, list products, and trade directly — completely free.
+          Say goodbye to thousands of dollars in membership fees, locked B2B directories, and transaction commissions. CoreTradeGlobal lets exporters, importers, and global brands connect, message, list products, and trade directly, completely free.
         </p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
           <Link
@@ -99,7 +99,7 @@ function Comparison() {
       <div className="max-w-5xl mx-auto">
         <div className="text-center mb-6">
           <h2 className="text-3xl md:text-4xl font-extrabold mb-2 tracking-tight">Why pay to showcase your business?</h2>
-          <p className="text-[#c8d3e0] text-base md:text-lg">CoreTradeGlobal vs Traditional B2B platforms — side by side.</p>
+          <p className="text-[#c8d3e0] text-base md:text-lg">CoreTradeGlobal vs Traditional B2B platforms, side by side.</p>
         </div>
         <div className="rounded-2xl overflow-hidden border border-[rgba(255,255,255,0.08)] bg-gradient-to-br from-[rgba(26,40,59,0.85)] to-[rgba(15,27,43,0.95)] shadow-[0_25px_50px_rgba(0,0,0,0.3)]">
           <div className="grid grid-cols-1 sm:grid-cols-[1.4fr_1fr_1fr] text-sm md:text-base">

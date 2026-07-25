@@ -179,7 +179,7 @@ function InquirePageInner() {
       if (raw) {
         const last = Number(raw);
         if (Number.isFinite(last) && Date.now() - last < RATE_LIMIT_WINDOW_MS) {
-          toast.error('You just submitted an inquiry — please wait a minute before trying again.');
+          toast.error('You just submitted an inquiry. Please wait a minute before trying again.');
           return;
         }
       }
@@ -380,7 +380,7 @@ function InquirePageInner() {
               {!user ? (
                 <div className="rounded-xl border border-dashed border-[rgba(255,215,0,0.35)] bg-[rgba(255,215,0,0.04)] px-4 py-3 text-sm text-[#c8d3e0]">
                   <Link href="/login" className="text-[#FFD700] underline">Sign in</Link>{' '}
-                  to pick a product from your catalog — otherwise our team will help pick the creative after you submit.
+                  to pick a product from your catalog. Otherwise our team will help pick the creative after you submit.
                 </div>
               ) : productsLoading ? (
                 <div className="rounded-xl border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.03)] px-4 py-3 text-sm text-[#A0A0A0] flex items-center gap-2">
@@ -388,7 +388,7 @@ function InquirePageInner() {
                 </div>
               ) : myProducts.length === 0 ? (
                 <div className="rounded-xl border border-dashed border-[rgba(255,255,255,0.15)] bg-[rgba(255,255,255,0.03)] px-4 py-3 text-sm text-[#c8d3e0]">
-                  You don&apos;t have any active products yet. You can still submit and our team will help you choose the creative later — or{' '}
+                  You don&apos;t have any active products yet. You can still submit and our team will help you choose the creative later, or{' '}
                   <Link href="/product/new" className="text-[#FFD700] underline">add a product</Link> first.
                 </div>
               ) : (
