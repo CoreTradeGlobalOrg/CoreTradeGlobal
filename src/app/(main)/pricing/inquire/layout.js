@@ -11,7 +11,7 @@
 const CANONICAL_URL = 'https://www.coretradeglobal.com/pricing/inquire';
 
 export const metadata = {
-  title: 'Advertising Placement Inquiry — CoreTradeGlobal',
+  title: 'Advertising Placement Inquiry | CoreTradeGlobal',
   description:
     'Reach a qualified global B2B audience with Featured Products, Hero Spotlight, or Carousel Brand placements. Tell us about your campaign and our team will follow up within 1 business day.',
   alternates: { canonical: CANONICAL_URL },
@@ -20,7 +20,7 @@ export const metadata = {
     type: 'website',
     locale: 'en_US',
     url: CANONICAL_URL,
-    title: 'Advertising Placement Inquiry — CoreTradeGlobal',
+    title: 'Advertising Placement Inquiry | CoreTradeGlobal',
     description:
       'Reach a qualified global B2B audience with Featured Products, Hero Spotlight, or Carousel Brand placements.',
     siteName: 'CoreTradeGlobal',
