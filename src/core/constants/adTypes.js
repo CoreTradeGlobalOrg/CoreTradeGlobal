@@ -74,7 +74,7 @@ export const AD_TIERS = [
       { id: AD_TYPES.FEATURED, label: 'Hero Product Ad (left card)' },
       { id: AD_TYPES.HERO, label: 'Hero Company Ad (right card)' },
     ],
-    desc: 'Prime homepage placement — every visitor sees your brand or product before scrolling. Choose the product slot, the company slot, or book both.',
+    desc: 'Prime homepage placement. Every visitor sees your brand or product before scrolling. Choose the product slot, the company slot, or book both.',
     features: [
       'Front-page homepage hero placement',
       'Choice of Product card (left) or Company card (right)',
@@ -94,7 +94,7 @@ export const AD_TIERS = [
     monthlyPrice: 99,
     priceUnit: '',
     typeOptions: [
-      { id: AD_TYPES.SPONSORED_PRODUCT, label: 'Sponsored Product Ad — /products top slot' },
+      { id: AD_TYPES.SPONSORED_PRODUCT, label: 'Sponsored Product Ad (/products top slot)' },
     ],
     desc: 'Top-of-directory placement in front of buyers actively browsing the products catalogue.',
     features: [
@@ -115,9 +115,9 @@ export const AD_TIERS = [
     monthlyPrice: 59,
     priceUnit: '/slot',
     typeOptions: [
-      { id: AD_TYPES.CAROUSEL, label: 'Carousel Company Ad — Featured Companies rotator' },
+      { id: AD_TYPES.CAROUSEL, label: 'Carousel Company Ad (Featured Companies rotator)' },
     ],
-    desc: 'Interactive horizontal brand showcase on the homepage — great for brand awareness campaigns. Up to 8 sponsored cards rotate through every week.',
+    desc: 'Interactive horizontal brand showcase on the homepage, great for brand awareness campaigns. Up to 8 sponsored cards rotate through every week.',
     features: [
       '2,000–3,000 direct B2B importers & exporters weekly',
       'Shown to active traders across 30+ countries',

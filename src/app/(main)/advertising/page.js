@@ -113,7 +113,7 @@ function FeaturedMockup() {
           <span className="text-[10px] font-bold uppercase tracking-wider text-white">
             Homepage Hero
           </span>
-          <span className="text-[9px] text-[#A0A0A0]">— top-left card</span>
+          <span className="text-[9px] text-[#A0A0A0]">(top-left card)</span>
         </div>
         <div className="rounded-lg overflow-hidden border-2 border-[#FFD700]/70 bg-[rgba(15,27,43,0.85)]">
           <div className="bg-[#FFD700] px-1.5 py-1 text-center">
@@ -143,7 +143,7 @@ function FeaturedMockup() {
           <span className="text-[10px] font-bold uppercase tracking-wider text-white">
             Products Directory
           </span>
-          <span className="text-[9px] text-[#A0A0A0]">— first spot</span>
+          <span className="text-[9px] text-[#A0A0A0]">(first spot)</span>
         </div>
         <div className="rounded-lg border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] p-2">
           <div className="flex items-center justify-between mb-2">
@@ -191,7 +191,7 @@ function FeaturedMockup() {
       </div>
 
       <p className="text-[9px] text-[#A0A0A0] leading-relaxed text-center pt-1">
-        One booking — two on-site placements. Same product card shape on both surfaces.
+        One booking, two on-site placements. Same product card shape on both surfaces.
       </p>
     </div>
   );
