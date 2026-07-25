@@ -11,7 +11,7 @@ const CANONICAL_URL = 'https://www.coretradeglobal.com/advertising';
 export const metadata = {
   title: 'Advertising & Sponsorship Options | CoreTradeGlobal',
   description:
-    'Reach qualified B2B buyers with Featured Product, Hero Section, Carousel Brand, and Featured Company placements — flat weekly rates, no commissions.',
+    'Reach qualified B2B buyers with Featured Product, Hero Section, Carousel Brand, and Featured Company placements. Flat weekly rates, no commissions.',
   alternates: { canonical: CANONICAL_URL },
   openGraph: {
     type: 'website',
