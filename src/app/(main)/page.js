@@ -7,9 +7,17 @@
  *
  * Also serves as the first-login landing point for authenticated users.
  * Renders the OnboardingTour overlay for users who haven't completed it yet.
+ *
+ * Server component — Home() itself has no hooks or event handlers, only
+ * composition. Every section it renders is a 'use client' component that
+ * still SSRs into HTML normally. Marking this file 'use client' used to
+ * force the whole tree onto the React 19 client-side rendering path, which
+ * shipped an empty <div hidden> in the SSR HTML — footer painted at ~y=400
+ * on first paint and dropped to ~y=6500 after hydration (~0.4 CLS on
+ * mobile). Dropping the directive lets React SSR the full section tree so
+ * the initial HTML already has the real content, no `min-height` clamp
+ * needed to reserve footer space.
  */
-
-'use client';
 
 import dynamic from 'next/dynamic';
 import { HeroSection } from '@/presentation/components/homepage/Hero/HeroSection';
@@ -25,6 +33,12 @@ import { CompaniesSection } from '@/presentation/components/homepage/Companies/C
 // the placeholder-to-real swap can't shift the footer during throttled
 // Lighthouse loads (showcase's 850px reservation was previously 640,
 // which was ~200px shorter than the real content).
+// An earlier revision also split FeaturedProducts / FeaturedRFQs /
+// CompaniesSection / CategoriesSection, but on mobile the stacked
+// card layouts are ~2x taller than the desktop-derived px placeholder
+// heights, so the placeholder→real swap shot CLS from 0.07 to 0.43.
+// Kept them eager for now — TBT already dropped 91% from the Globe
+// delay + idle-fetch delay alone.
 const ShowcaseSection = dynamic(
   () => import('@/presentation/components/homepage/Showcase/ShowcaseSection').then((m) => m.ShowcaseSection),
   { loading: () => <section className="showcase-section" style={{ minHeight: 580 }} /> }

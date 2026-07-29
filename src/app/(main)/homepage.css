@@ -2823,21 +2823,33 @@ html {
         padding: 5px 0 !important;
     }
 
-    /* CLS reservations (min-height ranges 540–850px) are tuned for
-       DESKTOP content height. On mobile the content is 1–2 cards tall,
-       so those reservations leave 300–500px of dead space above each
-       following section heading. Kill them on mobile — the mobile
-       card-stack layout is short enough that a shift, if any, is
-       within the viewport. */
-    .featured-products-section,
+    /* Mobile section reservations. Products / RFQs / Categories /
+       Fairs / News all render real content on SSR (either DEFAULT_*
+       fallbacks or dynamic() ssr:true), so their natural mobile
+       heights are already reserved without a clamp — Lighthouse
+       measured them shift-free once min-height was removed.
+
+       CompaniesSection is the exception: it starts with
+       `isMobile === null` and returns just a heading section (~40 px)
+       on the server, then swaps to the real MobileCompanyCardStack
+       (~626 px) once useEffect resolves isMobile on the client. That
+       ~500 px growth used to land as a ~0.40 CLS shift on the
+       <footer>. The .featured-products-section--pending modifier
+       clamps just that initial placeholder so the reserved space
+       matches the eventual card-stack height. */
+    .featured-products-section:not(.featured-products-section--pending),
     .featured-rfqs-section,
     .showcase-section + .featured-products-section,
-    .fair-section,
-    .news-section,
     .showcase-section,
-    .hp-section,
-    .fairs-wrapper {
+    .categories-section,
+    .fair-section,
+    .fairs-wrapper,
+    .news-section,
+    .hp-section {
         min-height: 0 !important;
+    }
+    .featured-products-section.featured-products-section--pending {
+        min-height: 640px !important;
     }
 
     .mobile-card-stack-container {

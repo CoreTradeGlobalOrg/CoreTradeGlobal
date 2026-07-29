@@ -8,21 +8,20 @@
  * Performance: auth & db are eager (needed immediately).
  * storage & functions are lazy-loaded on first use via getter functions.
  *
- * NOTE on analytics: an earlier revision tried to lazy-load
- * firebase/analytics via require() (mirroring the storage / functions
- * pattern). Firebase v12 is ESM-only and the require() interop
- * returned an object shape that Firebase's own analytics internals
- * chokes on ("TypeError: e is not a function" in the SDK's own
- * dispatch code). Reverted to static import. Dynamic import()
- * remains a future avenue — the callsites in AnalyticsContext are all
- * fire-and-forget and would tolerate an async logEvent — but that
- * needs a proper preview shakeout before shipping again.
+ * NOTE on analytics: lazy-loaded via dynamic import(). An earlier
+ * revision tried require() (mirroring the storage / functions
+ * pattern) and hit an ESM interop bug — Firebase v12 is ESM-only
+ * and the require() interop returned an object shape that Firebase's
+ * own analytics internals choked on ("TypeError: e is not a function"
+ * in the SDK's own dispatch code). Dynamic import() preserves the ESM
+ * namespace and works. The callsites in AnalyticsContext are all
+ * fire-and-forget so the async cost is invisible; the win is ~100 KiB
+ * of firebase/analytics code that no longer lands in the root bundle.
  */
 
 import { initializeApp, getApps } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
-import { getAnalytics, isSupported, logEvent, setUserId, setUserProperties } from 'firebase/analytics';
 
 // Firebase configuration from environment variables
 const firebaseConfig = {
@@ -95,21 +94,34 @@ export function getFunctionsInstance() {
 }
 
 /**
- * Firebase Analytics
+ * Firebase Analytics (lazy)
  *
- * Analytics is only initialized client-side when supported.
- * Use initializeAnalytics() to get the analytics instance.
+ * Analytics is only initialized client-side after consent and only if the
+ * environment supports it. The firebase/analytics module (~100 KiB) is
+ * pulled in via dynamic import() so it never sits on the root bundle's
+ * critical path. logAnalyticsEvent / setAnalyticsUserId /
+ * setAnalyticsUserProperties are async wrappers that no-op silently until
+ * initializeAnalytics() has resolved — callsites are all fire-and-forget.
  */
 let analyticsInstance = null;
+let analyticsModulePromise = null;
+
+const loadAnalyticsModule = () => {
+  if (!analyticsModulePromise) {
+    analyticsModulePromise = import('firebase/analytics');
+  }
+  return analyticsModulePromise;
+};
 
 export const initializeAnalytics = async () => {
   if (typeof window === 'undefined') return null;
 
   if (analyticsInstance) return analyticsInstance;
 
-  const supported = await isSupported();
+  const mod = await loadAnalyticsModule();
+  const supported = await mod.isSupported();
   if (supported) {
-    analyticsInstance = getAnalytics(app);
+    analyticsInstance = mod.getAnalytics(app);
   }
 
   return analyticsInstance;
@@ -117,7 +129,27 @@ export const initializeAnalytics = async () => {
 
 export const getAnalyticsInstance = () => analyticsInstance;
 
-export { logEvent, setUserId, setUserProperties };
+// Async fire-and-forget wrappers. If the analytics module hasn't finished
+// loading yet (or consent was never granted), the call is dropped rather
+// than queued — the event stream is best-effort telemetry, not a business
+// contract, so we don't burn memory buffering pre-consent events.
+export const logAnalyticsEvent = async (analytics, eventName, params) => {
+  if (!analytics) return;
+  const mod = await loadAnalyticsModule();
+  mod.logEvent(analytics, eventName, params);
+};
+
+export const setAnalyticsUserId = async (analytics, userId) => {
+  if (!analytics) return;
+  const mod = await loadAnalyticsModule();
+  mod.setUserId(analytics, userId);
+};
+
+export const setAnalyticsUserProperties = async (analytics, properties) => {
+  if (!analytics) return;
+  const mod = await loadAnalyticsModule();
+  mod.setUserProperties(analytics, properties);
+};
 
 /**
  * Export the app instance for advanced usage

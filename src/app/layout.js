@@ -143,14 +143,29 @@ export default function RootLayout({ children }) {
           body{display:flex;flex-direction:column;min-height:100vh}
           body>*{flex-shrink:0}
           .footer-section{margin-top:auto}
-          /* Homepage reservation — React 19 streams (main)/page via a
-             BAILOUT_TO_CLIENT_SIDE_RENDERING placeholder that ships an
-             empty <div hidden> in the SSR HTML; without this clamp the
-             footer paints at ~y=396 during hydration and only settles
-             at ~y=4600 once the client tree renders (~0.4 CLS). Value =
-             hero 780 + products 740 + rfqs 540 + showcase 580 +
-             companies 460 + categories 240 + fairs 585 + news 620 =
-             4545, rounded up to 4600 with a thin buffer. */
+          /* Tagline: matches homepage.css mobile rule. Duplicated
+             inline so the tagline is hidden from first paint even
+             before the ~30 KiB homepage.css chunk arrives — Lighthouse
+             was seeing a 15 px hero shift when the stylesheet landed
+             late and the tagline collapsed on mobile. */
+          @media (max-width:768px){.tagline-section{display:none}}
+          /* Homepage reservation — historically (main)/page was a
+             'use client' component, which forced React 19 to ship an
+             empty <div hidden> BAILOUT_TO_CLIENT_SIDE_RENDERING
+             placeholder in the SSR HTML. Without this clamp the footer
+             painted at ~y=396 on first paint and only settled once the
+             client tree hydrated (~0.4 CLS on mobile). Value = hero 780
+             + products 740 + rfqs 540 + showcase 580 + companies 460 +
+             categories 240 + fairs 585 + news 620 = 4545, rounded to
+             4600 with a thin buffer.
+
+             (main)/page is now a server component, so the initial HTML
+             contains the real section tree and no reservation is
+             needed — but the clamp is kept as belt-and-braces in case
+             any child forces a client bailout in the future. Mobile is
+             set to 0 because the real content is taller than any fixed
+             clamp we'd pick, and any over-reserve produces a visible
+             blank strip at the bottom of the page. */
           .main-content-reservation{min-height:4600px}
           @media (max-width:1024px){.main-content-reservation{min-height:4000px}}
           @media (max-width:600px){.main-content-reservation{min-height:0}}
