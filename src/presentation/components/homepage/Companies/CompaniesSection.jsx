@@ -336,10 +336,19 @@ export function CompaniesSection() {
     }
   };
 
-  // Wait for mobile detection
+  // Wait for mobile detection.
+  // Inline min-height reserves the space the final card-stack (mobile,
+  // ~626 px) or the desktop grid (~740 px via the CSS class) will need
+  // once isMobile resolves post-hydration. Without this, SSR shipped
+  // just the heading (~40 px) and the client re-render pushed the
+  // footer down ~500 px — Lighthouse attributed that as ~0.40 CLS to
+  // the <footer> element. Value split so the pixel-perfect reservation
+  // is applied on each viewport class separately: mobile clamp matches
+  // MobileCompanyCardStack's ~640 px working height; desktop already
+  // gets 740 px from the base .featured-products-section rule.
   if (isMobile === null) {
     return (
-      <section className="featured-products-section">
+      <section className="featured-products-section featured-products-section--pending">
         <div className="featured-products-container">
           <div className="featured-products-header">
             <div>
@@ -396,30 +405,37 @@ export function CompaniesSection() {
     }
 
     if (cardStackCompanies.length === 0) {
-      if (loading) {
-        return (
-          <section className="featured-products-section">
-            <div className="mobile-card-stack-container">
-              <div className="section-header" style={{ marginTop: 0, marginBottom: '1.5rem' }}>
-                <h2 className="section-title">Featured Companies</h2>
-                <Link
-                  href="/advertising"
-                  className="link-hero-blue"
-                  style={{ justifyContent: 'center', marginTop: '10px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-                >
-                  Want to see your company here? View Advertising Options <span className="arrow-icon">›</span>
-                </Link>
-              </div>
+      // Both loading and empty-final states keep the section mounted
+      // with the --pending clamp so the reserved 640 px doesn't
+      // collapse and shove the footer up when the async company
+      // fetch resolves. Empty-final (no loading, no data) renders
+      // just the header; the CSS clamp handles the vertical space.
+      // Skipping the return-null branch removed the ~0.045 CLS shift
+      // that Lighthouse attributed to featured-products-section when
+      // the section vanished mid-hydration on throttled mobile.
+      return (
+        <section className="featured-products-section featured-products-section--pending">
+          <div className="mobile-card-stack-container">
+            <div className="section-header" style={{ marginTop: 0, marginBottom: '1.5rem' }}>
+              <h2 className="section-title">Featured Companies</h2>
+              <Link
+                href="/advertising"
+                className="link-hero-blue"
+                style={{ justifyContent: 'center', marginTop: '10px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+              >
+                Want to see your company here? View Advertising Options <span className="arrow-icon">›</span>
+              </Link>
+            </div>
+            {loading && (
               <div className="relative w-full h-[420px] flex items-center justify-center">
                 <div className="w-[90%] h-[380px] bg-[rgba(255,255,255,0.03)] rounded-2xl border border-[rgba(255,215,0,0.2)] animate-pulse flex items-center justify-center">
                   <div className="text-[#64748b]">Loading...</div>
                 </div>
               </div>
-            </div>
-          </section>
-        );
-      }
-      return null;
+            )}
+          </div>
+        </section>
+      );
     }
 
     return (

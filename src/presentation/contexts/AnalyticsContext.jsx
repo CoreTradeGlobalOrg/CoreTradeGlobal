@@ -11,9 +11,9 @@ import { createContext, useContext, useEffect, useState, useCallback, useRef } f
 import {
   initializeAnalytics,
   getAnalyticsInstance,
-  logEvent,
-  setUserId,
-  setUserProperties,
+  logAnalyticsEvent,
+  setAnalyticsUserId as setAnalyticsUserIdLazy,
+  setAnalyticsUserProperties as setAnalyticsUserPropertiesLazy,
 } from '@/core/config/firebase.config';
 
 const COOKIE_CONSENT_KEY = 'cookie_consent';
@@ -80,7 +80,7 @@ export function AnalyticsProvider({ children }) {
     if (pageStartTime.current && currentPage.current) {
       const timeOnPage = Math.round((Date.now() - pageStartTime.current) / 1000);
       if (timeOnPage > 0 && timeOnPage < 3600) {
-        logEvent(analytics, 'time_on_page', {
+        logAnalyticsEvent(analytics, 'time_on_page', {
           page_path: currentPage.current,
           time_seconds: timeOnPage,
         });
@@ -88,7 +88,7 @@ export function AnalyticsProvider({ children }) {
     }
 
     // Track new page view
-    logEvent(analytics, 'page_view', {
+    logAnalyticsEvent(analytics, 'page_view', {
       page_path: pagePath,
       page_title: pageTitle || document.title,
     });
@@ -105,7 +105,7 @@ export function AnalyticsProvider({ children }) {
     const analytics = getAnalyticsInstance();
     if (!analytics) return;
 
-    logEvent(analytics, eventName, params);
+    logAnalyticsEvent(analytics, eventName, params);
   }, [isEnabled]);
 
   // Track time on page (for manual calls)
@@ -115,7 +115,7 @@ export function AnalyticsProvider({ children }) {
     const analytics = getAnalyticsInstance();
     if (!analytics) return;
 
-    logEvent(analytics, 'time_on_page', {
+    logAnalyticsEvent(analytics, 'time_on_page', {
       page_path: pagePath,
       time_seconds: timeSeconds,
     });
@@ -129,7 +129,7 @@ export function AnalyticsProvider({ children }) {
     if (!analytics) return;
 
     if (userId) {
-      setUserId(analytics, userId);
+      setAnalyticsUserIdLazy(analytics, userId);
     }
   }, [isEnabled]);
 
@@ -140,7 +140,7 @@ export function AnalyticsProvider({ children }) {
     const analytics = getAnalyticsInstance();
     if (!analytics) return;
 
-    setUserProperties(analytics, properties);
+    setAnalyticsUserPropertiesLazy(analytics, properties);
   }, [isEnabled]);
 
   // Track time when user leaves page
@@ -153,7 +153,7 @@ export function AnalyticsProvider({ children }) {
         if (timeOnPage > 0 && timeOnPage < 3600) {
           const analytics = getAnalyticsInstance();
           if (analytics) {
-            logEvent(analytics, 'time_on_page', {
+            logAnalyticsEvent(analytics, 'time_on_page', {
               page_path: currentPage.current,
               time_seconds: timeOnPage,
             });
