@@ -114,10 +114,27 @@ export default function RootLayout({ children }) {
             requests; a crossOrigin='anonymous' preconnect creates a
             different connection than the credentialed one that ends up
             handling the real request, which is why Lighthouse marked
-            the earlier version as "unused preconnect". */}
-        <link rel="preconnect" href="https://firebase.googleapis.com" />
-        <link rel="preconnect" href="https://firestore.googleapis.com" />
+            the earlier version as "unused preconnect".
+
+            Preconnect is expensive (TLS + TCP + DNS) — Google recommends
+            ≤ 4. So we split by criticality: origins on the LCP path get
+            preconnect, origins needed later (Firebase auth GAPI, app
+            check installations) get the much cheaper dns-prefetch.
+
+            Removed: firebase.googleapis.com — Lighthouse flagged it as
+            an unused preconnect on the homepage (the SDK reaches the
+            Google servers via other origins first).
+
+            Added: core-trade-global.firebaseapp.com — hosts the Firebase
+            Auth iframe (__/auth/iframe.js), which Lighthouse's network
+            dependency tree currently pins as the 1.76 s critical-path
+            leaf. Preconnecting shaves ~310 ms per Lighthouse's estimate.
+            No crossOrigin because the iframe fetch is credentialed. */}
         <link rel="preconnect" href="https://firebasestorage.googleapis.com" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://firestore.googleapis.com" />
+        <link rel="preconnect" href="https://core-trade-global.firebaseapp.com" />
+        <link rel="dns-prefetch" href="https://apis.google.com" />
+        <link rel="dns-prefetch" href="https://www.googleapis.com" />
         <link rel="dns-prefetch" href="https://firebaseinstallations.googleapis.com" />
         {/* Clarity's tag script fetches from scripts.clarity.ms after
             the tag is injected. Lighthouse flagged ~160 ms LCP savings

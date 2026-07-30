@@ -8,6 +8,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, useRef, useCallback, memo } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { COUNTRIES } from '@/core/constants/countries';
 import { CountryFlag } from '@/presentation/components/common/CountryFlag/CountryFlag';
@@ -61,12 +62,16 @@ const CompanyLogoImage = memo(function CompanyLogoImage({ src, alt, fallback }) 
           <div className="w-5 h-5 border-2 border-[#FFD700] border-t-transparent rounded-full animate-spin"></div>
         </div>
       )}
-      <img
+      <Image
         src={src}
         alt={alt}
-        width={320}
-        height={400}
-        className={`w-full h-full object-cover transition-opacity duration-200 ${loading ? 'opacity-0' : 'opacity-100'}`}
+        fill
+        // Showcase carousel cards are ~320 px on desktop and shrink to
+        // ~260 px on tablet / mobile. sizes hint keeps Next/image on
+        // the 256 or 384 variant instead of the ~640 default the
+        // fallback picks when sizes is missing.
+        sizes="(max-width: 768px) 260px, 320px"
+        className={`object-cover transition-opacity duration-200 ${loading ? 'opacity-0' : 'opacity-100'}`}
         onLoad={() => setLoading(false)}
         onError={() => { setLoading(false); setError(true); }}
       />

@@ -176,13 +176,18 @@ const ProductCardImage = memo(function ProductCardImage({ src, alt, unoptimized 
         alt={alt}
         fill
         unoptimized={unoptimized}
-        // Lighthouse flagged these product card images as ~123 KiB
-        // oversize (served 384px wide against actual displayed widths
-        // of 98–254px). Tighten the sizes hint so Next/image picks the
-        // next size DOWN — desktop lands on ~256px served for the
-        // largest 254px cell instead of 384px. Mobile / tablet slots
-        // are proportionally smaller than the old 50vw / 25vw claimed.
-        sizes="(max-width: 768px) 45vw, (max-width: 1200px) 22vw, 200px"
+        // Sizes hint mirrors the real grid in homepage.css #products:
+        // <640 px: flex 0 0 100% (single-column, full row)
+        // 640-900 px: flex 0 0 calc(50% - 12px)
+        // 900-1200 px: flex 0 0 calc(33.333% - 16px)
+        // >1200 px: flex 0 0 calc(25% - 18px), min-width 280 px
+        // The prior "45vw / 22vw / 200px" understated mobile (real card
+        // is 100vw, not 45vw) and Lighthouse still served the 1024 px
+        // variant because next.config's default imageSizes rounded a
+        // ~185 px hint up to 384 while the DPR-2 branch grabbed 1024.
+        // With the tighter deviceSizes/imageSizes matrix in next.config
+        // this now lands on 512 for the mobile 100vw case.
+        sizes="(max-width: 639px) 100vw, (max-width: 900px) 50vw, (max-width: 1200px) 33vw, 300px"
         className={`object-cover transition-opacity duration-300 ${loading ? 'opacity-0' : 'opacity-100'}`}
         onLoad={() => setLoading(false)}
         onError={() => { setLoading(false); setError(true); }}

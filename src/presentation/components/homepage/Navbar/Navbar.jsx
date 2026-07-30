@@ -421,6 +421,13 @@ export function Navbar() {
               height={109}
               className="nav-logo-img"
               priority
+              // sizes pins the srcset selection to the intrinsic 200 px
+              // width. Without it Next.js still generates a DPR-aware
+              // srcset from the fixed width, but Lighthouse was picking
+              // the 400 px 2x variant for a nav slot that displays at
+              // ~154 px CSS width — the 200 px hint pushes it to the
+              // next-smaller variant (200 or 256) instead of 384/400.
+              sizes="200px"
             />
           </Link>
         </div>

@@ -173,7 +173,17 @@ export function HeroSection({ fetchData = false }) {
 
       {/* Hero Section */}
       <section id="hero-section">
-        <HeroGlobe mounted={canMountGlobe} globeLoaded={globeLoaded} onGlobeReady={handleGlobeReady} />
+        {/* Mobile drops the Globe entirely: three.js + @react-three/fiber
+            + drei add up to ~913 KiB unminified (~280 KiB gzip) and their
+            parse/eval on a 4x-throttled mobile CPU costs ~1.5-2 s of TBT
+            plus WebGL context ~30-50 MB RAM — the LCP element is
+            h1.hero-slogan (text), so the Globe never earned that cost on
+            mobile. `mounted={false}` blocks the dynamic() call inside
+            HeroGlobe, so the three chunks are never fetched at all.
+            #canvas-container's mobile CSS reserves 320 px, so removing
+            the Globe leaves a same-size empty slot and CLS stays at 0.
+            Desktop path is unchanged. */}
+        <HeroGlobe mounted={canMountGlobe && !isMobile} globeLoaded={globeLoaded} onGlobeReady={handleGlobeReady} />
 
         {/* Hero Overlay with Slogan and Search */}
         <div className="hero-overlay">

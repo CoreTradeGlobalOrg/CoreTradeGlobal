@@ -1,10 +1,15 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Route user-uploaded avatars, company logos, and product images through
-  // Next.js's image optimizer so the browser only downloads what fits the
-  // display size in a modern format (AVIF/WebP). Firebase Storage otherwise
-  // serves the native asset — company logos have arrived at 1500x1500 for a
-  // 50x50 avatar slot.
+  // Inline the critical (above-the-fold) subset of every route's CSS into
+  // the HTML `<head>` at build time via Critters, and defer the rest with
+  // a `media="print" onload="this.media='all'"` swap. PageSpeed flagged 6
+  // render-blocking stylesheets (~50 KiB, ~670 ms savings) on the
+  // homepage; the largest was homepage.css (~30 KiB) sitting on the LCP
+  // critical path. `fonts: false` leaves the Inter setup in layout.js
+  // (display: 'optional', preload: false) untouched.
+  experimental: {
+    optimizeCss: true,
+  },
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: 'firebasestorage.googleapis.com' },
@@ -12,6 +17,18 @@ const nextConfig = {
       { protocol: 'https', hostname: 'lh3.googleusercontent.com' },
       { protocol: 'https', hostname: 'media.licdn.com' },
     ],
+    // Tighter breakpoints closer to the actual card sizes we render.
+    // Defaults are deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048,
+    // 3840] and imageSizes: [16, 32, 48, 64, 96, 128, 256, 384]. That
+    // matrix left big gaps in the small-thumbnail range: a 200 px card
+    // rounded up to 384, and a 500 px mobile hero rounded up to 828.
+    // Adds 360 (min mobile viewport), 80/200/512 (common thumbnail /
+    // hero widths) and drops 2048/3840 (nothing on our pages renders at
+    // 2K+ except a rare desktop hero — no need to keep 2 extra AVIF
+    // variants around per image). Lighthouse flagged ~668 KiB of
+    // image-oversize on the homepage against this exact gap.
+    deviceSizes: [360, 640, 828, 1080, 1200, 1920],
+    imageSizes: [16, 32, 48, 64, 80, 96, 128, 200, 256, 384, 512],
     formats: ['image/avif', 'image/webp'],
   },
   // Security headers

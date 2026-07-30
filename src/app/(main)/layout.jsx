@@ -5,14 +5,53 @@ import { usePathname, useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { Navbar } from '@/presentation/components/homepage/Navbar/Navbar';
 import { Footer } from '@/presentation/components/homepage/Footer/Footer';
-import { MessagesWidget } from '@/presentation/components/common/MessagesWidget/MessagesWidget';
-import { NotificationPrompt } from '@/presentation/components/common/NotificationPrompt/NotificationPrompt';
-import { NotificationListener } from '@/presentation/components/common/NotificationListener/NotificationListener';
-import { CookieConsent } from '@/presentation/components/common/CookieConsent/CookieConsent';
 import { ScrollToTop } from '@/presentation/components/common/ScrollToTop/ScrollToTop';
 import { ErrorBoundary } from '@/presentation/components/common/ErrorBoundary/ErrorBoundary';
 import { useAuth } from '@/presentation/contexts/AuthContext';
 import './homepage.css';
+
+// Lazy the four widgets that live at the bottom of every (main) route.
+// PageSpeed traced ~1 MB of homepage-unnecessary JS (react-hook-form,
+// zod, libphonenumber, recaptcha, extra firebase auth surface, framer-
+// motion) to these components' import trees — they render nothing for
+// signed-out users on the LCP path, so keeping their code out of the
+// initial bundle is a pure win. ssr: false because they all read
+// localStorage / user state; loading: () => null because there's no
+// visible slot to reserve above the fold (CookieConsent overlays on top
+// but a ~500 ms delayed banner is preferable to shipping the whole
+// dependency chain synchronously). CLS unaffected — none of these
+// occupy in-flow space on first paint.
+const MessagesWidget = dynamic(
+  () =>
+    import('@/presentation/components/common/MessagesWidget/MessagesWidget').then(
+      (m) => ({ default: m.MessagesWidget })
+    ),
+  { ssr: false, loading: () => null }
+);
+
+const NotificationPrompt = dynamic(
+  () =>
+    import('@/presentation/components/common/NotificationPrompt/NotificationPrompt').then(
+      (m) => ({ default: m.NotificationPrompt })
+    ),
+  { ssr: false, loading: () => null }
+);
+
+const NotificationListener = dynamic(
+  () =>
+    import('@/presentation/components/common/NotificationListener/NotificationListener').then(
+      (m) => ({ default: m.NotificationListener })
+    ),
+  { ssr: false, loading: () => null }
+);
+
+const CookieConsent = dynamic(
+  () =>
+    import('@/presentation/components/common/CookieConsent/CookieConsent').then(
+      (m) => ({ default: m.CookieConsent })
+    ),
+  { ssr: false, loading: () => null }
+);
 
 const ProfileCompletionCard = dynamic(
   () =>
