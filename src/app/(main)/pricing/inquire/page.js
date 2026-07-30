@@ -533,7 +533,7 @@ function InquirePageInner() {
               </div>
               <div>
                 <p className="text-[11px] uppercase tracking-wider text-[#A0A0A0] font-semibold mb-1">
-                  End {isMonthlyDuration && <span className="normal-case text-[#A0A0A0]">(auto — start + {durationDays - 1} days)</span>}
+                  End {isMonthlyDuration && <span className="normal-case text-[#A0A0A0]">(auto, start + {durationDays - 1} days)</span>}
                 </p>
                 <DatePicker
                   value={endDate}

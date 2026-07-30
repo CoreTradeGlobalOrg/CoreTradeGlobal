@@ -540,7 +540,7 @@ function ScheduleHint({ start, end }) {
       text: 'text-[#FFD700]',
     },
     [AD_STATUSES.EXPIRED]: {
-      label: 'This window has already ended — pick a later range',
+      label: 'This window has already ended. Pick a later range.',
       bg: 'bg-red-500/15',
       border: 'border-red-500/40',
       text: 'text-red-300',
@@ -551,7 +551,7 @@ function ScheduleHint({ start, end }) {
   return (
     <div className={`mt-2 inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-semibold ${meta.bg} ${meta.border} ${meta.text}`}>
       <span className="uppercase tracking-wider">{status}</span>
-      <span className="text-white/80 font-normal">— {meta.label} · {fmt(range.start)} → {fmt(range.end)}</span>
+      <span className="text-white/80 font-normal">· {meta.label} · {fmt(range.start)} → {fmt(range.end)}</span>
     </div>
   );
 }
