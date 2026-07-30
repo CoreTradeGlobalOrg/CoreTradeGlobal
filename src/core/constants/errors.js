@@ -14,14 +14,14 @@ export const AUTH_ERRORS = {
   'auth/user-not-found': 'User not found',
   'auth/wrong-password': 'Incorrect password',
   'auth/email-already-in-use': 'This email is already in use',
-  'auth/weak-password': 'Password is too weak (minimum 6 characters)',
+  'auth/weak-password': 'Password is too weak. Use at least 8 characters with a number.',
   'auth/operation-not-allowed': 'This operation is not allowed',
   'auth/invalid-credential': 'Invalid credentials',
   'auth/too-many-requests': 'Too many attempts, please try again later',
 
   // Custom validation errors
   INVALID_EMAIL: 'Please enter a valid email address',
-  INVALID_PASSWORD: 'Password must be at least 6 characters',
+  INVALID_PASSWORD: 'Password must be at least 8 characters and contain a number',
   PASSWORDS_NOT_MATCH: 'Passwords do not match',
   EMPTY_FIELD: 'This field cannot be empty',
   INVALID_COMPANY_NAME: 'Company name must be at least 2 characters',

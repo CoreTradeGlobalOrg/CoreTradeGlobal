@@ -151,7 +151,10 @@ export class RegisterUseCase {
       throw new Error(AUTH_ERRORS.EMPTY_FIELD);
     }
 
-    if (password.length < 6) {
+    // Kept in sync with registerSchema / PasswordChecklist. In practice
+    // this is dead code — Zod validation on the form runs first — but
+    // it stays here as a defence-in-depth guard for any non-form caller.
+    if (password.length < 8 || !/[0-9]/.test(password)) {
       throw new Error(AUTH_ERRORS.INVALID_PASSWORD);
     }
   }

@@ -19,6 +19,7 @@ import { Lock, Eye, EyeOff, Shield, ShieldOff, RefreshCw, AlertTriangle } from '
 import { changePasswordSchema } from '@/core/validation/changePasswordSchema';
 import { usePasswordChange } from '@/presentation/hooks/settings/usePasswordChange';
 import { useTwoFactor } from '@/presentation/hooks/settings/useTwoFactor';
+import { PasswordChecklist } from '@/presentation/components/common/PasswordChecklist/PasswordChecklist';
 
 // Loaded dynamically — avoids SSR issues with qrcode.react and SubtleCrypto
 const TwoFactorSetup = dynamic(
@@ -41,6 +42,7 @@ function PasswordChangeSection() {
     register,
     handleSubmit,
     reset,
+    watch,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(changePasswordSchema),
@@ -113,6 +115,7 @@ function PasswordChangeSection() {
               {showNew ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
           </div>
+          <PasswordChecklist password={watch('newPassword') || ''} />
           {errors.newPassword && (
             <p className="text-xs text-red-400 mt-1">{errors.newPassword.message}</p>
           )}

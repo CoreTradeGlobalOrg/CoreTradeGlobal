@@ -27,9 +27,12 @@ import { DetailsStep } from './steps/DetailsStep';
 import { PhotoStep } from './steps/PhotoStep';
 import { PreferencesStep } from './steps/PreferencesStep';
 
+// Policy stays in sync with registerSchema + PasswordChecklist.
 const step1Schema = z.object({
   email: z.string().email('Please enter a valid email address'),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
+  password: z.string()
+    .min(8, 'Password must be at least 8 characters')
+    .regex(/[0-9]/, 'Must contain at least one number'),
   confirmPassword: z.string(),
 }).refine((d) => d.password === d.confirmPassword, { message: 'Passwords do not match', path: ['confirmPassword'] });
 
@@ -98,7 +101,7 @@ export function OnboardingWizard({ uid: initialUid }) {
     }
   }, []);
 
-  const { register: registerStep1, handleSubmit: handleStep1Submit, formState: { errors: step1Errors }, setValue: setStep1Value } = useForm({
+  const { register: registerStep1, handleSubmit: handleStep1Submit, formState: { errors: step1Errors }, setValue: setStep1Value, watch: watchStep1 } = useForm({
     resolver: zodResolver(step1Schema),
     defaultValues: { email: '', password: '', confirmPassword: '' },
   });
@@ -199,7 +202,7 @@ export function OnboardingWizard({ uid: initialUid }) {
       <div className="relative overflow-hidden">
         <AnimatePresence mode="wait" custom={direction}>
           <motion.div key={step} custom={direction} variants={slideVariants} initial="enter" animate="center" exit="exit" transition={{ duration: 0.25, ease: 'easeInOut' }}>
-            {step === 1 && <IdentityStep registerStep1={registerStep1} handleStep1Submit={handleStep1Submit} onSubmit={onStep1Submit} step1Errors={step1Errors} isLoading={isLoading} showPassword={showPassword} setShowPassword={setShowPassword} showConfirm={showConfirm} setShowConfirm={setShowConfirm} />}
+            {step === 1 && <IdentityStep registerStep1={registerStep1} watchStep1={watchStep1} handleStep1Submit={handleStep1Submit} onSubmit={onStep1Submit} step1Errors={step1Errors} isLoading={isLoading} showPassword={showPassword} setShowPassword={setShowPassword} showConfirm={showConfirm} setShowConfirm={setShowConfirm} />}
             {step === 2 && <DetailsStep userProfile={userProfile} step2Loading={step2Loading} onContinue={goNext} />}
             {step === 3 && <PhotoStep photoPreview={photoPreview} photoUploading={photoUploading} photoFile={photoFile} onPhotoSelect={handlePhotoSelect} onPhotoUpload={handlePhotoUpload} onSkip={() => { toast('Photo skipped — you can add it from your profile later.', { icon: 'ℹ️' }); goNext(); }} onBack={goBack} />}
             {step === 4 && <PreferencesStep emailNotifications={emailNotifications} setEmailNotifications={setEmailNotifications} marketingEmails={marketingEmails} setMarketingEmails={setMarketingEmails} completing={completing} onComplete={handleComplete} onBack={goBack} />}

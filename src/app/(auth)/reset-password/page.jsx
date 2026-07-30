@@ -12,6 +12,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { LoadingScreen } from '@/presentation/components/common/LoadingScreen/LoadingScreen';
+import { PasswordChecklist, isPasswordValid } from '@/presentation/components/common/PasswordChecklist/PasswordChecklist';
 import toast from 'react-hot-toast';
 import { confirmPasswordReset } from 'firebase/auth';
 import { auth } from '@/core/config/firebase.config';
@@ -34,9 +35,10 @@ function ResetPasswordForm() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validation
-    if (newPassword.length < 6) {
-      toast.error('Password must be at least 6 characters');
+    // Validation — kept in sync with registerSchema / PasswordChecklist:
+    // length ≥ 8 + at least one digit.
+    if (!isPasswordValid(newPassword)) {
+      toast.error('Password must be at least 8 characters and contain a number');
       return;
     }
 
@@ -119,9 +121,7 @@ function ResetPasswordForm() {
             disabled={loading}
             autoFocus
           />
-          <p className="text-xs text-gray-500 mt-1">
-            Minimum 6 characters
-          </p>
+          <PasswordChecklist password={newPassword} />
         </div>
 
         <div>

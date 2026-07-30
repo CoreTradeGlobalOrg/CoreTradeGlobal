@@ -12,6 +12,7 @@
 'use client';
 
 import { SearchableSelect } from '@/presentation/components/common/SearchableSelect/SearchableSelect';
+import { PasswordChecklist } from '@/presentation/components/common/PasswordChecklist/PasswordChecklist';
 import { COUNTRIES, COUNTRY_PHONE_CODES, PHONE_CODE_OPTIONS } from '@/core/constants/countries';
 import { COMPANY_TYPES } from '@/core/constants/companyTypes';
 import { Eye, EyeOff } from 'lucide-react';
@@ -344,6 +345,7 @@ export function RegisterFormFields({ step, register, errors, loading, setValue, 
                 {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
             </div>
+            <PasswordChecklist password={watch('password') || ''} />
             {errors.password && (
               <p className="mt-1 text-xs text-red-400">{errors.password.message}</p>
             )}

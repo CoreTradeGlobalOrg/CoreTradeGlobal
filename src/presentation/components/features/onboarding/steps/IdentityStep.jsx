@@ -1,11 +1,13 @@
 'use client';
 
 import { ArrowRight, Eye, EyeOff, Loader2, User } from 'lucide-react';
+import { PasswordChecklist } from '@/presentation/components/common/PasswordChecklist/PasswordChecklist';
 
 /**
  * IdentityStep (Step 1) - Email + password sign-in form for onboarding.
  */
-export function IdentityStep({ registerStep1, handleStep1Submit, onSubmit, step1Errors, isLoading, showPassword, setShowPassword, showConfirm, setShowConfirm }) {
+export function IdentityStep({ registerStep1, watchStep1, handleStep1Submit, onSubmit, step1Errors, isLoading, showPassword, setShowPassword, showConfirm, setShowConfirm }) {
+  const passwordValue = watchStep1 ? watchStep1('password') : '';
   return (
     <div className="login-card p-8">
       <div className="flex items-center gap-3 mb-6">
@@ -29,11 +31,12 @@ export function IdentityStep({ registerStep1, handleStep1Submit, onSubmit, step1
         <div>
           <label className="block text-xs text-[#A0A0A0] font-semibold tracking-wider uppercase mb-2">Set Password</label>
           <div className="relative">
-            <input type={showPassword ? 'text' : 'password'} {...registerStep1('password')} placeholder="Min. 8 characters" disabled={isLoading} className="form-input-anasyf pr-12" />
+            <input type={showPassword ? 'text' : 'password'} {...registerStep1('password')} placeholder="••••••••" disabled={isLoading} className="form-input-anasyf pr-12" />
             <button type="button" onClick={() => setShowPassword((v) => !v)} className="absolute right-4 top-1/2 -translate-y-1/2 text-[#A0A0A0] hover:text-white transition-colors" tabIndex={-1}>
               {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
             </button>
           </div>
+          <PasswordChecklist password={passwordValue || ''} />
           {step1Errors.password && <p className="mt-1 text-xs text-red-400">{step1Errors.password.message}</p>}
         </div>
 
