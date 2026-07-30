@@ -48,6 +48,7 @@ export function ProfileProducts({
         products={products?.slice((productPage - 1) * itemsPerPage, productPage * itemsPerPage)}
         loading={productsLoading}
         isOwnProfile={canEdit}
+        onAddProduct={canEdit ? onOpenModal : undefined}
         onEdit={onEditProduct}
         onDelete={onDeleteProduct}
         onToggleStatus={onToggleProductStatus}

@@ -71,7 +71,7 @@ const ProductCardImage = memo(function ProductCardImage({ src, alt, inactive }) 
   );
 });
 
-export function ProductList({ products = [], loading, isOwnProfile, onEdit, onDelete, onToggleStatus }) {
+export function ProductList({ products = [], loading, isOwnProfile, onAddProduct, onEdit, onDelete, onToggleStatus }) {
   const [activeMenu, setActiveMenu] = useState(null);
   const { categories } = useCategories();
 
@@ -93,7 +93,10 @@ export function ProductList({ products = [], loading, isOwnProfile, onEdit, onDe
     );
   }
 
-  // Empty state
+  // Empty state — for the profile owner we lead with the visibility
+  // consequence (other members can only start a conversation from a
+  // product page today) so the missing product isn't just a blank shelf
+  // but a real reachability issue. Non-owners see the neutral copy.
   if (!products || products.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
@@ -103,11 +106,31 @@ export function ProductList({ products = [], loading, isOwnProfile, onEdit, onDe
         <h3 className="text-lg font-bold text-white mb-2">
           {isOwnProfile ? 'No products yet' : 'No products available'}
         </h3>
-        <p className="text-[#A0A0A0] mb-6 max-w-md">
-          {isOwnProfile
-            ? 'Start by adding your first product to showcase what you offer.'
-            : 'This user has not added any products yet.'}
-        </p>
+        {isOwnProfile ? (
+          <>
+            <p className="text-[#A0A0A0] mb-2 max-w-md">
+              Other members can only reach out to you from a product page.
+              Without at least one product, they won&apos;t be able to send
+              you a message.
+            </p>
+            <p className="text-[#A0A0A0] mb-6 max-w-md">
+              Add your first product to start receiving inquiries.
+            </p>
+            {onAddProduct && (
+              <button
+                type="button"
+                onClick={onAddProduct}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-[#FFD700] to-[#FDB931] text-[#0F1B2B] font-bold text-sm hover:shadow-[0_6px_20px_rgba(255,215,0,0.35)] transition-all"
+              >
+                + Add Your First Product
+              </button>
+            )}
+          </>
+        ) : (
+          <p className="text-[#A0A0A0] mb-6 max-w-md">
+            This user has not added any products yet.
+          </p>
+        )}
       </div>
     );
   }

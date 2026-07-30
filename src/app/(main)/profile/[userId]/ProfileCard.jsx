@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import { Pencil, Check, X as XIcon, ImagePlus, Trash2, Upload } from 'lucide-react';
 import { RoleBadge } from '@/presentation/components/common/RoleBadge/RoleBadge';
 import { COUNTRIES } from '@/core/constants/countries';
+import { COMPANY_TYPES } from '@/core/constants/companyTypes';
+import { useAuth } from '@/presentation/contexts/AuthContext';
 
 function getCountryLabel(countryCode) {
   if (!countryCode) return 'Not set';
@@ -408,6 +410,15 @@ export function ProfileCard({
   onFieldSave,
   highlightFields = new Set(),
 }) {
+  const { user: currentUser } = useAuth();
+  // Role field is admin-only. Regular members see Company Type instead,
+  // rendered with the same plain-text card as Company Name / Category /
+  // Country so it drops in without visual noise.
+  const isViewerAdmin = currentUser?.role === 'admin';
+  const companyTypeLabel =
+    COMPANY_TYPES.find((t) => t.value === profileUser?.companyType)?.label
+    || 'Not set';
+
   const hl = (field) =>
     highlightFields.has(field) ? ' animate-highlight-incomplete border-2' : '';
   return (
@@ -510,10 +521,17 @@ export function ProfileCard({
             <p className="text-white font-semibold text-lg truncate">{formatCategory(categoryName)}</p>
           </div>
 
-          <div className="bg-[rgba(255,255,255,0.04)] rounded-2xl p-5 border border-[rgba(255,255,255,0.05)]">
-            <p className="text-sm font-semibold uppercase tracking-wider mb-3 bg-gradient-to-r from-[#C0C0C0] via-[#FFFFFF] to-[#C0C0C0] bg-clip-text text-transparent">Role</p>
-            <RoleBadge role={profileUser?.role} size="md" />
-          </div>
+          {isViewerAdmin ? (
+            <div className="bg-[rgba(255,255,255,0.04)] rounded-2xl p-5 border border-[rgba(255,255,255,0.05)]">
+              <p className="text-sm font-semibold uppercase tracking-wider mb-3 bg-gradient-to-r from-[#C0C0C0] via-[#FFFFFF] to-[#C0C0C0] bg-clip-text text-transparent">Role</p>
+              <RoleBadge role={profileUser?.role} size="md" />
+            </div>
+          ) : (
+            <div className="bg-[rgba(255,255,255,0.04)] rounded-2xl p-5 border border-[rgba(255,255,255,0.05)]">
+              <p className="text-sm font-semibold uppercase tracking-wider mb-2 bg-gradient-to-r from-[#C0C0C0] via-[#FFFFFF] to-[#C0C0C0] bg-clip-text text-transparent">Company Type</p>
+              <p className="text-white font-semibold text-lg truncate">{companyTypeLabel}</p>
+            </div>
+          )}
 
           <div
             data-field="country"
