@@ -116,6 +116,20 @@ export function RegisterForm() {
     setStep((s) => s - 1);
   };
 
+  // Single form owns Enter across all steps. On step 1/2 we route Enter
+  // (and CTA button clicks) into handleNext so validation runs on just
+  // the current step's fields; only step 3 hits the real submit path.
+  // Without this router, pressing Enter on step 1 would trip the whole
+  // schema validation and drop errors on fields that aren't rendered yet.
+  const handleFormSubmit = async (e) => {
+    e.preventDefault();
+    if (step < 3) {
+      await handleNext();
+    } else {
+      await handleSubmit(onSubmit)();
+    }
+  };
+
   const onSubmit = async (data) => {
     if (!recaptchaValue) {
       toast.error('Please complete the reCAPTCHA verification');
@@ -190,7 +204,7 @@ export function RegisterForm() {
 
   return (
     <div className="w-full max-w-[500px] mx-auto">
-      <form onSubmit={handleSubmit(onSubmit)} className="register-card w-full p-6 space-y-5">
+      <form onSubmit={handleFormSubmit} className="register-card w-full p-6 space-y-5">
 
         {/* Step Indicator */}
         <div className="flex items-center justify-center gap-2 mb-2">
@@ -262,8 +276,7 @@ export function RegisterForm() {
 
             {step < 3 ? (
               <button
-                type="button"
-                onClick={handleNext}
+                type="submit"
                 disabled={loading}
                 className="flex-1 py-3 bg-gradient-to-br from-[#FFD700] to-[#FDB931] text-[#0F1B2B] font-bold rounded-full shadow-[0_4px_20px_rgba(255,215,0,0.2)] hover:-translate-y-0.5 hover:shadow-[0_6px_30px_rgba(255,215,0,0.4)] active:scale-[0.98] transition-all duration-200"
               >
