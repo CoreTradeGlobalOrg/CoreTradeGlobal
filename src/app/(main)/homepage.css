@@ -674,6 +674,29 @@ html {
     box-shadow: 0 12px 40px rgba(255, 215, 0, 0.2), inset 0 0 20px rgba(255, 215, 0, 0.08);
 }
 
+/* Sponsored / ad slot variant — mirrors the SponsoredProductCard on the
+   product page: 2px solid gold border + soft gold glow so the paid slot
+   reads distinctly against the neighbouring info cards. */
+.hero-ad-slot-card {
+    border: 2px solid rgba(255, 215, 0, 0.65);
+    box-shadow: 0 10px 30px rgba(255, 215, 0, 0.18), inset 0 0 24px rgba(255, 215, 0, 0.06);
+}
+
+.hero-ad-slot-card:hover {
+    border-color: #FFD700;
+    box-shadow: 0 14px 44px rgba(255, 215, 0, 0.32), inset 0 0 24px rgba(255, 215, 0, 0.1);
+}
+
+.hero-ad-slot-card .card-tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: #FFD700;
+    color: #0F1B2B !important;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+}
+
 .hero-product-card {
     opacity: 0;
     animation: slideInFromLeft 0.7s ease 0.4s forwards;

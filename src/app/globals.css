@@ -907,7 +907,10 @@ a:hover {
     padding: 10px;
     border-radius: 14px;
     background: rgba(15, 27, 43, 0.75);
-    border: 1px solid rgba(255, 215, 0, 0.35);
+    /* Match the SponsoredProductCard border weight on /products so paid
+       hero slots read as sponsored on mobile too. */
+    border: 2px solid rgba(255, 215, 0, 0.65);
+    box-shadow: 0 10px 24px rgba(255, 215, 0, 0.18), inset 0 0 18px rgba(255, 215, 0, 0.05);
     text-decoration: none;
     color: inherit;
     transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
@@ -920,7 +923,7 @@ a:hover {
   }
   .hero-mobile-ad-card:hover {
     border-color: #FFD700;
-    box-shadow: 0 6px 20px rgba(255, 215, 0, 0.15);
+    box-shadow: 0 12px 30px rgba(255, 215, 0, 0.3), inset 0 0 18px rgba(255, 215, 0, 0.08);
   }
   .hero-mobile-ad-card-media {
     position: relative;
@@ -963,14 +966,18 @@ a:hover {
     min-width: 0;
   }
   .hero-mobile-ad-card-tag {
+    align-self: flex-start;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: #FFD700;
+    color: #0F1B2B;
     font-size: 9px;
-    font-weight: 700;
+    font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    color: #FFD700;
   }
   .hero-mobile-ad-card-tag-empty {
-    opacity: 0.85;
+    opacity: 0.9;
   }
   .hero-mobile-ad-card-title {
     font-size: 12px;
