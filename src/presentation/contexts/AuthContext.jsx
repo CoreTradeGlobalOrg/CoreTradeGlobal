@@ -111,11 +111,19 @@ export function AuthProvider({ children }) {
         if (firebaseUser) {
           hasEverSeenUser = true;
 
-          // Immediately set a basic user from Firebase Auth (fast, no Firestore)
+          // Immediately set a basic user from Firebase Auth (fast, no Firestore).
+          // Include displayName / photoURL so the Navbar avatar can render
+          // straight from the Firebase Auth record for OAuth users — the
+          // previous shape omitted them, so between basicUser landing and
+          // fetchProfileAndSession completing the header had no image
+          // source, and any code that ran <Image src={undefined}> flashed
+          // a broken-image state until the Firestore fetch finished.
           const basicUser = {
             uid: firebaseUser.uid,
             email: firebaseUser.email,
             emailVerified: firebaseUser.emailVerified,
+            displayName: firebaseUser.displayName || '',
+            photoURL: firebaseUser.photoURL || '',
           };
 
           setUser(basicUser);

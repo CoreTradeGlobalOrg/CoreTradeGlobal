@@ -280,9 +280,18 @@ export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  // Fall back to the User icon if the avatar URL 404s or fails the
+  // next/image optimizer step. Reset when the underlying URL changes so
+  // a stale error state doesn't hide a newly-valid avatar.
+  const [avatarError, setAvatarError] = useState(false);
   const dropdownRef = useRef(null);
   const pathname = usePathname();
   const navRef = useRef(null);
+
+  const avatarSrc = user?.companyLogo || user?.photoURL || null;
+  useEffect(() => {
+    setAvatarError(false);
+  }, [avatarSrc]);
 
   // Track navbar height and expose as CSS variable
   useEffect(() => {
@@ -421,13 +430,6 @@ export function Navbar() {
               height={109}
               className="nav-logo-img"
               priority
-              // sizes pins the srcset selection to the intrinsic 200 px
-              // width. Without it Next.js still generates a DPR-aware
-              // srcset from the fixed width, but Lighthouse was picking
-              // the 400 px 2x variant for a nav slot that displays at
-              // ~154 px CSS width — the 200 px hint pushes it to the
-              // next-smaller variant (200 or 256) instead of 384/400.
-              sizes="200px"
             />
           </Link>
         </div>
@@ -477,14 +479,15 @@ export function Navbar() {
                   aria-haspopup="menu"
                   aria-label={`Account menu for ${user.companyName || user.displayName || 'Account'}`}
                 >
-                  {user.companyLogo || user.photoURL ? (
+                  {avatarSrc && !avatarError ? (
                     <div className="relative w-8 h-8 rounded-full overflow-hidden border border-[#FFD700]">
                       <Image
-                        src={user.companyLogo || user.photoURL}
+                        src={avatarSrc}
                         alt="Avatar"
                         fill
                         sizes="32px"
                         className="object-cover object-center"
+                        onError={() => setAvatarError(true)}
                       />
                     </div>
                   ) : (
@@ -570,13 +573,14 @@ export function Navbar() {
                 className="relative w-10 h-10 flex-shrink-0 rounded-full overflow-hidden border-2 border-[#FFD700] hover:opacity-90 transition-opacity"
                 style={{ backgroundColor: '#FFD700' }}
               >
-                {user.companyLogo || user.photoURL ? (
+                {avatarSrc && !avatarError ? (
                   <Image
-                    src={user.companyLogo || user.photoURL}
+                    src={avatarSrc}
                     alt="Profile"
                     fill
                     sizes="40px"
                     className="object-cover object-center"
+                    onError={() => setAvatarError(true)}
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center bg-[#FFD700]">
