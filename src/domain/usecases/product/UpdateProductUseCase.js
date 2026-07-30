@@ -83,8 +83,8 @@ export class UpdateProductUseCase {
 
       if (newImageFiles && newImageFiles.length > 0) {
         // Check total image count
-        if (imageUrls.length + newImageFiles.length > 5) {
-          throw new Error('Maximum 5 images allowed. Remove existing images first.');
+        if (imageUrls.length + newImageFiles.length > 10) {
+          throw new Error('Maximum 10 images allowed. Remove existing images first.');
         }
 
         try {
@@ -187,8 +187,8 @@ export class UpdateProductUseCase {
     if (description.length < 10) {
       throw new Error('Description must be at least 10 characters');
     }
-    if (description.length > 2000) {
-      throw new Error('Description is too long');
+    if (description.length > 5000) {
+      throw new Error('Description is too long (max 5000 characters)');
     }
   }
 

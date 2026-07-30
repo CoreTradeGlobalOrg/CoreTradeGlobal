@@ -25,7 +25,7 @@ export class CreateProductUseCase {
    * @param {number} productData.price - Product price
    * @param {string} productData.currency - Price currency
    * @param {string} productData.description - Product description
-   * @param {Array<File>} imageFiles - Optional image files (max 5)
+   * @param {Array<File>} imageFiles - Optional image files (max 10)
    * @returns {Promise<Object>} Created product
    * @throws {Error} If validation fails or creation fails
    */
@@ -195,8 +195,8 @@ export class CreateProductUseCase {
     if (description.length < 10) {
       throw new Error('Description must be at least 10 characters');
     }
-    if (description.length > 2000) {
-      throw new Error('Description is too long (max 2000 characters)');
+    if (description.length > 5000) {
+      throw new Error('Description is too long (max 5000 characters)');
     }
   }
 
@@ -210,8 +210,8 @@ export class CreateProductUseCase {
       return; // Images are optional
     }
 
-    if (imageFiles.length > 5) {
-      throw new Error('Maximum 5 images allowed');
+    if (imageFiles.length > 10) {
+      throw new Error('Maximum 10 images allowed');
     }
 
     imageFiles.forEach((file, index) => {

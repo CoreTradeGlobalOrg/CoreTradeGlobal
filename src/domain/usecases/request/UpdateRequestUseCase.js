@@ -123,8 +123,8 @@ export class UpdateRequestUseCase {
     if (description.length < 10) {
       throw new Error('Description must be at least 10 characters');
     }
-    if (description.length > 2000) {
-      throw new Error('Description is too long');
+    if (description.length > 5000) {
+      throw new Error('Description is too long (max 5000 characters)');
     }
   }
 

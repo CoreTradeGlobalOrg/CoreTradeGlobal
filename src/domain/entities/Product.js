@@ -152,7 +152,7 @@ export class Product {
    * @param {string} imageUrl - Image URL to add
    */
   addImage(imageUrl) {
-    if (this.images.length < 5) {
+    if (this.images.length < 10) {
       this.images.push(imageUrl);
       this.updatedAt = new Date();
     }

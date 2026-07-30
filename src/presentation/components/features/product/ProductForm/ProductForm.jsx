@@ -69,8 +69,8 @@ export function ProductForm({ product, onSubmit, onCancel, userId }) {
     const fileArray = Array.from(files);
     const totalImages = imagePreviews.length + fileArray.length;
 
-    if (totalImages > 5) {
-      toast.error('Maximum 5 images allowed');
+    if (totalImages > 10) {
+      toast.error('Maximum 10 images allowed');
       return;
     }
 
@@ -348,7 +348,7 @@ export function ProductForm({ product, onSubmit, onCancel, userId }) {
       <div>
         <div className="flex items-center justify-between flex-wrap gap-2 mb-2">
           <label className="block text-sm font-medium text-gray-300">
-            Product Images (max 5)
+            Product Images (max 10)
           </label>
           {/* Persistent nudge — dashed gold chip on the right of the
               label. Mirrors the site's gold-accent brand cue so it feels
