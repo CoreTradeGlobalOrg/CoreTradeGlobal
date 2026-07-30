@@ -245,11 +245,12 @@ export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter, cou
     }, [products, searchQuery, categoryFilter, categoryIdFilter, countryFilter]);
 
     // Numbered pagination (client-side over the filtered set).
-    // The Sponsored Product ad renders on EVERY page as the first
-    // tile, so every page reserves one slot for it and shows
-    // PAGE_SIZE-1 organic products. Total tiles per page stays at
-    // PAGE_SIZE regardless of which page you're on.
-    const perPageOrganic = featuredAd ? PAGE_SIZE - 1 : PAGE_SIZE;
+    // The Sponsored Product slot renders on EVERY page as the first
+    // tile — either a live ad (SponsoredProductCard) or a "Book This
+    // Spot" placeholder (SponsoredProductPlaceholder). The reservation
+    // is unconditional so grid density stays constant whether or not
+    // an ad is running, and organic totals per page stay predictable.
+    const perPageOrganic = PAGE_SIZE - 1;
     const totalPages = Math.max(1, Math.ceil(filteredProducts.length / perPageOrganic));
     const safePage = Math.min(currentPage, totalPages);
     const pageStart = (safePage - 1) * perPageOrganic;
@@ -397,9 +398,9 @@ export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter, cou
         <>
             <div ref={gridTopRef} className="scroll-mt-28" />
             <div className={`grid ${gridColsClass} gap-6`}>
-                {featuredAd && (
-                    <SponsoredProductCard ad={featuredAd} />
-                )}
+                {featuredAd
+                    ? <SponsoredProductCard ad={featuredAd} />
+                    : <SponsoredProductPlaceholder />}
                 {pageProducts.map((product) => (
                     <ProductCard
                         key={product.id}
@@ -625,6 +626,71 @@ function SponsoredProductCard({ ad }) {
                     </div>
                     <div className="px-5 py-2 bg-gradient-to-r from-[#FFD700] to-[#FDB931] text-[#0F1B2B] font-bold rounded-full text-center text-sm hover:brightness-110 transition-all">
                         Visit
+                    </div>
+                </div>
+            </div>
+        </Link>
+    );
+}
+
+/**
+ * SponsoredProductPlaceholder — dashed-gold "book this spot" card that
+ * takes the same top slot as SponsoredProductCard when no live ad is
+ * running for the sponsored product slot. Mirrors ProductCard's DOM +
+ * spacing so the grid alignment stays identical; only the border style
+ * and copy swap to signal availability. Clicking routes into the
+ * pricing inquiry form with the Sponsored Product package pre-selected.
+ */
+function SponsoredProductPlaceholder() {
+    return (
+        <Link
+            href="/pricing/inquire?type=sponsored_product"
+            aria-label="Book the Sponsored Product placement"
+            className="product-grid-card group relative"
+            style={{
+                border: '2px dashed rgba(255,215,0,0.55)',
+                background: 'linear-gradient(180deg, rgba(255,215,0,0.05), rgba(15,27,43,0.85))',
+                textDecoration: 'none',
+            }}
+        >
+            <span
+                className="absolute top-2 left-2 z-20 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider"
+                style={{ background: '#FFD700', color: '#0F1B2B' }}
+            >
+                Available
+            </span>
+
+            {/* Image Area — matches ProductCard shape with a dashed gold
+                "+" placeholder in place of the product image. */}
+            <div className="aspect-[4/3] w-full rounded-xl mb-4 overflow-hidden relative flex items-center justify-center"
+                 style={{
+                     background: 'linear-gradient(135deg, rgba(255,215,0,0.18), rgba(15,27,43,0.9))',
+                     border: '1px dashed rgba(255,215,0,0.4)',
+                 }}
+            >
+                <div className="flex flex-col items-center gap-2 text-[#FFD700]">
+                    <span className="text-5xl font-extrabold leading-none">+</span>
+                    <span className="text-[11px] uppercase tracking-wider font-bold">Book This Spot</span>
+                </div>
+            </div>
+
+            {/* Content — matches SponsoredProductCard layout */}
+            <div className="flex flex-col flex-1">
+                <div className="flex items-center gap-2 mb-2 text-[#A0A0A0] text-sm">
+                    <span className="uppercase tracking-wider text-[10px] text-[#FFD700] font-bold">Ad</span>
+                    <span className="truncate">Available</span>
+                </div>
+
+                <h3 className="text-lg font-bold text-white mb-1 leading-tight line-clamp-2 min-h-[44px]">
+                    Your Product Here
+                </h3>
+
+                <div className="mt-auto pt-4 border-t border-[rgba(255,255,255,0.05)] flex justify-between items-center">
+                    <div className="text-[#FFD700] font-bold text-sm uppercase tracking-wider">
+                        Sponsored Spot
+                    </div>
+                    <div className="px-5 py-2 bg-gradient-to-r from-[#FFD700] to-[#FDB931] text-[#0F1B2B] font-bold rounded-full text-center text-sm hover:brightness-110 transition-all">
+                        Book →
                     </div>
                 </div>
             </div>

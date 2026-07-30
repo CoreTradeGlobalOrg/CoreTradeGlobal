@@ -39,7 +39,10 @@ const PLACEHOLDER_CARDS = Array.from({ length: PLACEHOLDER_COUNT }, (_, i) => ({
   country: '',
   category: 'Available',
   description: 'Book this spot to feature your company in the carousel.',
-  linkUrl: '/advertising',
+  // Empty carousel slot goes straight to the carousel-tier inquiry form
+  // instead of the /advertising tier overview, matching the hero ad
+  // placeholder behavior (click = start a booking, not read the pitch).
+  linkUrl: '/pricing/inquire?type=carousel',
 }));
 
 // Company logo image with loading state
@@ -88,7 +91,7 @@ function CompanyCard({ company, isActive, style }) {
   const isSponsored = !!company.isSponsored;
   const isPlaceholder = !!company.isPlaceholder;
   const href = isPlaceholder
-    ? (company.linkUrl || '/advertising')
+    ? (company.linkUrl || '/pricing/inquire?type=carousel')
     : isSponsored
       ? (company.linkUrl || '#')
       : (company.id ? `/profile/${company.id}` : '#');
@@ -384,7 +387,7 @@ export function ShowcaseSection() {
       <div className="section-header">
         <h2 className="section-title">Featured Companies</h2>
         <Link
-          href="/advertising"
+          href="/pricing/inquire?type=carousel"
           className="link-hero-blue"
           style={{ justifyContent: 'center', marginTop: '10px', color: '#0066FF' }}
         >
