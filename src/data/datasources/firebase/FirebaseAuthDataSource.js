@@ -41,9 +41,23 @@ export class FirebaseAuthDataSource {
    * to pass an `auth` argument to a firebase/auth function should use
    * this rather than `this.auth`, because `this.auth` is the lazy
    * Proxy — the SDK's internals want the real object.
+   *
+   * Also awaits `auth.authStateReady()` — the Firebase v10+ API that
+   * resolves once persistence restore has finished. Without this, a
+   * fresh page load can subscribe to onAuthStateChanged BEFORE the
+   * IndexedDB restore completes, which makes Firebase fire twice
+   * (first null, then the real restored user). That first null
+   * cascades into "signed out" state, protected pages redirect to
+   * /login, and middleware bounces the user to '/'. authStateReady
+   * collapses that into a single fire with the settled state.
    */
   async _resolveAuth() {
-    return getAuthSync() || (await getAuthAsync());
+    const auth = getAuthSync() || (await getAuthAsync());
+    // Guard: SDK versions < 10 don't have authStateReady. Skip if absent.
+    if (typeof auth.authStateReady === 'function') {
+      await auth.authStateReady();
+    }
+    return auth;
   }
 
   /**
