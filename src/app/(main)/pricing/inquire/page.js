@@ -25,11 +25,20 @@
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { addDoc, collection, query, where, getDocs, serverTimestamp } from 'firebase/firestore';
+import { addDoc, collection, query, where, getDocs, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { ArrowRight, ChevronLeft, Send, Loader2, Check } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { db } from '@/core/config/firebase.config';
-import { AD_PACKAGES as PACKAGES, TYPE_TO_PACKAGE, CAMPAIGN_WEEKS, AD_TYPES, AD_DURATIONS, computeMonthlyDiscount } from '@/core/constants/adTypes';
+import {
+  AD_PACKAGES as PACKAGES,
+  TYPE_TO_PACKAGE,
+  AD_TYPES,
+  AD_DURATIONS,
+  daysForDuration,
+  computeMonthlyDiscount,
+  validateCampaignRange,
+} from '@/core/constants/adTypes';
+import { DatePicker } from '@/presentation/components/common/DatePicker/DatePicker';
 import { useAuth } from '@/presentation/contexts/AuthContext';
 
 const RATE_LIMIT_KEY = 'ad_inquiry_last_submit_at';
@@ -37,15 +46,26 @@ const RATE_LIMIT_WINDOW_MS = 60 * 1000;
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-function computeMonths() {
-  const months = [];
-  const now = new Date();
-  const monthName = (d) => d.toLocaleString('en-US', { month: 'long', year: 'numeric' });
-  for (let i = 0; i < 6; i++) {
-    const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
-    months.push(monthName(d));
-  }
-  return months;
+// YYYY-MM-DD helpers — the DatePicker component speaks ISO date strings.
+function toIsoDate(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+function addDays(dateStr, days) {
+  const d = new Date(`${dateStr}T00:00:00`);
+  d.setDate(d.getDate() + days);
+  return toIsoDate(d);
+}
+
+function fmtRange(startStr, endStr) {
+  if (!startStr || !endStr) return '';
+  const fmt = (s) => new Date(`${s}T00:00:00`).toLocaleDateString('en-GB', {
+    day: '2-digit', month: 'short', year: 'numeric',
+  });
+  return `${fmt(startStr)} → ${fmt(endStr)}`;
 }
 
 function normalizeUrl(raw) {
@@ -60,7 +80,15 @@ function InquirePageInner() {
   const { user } = useAuth();
   const initialPackage = TYPE_TO_PACKAGE[searchParams.get('type')] || PACKAGES[0].value;
   const initialDuration = AD_DURATIONS.find((d) => d.id === searchParams.get('duration'))?.id || 'weekly';
-  const months = useMemo(() => computeMonths(), []);
+  // Sensible default: start tomorrow (giving admin lead time). End is
+  // derived from the picked duration so a monthly buyer immediately sees
+  // the full 28-day window without touching the calendar.
+  const defaultStart = useMemo(() => addDays(toIsoDate(new Date()), 1), []);
+  const defaultEnd = useMemo(
+    () => addDays(defaultStart, daysForDuration(initialDuration) - 1),
+    [defaultStart, initialDuration]
+  );
+  const todayIso = useMemo(() => toIsoDate(new Date()), []);
 
   const [company, setCompany] = useState('');
   const [website, setWebsite] = useState('');
@@ -68,8 +96,8 @@ function InquirePageInner() {
   const [email, setEmail] = useState('');
   const [pkg, setPkg] = useState(initialPackage);
   const [duration, setDuration] = useState(initialDuration);
-  const [campaignMonth, setCampaignMonth] = useState(months[0]);
-  const [campaignWeek, setCampaignWeek] = useState(CAMPAIGN_WEEKS[0]);
+  const [startDate, setStartDate] = useState(defaultStart);
+  const [endDate, setEndDate] = useState(defaultEnd);
   const [brief, setBrief] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
@@ -85,7 +113,28 @@ function InquirePageInner() {
 
   const pkgMeta = useMemo(() => PACKAGES.find((p) => p.value === pkg), [pkg]);
   const isFeatured = pkgMeta?.type === AD_TYPES.FEATURED;
+  // Monthly locks the end date to start + 27 days; weekly leaves it free
+  // (subject to the 7-day cap). Toggling duration always snaps end back
+  // to the duration's cap so the price banner stays truthful.
+  const durationDays = daysForDuration(duration);
+  const isMonthlyDuration = duration === 'monthly';
   const userTouchedFields = useRef({ company: false, website: false, contactName: false, email: false });
+
+  useEffect(() => {
+    if (!startDate) return;
+    const maxEnd = addDays(startDate, durationDays - 1);
+    if (isMonthlyDuration) {
+      // Monthly: end is fully derived — always start + 27 days.
+      setEndDate(maxEnd);
+    } else if (!endDate || endDate < startDate || endDate > maxEnd) {
+      // Weekly: only snap when the current end falls outside the new
+      // window (duration toggle down, or start pushed forward past end).
+      setEndDate(maxEnd);
+    }
+    // Deps intentionally exclude endDate so a manual weekly edit inside
+    // the 7-day range isn't reverted by this effect.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [duration, startDate]);
 
   // Autofill from the signed-in user's profile. We only overwrite fields
   // the visitor hasn't manually edited yet, so hitting an old draft in
@@ -162,8 +211,8 @@ function InquirePageInner() {
     if (!email.trim() || !EMAIL_RE.test(email.trim())) e.email = 'A valid business email is required.';
     if (!website.trim()) e.website = 'Company website is required.';
     if (!pkg) e.pkg = 'Select an ad placement.';
-    if (!campaignMonth) e.campaignMonth = 'Pick a campaign month.';
-    if (!campaignWeek) e.campaignWeek = 'Pick a campaign week.';
+    const range = validateCampaignRange(startDate, endDate, durationDays);
+    if (!range.ok) e.range = range.reason;
     if (brief.length > 2000) e.brief = 'Brief must be under 2000 characters.';
     setErrors(e);
     return Object.keys(e).length === 0;
@@ -209,6 +258,12 @@ function InquirePageInner() {
           }
         : null;
 
+      const range = validateCampaignRange(startDate, endDate, durationDays);
+      if (!range.ok) {
+        toast.error(range.reason);
+        setSubmitting(false);
+        return;
+      }
       const payload = {
         company: company.trim(),
         website: normalizeUrl(website),
@@ -216,8 +271,8 @@ function InquirePageInner() {
         email: email.trim().toLowerCase(),
         package: pkg,
         duration, // 'weekly' | 'monthly'
-        campaignMonth,
-        campaignWeek,
+        startDate: Timestamp.fromDate(range.start),
+        endDate: Timestamp.fromDate(range.end),
         brief: brief.trim(),
         status: 'new',
         // MUST be serverTimestamp() — the Firestore rule enforces
@@ -445,58 +500,56 @@ function InquirePageInner() {
             </div>
           )}
 
-          {/* Campaign Month — pill tab picker */}
+          {/* Campaign date range — start + end calendar. Weekly lets the
+              buyer pick end inside a 7-day window; monthly auto-derives
+              end from start (+27 days) and shows it as read-only so the
+              buyer sees the full 4-week window before submitting. */}
           <div>
             <label className="block text-xs uppercase tracking-wider text-[#A0A0A0] font-semibold mb-1.5">
-              Select Campaign Month <span className="text-red-400">*</span>
+              Campaign Dates <span className="text-red-400">*</span>
+              <span className="text-[#A0A0A0] normal-case font-normal ml-2">
+                ({isMonthlyDuration ? '4-week block' : `up to ${durationDays} days`})
+              </span>
             </label>
-            <div className="flex flex-wrap gap-2">
-              {months.map((m) => {
-                const selected = campaignMonth === m;
-                return (
-                  <button
-                    key={m}
-                    type="button"
-                    onClick={() => setCampaignMonth(m)}
-                    className={`px-4 py-2 rounded-full text-sm font-semibold border transition-all ${
-                      selected
-                        ? 'bg-[rgba(255,215,0,0.15)] border-[#FFD700] text-[#FFD700]'
-                        : 'bg-[rgba(255,255,255,0.04)] border-[rgba(255,255,255,0.12)] text-white hover:border-[rgba(255,215,0,0.5)]'
-                    }`}
-                  >
-                    {m}
-                  </button>
-                );
-              })}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <p className="text-[11px] uppercase tracking-wider text-[#A0A0A0] font-semibold mb-1">Start</p>
+                <DatePicker
+                  value={startDate}
+                  onChange={(iso) => {
+                    setStartDate(iso);
+                    // Nudge the end date to stay within the duration window.
+                    if (iso && endDate) {
+                      const maxEnd = addDays(iso, durationDays - 1);
+                      if (isMonthlyDuration) setEndDate(maxEnd);
+                      else if (endDate < iso) setEndDate(iso);
+                      else if (endDate > maxEnd) setEndDate(maxEnd);
+                    }
+                  }}
+                  minDate={todayIso}
+                  accentColor="gold"
+                  placeholder="Start date"
+                />
+              </div>
+              <div>
+                <p className="text-[11px] uppercase tracking-wider text-[#A0A0A0] font-semibold mb-1">
+                  End {isMonthlyDuration && <span className="normal-case text-[#A0A0A0]">(auto — start + {durationDays - 1} days)</span>}
+                </p>
+                <DatePicker
+                  value={endDate}
+                  onChange={setEndDate}
+                  minDate={startDate || todayIso}
+                  maxDate={startDate ? addDays(startDate, durationDays - 1) : undefined}
+                  accentColor="gold"
+                  placeholder="End date"
+                  disabled={isMonthlyDuration}
+                />
+              </div>
             </div>
-            {errors.campaignMonth && <p className="text-xs text-red-400 mt-1">{errors.campaignMonth}</p>}
-          </div>
-
-          {/* Campaign Week — pill radio */}
-          <div>
-            <label className="block text-xs uppercase tracking-wider text-[#A0A0A0] font-semibold mb-1.5">
-              Sponsoring Week (7-Day Placement Block) <span className="text-red-400">*</span>
-            </label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              {CAMPAIGN_WEEKS.map((w) => {
-                const selected = campaignWeek === w;
-                return (
-                  <button
-                    key={w}
-                    type="button"
-                    onClick={() => setCampaignWeek(w)}
-                    className={`px-3 py-2 rounded-lg text-sm font-semibold border transition-all ${
-                      selected
-                        ? 'bg-[rgba(255,215,0,0.15)] border-[#FFD700] text-[#FFD700]'
-                        : 'bg-[rgba(255,255,255,0.04)] border-[rgba(255,255,255,0.12)] text-white hover:border-[rgba(255,215,0,0.5)]'
-                    }`}
-                  >
-                    {w}
-                  </button>
-                );
-              })}
-            </div>
-            {errors.campaignWeek && <p className="text-xs text-red-400 mt-1">{errors.campaignWeek}</p>}
+            {startDate && endDate && !errors.range && (
+              <p className="text-xs text-[#FFD700] mt-2">Booking window: {fmtRange(startDate, endDate)}</p>
+            )}
+            {errors.range && <p className="text-xs text-red-400 mt-1">{errors.range}</p>}
           </div>
 
           {/* Brief */}

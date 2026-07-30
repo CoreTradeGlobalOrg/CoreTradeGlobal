@@ -316,9 +316,8 @@ export function AdCampaignsManager() {
 
                   <div className="flex-1 min-w-0">
                     <p className="text-sm text-[#c8d3e0] leading-snug line-clamp-2">{ad.description || '—'}</p>
-                    <div className="mt-2 grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                    <div className="mt-2 grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
                       <Stat label="Window" value={`${fmtDate(ad.startDate)} → ${fmtDate(ad.endDate)}`} />
-                      <Stat label="Week" value={`${ad.campaignMonth || '—'} · ${ad.campaignWeek || '—'}`} />
                       <Stat label="Priority" value={String(ad.priority ?? 0)} />
                       <Stat label="Metrics" value={<span className="inline-flex items-center gap-2"><Eye className="w-3.5 h-3.5" /> {ad.impressions ?? 0} <MousePointerClick className="w-3.5 h-3.5 ml-2" /> {ad.clicks ?? 0}</span>} />
                     </div>

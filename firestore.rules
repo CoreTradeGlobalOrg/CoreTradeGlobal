@@ -423,7 +423,7 @@ service cloud.firestore {
       // catalog (Featured Product tier flow).
       allow create: if request.resource.data.keys().hasOnly([
                        'company', 'website', 'contactName', 'email',
-                       'package', 'duration', 'campaignMonth', 'campaignWeek', 'brief',
+                       'package', 'duration', 'startDate', 'endDate', 'brief',
                        'status', 'createdAt',
                        'userId', 'productId', 'productSnapshot'
                      ])
@@ -440,10 +440,14 @@ service cloud.firestore {
                    && request.resource.data.email.size() <= 254
                    && request.resource.data.package is string
                    && request.resource.data.package.size() <= 100
-                   && request.resource.data.campaignMonth is string
-                   && request.resource.data.campaignMonth.size() <= 30
-                   && request.resource.data.campaignWeek is string
-                   && request.resource.data.campaignWeek.size() <= 30
+                   && request.resource.data.startDate is timestamp
+                   && request.resource.data.endDate is timestamp
+                   && request.resource.data.endDate.toMillis() >= request.resource.data.startDate.toMillis()
+                   // 28-day (4-week) absolute ceiling — matches the monthly
+                   // duration option. Weekly writes stay well under this
+                   // cap; client-side validation enforces the tighter 7-day
+                   // limit when duration='weekly'.
+                   && request.resource.data.endDate.toMillis() - request.resource.data.startDate.toMillis() <= 28 * 24 * 60 * 60 * 1000
                    && request.resource.data.brief is string
                    && request.resource.data.brief.size() <= 2000
                    && request.resource.data.status == 'new'

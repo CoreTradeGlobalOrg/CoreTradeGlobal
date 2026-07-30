@@ -1984,6 +1984,19 @@ exports.backfillResendContacts = onCall(
  */
 function buildAdInquiryAdminEmailHtml(inquiry) {
   const esc = (v) => String(v ?? '').replace(/[<>]/g, '');
+  // New inquiries carry startDate/endDate Timestamps; historic inquiries
+  // stored only campaignMonth/campaignWeek strings — keep both paths.
+  const fmtDay = (ts) => {
+    if (!ts) return '';
+    const d = ts.toDate ? ts.toDate() : new Date(ts);
+    if (Number.isNaN(d.getTime())) return '';
+    return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+  };
+  const startLabel = fmtDay(inquiry.startDate);
+  const endLabel = fmtDay(inquiry.endDate);
+  const windowLabel = (startLabel && endLabel)
+    ? `${startLabel} &rarr; ${endLabel}`
+    : `${esc(inquiry.campaignMonth || '—')} &middot; ${esc(inquiry.campaignWeek || '—')}`;
   const briefHtml = (inquiry.brief || '').trim()
     ? `<tr><td style="padding:6px 0;color:#94a3b8;font-size:12px;text-transform:uppercase;letter-spacing:0.05em;">Brief</td></tr>
        <tr><td style="padding:0 0 12px 0;color:#f1f5f9;font-size:14px;line-height:1.6;white-space:pre-wrap;">${esc(inquiry.brief).replace(/\n/g, '<br />')}</td></tr>`
@@ -2007,7 +2020,7 @@ function buildAdInquiryAdminEmailHtml(inquiry) {
           <tr><td style="padding:6px 0;color:#94a3b8;font-size:12px;text-transform:uppercase;letter-spacing:0.05em;">Website</td></tr>
           <tr><td style="padding:0 0 8px 0;color:#f1f5f9;font-size:15px;"><a href="${esc(inquiry.website)}" target="_blank" style="color:#ffd700;text-decoration:none;">${esc(inquiry.website)}</a></td></tr>
           <tr><td style="padding:6px 0;color:#94a3b8;font-size:12px;text-transform:uppercase;letter-spacing:0.05em;">Campaign Window</td></tr>
-          <tr><td style="padding:0 0 12px 0;color:#f1f5f9;font-size:15px;">${esc(inquiry.campaignMonth)} &middot; ${esc(inquiry.campaignWeek)}</td></tr>
+          <tr><td style="padding:0 0 12px 0;color:#f1f5f9;font-size:15px;">${windowLabel}</td></tr>
           ${briefHtml}
         </table>
       </td></tr>

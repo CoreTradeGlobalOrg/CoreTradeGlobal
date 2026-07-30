@@ -10,6 +10,7 @@
  * @param {string|Date|null} props.value - Selected date (ISO string or Date)
  * @param {(dateStr: string) => void} props.onChange - Callback with ISO date string (YYYY-MM-DD)
  * @param {string} [props.minDate] - Minimum selectable date (ISO string)
+ * @param {string} [props.maxDate] - Maximum selectable date (ISO string)
  * @param {string} [props.placeholder] - Placeholder text
  * @param {string} [props.accentColor] - Tailwind color name: 'orange', 'green', 'blue', 'emerald', 'gold'
  * @param {boolean} [props.disabled]
@@ -25,37 +26,45 @@ import { format, parse, isValid } from 'date-fns';
 import { CalendarDays } from 'lucide-react';
 import 'react-day-picker/style.css';
 
+// Accent palette. `bg` / `text` are the selected-day fill + text colors
+// applied to the button itself (so shape matches the pill hover), NOT to
+// the outer table cell — see the .rdp-selected rule below.
 const ACCENT_MAP = {
   orange: {
-    selected: 'bg-orange-500 text-white',
+    bg: '#f97316',
+    text: '#ffffff',
     today: 'border-orange-400',
     focus: 'focus:border-orange-500/50',
     icon: 'text-orange-400',
     chevron: 'fill-orange-400',
   },
   green: {
-    selected: 'bg-green-500 text-white',
+    bg: '#22c55e',
+    text: '#ffffff',
     today: 'border-green-400',
     focus: 'focus:border-green-500/50',
     icon: 'text-green-400',
     chevron: 'fill-green-400',
   },
   blue: {
-    selected: 'bg-blue-500 text-white',
+    bg: '#3b82f6',
+    text: '#ffffff',
     today: 'border-blue-400',
     focus: 'focus:border-blue-500/50',
     icon: 'text-blue-400',
     chevron: 'fill-blue-400',
   },
   emerald: {
-    selected: 'bg-emerald-500 text-white',
+    bg: '#10b981',
+    text: '#ffffff',
     today: 'border-emerald-400',
     focus: 'focus:border-emerald-500/50',
     icon: 'text-emerald-400',
     chevron: 'fill-emerald-400',
   },
   gold: {
-    selected: 'bg-[#FFD700] text-[#0F1C2E]',
+    bg: '#FFD700',
+    text: '#0F1C2E',
     today: 'border-[#FFD700]',
     focus: 'focus:border-[#FFD700]/50',
     icon: 'text-[#FFD700]',
@@ -67,6 +76,7 @@ export function DatePicker({
   value,
   onChange,
   minDate,
+  maxDate,
   placeholder = 'Select date...',
   accentColor = 'blue',
   disabled = false,
@@ -93,6 +103,13 @@ export function DatePicker({
       : '';
 
   const minDateObj = minDate ? parse(minDate, 'yyyy-MM-dd', new Date()) : undefined;
+  const maxDateObj = maxDate ? parse(maxDate, 'yyyy-MM-dd', new Date()) : undefined;
+  const disabledMatcher = minDateObj || maxDateObj
+    ? {
+        ...(minDateObj ? { before: minDateObj } : {}),
+        ...(maxDateObj ? { after: maxDateObj } : {}),
+      }
+    : undefined;
 
   // Calculate dropdown position from button rect
   const updatePosition = useCallback(() => {
@@ -198,8 +215,20 @@ export function DatePicker({
               border: 1px solid #4A5B6E;
               font-weight: 700;
             }
+            /* Selected day: paint the button (not the outer <td>) so the
+               fill shape matches the 8px hover pill instead of a square. */
+            .ctg-calendar .rdp-selected {
+              background: transparent !important;
+            }
             .ctg-calendar .rdp-selected .rdp-day_button {
+              background: var(--ctg-accent-bg) !important;
+              color: var(--ctg-accent-text) !important;
+              border-radius: 8px !important;
               font-weight: 700;
+            }
+            .ctg-calendar .rdp-selected .rdp-day_button:hover {
+              background: var(--ctg-accent-bg) !important;
+              filter: brightness(1.08);
             }
             .ctg-calendar .rdp-outside .rdp-day_button {
               color: #2A3B52;
@@ -213,16 +242,18 @@ export function DatePicker({
               color: #C0D0E0;
             }
           `}</style>
-          <div className="ctg-calendar">
+          <div
+            className="ctg-calendar"
+            style={{ '--ctg-accent-bg': accent.bg, '--ctg-accent-text': accent.text }}
+          >
             <DayPicker
               mode="single"
               selected={selectedDate && isValid(selectedDate) ? selectedDate : undefined}
               onSelect={handleSelect}
-              disabled={minDateObj ? { before: minDateObj } : undefined}
+              disabled={disabledMatcher}
               defaultMonth={selectedDate && isValid(selectedDate) ? selectedDate : undefined}
               classNames={{
                 today: accent.today,
-                selected: accent.selected,
                 chevron: accent.chevron,
               }}
             />

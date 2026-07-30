@@ -158,42 +158,71 @@ export const TYPE_TO_PACKAGE = {
   combined: 'Combined Multi-Placement Package',
 };
 
-// Fixed 7-day week blocks — must match the option strings the inquiry
-// form + admin form present so a converted inquiry doesn't get an
-// invalid week label. If we ever add a Week 5, update both places.
-export const CAMPAIGN_WEEKS = [
-  'Week 1 (01-07)',
-  'Week 2 (08-14)',
-  'Week 3 (15-21)',
-  'Week 4 (22-28)',
-];
+// Max campaign span depends on the duration the buyer picked:
+//   - weekly  → 7-day window (Mon → Sun inclusive)
+//   - monthly → 28-day window (4 × 7 = 28 days inclusive, matches the
+//     "Monthly (4 weeks)" pricing option in AD_DURATIONS)
+// Admin can create ads without a duration constraint but the same
+// 28-day absolute ceiling still applies (and is what the Firestore
+// rules enforce on inquiry writes).
+export const DURATION_DAYS = {
+  weekly: 7,
+  monthly: 28,
+};
+
+export const MAX_CAMPAIGN_DAYS = DURATION_DAYS.monthly;
+export const MAX_CAMPAIGN_MS = MAX_CAMPAIGN_DAYS * 24 * 60 * 60 * 1000;
+
+// Return the inclusive day-count cap for the given duration id. Unknown
+// or missing duration falls back to the weekly cap so a bad `?duration=`
+// query param can't silently unlock a 4× longer window.
+export function daysForDuration(duration) {
+  return DURATION_DAYS[duration] ?? DURATION_DAYS.weekly;
+}
 
 /**
- * Convert a ("July 2026", "Week 2 (08-14)") pair into concrete start/end
- * JS Dates. End of week is inclusive, i.e., 23:59:59 on the last day.
- * Returns { startDate, endDate } — callers wrap in Timestamp.fromDate
- * before writing to Firestore.
+ * Normalize an ISO date string (`YYYY-MM-DD`) or Date to a Date at
+ * start-of-day / end-of-day in the local timezone. Used by both forms
+ * so a picked "Aug 4" becomes 00:00:00.000 (start) or 23:59:59.999 (end),
+ * matching the inclusive semantics the old week-block model used.
  */
-export function campaignWeekToDates(monthLabel, weekLabel) {
-  if (!monthLabel || !weekLabel) return null;
-  const parts = monthLabel.trim().split(/\s+/);
-  if (parts.length !== 2) return null;
-  const [monthName, yearStr] = parts;
-  const year = parseInt(yearStr, 10);
-  const monthIdx = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December',
-  ].indexOf(monthName);
-  if (monthIdx < 0 || !Number.isFinite(year)) return null;
+export function toDayStart(input) {
+  if (!input) return null;
+  const d = typeof input === 'string' ? new Date(`${input}T00:00:00`) : new Date(input);
+  if (Number.isNaN(d.getTime())) return null;
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
 
-  const match = weekLabel.match(/\((\d{2})-(\d{2})\)/);
-  if (!match) return null;
-  const startDay = parseInt(match[1], 10);
-  const endDay = parseInt(match[2], 10);
+export function toDayEnd(input) {
+  if (!input) return null;
+  const d = typeof input === 'string' ? new Date(`${input}T00:00:00`) : new Date(input);
+  if (Number.isNaN(d.getTime())) return null;
+  d.setHours(23, 59, 59, 999);
+  return d;
+}
 
-  const startDate = new Date(year, monthIdx, startDay, 0, 0, 0, 0);
-  const endDate = new Date(year, monthIdx, endDay, 23, 59, 59, 999);
-  return { startDate, endDate };
+/**
+ * Validate a picked campaign range. Returns { ok: true, start, end } when
+ * valid, or { ok: false, reason } with a user-facing message when not.
+ * `start` / `end` are Date objects with the standard day-start / day-end
+ * clamping applied so callers can wrap in Timestamp.fromDate directly.
+ *
+ * `maxDays` overrides the ceiling — buyer form passes the duration cap
+ * (7 or 28); admin form omits it and gets the absolute MAX_CAMPAIGN_DAYS.
+ */
+export function validateCampaignRange(startInput, endInput, maxDays = MAX_CAMPAIGN_DAYS) {
+  const start = toDayStart(startInput);
+  const end = toDayEnd(endInput);
+  if (!start || !end) return { ok: false, reason: 'Pick both a start and end date.' };
+  if (end.getTime() < start.getTime()) {
+    return { ok: false, reason: 'End date must be on or after the start date.' };
+  }
+  const capMs = maxDays * 24 * 60 * 60 * 1000;
+  if (end.getTime() - start.getTime() > capMs) {
+    return { ok: false, reason: `Campaign window can be at most ${maxDays} days.` };
+  }
+  return { ok: true, start, end };
 }
 
 const adTypesExport = {
@@ -205,8 +234,13 @@ const adTypesExport = {
   AD_PACKAGES,
   AD_DURATIONS,
   TYPE_TO_PACKAGE,
-  CAMPAIGN_WEEKS,
-  campaignWeekToDates,
+  DURATION_DAYS,
+  MAX_CAMPAIGN_DAYS,
+  MAX_CAMPAIGN_MS,
+  daysForDuration,
+  toDayStart,
+  toDayEnd,
+  validateCampaignRange,
   computeMonthlyDiscount,
 };
 

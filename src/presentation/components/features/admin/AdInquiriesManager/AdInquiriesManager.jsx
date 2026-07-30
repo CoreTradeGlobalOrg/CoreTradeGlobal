@@ -42,6 +42,25 @@ function fmtDate(ts) {
   return d.toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
+function fmtDay(ts) {
+  if (!ts) return null;
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+// New inquiries store `startDate`/`endDate` Timestamps. Old inquiries
+// (pre-calendar migration) still have `campaignMonth`/`campaignWeek`
+// strings — fall back so history renders without gaps.
+function inquiryRangeLabel(inq) {
+  const s = fmtDay(inq.startDate);
+  const e = fmtDay(inq.endDate);
+  if (s && e) return `${s} → ${e}`;
+  if (inq.campaignMonth || inq.campaignWeek) {
+    return `${inq.campaignMonth || '—'} · ${inq.campaignWeek || '—'}`;
+  }
+  return '—';
+}
+
 export function AdInquiriesManager() {
   const { user } = useAuth();
   const [inquiries, setInquiries] = useState([]);
@@ -212,7 +231,7 @@ export function AdInquiriesManager() {
                       )}
                     </p>
                     <p className="text-xs text-[#A0A0A0]">
-                      {inq.contactName || '—'} · {inq.campaignMonth || '—'} · {inq.campaignWeek || '—'} · {fmtDate(inq.createdAt)}
+                      {inq.contactName || '—'} · {inquiryRangeLabel(inq)} · {fmtDate(inq.createdAt)}
                     </p>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
@@ -271,11 +290,8 @@ export function AdInquiriesManager() {
                       <Row label="Package">
                         <span className="text-white">{inq.package || '—'}</span>
                       </Row>
-                      <Row label="Campaign Month">
-                        <span className="text-white">{inq.campaignMonth || '—'}</span>
-                      </Row>
-                      <Row label="Campaign Week">
-                        <span className="text-white">{inq.campaignWeek || '—'}</span>
+                      <Row label="Campaign Dates">
+                        <span className="text-white">{inquiryRangeLabel(inq)}</span>
                       </Row>
                       <Row label="Submitted">
                         <span className="text-white">{fmtDate(inq.createdAt)}</span>
@@ -453,8 +469,11 @@ function buildPrefillFromInquiry(inq) {
     badgeText: hasProduct ? 'Featured' : '',
     productId: hasProduct ? inq.productId : null,
     inquiryId: inq.id,
-    campaignMonth: inq.campaignMonth || null,
-    campaignWeek: inq.campaignWeek || null,
+    // Forward the picked date range so the admin form defaults to the
+    // buyer's requested window. Old inquiries won't have these — form
+    // falls back to its own default (tomorrow + 7 days).
+    startDate: inq.startDate || null,
+    endDate: inq.endDate || null,
   };
 }
 

@@ -39,9 +39,11 @@ import {
   AD_STATUSES,
   AD_TYPES,
   AD_TYPE_LABELS,
-  CAMPAIGN_WEEKS,
-  campaignWeekToDates,
+  DURATION_DAYS,
+  MAX_CAMPAIGN_DAYS,
+  validateCampaignRange,
 } from '@/core/constants/adTypes';
+import { DatePicker } from '@/presentation/components/common/DatePicker/DatePicker';
 
 const DEFAULT_STATUS_BY_DATE = (startMs, endMs) => {
   const now = Date.now();
@@ -50,10 +52,10 @@ const DEFAULT_STATUS_BY_DATE = (startMs, endMs) => {
   return AD_STATUSES.ACTIVE;
 };
 
-// How many ads can share the same week per ad type. Each of the three
+// How many ads can share the same window per ad type. Each of the three
 // single-slot placements (hero product, hero company, products directory)
 // is capped at 1. The 3D Featured Companies carousel rotates through
-// many cards, so up to 8 sponsored slots per week is allowed there.
+// many cards, so up to 8 sponsored slots may overlap there.
 const OVERLAP_CAP_BY_TYPE = {
   [AD_TYPES.FEATURED]: 1,
   [AD_TYPES.HERO]: 1,
@@ -71,55 +73,55 @@ function normalizeUrl(raw) {
   return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
 }
 
-// Pick the first (month, week) whose end date is >= today so the form
-// defaults to something that will actually go live. Otherwise the admin
-// hits Save on the leftover "Week 1" default and ends up with an ad
-// that's created in EXPIRED status and never shows on the homepage.
-function pickDefaultMonthWeek(months) {
-  const now = Date.now();
-  for (const m of months) {
-    for (const w of CAMPAIGN_WEEKS) {
-      const range = campaignWeekToDates(m, w);
-      if (range && range.endDate.getTime() >= now) {
-        return { month: m, week: w };
-      }
-    }
-  }
-  return { month: months[1] || months[0], week: CAMPAIGN_WEEKS[0] };
+function toIsoDate(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
 }
 
-function computeMonths() {
-  const months = [];
-  const now = new Date();
-  const fmt = (d) => d.toLocaleString('en-US', { month: 'long', year: 'numeric' });
-  for (let i = -1; i < 11; i++) {
-    const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
-    months.push(fmt(d));
-  }
-  return months;
+function addDays(dateStr, days) {
+  const d = new Date(`${dateStr}T00:00:00`);
+  d.setDate(d.getDate() + days);
+  return toIsoDate(d);
+}
+
+// Convert a Firestore Timestamp or JS Date to `YYYY-MM-DD`. Used when
+// hydrating the form from an edit target or inquiry prefill.
+function tsToIso(ts) {
+  if (!ts) return null;
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  if (Number.isNaN(d.getTime())) return null;
+  return toIsoDate(d);
 }
 
 export function AdCampaignForm({
   editing,       // ad doc if editing, else null
-  prefill,       // { type, companyName, linkUrl, companyLogo, description, badgeText, productId, inquiryId, campaignMonth, campaignWeek }
+  prefill,       // { type, companyName, linkUrl, companyLogo, description, badgeText, productId, inquiryId, startDate, endDate }
   onClose,
   onSaved,
 }) {
   const { user } = useAuth();
-  const months = useMemo(() => computeMonths(), []);
   const isEdit = !!editing?.id;
+
+  const todayIso = useMemo(() => toIsoDate(new Date()), []);
+  const initialStart = useMemo(
+    () => tsToIso(editing?.startDate) || tsToIso(prefill?.startDate) || addDays(todayIso, 1),
+    [editing?.startDate, prefill?.startDate, todayIso]
+  );
+  const initialEnd = useMemo(
+    // Default to a weekly (7-day) window; admin can extend up to
+    // MAX_CAMPAIGN_DAYS via the calendar.
+    () => tsToIso(editing?.endDate) || tsToIso(prefill?.endDate) || addDays(initialStart, DURATION_DAYS.weekly - 1),
+    [editing?.endDate, prefill?.endDate, initialStart]
+  );
 
   const [type, setType] = useState(editing?.type || prefill?.type || AD_TYPES.FEATURED);
   const [companyName, setCompanyName] = useState(editing?.companyName || prefill?.companyName || '');
   const [description, setDescription] = useState(editing?.description || prefill?.description || '');
   const [linkUrl, setLinkUrl] = useState(editing?.linkUrl || prefill?.linkUrl || '');
-  const defaults = useMemo(() => pickDefaultMonthWeek(months), [months]);
-  const [campaignMonth, setCampaignMonth] = useState(
-    editing?.campaignMonth || prefill?.campaignMonth || defaults.month
-  );
-  const [campaignWeek, setCampaignWeek] = useState(
-    editing?.campaignWeek || prefill?.campaignWeek || defaults.week
-  );
+  const [startDate, setStartDate] = useState(initialStart);
+  const [endDate, setEndDate] = useState(initialEnd);
   const [priority, setPriority] = useState(editing?.priority ?? 0);
   const [badgeText, setBadgeText] = useState(editing?.badgeText || prefill?.badgeText || '');
   const [logoFile, setLogoFile] = useState(null);
@@ -145,8 +147,8 @@ export function AdCampaignForm({
     if (description.length > 240) e.description = 'Description must be under 240 characters.';
     if (!linkUrl.trim()) e.linkUrl = 'Link URL is required.';
     if (!type) e.type = 'Type is required.';
-    if (!campaignMonth) e.campaignMonth = 'Pick a campaign month.';
-    if (!campaignWeek) e.campaignWeek = 'Pick a campaign week.';
+    const range = validateCampaignRange(startDate, endDate);
+    if (!range.ok) e.range = range.reason;
     if (!isEdit && !logoFile && !logoPreview) e.logo = 'Upload a logo/creative.';
     setErrors(e);
     return Object.keys(e).length === 0;
@@ -160,9 +162,9 @@ export function AdCampaignForm({
       return;
     }
 
-    const dates = campaignWeekToDates(campaignMonth, campaignWeek);
-    if (!dates) {
-      toast.error('Invalid campaign month/week combination.');
+    const range = validateCampaignRange(startDate, endDate);
+    if (!range.ok) {
+      toast.error(range.reason);
       return;
     }
 
@@ -170,15 +172,15 @@ export function AdCampaignForm({
     try {
       // Overlap check — respect the per-type cap. Single-slot placements
       // block on the first collision; the Carousel type allows up to 8
-      // sponsored cards per week (see OVERLAP_CAP_BY_TYPE).
+      // sponsored cards in the same window (see OVERLAP_CAP_BY_TYPE).
       const conflictQuery = query(
         collection(db, 'ads'),
         where('type', '==', type),
         where('status', 'in', [AD_STATUSES.SCHEDULED, AD_STATUSES.ACTIVE, AD_STATUSES.PAUSED])
       );
       const conflictSnap = await getDocs(conflictQuery);
-      const newStart = dates.startDate.getTime();
-      const newEnd = dates.endDate.getTime();
+      const newStart = range.start.getTime();
+      const newEnd = range.end.getTime();
       const overlapping = conflictSnap.docs.filter((d) => {
         if (isEdit && d.id === editing.id) return false;
         const data = d.data();
@@ -189,15 +191,18 @@ export function AdCampaignForm({
       });
       const cap = OVERLAP_CAP_BY_TYPE[type] ?? 1;
       if (overlapping.length >= cap) {
+        const fmt = (d) => d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
         if (cap === 1) {
           const c = overlapping[0].data();
+          const otherStart = c.startDate?.toDate ? fmt(c.startDate.toDate()) : '?';
+          const otherEnd = c.endDate?.toDate ? fmt(c.endDate.toDate()) : '?';
           toast.error(
-            `This week is already booked by "${c.companyName}" (${c.campaignMonth} · ${c.campaignWeek}).`,
+            `This window is already booked by "${c.companyName}" (${otherStart} → ${otherEnd}).`,
             { duration: 6000 }
           );
         } else {
           toast.error(
-            `This week already has ${overlapping.length} of ${cap} slots booked for this ad type. Pick a different week or pause/expire an existing one.`,
+            `This window already has ${overlapping.length} of ${cap} slots booked for this ad type. Pick a different range or pause/expire an existing one.`,
             { duration: 6000 }
           );
         }
@@ -208,8 +213,8 @@ export function AdCampaignForm({
       // Reserve the ad id (create with placeholder then upload + patch)
       // so the logo lands under the final ad's path.
       const now = Timestamp.now();
-      const startTs = Timestamp.fromDate(dates.startDate);
-      const endTs = Timestamp.fromDate(dates.endDate);
+      const startTs = Timestamp.fromDate(range.start);
+      const endTs = Timestamp.fromDate(range.end);
       const computedStatus = DEFAULT_STATUS_BY_DATE(newStart, newEnd);
 
       const baseFields = {
@@ -217,8 +222,6 @@ export function AdCampaignForm({
         companyName: companyName.trim(),
         description: description.trim(),
         linkUrl: normalizeUrl(linkUrl),
-        campaignMonth,
-        campaignWeek,
         startDate: startTs,
         endDate: endTs,
         priority: Number.isFinite(priority) ? priority : 0,
@@ -408,66 +411,48 @@ export function AdCampaignForm({
             {errors.logo && <p className="text-xs text-red-400 mt-1">{errors.logo}</p>}
           </div>
 
-          {/* Campaign Month */}
+          {/* Campaign dates — start + end calendar, max MAX_CAMPAIGN_DAYS
+              span. The end picker's maxDate keeps clicks physically
+              constrained; validate() catches keyboard/paste attempts. */}
           <div>
             <label className="block text-xs uppercase tracking-wider text-[#A0A0A0] font-semibold mb-1.5">
-              Campaign Month <span className="text-red-400">*</span>
+              Campaign Dates <span className="text-red-400">*</span>
+              <span className="text-[#A0A0A0] normal-case font-normal ml-2">
+                (up to {MAX_CAMPAIGN_DAYS} days)
+              </span>
             </label>
-            <div className="flex flex-wrap gap-2">
-              {months.map((m) => {
-                const selected = campaignMonth === m;
-                return (
-                  <button
-                    key={m}
-                    type="button"
-                    onClick={() => setCampaignMonth(m)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
-                      selected
-                        ? 'bg-[rgba(255,215,0,0.15)] border-[#FFD700] text-[#FFD700]'
-                        : 'bg-[rgba(255,255,255,0.04)] border-[rgba(255,255,255,0.12)] text-white hover:border-[rgba(255,215,0,0.5)]'
-                    }`}
-                  >
-                    {m}
-                  </button>
-                );
-              })}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <p className="text-[11px] uppercase tracking-wider text-[#A0A0A0] font-semibold mb-1">Start</p>
+                <DatePicker
+                  value={startDate}
+                  onChange={(iso) => {
+                    setStartDate(iso);
+                    if (iso && endDate) {
+                      const maxEnd = addDays(iso, MAX_CAMPAIGN_DAYS - 1);
+                      if (endDate < iso) setEndDate(iso);
+                      else if (endDate > maxEnd) setEndDate(maxEnd);
+                    }
+                  }}
+                  accentColor="gold"
+                  placeholder="Start date"
+                />
+              </div>
+              <div>
+                <p className="text-[11px] uppercase tracking-wider text-[#A0A0A0] font-semibold mb-1">End</p>
+                <DatePicker
+                  value={endDate}
+                  onChange={setEndDate}
+                  minDate={startDate || undefined}
+                  maxDate={startDate ? addDays(startDate, MAX_CAMPAIGN_DAYS - 1) : undefined}
+                  accentColor="gold"
+                  placeholder="End date"
+                />
+              </div>
             </div>
-          </div>
-
-          {/* Campaign Week */}
-          <div>
-            <label className="block text-xs uppercase tracking-wider text-[#A0A0A0] font-semibold mb-1.5">
-              Campaign Week <span className="text-red-400">*</span>
-            </label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              {CAMPAIGN_WEEKS.map((w) => {
-                const selected = campaignWeek === w;
-                const range = campaignWeekToDates(campaignMonth, w);
-                const nowMs = Date.now();
-                const isPast = range && range.endDate.getTime() < nowMs;
-                return (
-                  <button
-                    key={w}
-                    type="button"
-                    onClick={() => setCampaignWeek(w)}
-                    disabled={isPast}
-                    title={isPast ? 'This week has already ended' : undefined}
-                    className={`px-3 py-2 rounded-lg text-xs font-semibold border transition-all ${
-                      selected
-                        ? 'bg-[rgba(255,215,0,0.15)] border-[#FFD700] text-[#FFD700]'
-                        : isPast
-                          ? 'bg-[rgba(255,255,255,0.02)] border-[rgba(255,255,255,0.06)] text-[#5a6473] cursor-not-allowed'
-                          : 'bg-[rgba(255,255,255,0.04)] border-[rgba(255,255,255,0.12)] text-white hover:border-[rgba(255,215,0,0.5)]'
-                    }`}
-                  >
-                    {w}
-                  </button>
-                );
-              })}
-            </div>
-            {/* Live "this ad will be…" hint so the admin doesn't create
-                an EXPIRED ad by accident on the leftover default week. */}
-            <ScheduleHint month={campaignMonth} week={campaignWeek} />
+            {errors.range && <p className="text-xs text-red-400 mt-1">{errors.range}</p>}
+            {/* Live "this ad will be…" hint. */}
+            <ScheduleHint start={startDate} end={endDate} />
           </div>
 
           {/* Priority + Badge text */}
@@ -532,12 +517,12 @@ export function AdCampaignForm({
   );
 }
 
-function ScheduleHint({ month, week }) {
-  const range = campaignWeekToDates(month, week);
-  if (!range) return null;
+function ScheduleHint({ start, end }) {
+  const range = validateCampaignRange(start, end);
+  if (!range.ok) return null;
   const now = Date.now();
-  const startMs = range.startDate.getTime();
-  const endMs = range.endDate.getTime();
+  const startMs = range.start.getTime();
+  const endMs = range.end.getTime();
   const status = DEFAULT_STATUS_BY_DATE(startMs, endMs);
   const fmt = (d) => d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 
@@ -549,13 +534,13 @@ function ScheduleHint({ month, week }) {
       text: 'text-emerald-300',
     },
     [AD_STATUSES.SCHEDULED]: {
-      label: `Will go live on ${fmt(range.startDate)}`,
+      label: `Will go live on ${fmt(range.start)}`,
       bg: 'bg-[#FFD700]/12',
       border: 'border-[#FFD700]/40',
       text: 'text-[#FFD700]',
     },
     [AD_STATUSES.EXPIRED]: {
-      label: 'This window has already ended — pick a later week',
+      label: 'This window has already ended — pick a later range',
       bg: 'bg-red-500/15',
       border: 'border-red-500/40',
       text: 'text-red-300',
@@ -566,7 +551,7 @@ function ScheduleHint({ month, week }) {
   return (
     <div className={`mt-2 inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-semibold ${meta.bg} ${meta.border} ${meta.text}`}>
       <span className="uppercase tracking-wider">{status}</span>
-      <span className="text-white/80 font-normal">— {meta.label} · {fmt(range.startDate)} → {fmt(range.endDate)}</span>
+      <span className="text-white/80 font-normal">— {meta.label} · {fmt(range.start)} → {fmt(range.end)}</span>
     </div>
   );
 }
