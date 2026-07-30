@@ -611,8 +611,21 @@ function PriceBanner({ pkg, duration, onDurationChange }) {
   const price = isMonthly ? monthly : weekly;
   const unit = isMonthly ? '/month' : '/week';
   const discount = computeMonthlyDiscount(weekly, monthly);
+  // Browser auto-translate (Chrome, Safari, Edge) replaces text nodes
+  // in-place, which breaks React reconciliation on subsequent updates —
+  // the reported symptom was the monthly price freezing on the weekly
+  // value after toggling. Two layers of defence:
+  //   1. `translate="no"` on the whole banner tells browsers to leave
+  //      the subtree alone (price, unit, discount badge, toggle labels).
+  //   2. `key={duration}` forces React to remount the container on any
+  //      duration flip, so even if a browser extension still muddies the
+  //      subtree the next render lands on a fresh DOM.
   return (
-    <div className="mb-6 rounded-2xl border border-[rgba(255,215,0,0.3)] bg-gradient-to-br from-[rgba(255,215,0,0.08)] to-[rgba(253,185,49,0.03)] px-5 py-4">
+    <div
+      key={duration}
+      translate="no"
+      className="mb-6 rounded-2xl border border-[rgba(255,215,0,0.3)] bg-gradient-to-br from-[rgba(255,215,0,0.08)] to-[rgba(253,185,49,0.03)] px-5 py-4"
+    >
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <p className="text-xs uppercase tracking-wider text-[#FFD700] font-semibold mb-1">Selected placement</p>
