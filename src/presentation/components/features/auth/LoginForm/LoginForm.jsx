@@ -9,9 +9,10 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useLogin } from '@/presentation/hooks/auth/useLogin';
+import { useAuth } from '@/presentation/contexts/AuthContext';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
 import { container } from '@/core/di/container';
@@ -31,10 +32,44 @@ export function LoginForm() {
   const [backupCode, setBackupCode] = useState('');
   const [mfaLoading, setMfaLoading] = useState(false);
   const { login, completeMfaLogin, loginWithBackupCode, clearError, loading, error, mfaRequired } = useLogin();
+  const { user: authUser, loading: authLoading } = useAuth();
   const { trackLogin } = useTrackEvent();
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get('redirect');
+
+  // Guard so the fast-path redirect only fires once — otherwise every
+  // AuthContext state tick (basicUser -> full profile) re-runs the
+  // effect and can retrigger a navigation mid-transition.
+  const hasRedirectedRef = useRef(false);
+
+  // Fast-path redirect: Firebase signIn resolves and AuthContext fires
+  // its user callback ~immediately, but `authRepository.login()` blocks
+  // on a Firestore getById(USERS, uid) that can take 1-3 s on a cold
+  // page (Firestore SDK settling its auth-token handshake after the
+  // lazy-loaded firebase/auth chunk lands). The Navbar avatar flips on
+  // during that wait, but handleLoginSuccess is still parked on the
+  // Firestore fetch, so the redirect never fires and the user thinks
+  // login broke. Watching AuthContext directly lets us navigate as
+  // soon as the auth SDK confirms the user, without waiting for the
+  // profile hydration to finish (the destination page will pull the
+  // profile via its own useAuth()).
+  //
+  // Only triggers when we're NOT mid-MFA (otherwise a partial signIn
+  // that still needs a TOTP could bounce off the login form) and only
+  // once per mount (hasRedirectedRef).
+  useEffect(() => {
+    if (authLoading) return;
+    if (!authUser) return;
+    if (mfaRequired) return;
+    if (hasRedirectedRef.current) return;
+    hasRedirectedRef.current = true;
+    // Hard nav so middleware picks up the session cookie the login
+    // path just wrote — soft router.push would keep the current
+    // request's cookie state and any protected page it lands on
+    // could re-guard against a stale absence.
+    window.location.href = redirectTo || '/';
+  }, [authLoading, authUser, mfaRequired, redirectTo]);
 
   const handleLoginSuccess = async (user) => {
     // TODO: Re-enable email verification check when verification flow is finalized
