@@ -164,21 +164,68 @@ export function AuthProvider({ children }) {
         return;
       }
 
-      // No profile document exists. Treat this as "profile not yet created"
-      // rather than "deleted / invalid," regardless of provider. The app
-      // routes the user to /complete-profile and the guard handles redirect.
+      // No profile document exists. Before assuming "brand-new user"
+      // and letting the layout guard kick them to /complete-profile,
+      // rule out the two false-positive cases we've hit on hard refresh:
+      //
+      //   1. Custom claim proof — the ID token carries a `role` claim
+      //      (admin / lawyer / provider …) only after a Cloud Function
+      //      onboarded them. If the claim exists, this user has finished
+      //      registration; the null Firestore read is transient (cold
+      //      Firestore SDK on hard refresh, offline persistence off).
+      //      Seed the state with the role claim as evidence so the
+      //      MainLayout profileComplete guard finds it.
+      //
+      //   2. Session cookie hint — this browser has previously written
+      //      the httpOnly session cookie, meaning we've hydrated a real
+      //      profile here at least once. Treat any null now as transient.
+      //
+      // In both cases we mark profileComplete: true so the layout guard
+      // does not run its redirect. The next auth-state fire (natural
+      // token refresh, tab focus) will re-hit fetchProfileAndSession
+      // and land the full profile. Only truly-new users fall past this
+      // block into the fresh-signup fallback.
       if (!userProfile) {
         const providerId = firebaseUser.providerData?.[0]?.providerId;
         const isOAuth = !providerId || providerId !== 'password';
+        const authProvider = isOAuth
+          ? (providerId === 'google.com' ? 'google' : (providerId || 'linkedin'))
+          : 'password';
+
+        let roleClaim = null;
+        try {
+          const tokenResult = await firebaseUser.getIdTokenResult();
+          roleClaim = tokenResult?.claims?.role || null;
+        } catch (claimErr) {
+          console.warn('getIdTokenResult failed while checking role claim:', claimErr);
+        }
+        if (isStale()) return;
+
+        const hasSessionHint = readSessionHint() > 0;
+
+        if (roleClaim || hasSessionHint) {
+          setUser({
+            uid: firebaseUser.uid,
+            email: firebaseUser.email,
+            emailVerified: firebaseUser.emailVerified,
+            displayName: firebaseUser.displayName || '',
+            photoURL: firebaseUser.photoURL || '',
+            authProvider,
+            role: roleClaim || undefined,
+            profileComplete: true,
+          });
+          setProfileLoading(false);
+          return;
+        }
+
+        // Truly-new user: no claim, no prior session — send to /complete-profile.
         setUser({
           uid: firebaseUser.uid,
           email: firebaseUser.email,
           emailVerified: firebaseUser.emailVerified,
           displayName: firebaseUser.displayName || '',
           photoURL: firebaseUser.photoURL || '',
-          authProvider: isOAuth
-            ? (providerId === 'google.com' ? 'google' : (providerId || 'linkedin'))
-            : 'password',
+          authProvider,
           profileComplete: false,
         });
         setProfileLoading(false);
@@ -279,17 +326,48 @@ export function AuthProvider({ children }) {
       if (profileFetchFailed) return;
 
       if (!userProfile) {
+        // Same false-positive guard as fetchProfileAndSession — see the
+        // longer comment there. Custom role claim OR a prior session
+        // cookie is evidence this user was already onboarded; don't
+        // stomp them into a /complete-profile-bound bare state just
+        // because a refetch raced null.
         const providerId = currentUser.providerData?.[0]?.providerId;
         const isOAuth = !providerId || providerId !== 'password';
+        const authProvider = isOAuth
+          ? (providerId === 'google.com' ? 'google' : (providerId || 'linkedin'))
+          : 'password';
+
+        let roleClaim = null;
+        try {
+          const tokenResult = await currentUser.getIdTokenResult();
+          roleClaim = tokenResult?.claims?.role || null;
+        } catch (claimErr) {
+          console.warn('refreshUser: getIdTokenResult failed:', claimErr);
+        }
+
+        const hasSessionHint = readSessionHint() > 0;
+
+        if (roleClaim || hasSessionHint) {
+          setUser({
+            uid: currentUser.uid,
+            email: currentUser.email,
+            emailVerified: currentUser.emailVerified,
+            displayName: currentUser.displayName || '',
+            photoURL: currentUser.photoURL || '',
+            authProvider,
+            role: roleClaim || undefined,
+            profileComplete: true,
+          });
+          return;
+        }
+
         setUser({
           uid: currentUser.uid,
           email: currentUser.email,
           emailVerified: currentUser.emailVerified,
           displayName: currentUser.displayName || '',
           photoURL: currentUser.photoURL || '',
-          authProvider: isOAuth
-            ? (providerId === 'google.com' ? 'google' : (providerId || 'linkedin'))
-            : 'password',
+          authProvider,
           profileComplete: false,
         });
         return;
