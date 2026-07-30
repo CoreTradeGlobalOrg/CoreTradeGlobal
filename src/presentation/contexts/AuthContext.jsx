@@ -80,37 +80,9 @@ export function AuthProvider({ children }) {
     // Subscribe to auth state changes
     const authRepository = container.getAuthRepository();
 
-    // Firebase Auth's persistence restore is async. When the auth SDK is
-    // lazily loaded (see firebase.config.js / FirebaseAuthDataSource.js),
-    // onAuthStateChanged can fire TWICE on a fresh page load for a user
-    // who is actually signed in:
-    //   1. First fire (null) — subscribe raced restore; persistence hasn't
-    //      hydrated yet, so currentUser is null.
-    //   2. Second fire (real user) — restore completes and Firebase fires
-    //      again with the restored user.
-    //
-    // Naively treating the first null as "signed out" wipes the session
-    // cookie, drops authLoading to false with user=null, and any protected
-    // page's `if (!loading && !isAuthenticated) router.replace('/login')`
-    // guard fires — the user is booted back to /login before the second
-    // fire can land. Middleware then sees a still-valid session cookie on
-    // /login and bounces them to '/'. Symptom: "I logged in but I got
-    // sent back to /login, then to '/' when I refreshed."
-    //
-    // Fix: if we have a session-hint cookie marker on mount (i.e. we
-    // wrote the session cookie at least once this browser), ignore the
-    // first null fire. Wait for the real user. A 2s safety timeout
-    // releases authLoading if the second fire never arrives (stale hint,
-    // wiped IndexedDB, revoked session), so protected pages can still
-    // make a redirect decision instead of spinning forever.
-    const hasHintOnMount = readSessionHint() > 0;
-    let hasEverSeenUser = false;
-
     const unsubscribe = authRepository.onAuthStateChanged(
       (firebaseUser) => {
         if (firebaseUser) {
-          hasEverSeenUser = true;
-
           // Immediately set a basic user from Firebase Auth (fast, no Firestore)
           const basicUser = {
             uid: firebaseUser.uid,
@@ -125,14 +97,7 @@ export function AuthProvider({ children }) {
           setProfileLoading(true);
           fetchProfileAndSession(authRepository, firebaseUser);
         } else {
-          // Race guard — see the block comment above. On a fresh page
-          // with a session hint present, the first null fire is almost
-          // always the pre-restore state, not a real sign-out.
-          if (!hasEverSeenUser && hasHintOnMount) {
-            return;
-          }
-
-          // Real sign-out (or no prior session at all).
+          // User is signed out
           setUser(null);
           setAuthLoading(false);
           setProfileLoading(false);
@@ -146,22 +111,8 @@ export function AuthProvider({ children }) {
       }
     );
 
-    // Safety valve: if the second fire (real user) never comes, unlock
-    // authLoading so the app doesn't hang on a spinner forever. Leaves
-    // user=null and preserves the cookie/hint so the next request lets
-    // the server (middleware / API) make the final call.
-    const releaseTimer = setTimeout(() => {
-      if (!hasEverSeenUser && hasHintOnMount) {
-        setAuthLoading(false);
-        setProfileLoading(false);
-      }
-    }, 2000);
-
     // Cleanup subscription on unmount
-    return () => {
-      clearTimeout(releaseTimer);
-      unsubscribe();
-    };
+    return () => unsubscribe();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   /**

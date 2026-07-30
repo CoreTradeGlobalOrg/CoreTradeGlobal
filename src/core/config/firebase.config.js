@@ -20,6 +20,7 @@
  */
 
 import { initializeApp, getApps } from 'firebase/app';
+import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
 // Firebase configuration from environment variables
@@ -46,86 +47,13 @@ if (!getApps().length) {
 }
 
 /**
- * Firebase Service Instances
+ * Firebase Service Instances (eager)
  *
- * - auth: LAZY — firebase/auth (~360 KiB minified) is loaded on first
- *   access, not at module-eval time. See the `auth` proxy below.
- * - db:   EAGER — Firestore is on the homepage LCP path (featured
- *   products / RFQs / companies queries). Keeping it eager avoids an
- *   extra chunk fetch on the very first Firestore call.
+ * - auth: Firebase Authentication
+ * - db: Firestore Database
  */
+export const auth = getAuth(app);
 export const db = getFirestore(app);
-
-/**
- * Lazy Firebase Auth.
- *
- * Root layout mounts AuthProvider on every route (including the
- * unauthenticated homepage), which used to pull `getAuth` and the whole
- * `firebase/auth` SDK into the homepage's initial JS bundle — ~360 KiB
- * minified sitting on the LCP critical path even though 99% of homepage
- * visitors never trigger a sign-in flow.
- *
- * Fix:
- *  - `import('firebase/auth')` is dynamic and memoised in
- *    `_authModulePromise` so it runs at most once per session.
- *  - `getAuthAsync()` is the awaitable form and the only path that
- *    guarantees `firebase/auth` is loaded before it returns.
- *  - `auth` is exported as a Proxy so the ~10 callsites that read
- *    `auth.currentUser` / `auth.app` / etc. keep working WITHOUT change.
- *    First read on a still-cold module triggers the async load and
- *    returns undefined for that one call. Every callsite is inside a
- *    click / effect that fires after AuthProvider has already resolved
- *    the promise, so the undefined branch is essentially unreachable
- *    at runtime.
- *
- * If you need a hard guarantee that auth is ready (e.g., a hard-refresh
- * landing directly on /reset-password), `await getAuthAsync()` first.
- */
-let _authInstance = null;
-let _authModulePromise = null;
-
-function loadAuthModule() {
-  if (!_authModulePromise) {
-    _authModulePromise = import('firebase/auth');
-  }
-  return _authModulePromise;
-}
-
-export async function getAuthAsync() {
-  if (_authInstance) return _authInstance;
-  const mod = await loadAuthModule();
-  if (!_authInstance) {
-    _authInstance = mod.getAuth(app);
-  }
-  return _authInstance;
-}
-
-export function getAuthSync() {
-  return _authInstance;
-}
-
-export const auth = new Proxy(
-  { __isLazyFirebaseAuthProxy: true },
-  {
-    get(_target, prop) {
-      if (prop === Symbol.toPrimitive) return () => '[LazyAuth]';
-      if (prop === 'then') return undefined; // avoid being treated as thenable
-      if (!_authInstance) {
-        // Fire the load but don't block — this call returns undefined.
-        // Any caller that lands here is either (a) racing hydration on
-        // an auth-only page hard refresh, or (b) reading the proxy
-        // before AuthProvider mounts, both of which fix themselves on
-        // the next tick / re-render.
-        loadAuthModule().then((mod) => {
-          if (!_authInstance) _authInstance = mod.getAuth(app);
-        });
-        return undefined;
-      }
-      const value = _authInstance[prop];
-      return typeof value === 'function' ? value.bind(_authInstance) : value;
-    },
-  }
-);
 
 /**
  * Lazy-loaded Firebase Storage

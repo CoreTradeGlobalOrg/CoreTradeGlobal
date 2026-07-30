@@ -1,13 +1,15 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // experimental.optimizeCss (Critters) was tried here but is a
-  // Pages-Router-only feature — Next.js App Router's render pipeline
-  // never calls postProcessHTML, so the flag silently no-ops (verified:
-  // 0 grep hits for postProcessHTML in node_modules/next/dist/server/
-  // app-render/). Removed the flag and the `critters` devDep to stop
-  // shipping dead config. Critical-CSS inlining on the LCP path is
-  // still handled by the `<style dangerouslySetInnerHTML>` block in
-  // src/app/layout.js (sticky-footer + tagline + homepage reservation).
+  // Inline the critical (above-the-fold) subset of every route's CSS into
+  // the HTML `<head>` at build time via Critters, and defer the rest with
+  // a `media="print" onload="this.media='all'"` swap. PageSpeed flagged 6
+  // render-blocking stylesheets (~50 KiB, ~670 ms savings) on the
+  // homepage; the largest was homepage.css (~30 KiB) sitting on the LCP
+  // critical path. `fonts: false` leaves the Inter setup in layout.js
+  // (display: 'optional', preload: false) untouched.
+  experimental: {
+    optimizeCss: true,
+  },
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: 'firebasestorage.googleapis.com' },

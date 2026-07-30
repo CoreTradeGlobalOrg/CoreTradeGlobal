@@ -1,11 +1,15 @@
 import { Inter } from 'next/font/google';
 import Script from 'next/script';
+import { SpeedInsights } from '@vercel/speed-insights/next';
+import { Analytics } from '@vercel/analytics/next';
 import './globals.css';
 import { AuthProvider } from '@/presentation/contexts/AuthContext';
 import { ProductViewProvider } from '@/presentation/contexts/ProductViewContext';
 import { MessagesProvider } from '@/presentation/contexts/MessagesContext';
 import { AnalyticsProvider } from '@/presentation/contexts/AnalyticsContext';
-import { InstrumentationHead, InstrumentationTail } from './InstrumentationStack';
+import { AnalyticsTracker } from '@/presentation/components/common/AnalyticsTracker/AnalyticsTracker';
+import { WebVitals } from '@/presentation/components/common/WebVitals/WebVitals';
+import { Toaster } from 'react-hot-toast';
 
 const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID;
 const CLARITY_PROJECT_ID = process.env.NEXT_PUBLIC_CLARITY_PROJECT_ID;
@@ -219,17 +223,43 @@ export default function RootLayout({ children }) {
         )}
       </head>
       <body className={inter.className}>
-        <InstrumentationHead />
+        <WebVitals />
+        <SpeedInsights />
+        <Analytics />
         <AuthProvider>
           <AnalyticsProvider>
             <MessagesProvider>
               <ProductViewProvider>
                 {children}
-                <InstrumentationTail />
+                <AnalyticsTracker />
               </ProductViewProvider>
             </MessagesProvider>
           </AnalyticsProvider>
         </AuthProvider>
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            duration: 4000,
+            style: {
+              background: '#363636',
+              color: '#fff',
+            },
+            success: {
+              duration: 3000,
+              iconTheme: {
+                primary: '#10b981',
+                secondary: '#fff',
+              },
+            },
+            error: {
+              duration: 4000,
+              iconTheme: {
+                primary: '#ef4444',
+                secondary: '#fff',
+              },
+            },
+          }}
+        />
       </body>
     </html>
   );

@@ -9,55 +9,34 @@
  * - Single Responsibility: Only handles Firebase Auth API calls
  */
 
-import { getAuthAsync, getAuthSync } from '@/core/config/firebase.config';
-
-// firebase/auth (~360 KiB minified) is loaded lazily on first use so it
-// stays out of the homepage's initial JS graph. Every entrypoint below
-// awaits `loadAuthMod()` — the promise is memoised at module scope so
-// subsequent calls are free once the chunk has landed.
-let _authModulePromise = null;
-function loadAuthMod() {
-  if (!_authModulePromise) {
-    _authModulePromise = import('firebase/auth');
-  }
-  return _authModulePromise;
-}
+import {
+  signInWithEmailAndPassword,
+  signInWithCustomToken,
+  createUserWithEmailAndPassword,
+  GoogleAuthProvider,
+  signInWithPopup,
+  linkWithPopup,
+  unlink,
+  signOut,
+  onAuthStateChanged,
+  sendPasswordResetEmail,
+  sendEmailVerification,
+  applyActionCode,
+  updateProfile,
+  updateEmail,
+  updatePassword,
+  reload,
+  getMultiFactorResolver,
+  TotpMultiFactorGenerator,
+} from 'firebase/auth';
 
 export class FirebaseAuthDataSource {
   /**
    * Constructor
-   * @param {Auth} auth - Firebase Auth instance (the Proxy from
-   *   firebase.config — it's kept for backward compat with methods that
-   *   still touch `this.auth.currentUser`, but every real firebase/auth
-   *   call resolves the real instance via getAuthAsync()).
+   * @param {Auth} auth - Firebase Auth instance
    */
   constructor(auth) {
     this.auth = auth;
-  }
-
-  /**
-   * Resolve the real Firebase Auth instance, loading the SDK chunk if
-   * it hasn't been fetched yet. All method implementations that need
-   * to pass an `auth` argument to a firebase/auth function should use
-   * this rather than `this.auth`, because `this.auth` is the lazy
-   * Proxy — the SDK's internals want the real object.
-   *
-   * Also awaits `auth.authStateReady()` — the Firebase v10+ API that
-   * resolves once persistence restore has finished. Without this, a
-   * fresh page load can subscribe to onAuthStateChanged BEFORE the
-   * IndexedDB restore completes, which makes Firebase fire twice
-   * (first null, then the real restored user). That first null
-   * cascades into "signed out" state, protected pages redirect to
-   * /login, and middleware bounces the user to '/'. authStateReady
-   * collapses that into a single fire with the settled state.
-   */
-  async _resolveAuth() {
-    const auth = getAuthSync() || (await getAuthAsync());
-    // Guard: SDK versions < 10 don't have authStateReady. Skip if absent.
-    if (typeof auth.authStateReady === 'function') {
-      await auth.authStateReady();
-    }
-    return auth;
   }
 
   /**
@@ -67,16 +46,18 @@ export class FirebaseAuthDataSource {
    * @returns {Promise<User>} Firebase User object
    */
   async login(email, password) {
-    const [{ signInWithEmailAndPassword, getMultiFactorResolver }, auth] =
-      await Promise.all([loadAuthMod(), this._resolveAuth()]);
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const userCredential = await signInWithEmailAndPassword(
+        this.auth,
+        email,
+        password
+      );
       return userCredential.user;
     } catch (error) {
       if (error.code === 'auth/multi-factor-auth-required') {
         const mfaError = new Error('MFA_REQUIRED');
         mfaError.code = 'auth/multi-factor-auth-required';
-        mfaError.resolver = getMultiFactorResolver(auth, error);
+        mfaError.resolver = getMultiFactorResolver(this.auth, error);
         throw mfaError;
       }
       throw error;
@@ -90,7 +71,6 @@ export class FirebaseAuthDataSource {
    * @returns {Promise<User>} Firebase User object
    */
   async completeMfaSignIn(resolver, totpCode) {
-    const { TotpMultiFactorGenerator } = await loadAuthMod();
     const totpHint = resolver.hints.find((h) => h.factorId === 'totp');
     if (!totpHint) throw new Error('No TOTP factor found');
     const assertion = TotpMultiFactorGenerator.assertionForSignIn(totpHint.uid, totpCode);
@@ -104,8 +84,7 @@ export class FirebaseAuthDataSource {
    * @returns {Promise<User>} Firebase User object
    */
   async loginWithCustomToken(customToken) {
-    const [{ signInWithCustomToken }, auth] = await Promise.all([loadAuthMod(), this._resolveAuth()]);
-    const userCredential = await signInWithCustomToken(auth, customToken);
+    const userCredential = await signInWithCustomToken(this.auth, customToken);
     return userCredential.user;
   }
 
@@ -116,11 +95,11 @@ export class FirebaseAuthDataSource {
    * @returns {Promise<User>} Firebase User object
    */
   async register(email, password) {
-    const [{ createUserWithEmailAndPassword }, auth] = await Promise.all([
-      loadAuthMod(),
-      this._resolveAuth(),
-    ]);
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    const userCredential = await createUserWithEmailAndPassword(
+      this.auth,
+      email,
+      password
+    );
     return userCredential.user;
   }
 
@@ -131,13 +110,9 @@ export class FirebaseAuthDataSource {
    * @returns {Promise<User>} Firebase User object
    */
   async signInWithGoogle() {
-    const [{ GoogleAuthProvider, signInWithPopup }, auth] = await Promise.all([
-      loadAuthMod(),
-      this._resolveAuth(),
-    ]);
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
-    const userCredential = await signInWithPopup(auth, provider);
+    const userCredential = await signInWithPopup(this.auth, provider);
     return userCredential.user;
   }
 
@@ -146,11 +121,7 @@ export class FirebaseAuthDataSource {
    * @returns {Promise<User>} The updated current user.
    */
   async linkGoogle() {
-    const [{ GoogleAuthProvider, linkWithPopup }, auth] = await Promise.all([
-      loadAuthMod(),
-      this._resolveAuth(),
-    ]);
-    const user = auth.currentUser;
+    const user = this.auth.currentUser;
     if (!user) throw new Error('No authenticated user to link.');
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
@@ -164,8 +135,7 @@ export class FirebaseAuthDataSource {
    * @returns {Promise<User>}
    */
   async unlinkProvider(providerId) {
-    const [{ unlink }, auth] = await Promise.all([loadAuthMod(), this._resolveAuth()]);
-    const user = auth.currentUser;
+    const user = this.auth.currentUser;
     if (!user) throw new Error('No authenticated user.');
     return unlink(user, providerId);
   }
@@ -175,53 +145,30 @@ export class FirebaseAuthDataSource {
    * @returns {Promise<void>}
    */
   async logout() {
-    const [{ signOut }, auth] = await Promise.all([loadAuthMod(), this._resolveAuth()]);
-    await signOut(auth);
+    await signOut(this.auth);
   }
 
   /**
-   * Get currently signed-in user.
-   *
-   * SYNC accessor for callsites that expect immediate return. If auth
-   * hasn't been resolved yet (fresh page, no AuthProvider mount) this
-   * returns null — same shape as "no user signed in" — which is the
-   * safe default. AuthContext's onAuthStateChanged will fire once the
-   * SDK actually lands and update state anyway.
-   *
+   * Get currently signed-in user
    * @returns {User|null} Current user or null
    */
   getCurrentUser() {
-    const auth = getAuthSync();
-    return auth ? auth.currentUser : null;
+    return this.auth.currentUser;
   }
 
   /**
-   * Listen to auth state changes.
-   *
-   * Returns a synchronous unsubscribe function even though the real
-   * onAuthStateChanged subscription is async (waits for firebase/auth
-   * chunk to load). If the caller unsubscribes before the SDK lands,
-   * we set `cancelled` so the eventual real unsub is called from the
-   * .then() below.
-   *
+   * Listen to auth state changes
    * @param {Function} callback - Called when auth state changes
    * @returns {Function} Unsubscribe function
+   *
+   * Usage:
+   * const unsubscribe = authDataSource.onAuthStateChanged((user) => {
+   *   // handle user state change
+   * })
+   * // Later: unsubscribe()
    */
   onAuthStateChanged(callback) {
-    let realUnsub = null;
-    let cancelled = false;
-    (async () => {
-      const [{ onAuthStateChanged }, auth] = await Promise.all([
-        loadAuthMod(),
-        this._resolveAuth(),
-      ]);
-      if (cancelled) return;
-      realUnsub = onAuthStateChanged(auth, callback);
-    })();
-    return () => {
-      cancelled = true;
-      if (realUnsub) realUnsub();
-    };
+    return onAuthStateChanged(this.auth, callback);
   }
 
   /**
@@ -230,11 +177,7 @@ export class FirebaseAuthDataSource {
    * @returns {Promise<void>}
    */
   async sendPasswordResetEmail(email) {
-    const [{ sendPasswordResetEmail }, auth] = await Promise.all([
-      loadAuthMod(),
-      this._resolveAuth(),
-    ]);
-    await sendPasswordResetEmail(auth, email);
+    await sendPasswordResetEmail(this.auth, email);
   }
 
   /**
@@ -242,7 +185,6 @@ export class FirebaseAuthDataSource {
    * @returns {Promise<void>}
    */
   async sendEmailVerification() {
-    const { sendEmailVerification } = await loadAuthMod();
     const user = this.getCurrentUser();
     if (!user) {
       throw new Error('No user signed in');
@@ -256,8 +198,7 @@ export class FirebaseAuthDataSource {
    * @returns {Promise<void>}
    */
   async verifyEmail(actionCode) {
-    const [{ applyActionCode }, auth] = await Promise.all([loadAuthMod(), this._resolveAuth()]);
-    await applyActionCode(auth, actionCode);
+    await applyActionCode(this.auth, actionCode);
   }
 
   /**
@@ -265,7 +206,6 @@ export class FirebaseAuthDataSource {
    * @returns {Promise<void>}
    */
   async reloadUser() {
-    const { reload } = await loadAuthMod();
     const user = this.getCurrentUser();
     if (!user) {
       throw new Error('No user signed in');
@@ -288,7 +228,6 @@ export class FirebaseAuthDataSource {
    * @returns {Promise<void>}
    */
   async updateProfile(profile) {
-    const { updateProfile } = await loadAuthMod();
     const user = this.getCurrentUser();
     if (!user) {
       throw new Error('No user signed in');
@@ -302,7 +241,6 @@ export class FirebaseAuthDataSource {
    * @returns {Promise<void>}
    */
   async updateEmail(newEmail) {
-    const { updateEmail } = await loadAuthMod();
     const user = this.getCurrentUser();
     if (!user) {
       throw new Error('No user signed in');
@@ -316,7 +254,6 @@ export class FirebaseAuthDataSource {
    * @returns {Promise<void>}
    */
   async updatePassword(newPassword) {
-    const { updatePassword } = await loadAuthMod();
     const user = this.getCurrentUser();
     if (!user) {
       throw new Error('No user signed in');
