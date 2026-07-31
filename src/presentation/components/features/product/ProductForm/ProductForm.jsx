@@ -21,6 +21,13 @@ import { toTitleCase } from '@/core/utils/nameCase';
 import { Zap } from 'lucide-react';
 import { useCategories } from '@/presentation/hooks/category/useCategories';
 
+// Max product images. Was 5 in an older version; bumped to 10 to match
+// the label ("Product Images (max 10)") and the upload-side guard in
+// handleImageChange ("Maximum 10 images allowed"). Keep the three
+// callsites (dropzone visibility gate, browse counter, upload guard)
+// referring to this constant so they stay in sync.
+const MAX_PRODUCT_IMAGES = 10;
+
 export function ProductForm({ product, onSubmit, onCancel, userId }) {
   const { categories, loading: categoriesLoading } = useCategories();
   const [imageFiles, setImageFiles] = useState([]);
@@ -69,8 +76,8 @@ export function ProductForm({ product, onSubmit, onCancel, userId }) {
     const fileArray = Array.from(files);
     const totalImages = imagePreviews.length + fileArray.length;
 
-    if (totalImages > 10) {
-      toast.error('Maximum 10 images allowed');
+    if (totalImages > MAX_PRODUCT_IMAGES) {
+      toast.error(`Maximum ${MAX_PRODUCT_IMAGES} images allowed`);
       return;
     }
 
@@ -348,7 +355,7 @@ export function ProductForm({ product, onSubmit, onCancel, userId }) {
       <div>
         <div className="flex items-center justify-between flex-wrap gap-2 mb-2">
           <label className="block text-sm font-medium text-gray-300">
-            Product Images (max 10)
+            Product Images (max {MAX_PRODUCT_IMAGES})
           </label>
           {/* Persistent nudge — dashed gold chip on the right of the
               label. Mirrors the site's gold-accent brand cue so it feels
@@ -392,7 +399,7 @@ export function ProductForm({ product, onSubmit, onCancel, userId }) {
         )}
 
         {/* Drag & Drop Zone */}
-        {imagePreviews.length < 5 && (
+        {imagePreviews.length < MAX_PRODUCT_IMAGES && (
           <div
             onDragEnter={handleDragEnter}
             onDragOver={handleDragOver}
@@ -433,7 +440,7 @@ export function ProductForm({ product, onSubmit, onCancel, userId }) {
                   {isDragging ? 'Drop images here' : 'Drag & drop images here'}
                 </p>
                 <p className="text-xs text-[#A0A0A0] mt-1">
-                  or click to browse ({imagePreviews.length}/5)
+                  or click to browse ({imagePreviews.length}/{MAX_PRODUCT_IMAGES})
                 </p>
               </div>
 
