@@ -19,8 +19,18 @@ const providerRoutes = ['/provider'];
 // Routes only for lawyer or admin (use '/lawyer/' to avoid matching '/lawyers' directory)
 const lawyerRoutes = ['/lawyer/'];
 
-// Routes only for guests (redirects to home if already logged in)
-const guestOnlyRoutes = ['/login', '/register'];
+// Guest-only routes used to bounce authenticated users off /login and
+// /register to '/'. Removed 2026-07-31: on Chrome / Opera the still-valid
+// session cookie made every click on the Navbar's Login / Register link
+// (which briefly renders even for signed-in users during the client-side
+// AuthContext hydration race) trigger a redirect to '/' — the page just
+// looked like it was reloading in place. Safari's stricter session-cookie
+// handling made the bug appear browser-specific. Client-side handling
+// (LoginForm's post-submit redirect, RegisterForm's own logic) is enough
+// to send a signed-in user out of these routes when they actually do
+// something. Leaving the constant behind, empty, so the guard block below
+// stays a no-op without touching the flow of the file.
+const guestOnlyRoutes = [];
 
 /**
  * Parse session cookie and return user data

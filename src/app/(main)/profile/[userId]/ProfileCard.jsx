@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Pencil, Check, X as XIcon, ImagePlus, Trash2, Upload } from 'lucide-react';
 import { RoleBadge } from '@/presentation/components/common/RoleBadge/RoleBadge';
 import { COUNTRIES } from '@/core/constants/countries';
-import { COMPANY_TYPES } from '@/core/constants/companyTypes';
+import { COMPANY_TYPES, COMPANY_TYPE_LABELS } from '@/core/constants/companyTypes';
 import { useAuth } from '@/presentation/contexts/AuthContext';
 
 function getCountryLabel(countryCode) {
@@ -415,8 +415,13 @@ export function ProfileCard({
   // rendered with the same plain-text card as Company Name / Category /
   // Country so it drops in without visual noise.
   const isViewerAdmin = currentUser?.role === 'admin';
+  // Prefer the full COMPANY_TYPE_LABELS map (covers admin + lawyer,
+  // which the sign-up dropdown COMPANY_TYPES intentionally omits).
+  // Falls back to the dropdown label lookup for safety, then to
+  // "Not set" if the value is missing / unrecognised entirely.
   const companyTypeLabel =
-    COMPANY_TYPES.find((t) => t.value === profileUser?.companyType)?.label
+    COMPANY_TYPE_LABELS[profileUser?.companyType]
+    || COMPANY_TYPES.find((t) => t.value === profileUser?.companyType)?.label
     || 'Not set';
 
   const hl = (field) =>

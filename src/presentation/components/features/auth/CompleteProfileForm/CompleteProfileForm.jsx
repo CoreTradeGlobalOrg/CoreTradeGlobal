@@ -124,6 +124,11 @@ export function CompleteProfileForm() {
         companyCategory: data.companyCategory,
         country: data.country,
         role,
+        // Persist the raw companyType radio-group value alongside the
+        // derived role — profile card reads user.companyType directly
+        // and only had role to work with before, so every OAuth signup
+        // was surfacing as "Not set".
+        companyType: data.companyType || null,
         companyLogo: null,
         authProvider: user.authProvider || 'google',
         emailVerified: true, // OAuth provider email is already verified

@@ -36,6 +36,7 @@ export class RegisterUseCase {
       displayName,
       companyName,
       role,
+      companyType,
       // Additional registration data
       firstName,
       lastName,
@@ -62,6 +63,12 @@ export class RegisterUseCase {
         displayName,
         companyName,
         role: role || 'member',
+        // The sign-up form asks for `companyType` ('trade' | 'logistics'
+        // | 'insurance') and only the derived `role` was being written
+        // here before, which left every new profile with a null
+        // companyType and the profile card showing "Not set". Persist
+        // the raw form value alongside the derived role.
+        companyType: companyType || null,
         firstName,
         lastName,
         phone,

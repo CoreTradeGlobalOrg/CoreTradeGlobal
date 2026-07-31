@@ -7,9 +7,16 @@
  * sign-in-or-sign-up). Phase 1: Google. LinkedIn is added in Phase 2.
  *
  * Props:
- *   redirectTo {string} - where to go after a successful sign-in of a
- *                         completed account (defaults to '/').
- *   label      {string} - divider label (default "or continue with").
+ *   redirectTo     {string}    - where to go after a successful sign-in of
+ *                                a completed account (defaults to '/').
+ *   label          {string}    - divider label (default "or continue with").
+ *   onBeforeSignIn {() => void} - optional callback fired the instant the
+ *                                user clicks Google or LinkedIn, so the
+ *                                parent (LoginForm) can arm its post-sign-in
+ *                                fast-path redirect. Without this the effect
+ *                                would only fire on the form submit path
+ *                                and OAuth sign-ins would sit on /login
+ *                                after AuthContext resolved the user.
  */
 
 import { useGoogleAuth } from '@/presentation/hooks/auth/useGoogleAuth';
@@ -33,12 +40,18 @@ function GoogleIcon() {
   );
 }
 
-export function SocialAuthButtons({ redirectTo, label = 'or continue with' }) {
+export function SocialAuthButtons({ redirectTo, label = 'or continue with', onBeforeSignIn }) {
   const { signInWithGoogle, loading } = useGoogleAuth();
 
   const startLinkedIn = () => {
+    if (onBeforeSignIn) onBeforeSignIn();
     const dest = encodeURIComponent(redirectTo || '/');
     window.location.href = `/api/auth/linkedin/start?redirect=${dest}`;
+  };
+
+  const startGoogle = () => {
+    if (onBeforeSignIn) onBeforeSignIn();
+    signInWithGoogle(redirectTo);
   };
 
   return (
@@ -53,7 +66,7 @@ export function SocialAuthButtons({ redirectTo, label = 'or continue with' }) {
       {/* Google */}
       <button
         type="button"
-        onClick={() => signInWithGoogle(redirectTo)}
+        onClick={startGoogle}
         disabled={loading}
         className="w-full flex items-center justify-center gap-3 py-3 rounded-full bg-white text-[#1f1f1f] font-medium hover:bg-gray-100 active:scale-[0.98] transition-all disabled:opacity-60 disabled:cursor-not-allowed"
       >

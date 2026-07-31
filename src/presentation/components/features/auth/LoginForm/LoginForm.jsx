@@ -42,6 +42,14 @@ export function LoginForm() {
   // AuthContext state tick (basicUser -> full profile) re-runs the
   // effect and can retrigger a navigation mid-transition.
   const hasRedirectedRef = useRef(false);
+  // Only the click-submit path should trigger the fast-path effect.
+  // If we fired on `authUser` alone, an already-signed-in user who
+  // clicks the Navbar "Login" link would land on /login for a split
+  // second and be bounced right back to '/', looking to them like the
+  // page just reloaded on click. Setting this flag from handleSubmit
+  // / MFA continue / SocialAuthButtons keeps the redirect scoped to
+  // an actual sign-in attempt made from this page.
+  const submissionInFlightRef = useRef(false);
 
   // Fast-path redirect: Firebase signIn resolves and AuthContext fires
   // its user callback ~immediately, but `authRepository.login()` blocks
@@ -55,10 +63,12 @@ export function LoginForm() {
   // profile hydration to finish (the destination page will pull the
   // profile via its own useAuth()).
   //
-  // Only triggers when we're NOT mid-MFA (otherwise a partial signIn
-  // that still needs a TOTP could bounce off the login form) and only
-  // once per mount (hasRedirectedRef).
+  // Gated on submissionInFlightRef so it does NOT fire for users who
+  // are already signed in and just navigated onto /login (see the
+  // ref's declaration above), and skipped mid-MFA so a partial signIn
+  // waiting on TOTP doesn't bounce off the login form.
   useEffect(() => {
+    if (!submissionInFlightRef.current) return;
     if (authLoading) return;
     if (!authUser) return;
     if (mfaRequired) return;
@@ -105,12 +115,16 @@ export function LoginForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    // Unlock the fast-path redirect for THIS submission. Cleared on
+    // error so a failed attempt doesn't leave the effect armed.
+    submissionInFlightRef.current = true;
 
     try {
       const user = await login(email, password);
       if (!user) return; // MFA required — form will switch to TOTP input
       await handleLoginSuccess(user);
     } catch (err) {
+      submissionInFlightRef.current = false;
       console.error('Login failed:', err);
 
       if (err.message === 'ACCOUNT_DELETED' && err.deletionInfo) {
@@ -126,6 +140,7 @@ export function LoginForm() {
   const handleMfaSubmit = async (e) => {
     e.preventDefault();
     setMfaLoading(true);
+    submissionInFlightRef.current = true;
 
     try {
       if (useBackupCode) {
@@ -139,6 +154,7 @@ export function LoginForm() {
         await handleLoginSuccess(user);
       }
     } catch (err) {
+      submissionInFlightRef.current = false;
       console.error('MFA verification failed:', err);
       toast.error(err.message || (useBackupCode ? 'Invalid backup code.' : 'Invalid authenticator code.'));
       setMfaLoading(false);
@@ -325,7 +341,10 @@ export function LoginForm() {
         </button>
 
         <div className="mt-6">
-          <SocialAuthButtons redirectTo={redirectTo} />
+          <SocialAuthButtons
+            redirectTo={redirectTo}
+            onBeforeSignIn={() => { submissionInFlightRef.current = true; }}
+          />
         </div>
 
         <p className="mt-6 text-center text-sm text-[#A0A0A0]">
