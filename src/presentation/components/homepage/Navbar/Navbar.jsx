@@ -430,16 +430,6 @@ export function Navbar() {
               height={109}
               className="nav-logo-img"
               priority
-              // Bypass the Vercel image optimizer for this static asset:
-              // the source PNG is already ~10 KiB (pre-optimized during
-              // asset prep), so routing it through /_next/image only
-              // costs an extra transform without shrinking the payload.
-              // A prior preview run also showed the optimizer failing
-              // (broken-image state) for this specific asset while
-              // Firebase-Storage-hosted avatars kept working, so
-              // sidestepping the optimizer removes an unnecessary
-              // failure surface for the site logo.
-              unoptimized
             />
           </Link>
         </div>

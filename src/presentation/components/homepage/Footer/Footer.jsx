@@ -46,10 +46,6 @@ export function Footer() {
               height={109}
               className="nav-logo-img"
               loading="lazy"
-              // Bypass the Vercel image optimizer — same reason as the
-              // Navbar copy of this file: the PNG is already ~10 KiB
-              // and the optimizer path was flakier than the raw asset.
-              unoptimized
             />
             <p>CoreTradeGlobal is an end-to-end B2B trade ecosystem that brings exporters, importers, and businesses involved in international trade together on a single platform.</p>
             <div className="flex flex-col gap-2 mt-4 text-sm text-gray-400">
