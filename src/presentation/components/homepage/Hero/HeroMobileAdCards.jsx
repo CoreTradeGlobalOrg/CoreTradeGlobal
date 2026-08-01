@@ -20,6 +20,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useActiveAd } from '@/presentation/hooks/ads/useActiveAd';
 import { useTrackAd } from '@/presentation/hooks/ads/useTrackAd';
 import { AD_TYPES } from '@/core/constants/adTypes';
@@ -42,11 +43,16 @@ function AdSlot({ ad, placeholder, ariaLabel }) {
       >
         <div className="hero-mobile-ad-card-media">
           {ad.companyLogo ? (
-            <img
+            <Image
               src={ad.companyLogo}
               alt={ad.companyName || 'Sponsored'}
-              loading="lazy"
-              decoding="async"
+              fill
+              // Container is 50 % of the mobile grid (viewport / 2 - gap /
+              // gutter) — ~200 px at 400 px viewport, ~180 px at 375 px.
+              // 240 px hint keeps the optimizer on a small variant instead
+              // of the 640 px default.
+              sizes="(max-width: 768px) 240px, 240px"
+              className="object-cover"
             />
           ) : (
             <span className="text-3xl">✨</span>
