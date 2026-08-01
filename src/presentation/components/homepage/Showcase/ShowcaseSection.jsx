@@ -71,6 +71,11 @@ const CompanyLogoImage = memo(function CompanyLogoImage({ src, alt, fallback }) 
         // the 256 or 384 variant instead of the ~640 default the
         // fallback picks when sizes is missing.
         sizes="(max-width: 768px) 260px, 320px"
+        // Bypass the Vercel image optimizer — the monthly quota was
+        // hit in July 2026 and sponsored ad logos started rendering
+        // as broken images. Same pattern as the site logo bypass
+        // in Navbar/Footer and the post-25-Jul product card cutoff.
+        unoptimized
         className={`object-cover transition-opacity duration-200 ${loading ? 'opacity-0' : 'opacity-100'}`}
         onLoad={() => setLoading(false)}
         onError={() => { setLoading(false); setError(true); }}

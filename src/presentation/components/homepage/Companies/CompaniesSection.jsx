@@ -97,6 +97,7 @@ function CompanyCard({ company, categories }) {
                 sizes="64px"
                 className="object-cover"
                 onError={() => setImgError(true)}
+                unoptimized
               />
             ) : (
               <span className="text-xl font-extrabold text-[var(--accent-gold)]">

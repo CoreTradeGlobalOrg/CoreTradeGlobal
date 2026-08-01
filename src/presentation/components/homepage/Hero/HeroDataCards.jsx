@@ -134,6 +134,7 @@ export function HeroDataCards({ fetchData, dataLoading, latestProduct, latestReq
                   fill
                   sizes="48px"
                   className="object-cover rounded"
+                  unoptimized
                 />
               ) : (
                 <span style={{ fontSize: '24px' }}>✨</span>
@@ -284,6 +285,7 @@ export function HeroDataCards({ fetchData, dataLoading, latestProduct, latestReq
                   fill
                   sizes="64px"
                   className="object-cover rounded-lg"
+                  unoptimized
                 />
               ) : (
                 <span style={{ fontSize: '24px' }}>✨</span>
