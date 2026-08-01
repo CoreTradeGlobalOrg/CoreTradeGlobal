@@ -200,6 +200,12 @@ export function HeroSection({ fetchData = false }) {
           </div>
         </div>
 
+        {/* Mobile-only ad slots. Sits between the search bar and the CTA
+            row so it fills the vertical space the (mobile-hidden) globe
+            used to reserve — one strip of on-brand content instead of a
+            ~320 px blank band. Desktop hides via CSS in globals.css. */}
+        <HeroMobileAdCards />
+
         {/* Hero CTA Buttons */}
         <div className="hero-interactions">
           <div className="hero-cta-group">
@@ -244,11 +250,6 @@ export function HeroSection({ fetchData = false }) {
               </>
             )}
           </div>
-
-          {/* Mobile-only ad slots (Featured Product + Featured Company).
-              Sits directly under the CTA row; desktop hides via CSS since
-              the same ad types show up in HeroDataCards / Showcase. */}
-          <HeroMobileAdCards />
         </div>
 
         <HeroStats />

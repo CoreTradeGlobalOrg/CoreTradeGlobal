@@ -900,30 +900,32 @@ a:hover {
   .hero-mobile-ad-cards {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 10px;
+    gap: 12px;
     width: 100%;
-    margin-top: 0;
-    padding: 0 5px;
+    /* Fill the vertical band the mobile-hidden globe used to occupy.
+       Sits under HeroSearchBar and above the CTA button row (JSX
+       order in HeroSection). Padding matches .hero-overlay (12 px)
+       so both blocks align to the same page gutter. */
+    margin: 20px 0 12px;
+    padding: 0 12px;
+    order: 2;
     position: relative;
     z-index: 3;
-    /* Parent .hero-interactions has pointer-events: none so globe drag
-       works — re-enable pointer events on this row so the ad cards are
-       actually clickable. */
     pointer-events: auto;
   }
   .hero-mobile-ad-card {
     display: flex;
     flex-direction: column;
-    gap: 6px;
-    padding: 10px;
+    gap: 8px;
+    padding: 12px;
     border-radius: 14px;
     /* Placeholder-vs-real-ad body text differs (short vs 2-line clamp)
-       and the media slot is fixed at 72 px — pin a min-height so the
-       card can only grow above this floor when the loaded ad has a
-       long title, never below it. Prevents the 15-30 px card-height
-       shift that fired between the empty placeholder and the loaded
-       sponsored card on throttled mobile. */
-    min-height: 145px;
+       and the media slot is fixed — pin a min-height so the card can
+       only grow above this floor when the loaded ad has a long title,
+       never below it. Prevents the placeholder→loaded shift on
+       throttled mobile. 200 px roughly matches the empty band this
+       row is now filling in the mobile hero. */
+    min-height: 200px;
     background: rgba(15, 27, 43, 0.75);
     /* Match the SponsoredProductCard border weight on /products so paid
        hero slots read as sponsored on mobile too. */
@@ -946,8 +948,8 @@ a:hover {
   .hero-mobile-ad-card-media {
     position: relative;
     width: 100%;
-    height: 72px;
-    max-height: 72px;
+    height: 96px;
+    max-height: 96px;
     border-radius: 8px;
     overflow: hidden;
     background: rgba(255, 215, 0, 0.08);
@@ -964,8 +966,8 @@ a:hover {
   }
   .hero-mobile-ad-card-plus {
     width: 100%;
-    height: 72px;
-    max-height: 72px;
+    height: 96px;
+    max-height: 96px;
     border-radius: 8px;
     background: linear-gradient(135deg, rgba(255,215,0,0.18), rgba(253,185,49,0.06));
     border: 1px dashed rgba(255, 215, 0, 0.55);

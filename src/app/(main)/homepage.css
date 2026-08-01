@@ -117,16 +117,11 @@ html {
     }
 
     #canvas-container {
-        position: relative !important;
-        display: flex !important;
-        justify-content: center !important;
-        align-items: center !important;
-        pointer-events: none !important;
-        width: 100%;
-        height: 320px !important;
-        order: 2;
-        margin: 0 !important;
-        overflow: visible;
+        /* Mobile: no globe is ever mounted here (HeroSection gates
+           three.js behind !isMobile), so drop the whole slot from
+           layout instead of reserving a 320 px blank band under the
+           search bar. The mobile ad cards take that middle spot now. */
+        display: none !important;
     }
 
     .globe-loading-text {
