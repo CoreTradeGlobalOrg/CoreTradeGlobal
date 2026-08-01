@@ -19,7 +19,6 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useActiveAd } from '@/presentation/hooks/ads/useActiveAd';
 import { useTrackAd } from '@/presentation/hooks/ads/useTrackAd';
@@ -83,23 +82,18 @@ function AdSlot({ ad, placeholder, ariaLabel }) {
 }
 
 export function HeroMobileAdCards() {
-  // SSR-safe mobile gate. Start `false` so the server + first paint
-  // never emit these cards on desktop (or on unknown viewports). Once
-  // mounted we check window.innerWidth and listen for resize so the
-  // component appears/disappears at the same 768px breakpoint the CSS
-  // uses.
-  const [isMobile, setIsMobile] = useState(false);
-  useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 768);
-    check();
-    window.addEventListener('resize', check);
-    return () => window.removeEventListener('resize', check);
-  }, []);
-
+  // Desktop hiding is done purely via CSS (`.hero-mobile-ad-cards`
+  // is `display: none` by default and only flips to `display: grid`
+  // inside `@media (max-width: 768px)` in globals.css). The previous
+  // `if (!isMobile) return null` JS gate meant SSR emitted nothing
+  // here and the ~157 px grid only appeared after client mount —
+  // on throttled-mobile PageSpeed runs the delayed mount pushed the
+  // whole HeroStats + HeroDataCards + everything-below cluster down
+  // by 157 px, accounting for ~0.2 CLS on top of the 0.05 baseline
+  // this page otherwise measures. Rendering the container in SSR
+  // reserves the slot from first paint.
   const { ad: featuredProductAd } = useActiveAd(AD_TYPES.FEATURED);
   const { ad: heroAd } = useActiveAd(AD_TYPES.HERO);
-
-  if (!isMobile) return null;
 
   return (
     <div className="hero-mobile-ad-cards">

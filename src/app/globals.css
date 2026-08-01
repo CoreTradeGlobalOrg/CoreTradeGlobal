@@ -42,6 +42,17 @@ main {
   --navbar-height: 104px;
 }
 
+/* Mobile navbar is shorter (.navbar-content: 56px + ticker: 32px = 88px).
+   Without this override, the desktop 104px fallback was in effect until
+   Navbar.jsx's ResizeObserver measured the live nav on mount, which
+   collapsed #hero-section's margin-top by 15 px on mobile — accounting
+   for a chunk of the 0.4 mobile CLS score PageSpeed was reporting. */
+@media (max-width: 768px) {
+  :root {
+    --navbar-height: 88px;
+  }
+}
+
 html {
   scroll-padding-top: calc(var(--navbar-height) + 16px);
 }
@@ -906,6 +917,13 @@ a:hover {
     gap: 6px;
     padding: 10px;
     border-radius: 14px;
+    /* Placeholder-vs-real-ad body text differs (short vs 2-line clamp)
+       and the media slot is fixed at 72 px — pin a min-height so the
+       card can only grow above this floor when the loaded ad has a
+       long title, never below it. Prevents the 15-30 px card-height
+       shift that fired between the empty placeholder and the loaded
+       sponsored card on throttled mobile. */
+    min-height: 145px;
     background: rgba(15, 27, 43, 0.75);
     /* Match the SponsoredProductCard border weight on /products so paid
        hero slots read as sponsored on mobile too. */
