@@ -191,9 +191,20 @@ export default function JoinPage() {
         </div>
 
         {/* Register Form */}
+        {/* translate="no" quarantines the form from Chrome / Google
+            Translate — under auto-translate the browser injects <font>
+            wrappers around text nodes and React 19's reconciler then
+            throws "Failed to execute 'removeChild' on 'Node'" the
+            first time RegisterForm re-renders (facebook/react#11538).
+            Same class of crash the (auth)/layout.jsx fix (74a281f)
+            covered for /register; /join lives under (main) so the
+            wrapping div doesn't inherit that protection and needs
+            an explicit opt-out here. Marketing copy on the rest of
+            the page stays translatable. */}
         <div
           id="register-form"
           className="w-full max-w-[500px] scroll-mt-[calc(var(--navbar-height)+16px)]"
+          translate="no"
         >
           <Suspense fallback={<div className="h-64 rounded-2xl bg-[rgba(255,255,255,0.04)] animate-pulse" />}>
             <RegisterForm />
