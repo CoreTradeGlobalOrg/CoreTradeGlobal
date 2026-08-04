@@ -11,6 +11,8 @@
  *   users/{uid}/profile.*          → max 800px (onboarding avatar)
  *   users/{uid}/messages/*         → skipped (attachments)
  *   users/{uid}/legal/*            → skipped (legal evidence)
+ *   users/{uid}/documents/*        → skipped (KYC / ID scans — hassas evrak,
+ *                                    admin sonradan zoom ile inceleyebilir)
  *   everything else                → max 1600px
  *
  * Usage:
@@ -53,7 +55,7 @@ admin.initializeApp({
 const bucket = admin.storage().bucket();
 
 function sizeForPath(p) {
-  if (/\/messages\//.test(p) || /\/legal\//.test(p)) return null; // skip
+  if (/\/messages\//.test(p) || /\/legal\//.test(p) || /\/documents\//.test(p)) return null; // skip
   if (/\/company-logo\//.test(p) || /\/profile\./.test(p)) return 800;
   if (/\/products\//.test(p)) return 1200;
   return 1600;
