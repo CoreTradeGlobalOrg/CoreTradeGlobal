@@ -4,6 +4,7 @@ import { useEffect, useState, useLayoutEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { container } from '@/core/di/container';
+import { compressImage, extForCompressed } from '@/lib/image-utils';
 import { useProducts } from '@/presentation/hooks/product/useProducts';
 import { useCreateProduct } from '@/presentation/hooks/product/useCreateProduct';
 import { useUpdateProduct } from '@/presentation/hooks/product/useUpdateProduct';
@@ -156,11 +157,11 @@ export function useProfilePage({ userId, currentUser, authLoading, isAuthenticat
     reader.readAsDataURL(file);
 
     try {
-      const ext = (file.name.split('.').pop() || 'png').toLowerCase();
-      const storagePath = `users/${userId}/company-logo/image.${ext}`;
+      const compressed = await compressImage(file, 'logo');
+      const storagePath = `users/${userId}/company-logo/image.${extForCompressed(compressed)}`;
       const logoUrl = await container
         .getFirebaseStorageDataSource()
-        .uploadFile(storagePath, file);
+        .uploadFile(storagePath, compressed);
 
       const repo = container.getUserRepository();
       await repo.update(userId, { companyLogo: logoUrl, updatedAt: new Date() });
@@ -190,8 +191,11 @@ export function useProfilePage({ userId, currentUser, authLoading, isAuthenticat
       let logoUrl = profileUser.companyLogo;
       if (logoRemoved) logoUrl = null;
       else if (logoFile) {
-        const ext = logoFile.name.split('.').pop();
-        logoUrl = await container.getFirebaseStorageDataSource().uploadFile(`users/${userId}/company-logo/image.${ext}`, logoFile);
+        const compressed = await compressImage(logoFile, 'logo');
+        logoUrl = await container.getFirebaseStorageDataSource().uploadFile(
+          `users/${userId}/company-logo/image.${extForCompressed(compressed)}`,
+          compressed,
+        );
       }
       // Users routinely type `example.com` without the scheme — Firebase
       // stores it as-is and Link/anchor rendering treats it as a relative
