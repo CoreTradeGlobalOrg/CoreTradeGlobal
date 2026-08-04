@@ -9,6 +9,7 @@
 import { COLLECTIONS } from '@/core/constants/collections';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { getStorageInstance } from '@/core/config/firebase.config';
+import { compressImage } from '@/lib/image-utils';
 
 const MESSAGES_SUBCOLLECTION = 'messages';
 
@@ -201,27 +202,37 @@ export class MessageRepository {
    * @returns {Promise<Object>} - { url, name, type, size }
    */
   async uploadAttachment(conversationId, senderId, file) {
-    // Keep original filename with timestamp prefix to avoid collisions
-    const timestamp = Date.now();
-    const filename = `${timestamp}_${file.name}`;
+    // Image attachments (screenshots, product photos in DMs) run through
+    // the product-sized WebP preset so a 5 MB camera-roll capture doesn't
+    // land in Storage full-size. Non-images (PDF, doc, etc.) pass through
+    // untouched — compressImage already no-ops on non-image blobs, but
+    // we still bind the compressed reference so the metadata below picks
+    // up the resulting type/size correctly.
+    const payload = await compressImage(file, 'product');
 
-    // Storage path: conversations/attachments/{conversationId}/{filename}
+    // Keep original filename with timestamp prefix to avoid collisions.
+    // If the compressor rewrote the payload to WebP, swap the stored
+    // filename extension to `.webp` so the object at rest reflects its
+    // real bytes; the display name returned below stays original because
+    // that's what users recognise ("invoice.png").
+    const timestamp = Date.now();
+    const filename = payload.type === 'image/webp'
+      ? `${timestamp}_${file.name.replace(/\.[^.]+$/, '')}.webp`
+      : `${timestamp}_${file.name}`;
     const storagePath = `conversations/attachments/${conversationId}/${filename}`;
     const storageRef = ref(getStorageInstance(), storagePath);
 
-    // Upload file
-    const snapshot = await uploadBytes(storageRef, file, {
-      contentType: file.type,
+    const snapshot = await uploadBytes(storageRef, payload, {
+      contentType: payload.type,
     });
 
-    // Get download URL
     const downloadURL = await getDownloadURL(snapshot.ref);
 
     return {
       url: downloadURL,
       name: file.name,
-      type: file.type,
-      size: file.size,
+      type: payload.type,
+      size: payload.size,
       storagePath,
     };
   }
