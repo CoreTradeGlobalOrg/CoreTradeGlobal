@@ -22,6 +22,15 @@ const PRESETS = {
     useWebWorker: true,
     fileType: 'image/webp',
   },
+  // Ad campaign creatives — 96px media slot on desktop hero, still readable on
+  // retina at 2×. 600 covers both cases without blowing the storage budget.
+  adLogo: {
+    maxSizeMB: 0.4,
+    maxWidthOrHeight: 600,
+    initialQuality: 0.8,
+    useWebWorker: true,
+    fileType: 'image/webp',
+  },
   // Product photos — bigger, higher quality since users zoom.
   product: {
     maxSizeMB: 0.8,
@@ -39,6 +48,22 @@ const PRESETS = {
     fileType: 'image/webp',
   },
 };
+
+/**
+ * Pick the correct storage-path extension for a compressed file.
+ * Callers used to derive `ext` from `file.name` — after we swap the payload
+ * to WebP that extension lies. Use the returned File's `type` instead so
+ * `foo.jpg` uploaded as `image/webp` is stored as `foo.webp`.
+ */
+export function extForCompressed(file) {
+  const type = file?.type || '';
+  if (type === 'image/webp') return 'webp';
+  if (type === 'image/jpeg') return 'jpg';
+  if (type === 'image/png') return 'png';
+  if (type === 'image/gif') return 'gif';
+  if (type === 'image/svg+xml') return 'svg';
+  return 'bin';
+}
 
 export async function compressImage(file, preset = 'logo') {
   if (!file || !(file instanceof Blob)) return file;
