@@ -34,6 +34,7 @@ import toast from 'react-hot-toast';
 import { Loader2, Upload, X } from 'lucide-react';
 import { db } from '@/core/config/firebase.config';
 import { container } from '@/core/di/container';
+import { compressImage, extForCompressed } from '@/lib/image-utils';
 import { useAuth } from '@/presentation/contexts/AuthContext';
 import {
   AD_STATUSES,
@@ -255,12 +256,14 @@ export function AdCampaignForm({
         adId = created.id;
       }
 
-      // Upload the new logo if provided and patch the URL back on.
+      // Upload the new logo if provided and patch the URL back on. The
+      // creative renders in a 96 px media slot, so we push it through the
+      // adLogo preset (600 px WebP) before it hits Storage.
       if (logoFile && adId) {
-        const ext = (logoFile.name.split('.').pop() || 'png').toLowerCase();
+        const compressed = await compressImage(logoFile, 'adLogo');
         const storageDS = container.getFirebaseStorageDataSource();
-        const path = `ads/${adId}/creative.${ext}`;
-        const url = await storageDS.uploadFile(path, logoFile);
+        const path = `ads/${adId}/creative.${extForCompressed(compressed)}`;
+        const url = await storageDS.uploadFile(path, compressed);
         await updateDoc(doc(db, 'ads', adId), { companyLogo: url });
       }
 
