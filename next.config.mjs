@@ -9,22 +9,23 @@ const nextConfig = {
   // still handled by the `<style dangerouslySetInnerHTML>` block in
   // src/app/layout.js (sticky-footer + tagline + homepage reservation).
   images: {
+    // Global bypass of the Vercel Image Optimizer. Every user upload
+    // now arrives WebP-compressed (src/lib/image-utils.js on the client)
+    // or was recompressed in place by scripts/compress-storage-images.js
+    // on the historical backfill, so the CDN in front of Firebase
+    // Storage serves right-sized bytes directly. The optimizer added
+    // no value beyond avif/webp transcoding we already do at rest, and
+    // its per-month quota is what was driving the recurring HTTP 402
+    // outages on hero placements. remotePatterns / deviceSizes /
+    // imageSizes are left in place as documentation of the previous
+    // rendering matrix — they're no-ops while unoptimized is true.
+    unoptimized: true,
     remotePatterns: [
       { protocol: 'https', hostname: 'firebasestorage.googleapis.com' },
       { protocol: 'https', hostname: 'storage.googleapis.com' },
       { protocol: 'https', hostname: 'lh3.googleusercontent.com' },
       { protocol: 'https', hostname: 'media.licdn.com' },
     ],
-    // Tighter breakpoints closer to the actual card sizes we render.
-    // Defaults are deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048,
-    // 3840] and imageSizes: [16, 32, 48, 64, 96, 128, 256, 384]. That
-    // matrix left big gaps in the small-thumbnail range: a 200 px card
-    // rounded up to 384, and a 500 px mobile hero rounded up to 828.
-    // Adds 360 (min mobile viewport), 80/200/512 (common thumbnail /
-    // hero widths) and drops 2048/3840 (nothing on our pages renders at
-    // 2K+ except a rare desktop hero — no need to keep 2 extra AVIF
-    // variants around per image). Lighthouse flagged ~668 KiB of
-    // image-oversize on the homepage against this exact gap.
     deviceSizes: [360, 640, 828, 1080, 1200, 1920],
     imageSizes: [16, 32, 48, 64, 80, 96, 128, 200, 256, 384, 512],
     formats: ['image/avif', 'image/webp'],
