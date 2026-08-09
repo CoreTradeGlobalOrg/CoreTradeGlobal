@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Pencil, Check, X as XIcon, ImagePlus, Trash2, Upload } from 'lucide-react';
 import { RoleBadge } from '@/presentation/components/common/RoleBadge/RoleBadge';
 import { COUNTRIES } from '@/core/constants/countries';
-import { COMPANY_TYPES, COMPANY_TYPE_LABELS } from '@/core/constants/companyTypes';
+import { COMPANY_TYPES, COMPANY_TYPE_LABELS, ROLE_TO_COMPANY_TYPE } from '@/core/constants/companyTypes';
 import { useAuth } from '@/presentation/contexts/AuthContext';
 
 function getCountryLabel(countryCode) {
@@ -415,13 +415,21 @@ export function ProfileCard({
   // rendered with the same plain-text card as Company Name / Category /
   // Country so it drops in without visual noise.
   const isViewerAdmin = currentUser?.role === 'admin';
-  // Prefer the full COMPANY_TYPE_LABELS map (covers admin + lawyer,
-  // which the sign-up dropdown COMPANY_TYPES intentionally omits).
-  // Falls back to the dropdown label lookup for safety, then to
-  // "Not set" if the value is missing / unrecognised entirely.
+  // Derive companyType from role rather than reading the persisted
+  // user.companyType field. Two things were making the persisted value
+  // rot: (1) it was missing on every account created before the
+  // 17-01 patch, and (2) the setUserRole admin action updates `role`
+  // without touching `companyType`, so a member demoted from
+  // insurance_provider still showed "Insurance Company". role is the
+  // one field guaranteed to be current on every user, and the mapping
+  // in ROLE_TO_COMPANY_TYPE is 1:1, so deriving here removes both bug
+  // classes in one pass. Persisted companyType is kept as a defensive
+  // fallback for any user whose role is somehow missing/unknown.
+  const derivedType =
+    ROLE_TO_COMPANY_TYPE[profileUser?.role] || profileUser?.companyType;
   const companyTypeLabel =
-    COMPANY_TYPE_LABELS[profileUser?.companyType]
-    || COMPANY_TYPES.find((t) => t.value === profileUser?.companyType)?.label
+    COMPANY_TYPE_LABELS[derivedType]
+    || COMPANY_TYPES.find((t) => t.value === derivedType)?.label
     || 'Not set';
 
   const hl = (field) =>
