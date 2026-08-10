@@ -15,8 +15,9 @@
 import { useState, useEffect, Suspense } from 'react';
 import dynamic from 'next/dynamic';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { collection, getDocs, where, query } from 'firebase/firestore';
-import { Handshake, Truck, CheckCircle2 } from 'lucide-react';
+import { Handshake, Truck, CheckCircle2, BarChart3 } from 'lucide-react';
 import { useAuth } from '@/presentation/contexts/AuthContext';
 import { useGetAllUsers } from '@/presentation/hooks/admin/useGetAllUsers';
 import { db } from '@/core/config/firebase.config';
@@ -244,11 +245,21 @@ function AdminPageContent() {
   return (
     <div className="min-h-screen bg-[#0F1B2B] px-4 py-6 pt-[calc(var(--navbar-height)+24px)] md:px-8 md:py-8 md:pt-[calc(var(--navbar-height)+24px)]">
       {/* Page Header */}
-      <div className="mb-6 md:mb-8">
-        <h2 className="text-2xl md:text-3xl font-bold text-white mb-2">Admin Dashboard</h2>
-        <p className="text-sm md:text-base text-[#A0A0A0]">
-          Manage users, categories, and platform settings
-        </p>
+      <div className="mb-6 md:mb-8 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="text-2xl md:text-3xl font-bold text-white mb-2">Admin Dashboard</h2>
+          <p className="text-sm md:text-base text-[#A0A0A0]">
+            Manage users, categories, and platform settings
+          </p>
+        </div>
+        <Link
+          href="/admin/analytics"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#FFD700]/10 hover:bg-[#FFD700]/15 border border-[#FFD700]/30 text-[#FFD700] font-semibold text-sm transition-colors"
+        >
+          <BarChart3 className="w-4 h-4" />
+          Analytics Dashboard
+          <span aria-hidden>→</span>
+        </Link>
       </div>
 
       {/* Tabs - Scrollable on mobile */}
