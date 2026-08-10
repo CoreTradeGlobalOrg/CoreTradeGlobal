@@ -78,8 +78,8 @@ export function OverviewSection() {
     {
       icon: Activity,
       label: 'Aktif Üye (30g)',
-      value: data?.activeMembers30d,
-      hint: data?.activeMembers30d === null ? 'lastLoginAt izleme bekleniyor' : null,
+      value: data?.activeMembers30d?.toLocaleString('tr-TR'),
+      hint: 'Son 30 gün içinde giriş yapan',
     },
     {
       icon: Package,

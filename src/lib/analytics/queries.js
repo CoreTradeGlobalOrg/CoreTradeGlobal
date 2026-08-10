@@ -72,6 +72,7 @@ function toDate(value) {
  */
 export async function getOverviewKpis() {
   const weekAgo = Timestamp.fromDate(daysAgo(7));
+  const monthAgo = Timestamp.fromDate(daysAgo(30));
 
   const usersRef = collection(db, COLLECTIONS.USERS);
   const productsRef = collection(db, COLLECTIONS.PRODUCTS);
@@ -81,12 +82,18 @@ export async function getOverviewKpis() {
   const [
     totalMembersSnap,
     newMembersSnap,
+    activeMembersSnap,
     totalProductsSnap,
     activeAdsSnap,
     activeConversationsSnap,
   ] = await Promise.all([
     getCountFromServer(usersRef),
     getCountFromServer(query(usersRef, where('createdAt', '>=', weekAgo))),
+    // lastLoginAt is bumped from AuthContext on every real login-state
+    // resolution (throttled). Users still on the pre-tracking corpus
+    // will lack the field entirely and get excluded here — acceptable,
+    // the field back-fills naturally as they return to the site.
+    getCountFromServer(query(usersRef, where('lastLoginAt', '>=', monthAgo))),
     getCountFromServer(productsRef),
     // Ad campaigns store status 'active' | 'scheduled' | 'expired' | 'rejected'.
     getCountFromServer(query(adsRef, where('status', '==', 'active'))),
@@ -96,10 +103,7 @@ export async function getOverviewKpis() {
   return {
     totalMembers: totalMembersSnap.data().count,
     newMembersThisWeek: newMembersSnap.data().count,
-    // lastLoginAt isn't tracked on user docs today, so we can't derive
-    // "active in last 30 days" honestly. Return null and let the UI
-    // show a "coming soon" placeholder rather than a bogus number.
-    activeMembers30d: null,
+    activeMembers30d: activeMembersSnap.data().count,
     totalProducts: totalProductsSnap.data().count,
     activeAds: activeAdsSnap.data().count,
     activeConversations: activeConversationsSnap.data().count,

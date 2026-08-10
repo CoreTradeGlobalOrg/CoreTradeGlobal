@@ -14,6 +14,7 @@
 
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { container } from '@/core/di/container';
+import { bumpLastLoginAt } from '@/lib/analytics/tracking';
 
 const AuthContext = createContext(null);
 
@@ -320,6 +321,11 @@ export function AuthProvider({ children }) {
       };
 
       setUser(userData);
+
+      // Feed the Active-30d KPI on the analytics dashboard. Client-side
+      // throttled to at most once per hour per browser, fire-and-forget
+      // so a Firestore hiccup can't stall the login flow.
+      bumpLastLoginAt(firebaseUser.uid);
 
       // Refresh the session cookie when the local hint is missing or older
       // than 6 days. Uses a forced token refresh so newly-added custom
