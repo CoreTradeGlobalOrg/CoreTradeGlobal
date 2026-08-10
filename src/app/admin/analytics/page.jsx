@@ -28,6 +28,7 @@ import {
 import { useAuth } from '@/presentation/contexts/AuthContext';
 import { OverviewSection } from '@/presentation/components/features/admin/analytics/OverviewSection';
 import { MembersSection } from '@/presentation/components/features/admin/analytics/MembersSection';
+import { TeamLogSection } from '@/presentation/components/features/admin/analytics/TeamLogSection';
 
 const SECTIONS = [
   { id: 'overview', label: 'Overview', icon: BarChart3 },
@@ -36,7 +37,7 @@ const SECTIONS = [
   { id: 'hubspot', label: 'HubSpot CRM', icon: Mail, comingSoon: true },
   { id: 'site', label: 'Site Analytics', icon: Globe, comingSoon: true },
   { id: 'outreach', label: 'Outreach', icon: Megaphone, comingSoon: true },
-  { id: 'team-log', label: 'Team Daily Log', icon: ClipboardList, comingSoon: true },
+  { id: 'team-log', label: 'Team Daily Log', icon: ClipboardList },
 ];
 
 function ComingSoon({ label }) {
@@ -128,6 +129,7 @@ function AnalyticsContent() {
           <main>
             {active.id === 'overview' && <OverviewSection />}
             {active.id === 'members' && <MembersSection />}
+            {active.id === 'team-log' && <TeamLogSection />}
             {active.comingSoon && <ComingSoon label={active.label} />}
           </main>
         </div>
