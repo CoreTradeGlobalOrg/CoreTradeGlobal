@@ -146,6 +146,93 @@ export async function getRecentMembers({ days = 30 } = {}) {
   return rows;
 }
 
+// --- Members: activity + churn snapshot ------------------------------------
+
+/**
+ * Buckets a user into one of five activity states based on
+ * `daysSinceLogin`. Names are used by both the activity view and the
+ * churn view so the two panels never disagree.
+ */
+export function activityBucket(daysSinceLogin) {
+  if (daysSinceLogin === null || daysSinceLogin === undefined) return 'never';
+  if (daysSinceLogin <= 7) return 'active7d';
+  if (daysSinceLogin <= 30) return 'active30d';
+  if (daysSinceLogin <= 60) return 'dormant30to60';
+  if (daysSinceLogin <= 90) return 'churn60to90';
+  return 'churn90plus';
+}
+
+/**
+ * Single read of every user document with derived activity fields per
+ * row. Both the Activity table (3.3) and the Churn Risk table (3.4)
+ * feed off this — one Firestore round-trip serves both views.
+ *
+ * @returns {Promise<{
+ *   total: number,
+ *   snapshotAt: Date,
+ *   rows: Array<{
+ *     uid: string,
+ *     displayName: string,
+ *     email: string,
+ *     companyName: string,
+ *     country: string,
+ *     role: string,
+ *     lastLoginAt: Date | null,
+ *     daysSinceLogin: number | null,
+ *     bucket: 'active7d'|'active30d'|'dormant30to60'|'churn60to90'|'churn90plus'|'never',
+ *     isVerified: boolean,
+ *     isSuspended: boolean,
+ *     createdAt: Date | null,
+ *   }>,
+ *   counts: Record<string, number>,   // bucket -> count
+ * }>}
+ */
+export async function getMemberActivitySnapshot() {
+  const snap = await getDocs(collection(db, COLLECTIONS.USERS));
+  const now = Date.now();
+
+  const counts = {
+    active7d: 0,
+    active30d: 0,
+    dormant30to60: 0,
+    churn60to90: 0,
+    churn90plus: 0,
+    never: 0,
+  };
+
+  const rows = snap.docs.map((doc) => {
+    const data = doc.data() || {};
+    const lastLoginAt = toDate(data.lastLoginAt);
+    const daysSinceLogin = lastLoginAt
+      ? Math.floor((now - lastLoginAt.getTime()) / MS_PER_DAY)
+      : null;
+    const bucket = activityBucket(daysSinceLogin);
+    counts[bucket] += 1;
+
+    return {
+      uid: doc.id,
+      displayName: data.fullName || data.displayName || '(no name)',
+      email: data.email || '',
+      companyName: data.companyName || '',
+      country: data.country || '',
+      role: data.role || 'member',
+      lastLoginAt,
+      daysSinceLogin,
+      bucket,
+      isVerified: !!data.emailVerified && !!data.adminApproved,
+      isSuspended: !!data.isSuspended,
+      createdAt: toDate(data.createdAt),
+    };
+  });
+
+  return {
+    total: snap.size,
+    snapshotAt: new Date(),
+    rows,
+    counts,
+  };
+}
+
 // --- Members: profile distribution -----------------------------------------
 
 /**
