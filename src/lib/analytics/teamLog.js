@@ -107,9 +107,14 @@ export async function getTeamMembers() {
   return snap.docs
     .map((d) => {
       const data = d.data() || {};
+      // Prefer the internal fullName over the public displayName. Some
+      // admin accounts intentionally carry a generic display name for
+      // user-facing surfaces ("Admin", "CoreTradeGlobal Support Team")
+      // while fullName holds the real person for internal analytics
+      // views. Fallback chain keeps rows without a fullName visible.
       return {
         uid: d.id,
-        displayName: data.displayName || data.email || d.id,
+        displayName: data.fullName || data.displayName || data.email || d.id,
         email: data.email || '',
       };
     })
