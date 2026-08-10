@@ -146,6 +146,226 @@ export async function getRecentMembers({ days = 30 } = {}) {
   return rows;
 }
 
+// --- Growth: monthly registrations + MoM -----------------------------------
+
+/**
+ * Format a Date to `yyyy-mm` in the local timezone. Growth buckets
+ * key by calendar month; using UTC would slice a Turkish evening
+ * registration into the previous month.
+ */
+function toMonthKey(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  return `${y}-${m}`;
+}
+
+function shiftMonth(monthKey, delta) {
+  const [y, m] = monthKey.split('-').map(Number);
+  const d = new Date(y, m - 1 + delta, 1);
+  return toMonthKey(d);
+}
+
+/**
+ * Growth panel dataset. One users read, everything derived in memory
+ * — cheaper than five separate aggregation queries and lets us
+ * cross-tab (country × month, companyType × month) without paying
+ * per-slice.
+ *
+ * @param {{ monthlyTarget?: number, monthsBack?: number }} args
+ * @returns {Promise<{
+ *   snapshotAt: Date,
+ *   total: number,
+ *   thisMonthKey: string,
+ *   thisMonthCount: number,
+ *   lastMonthCount: number,
+ *   momPercent: number | null,             // % change vs previous full month
+ *   momentum: 'accelerating' | 'steady' | 'slowing' | 'insufficient',
+ *   monthlyTarget: number,
+ *   targetProgressPercent: number,
+ *   monthlySeries: Array<{ month: string, count: number, cumulative: number }>,
+ *   dailySeriesLast90: Array<{ date: string, count: number, cumulative: number }>,
+ *   forecastNext30: number,                // rough linear projection
+ *   countryDelta: Array<{
+ *     country: string, thisMonth: number, lastMonth: number, delta: number,
+ *   }>,
+ *   companyTypeSeries: Array<{
+ *     companyType: string, series: Array<{ month: string, count: number }>,
+ *   }>,
+ * }>}
+ */
+export async function getGrowthMetrics({ monthlyTarget = 30, monthsBack = 12 } = {}) {
+  const snap = await getDocs(collection(db, COLLECTIONS.USERS));
+  const now = new Date();
+  const thisMonthKey = toMonthKey(now);
+  const lastMonthKey = shiftMonth(thisMonthKey, -1);
+
+  // Build the last N months window (oldest → newest) so bar charts read
+  // left-to-right in chronological order.
+  const monthKeys = [];
+  for (let i = monthsBack - 1; i >= 0; i--) {
+    monthKeys.push(shiftMonth(thisMonthKey, -i));
+  }
+
+  const monthCounts = new Map(monthKeys.map((k) => [k, 0]));
+  const countryThisMonth = new Map();
+  const countryLastMonth = new Map();
+  // companyType → monthKey → count
+  const companyTypeMonthly = new Map();
+
+  // Daily series for the last 90 days for a smoother trend curve.
+  const startOfLast90 = new Date(now.getTime() - 89 * MS_PER_DAY);
+  startOfLast90.setHours(0, 0, 0, 0);
+  const startOfLast90Time = startOfLast90.getTime();
+  const dailyCounts = new Map(); // yyyy-mm-dd → count
+
+  const rows = [];
+  snap.forEach((doc) => {
+    const data = doc.data() || {};
+    const createdAt = toDate(data.createdAt);
+    if (!createdAt) return; // skip users with no createdAt (legacy import gap)
+
+    rows.push({ createdAt, data });
+
+    const monthKey = toMonthKey(createdAt);
+    if (monthCounts.has(monthKey)) {
+      monthCounts.set(monthKey, monthCounts.get(monthKey) + 1);
+    }
+
+    const role = data.role || 'member';
+    const companyType = ROLE_TO_COMPANY_TYPE[role] || 'other';
+    if (!companyTypeMonthly.has(companyType)) {
+      companyTypeMonthly.set(companyType, new Map(monthKeys.map((k) => [k, 0])));
+    }
+    const ctMap = companyTypeMonthly.get(companyType);
+    if (ctMap.has(monthKey)) ctMap.set(monthKey, ctMap.get(monthKey) + 1);
+
+    const country = (data.country || 'Unknown').trim() || 'Unknown';
+    if (monthKey === thisMonthKey) {
+      countryThisMonth.set(country, (countryThisMonth.get(country) || 0) + 1);
+    } else if (monthKey === lastMonthKey) {
+      countryLastMonth.set(country, (countryLastMonth.get(country) || 0) + 1);
+    }
+
+    if (createdAt.getTime() >= startOfLast90Time) {
+      const dayKey = (() => {
+        const y = createdAt.getFullYear();
+        const m = String(createdAt.getMonth() + 1).padStart(2, '0');
+        const day = String(createdAt.getDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
+      })();
+      dailyCounts.set(dayKey, (dailyCounts.get(dayKey) || 0) + 1);
+    }
+  });
+
+  // Turn the monthly counts into a series with a running cumulative
+  // that seeds from "everyone registered before the window".
+  const totalBeforeWindow = rows.filter(
+    (r) => toMonthKey(r.createdAt) < monthKeys[0],
+  ).length;
+
+  let running = totalBeforeWindow;
+  const monthlySeries = monthKeys.map((month) => {
+    const count = monthCounts.get(month) || 0;
+    running += count;
+    return { month, count, cumulative: running };
+  });
+
+  // Daily zero-filled series for the last 90 days with cumulative.
+  const dailySeriesLast90 = [];
+  let dailyRunning = rows.filter(
+    (r) => r.createdAt.getTime() < startOfLast90Time,
+  ).length;
+  for (let i = 0; i < 90; i++) {
+    const d = new Date(startOfLast90Time + i * MS_PER_DAY);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const key = `${y}-${m}-${day}`;
+    const count = dailyCounts.get(key) || 0;
+    dailyRunning += count;
+    dailySeriesLast90.push({ date: key, count, cumulative: dailyRunning });
+  }
+
+  const thisMonthCount = monthCounts.get(thisMonthKey) || 0;
+  const lastMonthCount = monthCounts.get(lastMonthKey) || 0;
+
+  // MoM percent: standard percent change. When lastMonth is zero and
+  // thisMonth is positive, "infinite" isn't a useful number for the
+  // UI — return null and let the panel render "—".
+  let momPercent = null;
+  if (lastMonthCount > 0) {
+    momPercent = ((thisMonthCount - lastMonthCount) / lastMonthCount) * 100;
+  } else if (thisMonthCount === 0 && lastMonthCount === 0) {
+    momPercent = 0;
+  }
+
+  // Momentum reads the slope over the last three full months (skip the
+  // current in-progress month so partial data doesn't skew it).
+  const closedMonths = monthlySeries.slice(0, -1);
+  const lastThree = closedMonths.slice(-3).map((r) => r.count);
+  let momentum = 'insufficient';
+  if (lastThree.length === 3) {
+    const [a, b, c] = lastThree;
+    if (c > b && b >= a) momentum = 'accelerating';
+    else if (c < b && b <= a) momentum = 'slowing';
+    else momentum = 'steady';
+  }
+
+  const targetProgressPercent =
+    monthlyTarget > 0
+      ? Math.min(Math.round((thisMonthCount / monthlyTarget) * 100), 999)
+      : 0;
+
+  // Forecast: average of the last 30 days × 30. Simple and honest —
+  // marketplace registrations are noisy so anything fancier would
+  // over-fit at this scale.
+  const last30 = dailySeriesLast90.slice(-30);
+  const last30Avg = last30.reduce((s, r) => s + r.count, 0) / (last30.length || 1);
+  const forecastNext30 = Math.round(last30Avg * 30);
+
+  // Country delta: union of this-month and last-month countries, sorted
+  // by this-month count desc.
+  const countrySet = new Set([...countryThisMonth.keys(), ...countryLastMonth.keys()]);
+  const countryDelta = Array.from(countrySet)
+    .map((country) => {
+      const tm = countryThisMonth.get(country) || 0;
+      const lm = countryLastMonth.get(country) || 0;
+      return { country, thisMonth: tm, lastMonth: lm, delta: tm - lm };
+    })
+    .sort((a, b) => b.thisMonth - a.thisMonth || b.delta - a.delta);
+
+  // Company type series: per-type array-of-months. Only emit types that
+  // actually appear in the window.
+  const companyTypeSeries = Array.from(companyTypeMonthly.entries())
+    .map(([companyType, mMap]) => ({
+      companyType,
+      series: monthKeys.map((month) => ({ month, count: mMap.get(month) || 0 })),
+    }))
+    .filter((row) => row.series.some((r) => r.count > 0))
+    .sort((a, b) => {
+      const sumA = a.series.reduce((s, r) => s + r.count, 0);
+      const sumB = b.series.reduce((s, r) => s + r.count, 0);
+      return sumB - sumA;
+    });
+
+  return {
+    snapshotAt: new Date(),
+    total: snap.size,
+    thisMonthKey,
+    thisMonthCount,
+    lastMonthCount,
+    momPercent,
+    momentum,
+    monthlyTarget,
+    targetProgressPercent,
+    monthlySeries,
+    dailySeriesLast90,
+    forecastNext30,
+    countryDelta,
+    companyTypeSeries,
+  };
+}
+
 // --- Members: activity + churn snapshot ------------------------------------
 
 /**
