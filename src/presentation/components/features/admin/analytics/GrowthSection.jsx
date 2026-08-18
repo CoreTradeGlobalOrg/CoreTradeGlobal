@@ -69,7 +69,7 @@ function KpiCard({ icon: Icon, label, value, sub, tone }) {
       <p className="text-3xl font-bold text-white leading-none tabular-nums">
         {value ?? <span className="text-[#606060]">—</span>}
       </p>
-      {sub && <p className="text-xs text-[#606060] mt-2">{sub}</p>}
+      {sub && <div className="text-xs text-[#606060] mt-2">{sub}</div>}
     </div>
   );
 }
