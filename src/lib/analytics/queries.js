@@ -146,6 +146,203 @@ export async function getRecentMembers({ days = 30 } = {}) {
   return rows;
 }
 
+// --- Ads: campaign performance ---------------------------------------------
+
+/**
+ * Full ads snapshot for the performance panel. One collection read of
+ * `ads`, all aggregates derived in memory. `impressions` and `clicks`
+ * counters live directly on the ad doc and are already bumped by the
+ * public site's tracking pixel, so no join is needed.
+ *
+ * @returns {Promise<{
+ *   snapshotAt: Date,
+ *   total: number,
+ *   activeCount: number,
+ *   scheduledCount: number,
+ *   pausedCount: number,
+ *   expiredCount: number,
+ *   totalImpressions: number,
+ *   totalClicks: number,
+ *   avgCtr: number,                 // 0-100 (%)
+ *   byType: Array<{
+ *     type: string,
+ *     active: number,
+ *     total: number,
+ *     impressions: number,
+ *     clicks: number,
+ *     ctr: number,
+ *   }>,
+ *   byCompany: Array<{
+ *     companyName: string,
+ *     campaigns: number,
+ *     impressions: number,
+ *     clicks: number,
+ *   }>,
+ *   activeCampaigns: Array<{
+ *     id: string,
+ *     type: string,
+ *     status: string,
+ *     companyName: string,
+ *     impressions: number,
+ *     clicks: number,
+ *     ctr: number,
+ *     startDate: Date | null,
+ *     endDate: Date | null,
+ *     daysRemaining: number | null,
+ *   }>,
+ *   endingSoon: Array<{ id, companyName, type, endDate, daysRemaining }>,
+ *   stalePastEnd: Array<{ id, companyName, type, endDate, daysOverdue, status }>,
+ * }>}
+ */
+export async function getAdsPerformance() {
+  const snap = await getDocs(collection(db, 'ads'));
+  const now = Date.now();
+
+  const rows = snap.docs.map((doc) => {
+    const data = doc.data() || {};
+    return {
+      id: doc.id,
+      type: data.type || 'unknown',
+      status: data.status || 'unknown',
+      companyName: data.companyName || '(no name)',
+      impressions: Number(data.impressions) || 0,
+      clicks: Number(data.clicks) || 0,
+      startDate: toDate(data.startDate),
+      endDate: toDate(data.endDate),
+    };
+  });
+
+  const daysBetween = (fromMs, toDateObj) =>
+    toDateObj instanceof Date
+      ? Math.floor((toDateObj.getTime() - fromMs) / MS_PER_DAY)
+      : null;
+
+  // Per-type aggregates
+  const typeMap = new Map();
+  const companyMap = new Map();
+  let totalImpressions = 0;
+  let totalClicks = 0;
+  let activeCount = 0;
+  let scheduledCount = 0;
+  let pausedCount = 0;
+  let expiredCount = 0;
+
+  for (const row of rows) {
+    if (row.status === 'active') activeCount += 1;
+    else if (row.status === 'scheduled') scheduledCount += 1;
+    else if (row.status === 'paused') pausedCount += 1;
+    else if (row.status === 'expired') expiredCount += 1;
+
+    totalImpressions += row.impressions;
+    totalClicks += row.clicks;
+
+    if (!typeMap.has(row.type)) {
+      typeMap.set(row.type, {
+        type: row.type,
+        active: 0,
+        total: 0,
+        impressions: 0,
+        clicks: 0,
+      });
+    }
+    const tt = typeMap.get(row.type);
+    tt.total += 1;
+    if (row.status === 'active') tt.active += 1;
+    tt.impressions += row.impressions;
+    tt.clicks += row.clicks;
+
+    if (!companyMap.has(row.companyName)) {
+      companyMap.set(row.companyName, {
+        companyName: row.companyName,
+        campaigns: 0,
+        impressions: 0,
+        clicks: 0,
+      });
+    }
+    const cc = companyMap.get(row.companyName);
+    cc.campaigns += 1;
+    cc.impressions += row.impressions;
+    cc.clicks += row.clicks;
+  }
+
+  const byType = Array.from(typeMap.values())
+    .map((row) => ({
+      ...row,
+      ctr: row.impressions > 0 ? (row.clicks / row.impressions) * 100 : 0,
+    }))
+    .sort((a, b) => b.impressions - a.impressions);
+
+  const byCompany = Array.from(companyMap.values())
+    .sort((a, b) => b.impressions - a.impressions)
+    .slice(0, 12);
+
+  // Only active campaigns get a spot in the "running now" table —
+  // scheduled/paused/expired live in their own summary counts above.
+  const activeCampaigns = rows
+    .filter((r) => r.status === 'active')
+    .map((r) => ({
+      ...r,
+      ctr: r.impressions > 0 ? (r.clicks / r.impressions) * 100 : 0,
+      daysRemaining: daysBetween(now, r.endDate),
+    }))
+    .sort((a, b) => b.impressions - a.impressions);
+
+  // Ending in ≤3 days — surface for admin heads-up.
+  const endingSoon = rows
+    .filter(
+      (r) =>
+        r.status === 'active' &&
+        r.endDate instanceof Date &&
+        r.endDate.getTime() >= now &&
+        r.endDate.getTime() <= now + 3 * MS_PER_DAY,
+    )
+    .map((r) => ({
+      id: r.id,
+      companyName: r.companyName,
+      type: r.type,
+      endDate: r.endDate,
+      daysRemaining: Math.max(0, daysBetween(now, r.endDate)),
+    }))
+    .sort((a, b) => (a.daysRemaining ?? 0) - (b.daysRemaining ?? 0));
+
+  // Anomaly bucket: ads whose end date is in the past but the status
+  // still says "active" (a cron didn't run, someone forgot to expire).
+  const stalePastEnd = rows
+    .filter(
+      (r) =>
+        r.status === 'active' &&
+        r.endDate instanceof Date &&
+        r.endDate.getTime() < now,
+    )
+    .map((r) => ({
+      id: r.id,
+      companyName: r.companyName,
+      type: r.type,
+      endDate: r.endDate,
+      daysOverdue: Math.floor((now - r.endDate.getTime()) / MS_PER_DAY),
+      status: r.status,
+    }));
+
+  const avgCtr = totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0;
+
+  return {
+    snapshotAt: new Date(),
+    total: rows.length,
+    activeCount,
+    scheduledCount,
+    pausedCount,
+    expiredCount,
+    totalImpressions,
+    totalClicks,
+    avgCtr,
+    byType,
+    byCompany,
+    activeCampaigns,
+    endingSoon,
+    stalePastEnd,
+  };
+}
+
 // --- Growth: monthly registrations + MoM -----------------------------------
 
 /**
