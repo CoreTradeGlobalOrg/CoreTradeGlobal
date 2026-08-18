@@ -30,13 +30,14 @@ import { OverviewSection } from '@/presentation/components/features/admin/analyt
 import { MembersSection } from '@/presentation/components/features/admin/analytics/MembersSection';
 import { TeamLogSection } from '@/presentation/components/features/admin/analytics/TeamLogSection';
 import { GrowthSection } from '@/presentation/components/features/admin/analytics/GrowthSection';
+import { SiteAnalyticsSection } from '@/presentation/components/features/admin/analytics/SiteAnalyticsSection';
 
 const SECTIONS = [
   { id: 'overview', label: 'Overview', icon: BarChart3 },
   { id: 'members', label: 'Members', icon: Users },
   { id: 'growth', label: 'Growth', icon: TrendingUp },
   { id: 'hubspot', label: 'HubSpot CRM', icon: Mail, comingSoon: true },
-  { id: 'site', label: 'Site Analytics', icon: Globe, comingSoon: true },
+  { id: 'site', label: 'Site Analytics', icon: Globe },
   { id: 'outreach', label: 'Outreach', icon: Megaphone, comingSoon: true },
   { id: 'team-log', label: 'Team Daily Log', icon: ClipboardList },
 ];
@@ -132,6 +133,7 @@ function AnalyticsContent() {
             {active.id === 'members' && <MembersSection />}
             {active.id === 'team-log' && <TeamLogSection />}
             {active.id === 'growth' && <GrowthSection />}
+            {active.id === 'site' && <SiteAnalyticsSection />}
             {active.comingSoon && <ComingSoon label={active.label} />}
           </main>
         </div>

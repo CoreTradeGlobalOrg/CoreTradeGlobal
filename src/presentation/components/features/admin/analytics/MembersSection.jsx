@@ -10,13 +10,14 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, Download, Search, Users2 } from 'lucide-react';
+import { AlertTriangle, Download, Eye, Search, Users2 } from 'lucide-react';
 import {
   activityBucket,
   getMemberActivitySnapshot,
   getMemberDistribution,
   getRecentMembers,
 } from '@/lib/analytics/queries';
+import { clarityUserRecordingsUrl } from '@/lib/analytics/tracking';
 import { COMPANY_TYPE_LABELS } from '@/core/constants/companyTypes';
 
 const DAY_RANGES = [
@@ -580,19 +581,20 @@ function ActivityView() {
                 <th className="py-2.5 pr-3 font-medium">Bucket</th>
                 <th className="py-2.5 pr-3 font-medium">Son giriş</th>
                 <th className="py-2.5 pr-3 font-medium">Durum</th>
+                <th className="py-2.5 pr-3 font-medium" aria-label="Clarity" />
               </tr>
             </thead>
             <tbody>
               {loading && (
                 <tr>
-                  <td colSpan={6} className="py-10 text-center text-[#606060]">
+                  <td colSpan={7} className="py-10 text-center text-[#606060]">
                     Yükleniyor...
                   </td>
                 </tr>
               )}
               {!loading && filtered.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="py-10 text-center text-[#606060]">
+                  <td colSpan={7} className="py-10 text-center text-[#606060]">
                     Bu filtreye uyan üye yok.
                   </td>
                 </tr>
@@ -600,6 +602,7 @@ function ActivityView() {
               {!loading &&
                 filtered.map((row) => {
                   const meta = ACTIVITY_BUCKET_META[row.bucket];
+                  const clarityUrl = clarityUserRecordingsUrl(row.uid);
                   return (
                     <tr
                       key={row.uid}
@@ -630,6 +633,20 @@ function ActivityView() {
                           <span className="text-green-400">Verified</span>
                         ) : (
                           <span className="text-amber-400">Pending</span>
+                        )}
+                      </td>
+                      <td className="py-2.5 pr-3 text-right">
+                        {clarityUrl && (
+                          <a
+                            href={clarityUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-[11px] text-[#A0A0A0] hover:text-[#FFD700] transition-colors"
+                            title={`${row.displayName} için Clarity recordings`}
+                          >
+                            <Eye className="w-3 h-3" />
+                            Clarity
+                          </a>
                         )}
                       </td>
                     </tr>
