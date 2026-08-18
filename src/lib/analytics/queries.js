@@ -286,13 +286,34 @@ export function profileSegment(percent) {
  * }>}
  */
 export async function getProfileCompleteness() {
-  const snap = await getDocs(collection(db, COLLECTIONS.USERS));
+  // Fetch users AND categories in parallel. user.companyCategory stores
+  // the category document ID — not the display name — so without this
+  // lookup the sector column renders raw Firestore IDs.
+  const [usersSnap, categoriesSnap] = await Promise.all([
+    getDocs(collection(db, COLLECTIONS.USERS)),
+    getDocs(collection(db, COLLECTIONS.CATEGORIES)),
+  ]);
+
+  const categoryIdToName = new Map();
+  categoriesSnap.forEach((doc) => {
+    const data = doc.data() || {};
+    if (data.name) categoryIdToName.set(doc.id, data.name);
+  });
+
+  // Some legacy users may have the raw name saved instead of the id
+  // (or a value that matches nothing). Resolve gracefully: try the
+  // id-map, fall back to the raw value, then to 'Unknown'.
+  const resolveSector = (raw) => {
+    const value = (raw || '').trim();
+    if (!value) return 'Unknown';
+    return categoryIdToName.get(value) || value;
+  };
 
   let sumPercent = 0;
   const counts = { weak: 0, medium: 0, strong: 0 };
   const sectorAgg = new Map(); // sector -> { total: number, count: number }
 
-  const rows = snap.docs.map((doc) => {
+  const rows = usersSnap.docs.map((doc) => {
     const data = doc.data() || {};
     let score = 0;
     const missingFields = [];
@@ -315,7 +336,7 @@ export async function getProfileCompleteness() {
     counts[segment] += 1;
     sumPercent += percent;
 
-    const sector = (data.companyCategory || 'Unknown').trim() || 'Unknown';
+    const sector = resolveSector(data.companyCategory);
     if (!sectorAgg.has(sector)) sectorAgg.set(sector, { total: 0, count: 0 });
     const agg = sectorAgg.get(sector);
     agg.total += percent;
