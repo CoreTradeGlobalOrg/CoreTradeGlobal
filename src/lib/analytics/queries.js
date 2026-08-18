@@ -146,6 +146,215 @@ export async function getRecentMembers({ days = 30 } = {}) {
   return rows;
 }
 
+// --- Profile completeness (Bölüm 10) ---------------------------------------
+
+/**
+ * Field-weight registry that drives the profile-completeness score.
+ * Total must sum to 100 so the UI's percent is a real percent.
+ *
+ * A field counts as "filled" when the accessor returns a truthy,
+ * non-empty value. Truthy is per-field-defined below so
+ * companyDocuments (array) and verified (bool) don't false-positive
+ * on `!undefined === true`.
+ *
+ * The `required` flag is surfaced as "kritik eksik" in the UI — the
+ * three fields the registration form actually mandates. Everything
+ * else is optional but scored.
+ */
+export const PROFILE_FIELDS = [
+  {
+    key: 'companyName',
+    label: 'Firma adı',
+    weight: 5,
+    required: true,
+    accessor: (d) => (d.companyName || '').trim() !== '',
+  },
+  {
+    key: 'phone',
+    label: 'Telefon',
+    weight: 5,
+    required: true,
+    accessor: (d) => (d.phone || '').trim() !== '',
+  },
+  {
+    key: 'companyCategory',
+    label: 'Sektör',
+    weight: 8,
+    required: true,
+    accessor: (d) => (d.companyCategory || '').trim() !== '',
+  },
+  {
+    key: 'name',
+    label: 'Ad soyad',
+    weight: 4,
+    accessor: (d) =>
+      (d.firstName || '').trim() !== '' && (d.lastName || '').trim() !== '',
+  },
+  {
+    key: 'companyLogo',
+    label: 'Logo',
+    weight: 12,
+    accessor: (d) => (d.companyLogo || '').trim() !== '',
+  },
+  {
+    key: 'about',
+    label: 'Firma açıklaması',
+    weight: 15,
+    accessor: (d) => (d.about || '').trim().length >= 40,
+  },
+  {
+    key: 'companyWebsite',
+    label: 'Web sitesi',
+    weight: 8,
+    accessor: (d) => (d.companyWebsite || '').trim() !== '',
+  },
+  {
+    key: 'linkedinProfile',
+    label: 'LinkedIn',
+    weight: 5,
+    accessor: (d) => (d.linkedinProfile || '').trim() !== '',
+  },
+  {
+    key: 'country',
+    label: 'Ülke',
+    weight: 5,
+    accessor: (d) => (d.country || '').trim() !== '',
+  },
+  {
+    key: 'position',
+    label: 'Pozisyon',
+    weight: 5,
+    accessor: (d) => (d.position || '').trim() !== '',
+  },
+  {
+    key: 'companyDocuments',
+    label: 'KYC / firma belgeleri',
+    weight: 18,
+    accessor: (d) => Array.isArray(d.companyDocuments) && d.companyDocuments.length > 0,
+  },
+  {
+    key: 'verified',
+    label: 'Verified (email + admin onayı)',
+    weight: 10,
+    accessor: (d) => !!d.emailVerified && !!d.adminApproved,
+  },
+];
+
+// Guard: weights must sum to 100 or the UI's percent lies.
+if (
+  PROFILE_FIELDS.reduce((s, f) => s + f.weight, 0) !== 100 &&
+  process.env.NODE_ENV !== 'production'
+) {
+  // eslint-disable-next-line no-console
+  console.warn(
+    '[analytics:profile] PROFILE_FIELDS weights do not sum to 100',
+    PROFILE_FIELDS.reduce((s, f) => s + f.weight, 0),
+  );
+}
+
+export function profileSegment(percent) {
+  if (percent >= 80) return 'strong';
+  if (percent >= 40) return 'medium';
+  return 'weak';
+}
+
+/**
+ * Scan every user document and derive a completeness score plus the
+ * missing-field list per row. Also emits sector-level averages so the
+ * admin sees which segments trail the pack.
+ *
+ * @returns {Promise<{
+ *   snapshotAt: Date,
+ *   total: number,
+ *   averagePercent: number,
+ *   counts: { weak: number, medium: number, strong: number },
+ *   rows: Array<{
+ *     uid: string,
+ *     displayName: string,
+ *     email: string,
+ *     companyName: string,
+ *     country: string,
+ *     companyCategory: string,
+ *     percent: number,
+ *     segment: 'weak' | 'medium' | 'strong',
+ *     missingFields: Array<{ key: string, label: string, weight: number, required: boolean }>,
+ *     missingRequiredCount: number,
+ *     score: number,             // raw weighted sum
+ *     isSuspended: boolean,
+ *   }>,
+ *   sectorAverages: Array<{ sector: string, average: number, count: number }>,
+ * }>}
+ */
+export async function getProfileCompleteness() {
+  const snap = await getDocs(collection(db, COLLECTIONS.USERS));
+
+  let sumPercent = 0;
+  const counts = { weak: 0, medium: 0, strong: 0 };
+  const sectorAgg = new Map(); // sector -> { total: number, count: number }
+
+  const rows = snap.docs.map((doc) => {
+    const data = doc.data() || {};
+    let score = 0;
+    const missingFields = [];
+
+    for (const field of PROFILE_FIELDS) {
+      if (field.accessor(data)) {
+        score += field.weight;
+      } else {
+        missingFields.push({
+          key: field.key,
+          label: field.label,
+          weight: field.weight,
+          required: !!field.required,
+        });
+      }
+    }
+
+    const percent = Math.round(score); // weights sum to 100 so score IS percent
+    const segment = profileSegment(percent);
+    counts[segment] += 1;
+    sumPercent += percent;
+
+    const sector = (data.companyCategory || 'Unknown').trim() || 'Unknown';
+    if (!sectorAgg.has(sector)) sectorAgg.set(sector, { total: 0, count: 0 });
+    const agg = sectorAgg.get(sector);
+    agg.total += percent;
+    agg.count += 1;
+
+    return {
+      uid: doc.id,
+      displayName: data.fullName || data.displayName || '(no name)',
+      email: data.email || '',
+      companyName: data.companyName || '',
+      country: data.country || '',
+      companyCategory: sector,
+      percent,
+      segment,
+      missingFields,
+      missingRequiredCount: missingFields.filter((f) => f.required).length,
+      score,
+      isSuspended: !!data.isSuspended,
+    };
+  });
+
+  const sectorAverages = Array.from(sectorAgg.entries())
+    .map(([sector, agg]) => ({
+      sector,
+      average: agg.count > 0 ? Math.round(agg.total / agg.count) : 0,
+      count: agg.count,
+    }))
+    .sort((a, b) => b.count - a.count);
+
+  return {
+    snapshotAt: new Date(),
+    total: rows.length,
+    averagePercent: rows.length > 0 ? Math.round(sumPercent / rows.length) : 0,
+    counts,
+    rows,
+    sectorAverages,
+  };
+}
+
 // --- Ads: campaign performance ---------------------------------------------
 
 /**

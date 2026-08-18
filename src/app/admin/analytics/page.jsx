@@ -25,6 +25,7 @@ import {
   Megaphone,
   ClipboardList,
   LayoutGrid,
+  UserCheck,
 } from 'lucide-react';
 import { useAuth } from '@/presentation/contexts/AuthContext';
 import { OverviewSection } from '@/presentation/components/features/admin/analytics/OverviewSection';
@@ -33,10 +34,12 @@ import { TeamLogSection } from '@/presentation/components/features/admin/analyti
 import { GrowthSection } from '@/presentation/components/features/admin/analytics/GrowthSection';
 import { SiteAnalyticsSection } from '@/presentation/components/features/admin/analytics/SiteAnalyticsSection';
 import { AdsSection } from '@/presentation/components/features/admin/analytics/AdsSection';
+import { ProfileCompletenessSection } from '@/presentation/components/features/admin/analytics/ProfileCompletenessSection';
 
 const SECTIONS = [
   { id: 'overview', label: 'Overview', icon: BarChart3 },
   { id: 'members', label: 'Members', icon: Users },
+  { id: 'profile', label: 'Profile Health', icon: UserCheck },
   { id: 'growth', label: 'Growth', icon: TrendingUp },
   { id: 'hubspot', label: 'HubSpot CRM', icon: Mail, comingSoon: true },
   { id: 'site', label: 'Site Analytics', icon: Globe },
@@ -134,6 +137,7 @@ function AnalyticsContent() {
           <main>
             {active.id === 'overview' && <OverviewSection />}
             {active.id === 'members' && <MembersSection />}
+            {active.id === 'profile' && <ProfileCompletenessSection />}
             {active.id === 'team-log' && <TeamLogSection />}
             {active.id === 'growth' && <GrowthSection />}
             {active.id === 'site' && <SiteAnalyticsSection />}
