@@ -14,7 +14,7 @@
 
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { container } from '@/core/di/container';
-import { bumpLastLoginAt } from '@/lib/analytics/tracking';
+import { bumpLastLoginAt, identifyClarity } from '@/lib/analytics/tracking';
 
 const AuthContext = createContext(null);
 
@@ -326,6 +326,21 @@ export function AuthProvider({ children }) {
       // throttled to at most once per hour per browser, fire-and-forget
       // so a Firestore hiccup can't stall the login flow.
       bumpLastLoginAt(firebaseUser.uid);
+
+      // Tag the Clarity session with the user's identity + tags so the
+      // admin panel's Members activity table can deep-link into that
+      // user's recordings, and so session filtering by country / role /
+      // verified status works in Clarity's own UI. Fire-and-forget,
+      // dedupes on uid client-side.
+      identifyClarity({
+        uid: firebaseUser.uid,
+        email: firebaseUser.email,
+        role: userProfile.role,
+        country: userProfile.country,
+        emailVerified: firebaseUser.emailVerified,
+        adminApproved: userProfile.adminApproved,
+        createdAt: userProfile.createdAt,
+      });
 
       // Refresh the session cookie when the local hint is missing or older
       // than 6 days. Uses a forced token refresh so newly-added custom

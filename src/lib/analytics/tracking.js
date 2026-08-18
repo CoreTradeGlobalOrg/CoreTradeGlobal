@@ -11,6 +11,7 @@
 import { doc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { db } from '@/core/config/firebase.config';
 import { COLLECTIONS } from '@/core/constants/collections';
+import { ROLE_TO_COMPANY_TYPE } from '@/core/constants/companyTypes';
 
 // Local throttle key. onAuthStateChanged fires far more often than a
 // human logs in (page refresh, token rotation, tab focus). Guard the
@@ -47,6 +48,95 @@ function writeLastBump(ts) {
  * @param {string} uid
  * @returns {Promise<void>}
  */
+// --- Microsoft Clarity identify() -----------------------------------------
+
+// Session-scoped throttle so we don't spam Clarity's identify API on every
+// auth-state fire. Once per session per uid is plenty — the identifier
+// persists across page-loads via Clarity's own storage.
+const IDENTIFIED_UIDS = new Set();
+
+/**
+ * Tag the current Clarity session with the user's identity and a few
+ * custom dimensions. Enables per-user session filtering in the Clarity
+ * dashboard and per-user session-recording links from the admin panel.
+ *
+ * Safe to call:
+ *   - Before the Clarity tag has finished loading (queued via clarity.q)
+ *   - Multiple times per uid (deduplicated in-memory)
+ *   - Without a user (no-op)
+ *   - On the server (no-op, gated on `typeof window`)
+ *
+ * @param {{
+ *   uid: string,
+ *   email?: string,
+ *   role?: string,
+ *   country?: string,
+ *   emailVerified?: boolean,
+ *   adminApproved?: boolean,
+ *   createdAt?: Date | string | number,
+ * }} user
+ */
+export function identifyClarity(user) {
+  if (typeof window === 'undefined') return;
+  if (!user?.uid) return;
+  if (IDENTIFIED_UIDS.has(user.uid)) return;
+
+  // Clarity's snippet shape is:
+  //   window.clarity = window.clarity || function () { (window.clarity.q ||= []).push(arguments); };
+  // so calls before the tag loads land in the queue and replay when the
+  // real function is installed. Nothing to guard against here.
+  const clarity = window.clarity;
+  if (typeof clarity !== 'function') return;
+
+  IDENTIFIED_UIDS.add(user.uid);
+
+  try {
+    // identify signature: (customId, customSessionId?, customPageId?, friendlyName?)
+    clarity('identify', user.uid, undefined, undefined, user.email || undefined);
+
+    // Custom tags — become filterable dimensions in the Clarity UI.
+    // Skip nullish values to keep the tag list tidy.
+    const role = user.role || 'member';
+    const companyType = ROLE_TO_COMPANY_TYPE[role] || 'other';
+    const verified = !!user.emailVerified && !!user.adminApproved;
+
+    clarity('set', 'membership', 'registered');
+    clarity('set', 'role', role);
+    clarity('set', 'companyType', companyType);
+    clarity('set', 'verified', verified ? 'yes' : 'no');
+    if (user.country) clarity('set', 'country', user.country);
+    if (user.createdAt) {
+      const iso =
+        user.createdAt instanceof Date
+          ? user.createdAt.toISOString()
+          : typeof user.createdAt?.toDate === 'function'
+            ? user.createdAt.toDate().toISOString()
+            : new Date(user.createdAt).toISOString();
+      clarity('set', 'joinDate', iso.slice(0, 10)); // yyyy-mm-dd, day-level
+    }
+  } catch (err) {
+    // Never bubble — this feeds analytics, not the app.
+    // eslint-disable-next-line no-console
+    console.warn('[analytics:tracking] identifyClarity failed:', err?.message || err);
+  }
+}
+
+/**
+ * Build the deep link that opens Clarity's recordings view filtered
+ * down to a single user. Consumed by admin-side per-user "Clarity'de
+ * gör" buttons.
+ *
+ * Returns null when the project id env var is missing so the calling
+ * code can hide the button rather than emit a broken link.
+ */
+export function clarityUserRecordingsUrl(uid) {
+  const projectId = process.env.NEXT_PUBLIC_CLARITY_PROJECT_ID;
+  if (!projectId || !uid) return null;
+  return `https://clarity.microsoft.com/projects/view/${projectId}/impressions?CustomUserId=${encodeURIComponent(uid)}`;
+}
+
+// --- Firestore user tracking -----------------------------------------------
+
 export async function bumpLastLoginAt(uid) {
   if (!uid) return;
 
