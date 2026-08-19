@@ -33,6 +33,7 @@ import {
   MessageCircle,
   ShieldCheck,
   Gauge,
+  PackageSearch,
 } from 'lucide-react';
 import { useAuth } from '@/presentation/contexts/AuthContext';
 import { OverviewSection } from '@/presentation/components/features/admin/analytics/OverviewSection';
@@ -49,6 +50,7 @@ import { SegmentationSection } from '@/presentation/components/features/admin/an
 import { CommunicationHygieneSection } from '@/presentation/components/features/admin/analytics/CommunicationHygieneSection';
 import { TrustSection } from '@/presentation/components/features/admin/analytics/TrustSection';
 import { EngagementSection } from '@/presentation/components/features/admin/analytics/EngagementSection';
+import { CatalogHealthSection } from '@/presentation/components/features/admin/analytics/CatalogHealthSection';
 
 const SECTIONS = [
   { id: 'overview', label: 'Overview', icon: BarChart3 },
@@ -62,6 +64,7 @@ const SECTIONS = [
   { id: 'trust', label: 'Trust', icon: ShieldCheck },
   { id: 'growth', label: 'Growth', icon: TrendingUp },
   { id: 'trade-flow', label: 'Trade Flow', icon: Package },
+  { id: 'catalog', label: 'Catalog Health', icon: PackageSearch },
   { id: 'hubspot', label: 'HubSpot CRM', icon: Mail, comingSoon: true },
   { id: 'site', label: 'Site Analytics', icon: Globe },
   { id: 'ads', label: 'Ads', icon: LayoutGrid },
@@ -169,6 +172,7 @@ function AnalyticsContent() {
             {active.id === 'growth' && <GrowthSection />}
             {active.id === 'site' && <SiteAnalyticsSection />}
             {active.id === 'trade-flow' && <TradeFlowSection />}
+            {active.id === 'catalog' && <CatalogHealthSection />}
             {active.id === 'ads' && <AdsSection />}
             {active.comingSoon && <ComingSoon label={active.label} />}
           </main>

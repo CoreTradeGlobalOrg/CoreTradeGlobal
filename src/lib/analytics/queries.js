@@ -1049,6 +1049,250 @@ export async function getAdsPerformance() {
   };
 }
 
+// --- Product Catalog Health (Bölüm 20) ------------------------------------
+
+/**
+ * Per-product weighted quality score. Weights sum to 100 by
+ * construction. Signals that need image processing (pHash duplicate
+ * detection, blur / watermark check) or search event logs (relevance
+ * scoring) are deliberately absent from this first pass — surfacing
+ * the derivable signals is 80% of the value at 20% of the cost.
+ */
+const PRODUCT_QUALITY_FIELDS = [
+  {
+    key: 'title',
+    label: 'Title length',
+    weight: 10,
+    ok: (p) => (p.name || '').trim().length >= 20,
+  },
+  {
+    key: 'description',
+    label: 'Rich description',
+    weight: 20,
+    ok: (p) => (p.description || '').trim().length >= 120,
+  },
+  {
+    key: 'images',
+    label: 'Multiple images',
+    weight: 20,
+    ok: (p) => Array.isArray(p.images) && p.images.length >= 2,
+  },
+  {
+    key: 'category',
+    label: 'Category assigned',
+    weight: 10,
+    ok: (p) => !!p.categoryId,
+  },
+  {
+    key: 'price',
+    label: 'Price set',
+    weight: 10,
+    ok: (p) => Number(p.price) > 0,
+  },
+  {
+    key: 'quantity',
+    label: 'Quantity set',
+    weight: 10,
+    ok: (p) => Number(p.quantity) > 0 || Number(p.stockQuantity) > 0,
+  },
+  {
+    key: 'unit',
+    label: 'Unit specified',
+    weight: 10,
+    ok: (p) => (p.unit || '').trim() !== '',
+  },
+  {
+    key: 'currency',
+    label: 'Currency set',
+    weight: 5,
+    ok: (p) => (p.currency || '').trim() !== '',
+  },
+  {
+    key: 'freshness',
+    label: 'Updated in 90 days',
+    weight: 5,
+    ok: (p) => {
+      const updated = toDate(p.updatedAt) || toDate(p.createdAt);
+      if (!updated) return false;
+      return Date.now() - updated.getTime() <= 90 * MS_PER_DAY;
+    },
+  },
+];
+
+if (
+  PRODUCT_QUALITY_FIELDS.reduce((s, f) => s + f.weight, 0) !== 100 &&
+  process.env.NODE_ENV !== 'production'
+) {
+  // eslint-disable-next-line no-console
+  console.warn('[analytics:catalog] PRODUCT_QUALITY_FIELDS weights do not sum to 100');
+}
+
+/**
+ * Catalog-health snapshot: per-product quality scoring, temporal
+ * signals (stale / dead / fresh), category coverage (empty vs
+ * overcrowded), top low-quality products, top prolific sellers.
+ *
+ * @returns {Promise<{
+ *   snapshotAt: Date,
+ *   total: number,
+ *   averageScore: number,
+ *   qualityBuckets: { high: number, medium: number, low: number },
+ *   freshnessBuckets: { fresh30: number, stale30to90: number, dead90plus: number, noTimestamp: number },
+ *   fieldGapCounts: Array<{ key: string, label: string, missing: number, weight: number }>,
+ *   emptyCategories: Array<{ id: string, name: string }>,
+ *   crowdedCategories: Array<{ id: string, name: string, count: number }>,
+ *   uncategorized: number,
+ *   topLowQuality: Array<{ id, name, sellerName, score, missing: string[] }>,
+ *   topSellers: Array<{ uid, name, count, avgScore: number }>,
+ *   deadListings: Array<{ id, name, sellerName, updatedAt: Date|null, ageDays: number|null }>,
+ * }>}
+ */
+export async function getCatalogHealth() {
+  const now = Date.now();
+
+  const [productsSnap, categoriesSnap, usersSnap] = await Promise.all([
+    getDocs(collection(db, COLLECTIONS.PRODUCTS)),
+    getDocs(collection(db, COLLECTIONS.CATEGORIES)),
+    getDocs(collection(db, COLLECTIONS.USERS)),
+  ]);
+
+  const categoryIdToName = new Map();
+  categoriesSnap.forEach((doc) => {
+    const data = doc.data() || {};
+    if (data.name) categoryIdToName.set(doc.id, data.name);
+  });
+
+  const userIdToName = new Map();
+  usersSnap.forEach((doc) => {
+    const data = doc.data() || {};
+    userIdToName.set(
+      doc.id,
+      data.companyName || data.fullName || data.displayName || data.email || doc.id,
+    );
+  });
+
+  const categoryCounts = new Map(); // categoryId → count
+  const fieldGapCounts = PRODUCT_QUALITY_FIELDS.map((f) => ({
+    key: f.key,
+    label: f.label,
+    missing: 0,
+    weight: f.weight,
+  }));
+  const gapByKey = new Map(fieldGapCounts.map((g) => [g.key, g]));
+
+  const qualityBuckets = { high: 0, medium: 0, low: 0 };
+  const freshnessBuckets = { fresh30: 0, stale30to90: 0, dead90plus: 0, noTimestamp: 0 };
+  const rows = [];
+  const sellerAgg = new Map(); // uid → { count, scoreSum }
+  let scoreSum = 0;
+  let uncategorized = 0;
+
+  productsSnap.forEach((doc) => {
+    const p = doc.data() || {};
+    let score = 0;
+    const missing = [];
+    for (const field of PRODUCT_QUALITY_FIELDS) {
+      if (field.ok(p)) {
+        score += field.weight;
+      } else {
+        missing.push(field.label);
+        gapByKey.get(field.key).missing += 1;
+      }
+    }
+    scoreSum += score;
+
+    if (score >= 80) qualityBuckets.high += 1;
+    else if (score >= 40) qualityBuckets.medium += 1;
+    else qualityBuckets.low += 1;
+
+    const updated = toDate(p.updatedAt) || toDate(p.createdAt);
+    if (!updated) freshnessBuckets.noTimestamp += 1;
+    else {
+      const ageDays = Math.floor((now - updated.getTime()) / MS_PER_DAY);
+      if (ageDays <= 30) freshnessBuckets.fresh30 += 1;
+      else if (ageDays <= 90) freshnessBuckets.stale30to90 += 1;
+      else freshnessBuckets.dead90plus += 1;
+    }
+
+    const catId = p.categoryId || null;
+    if (!catId) uncategorized += 1;
+    else categoryCounts.set(catId, (categoryCounts.get(catId) || 0) + 1);
+
+    const sellerName = userIdToName.get(p.userId) || 'Unknown';
+    rows.push({
+      id: doc.id,
+      name: (p.name || '').trim() || '(unnamed)',
+      sellerId: p.userId || null,
+      sellerName,
+      score,
+      missing,
+      updatedAt: updated,
+      ageDays: updated ? Math.floor((now - updated.getTime()) / MS_PER_DAY) : null,
+    });
+
+    if (p.userId) {
+      let s = sellerAgg.get(p.userId);
+      if (!s) {
+        s = { count: 0, scoreSum: 0, name: sellerName };
+        sellerAgg.set(p.userId, s);
+      }
+      s.count += 1;
+      s.scoreSum += score;
+    }
+  });
+
+  const total = productsSnap.size;
+  const averageScore = total > 0 ? Math.round(scoreSum / total) : 0;
+
+  // Empty categories vs overcrowded (more than 20% of catalog).
+  const overcrowdedThreshold = Math.max(20, Math.round(total * 0.15));
+  const emptyCategories = [];
+  const crowdedCategories = [];
+  categoriesSnap.forEach((doc) => {
+    const count = categoryCounts.get(doc.id) || 0;
+    const name = doc.data()?.name || doc.id;
+    if (count === 0) emptyCategories.push({ id: doc.id, name });
+    else if (count > overcrowdedThreshold) crowdedCategories.push({ id: doc.id, name, count });
+  });
+  emptyCategories.sort((a, b) => a.name.localeCompare(b.name));
+  crowdedCategories.sort((a, b) => b.count - a.count);
+
+  const topLowQuality = rows
+    .filter((r) => r.score < 40)
+    .sort((a, b) => a.score - b.score)
+    .slice(0, 20);
+
+  const topSellers = Array.from(sellerAgg.entries())
+    .map(([uid, agg]) => ({
+      uid,
+      name: agg.name,
+      count: agg.count,
+      avgScore: agg.count > 0 ? Math.round(agg.scoreSum / agg.count) : 0,
+    }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 15);
+
+  const deadListings = rows
+    .filter((r) => r.ageDays !== null && r.ageDays > 90)
+    .sort((a, b) => (b.ageDays ?? 0) - (a.ageDays ?? 0))
+    .slice(0, 20);
+
+  return {
+    snapshotAt: new Date(),
+    total,
+    averageScore,
+    qualityBuckets,
+    freshnessBuckets,
+    fieldGapCounts,
+    emptyCategories,
+    crowdedCategories,
+    uncategorized,
+    topLowQuality,
+    topSellers,
+    deadListings,
+  };
+}
+
 // --- Engagement Score — 5-layer model (Bölüm 18) --------------------------
 
 /**
