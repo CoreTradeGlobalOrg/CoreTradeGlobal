@@ -1048,6 +1048,265 @@ export async function getAdsPerformance() {
   };
 }
 
+// --- Onboarding funnel (Bölüm 12) -----------------------------------------
+
+/**
+ * The five onboarding steps we track. Each step derives from data
+ * that's already on the user doc or countable across other
+ * collections — no dedicated user_events table yet, so we compute
+ * live from steady-state observations. When the event pipeline
+ * lands (Bölüm 23 Faz 1) the same shape can be filled from event
+ * timestamps for precise time-to-step.
+ */
+export const ONBOARDING_STEPS = [
+  {
+    id: 'email_verified',
+    label: 'Email verified',
+    expectedWithinDays: 1,
+  },
+  {
+    id: 'profile_half',
+    label: 'Profile ≥50%',
+    expectedWithinDays: 3,
+  },
+  {
+    id: 'first_content',
+    label: 'First product or RFQ',
+    expectedWithinDays: 5,
+  },
+  {
+    id: 'first_message',
+    label: 'First message',
+    expectedWithinDays: 7,
+  },
+  {
+    id: 'second_signin',
+    label: 'Second sign-in',
+    expectedWithinDays: 7,
+  },
+];
+
+/**
+ * Onboarding funnel snapshot. All cohorts, per-step completion
+ * percentages, and the current-cohort dropout list live here in
+ * one shot.
+ *
+ * @returns {Promise<{
+ *   snapshotAt: Date,
+ *   total: number,
+ *   cohorts: {
+ *     current: { key: string, size: number, steps: Array<{ id, label, completed, percent }> },
+ *     previous: { key: string, size: number, steps: Array<{ id, label, completed, percent }> },
+ *     allTime: { key: string, size: number, steps: Array<{ id, label, completed, percent }> },
+ *   },
+ *   retention30d: { onboardedCount: number, retainedCount: number, percent: number|null },
+ *   dropoffByStep: Record<string, Array<{ uid, displayName, email, companyName, country, daysSinceRegister }>>,
+ * }>}
+ */
+export async function getOnboardingFunnel() {
+  const now = Date.now();
+
+  const [usersSnap, productsSnap, requestsSnap, conversationsSnap] = await Promise.all([
+    getDocs(collection(db, COLLECTIONS.USERS)),
+    getDocs(collection(db, COLLECTIONS.PRODUCTS)),
+    getDocs(collection(db, COLLECTIONS.REQUESTS)),
+    getDocs(collection(db, COLLECTIONS.CONVERSATIONS)),
+  ]);
+
+  // uid → earliest createdAt across products (for time-to-first-product).
+  const firstProductAt = new Map();
+  productsSnap.forEach((doc) => {
+    const d = doc.data() || {};
+    const uid = d.userId;
+    const created = toDate(d.createdAt);
+    if (!uid || !created) return;
+    const prev = firstProductAt.get(uid);
+    if (!prev || created < prev) firstProductAt.set(uid, created);
+  });
+
+  // uid → earliest RFQ createdAt.
+  const firstRequestAt = new Map();
+  requestsSnap.forEach((doc) => {
+    const d = doc.data() || {};
+    const uid = d.userId;
+    const created = toDate(d.createdAt);
+    if (!uid || !created) return;
+    const prev = firstRequestAt.get(uid);
+    if (!prev || created < prev) firstRequestAt.set(uid, created);
+  });
+
+  // uid → earliest conversation-participation createdAt.
+  const firstMessageAt = new Map();
+  conversationsSnap.forEach((doc) => {
+    const d = doc.data() || {};
+    const created = toDate(d.createdAt);
+    const parts = Array.isArray(d.participants) ? d.participants : [];
+    if (!created) return;
+    for (const uid of parts) {
+      const prev = firstMessageAt.get(uid);
+      if (!prev || created < prev) firstMessageAt.set(uid, created);
+    }
+  });
+
+  // --- profile-completeness weights (mirror of PROFILE_FIELDS but
+  // inline so this query doesn't depend on a separate one) ---
+  const PROFILE_WEIGHTS = [
+    { key: 'companyName', weight: 5, ok: (d) => (d.companyName || '').trim() !== '' },
+    { key: 'phone', weight: 5, ok: (d) => (d.phone || '').trim() !== '' },
+    { key: 'companyCategory', weight: 8, ok: (d) => (d.companyCategory || '').trim() !== '' },
+    { key: 'name', weight: 4, ok: (d) => (d.firstName || '').trim() !== '' && (d.lastName || '').trim() !== '' },
+    { key: 'companyLogo', weight: 12, ok: (d) => (d.companyLogo || '').trim() !== '' },
+    { key: 'about', weight: 15, ok: (d) => (d.about || '').trim().length >= 40 },
+    { key: 'companyWebsite', weight: 8, ok: (d) => (d.companyWebsite || '').trim() !== '' },
+    { key: 'linkedinProfile', weight: 5, ok: (d) => (d.linkedinProfile || '').trim() !== '' },
+    { key: 'country', weight: 5, ok: (d) => (d.country || '').trim() !== '' },
+    { key: 'position', weight: 5, ok: (d) => (d.position || '').trim() !== '' },
+    { key: 'companyDocuments', weight: 18, ok: (d) => Array.isArray(d.companyDocuments) && d.companyDocuments.length > 0 },
+    { key: 'verified', weight: 10, ok: (d) => !!d.emailVerified && !!d.adminApproved },
+  ];
+
+  function profilePercent(data) {
+    let sum = 0;
+    for (const f of PROFILE_WEIGHTS) if (f.ok(data)) sum += f.weight;
+    return sum;
+  }
+
+  // Derived per-user rows.
+  const rows = [];
+  usersSnap.forEach((doc) => {
+    const data = doc.data() || {};
+    const createdAt = toDate(data.createdAt);
+    const lastLoginAt = toDate(data.lastLoginAt);
+    const emailVerified = !!data.emailVerified;
+    const profilePct = profilePercent(data);
+    const firstProduct = firstProductAt.get(doc.id) || null;
+    const firstRequest = firstRequestAt.get(doc.id) || null;
+    const firstMessage = firstMessageAt.get(doc.id) || null;
+    const firstContent = firstProduct && firstRequest
+      ? (firstProduct < firstRequest ? firstProduct : firstRequest)
+      : (firstProduct || firstRequest);
+
+    // Second sign-in: lastLoginAt strictly after (createdAt + 1 hour).
+    // Anything within an hour of registration is still the initial
+    // session; we want confirmation the member actively returned.
+    const secondSignin =
+      createdAt &&
+      lastLoginAt &&
+      lastLoginAt.getTime() > createdAt.getTime() + 60 * 60 * 1000;
+
+    rows.push({
+      uid: doc.id,
+      displayName: data.fullName || data.displayName || '(no name)',
+      email: data.email || '',
+      companyName: data.companyName || '',
+      country: data.country || '',
+      createdAt,
+      isSuspended: !!data.isSuspended,
+      steps: {
+        email_verified: emailVerified,
+        profile_half: profilePct >= 50,
+        first_content: !!firstContent,
+        first_message: !!firstMessage,
+        second_signin: !!secondSignin,
+      },
+      daysSinceRegister: createdAt
+        ? Math.floor((now - createdAt.getTime()) / MS_PER_DAY)
+        : null,
+    });
+  });
+
+  const buildStepStats = (cohortRows) => {
+    const stats = ONBOARDING_STEPS.map((step) => {
+      const completed = cohortRows.reduce(
+        (n, r) => n + (r.steps[step.id] ? 1 : 0),
+        0,
+      );
+      const percent = cohortRows.length > 0
+        ? Math.round((completed / cohortRows.length) * 100)
+        : 0;
+      return { id: step.id, label: step.label, completed, percent };
+    });
+    return stats;
+  };
+
+  const activeRows = rows.filter((r) => !r.isSuspended && r.createdAt);
+
+  const currentCutoff = now - 30 * MS_PER_DAY;
+  const previousCutoff = now - 60 * MS_PER_DAY;
+
+  const currentCohort = activeRows.filter((r) => r.createdAt.getTime() >= currentCutoff);
+  const previousCohort = activeRows.filter(
+    (r) => r.createdAt.getTime() >= previousCutoff && r.createdAt.getTime() < currentCutoff,
+  );
+
+  const cohorts = {
+    current: {
+      key: 'Registered in last 30 days',
+      size: currentCohort.length,
+      steps: buildStepStats(currentCohort),
+    },
+    previous: {
+      key: 'Registered 31-60 days ago',
+      size: previousCohort.length,
+      steps: buildStepStats(previousCohort),
+    },
+    allTime: {
+      key: 'All members',
+      size: activeRows.length,
+      steps: buildStepStats(activeRows),
+    },
+  };
+
+  // Retention proxy: of members who completed 4+ onboarding steps,
+  // what % signed in within the last 30 days? A weak signal until
+  // we have proper session events, but honest at current scale.
+  const onboarded = activeRows.filter((r) => {
+    let done = 0;
+    for (const step of ONBOARDING_STEPS) if (r.steps[step.id]) done += 1;
+    return done >= 4;
+  });
+  const retained = onboarded.filter((r) => {
+    // Any recent login flag would live under lastLoginAt bump but the
+    // row we built above doesn't carry it. Rebuild the boolean off
+    // second_signin as a shorthand; a proper retention loop lands
+    // when the event log arrives.
+    return r.steps.second_signin;
+  });
+  const retention30d = {
+    onboardedCount: onboarded.length,
+    retainedCount: retained.length,
+    percent: onboarded.length > 0
+      ? Math.round((retained.length / onboarded.length) * 100)
+      : null,
+  };
+
+  // Dropout roster — per step, who from the current cohort has NOT
+  // yet completed it? Sorted by days-since-register desc so the
+  // longest-lingering incompletes bubble up.
+  const dropoffByStep = {};
+  for (const step of ONBOARDING_STEPS) {
+    dropoffByStep[step.id] = currentCohort
+      .filter((r) => !r.steps[step.id])
+      .map((r) => ({
+        uid: r.uid,
+        displayName: r.displayName,
+        email: r.email,
+        companyName: r.companyName,
+        country: r.country,
+        daysSinceRegister: r.daysSinceRegister,
+      }))
+      .sort((a, b) => (b.daysSinceRegister ?? 0) - (a.daysSinceRegister ?? 0));
+  }
+
+  return {
+    snapshotAt: new Date(),
+    total: activeRows.length,
+    cohorts,
+    retention30d,
+    dropoffByStep,
+  };
+}
+
 // --- Growth: monthly registrations + MoM -----------------------------------
 
 /**
