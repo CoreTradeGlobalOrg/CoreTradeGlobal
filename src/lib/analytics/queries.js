@@ -1049,6 +1049,272 @@ export async function getAdsPerformance() {
   };
 }
 
+// --- In-platform Messaging Analytics (Bölüm 21) ---------------------------
+
+/**
+ * Regex patterns that flag likely off-platform steering — phone
+ * numbers, emails, WhatsApp / Telegram / Skype handles, and IBAN
+ * strings. Deliberately loose; false positives are recoverable
+ * (human review), missed positives are the actual risk.
+ *
+ * Each pattern carries a category so the panel can group flagged
+ * messages by what got detected.
+ */
+const OFF_PLATFORM_PATTERNS = [
+  { key: 'email', label: 'Email address', regex: /[\w.+-]+@[\w-]+\.[\w.-]{2,}/i },
+  { key: 'phone', label: 'Phone number', regex: /(?:\+?\d[\s.-]?){8,}\d/ },
+  { key: 'whatsapp', label: 'WhatsApp', regex: /\bwhat[\s-]*s\s*app\b|wa\.me|whatsapp/i },
+  { key: 'telegram', label: 'Telegram', regex: /\btelegram\b|t\.me\/|@\w+_bot\b/i },
+  { key: 'skype', label: 'Skype', regex: /\bskype[\s:.]*[\w-]+/i },
+  { key: 'iban', label: 'Bank IBAN', regex: /\b[A-Z]{2}\d{2}[A-Z0-9\s]{10,30}\b/ },
+];
+
+/**
+ * Messaging analytics — pulls every conversation + its messages
+ * subcollection via a collectionGroup query and derives volume,
+ * response quality, off-platform flags, and per-seller response
+ * ranking.
+ *
+ * @returns {Promise<{
+ *   snapshotAt: Date,
+ *   totalConversations: number,
+ *   activeConversations30d: number,
+ *   newConversations7d: number,
+ *   totalMessages: number,
+ *   messagesLast7d: number,
+ *   messagesLast30d: number,
+ *   uniqueSenders: number,
+ *   emptyMessageRate: number,           // % of messages with <5 chars of content
+ *   attachmentRate: number,             // % of messages with an attachment
+ *   avgFirstResponseHours: number|null,
+ *   unansweredConversations: number,
+ *   slowResponders: Array<{ uid, name, avgResponseHours, sampleSize }>,
+ *   dailyTrend: Array<{ date: string, count: number }>,
+ *   flaggedMessages: Array<{
+ *     conversationId: string,
+ *     senderId: string,
+ *     senderName: string,
+ *     categories: string[],
+ *     snippet: string,
+ *     createdAt: Date|null,
+ *   }>,
+ *   flagCategoryCounts: Record<string, number>,
+ * }>}
+ */
+export async function getMessagingAnalytics() {
+  const now = Date.now();
+  const startOfLast7 = now - 7 * MS_PER_DAY;
+  const startOfLast30 = now - 30 * MS_PER_DAY;
+
+  const [conversationsSnap, messagesSnap, usersSnap] = await Promise.all([
+    getDocs(collection(db, COLLECTIONS.CONVERSATIONS)),
+    getDocs(collectionGroup(db, 'messages')),
+    getDocs(collection(db, COLLECTIONS.USERS)),
+  ]);
+
+  const userIdToName = new Map();
+  usersSnap.forEach((doc) => {
+    const data = doc.data() || {};
+    userIdToName.set(
+      doc.id,
+      data.fullName || data.displayName || data.companyName || data.email || doc.id,
+    );
+  });
+
+  // Group messages by conversation and by sender.
+  const messagesByConv = new Map(); // convId → sorted-by-createdAt array
+  const senderStats = new Map(); // uid → { messages: n, responseSamples: [hours] }
+  const uniqueSenders = new Set();
+  let messagesLast7d = 0;
+  let messagesLast30d = 0;
+  let emptyCount = 0;
+  let attachmentCount = 0;
+  const flaggedMessages = [];
+  const flagCategoryCounts = {};
+  const dailyCounts = new Map();
+  const startOfLast30Day = new Date(now - 29 * MS_PER_DAY);
+  startOfLast30Day.setHours(0, 0, 0, 0);
+
+  messagesSnap.forEach((doc) => {
+    const parent = doc.ref?.parent?.parent;
+    // messages collectionGroup includes legalMessages under other paths;
+    // filter to the conversations parent path.
+    if (!parent || parent.parent?.id !== COLLECTIONS.CONVERSATIONS) return;
+    const convId = parent.id;
+    const data = doc.data() || {};
+    const createdAt = toDate(data.createdAt);
+    if (!createdAt) return;
+    const content = (data.content || '').trim();
+    const senderId = data.senderId || '';
+    const attachments = Array.isArray(data.attachments) ? data.attachments : [];
+
+    if (senderId) uniqueSenders.add(senderId);
+    if (content.length < 5) emptyCount += 1;
+    if (attachments.length > 0) attachmentCount += 1;
+
+    if (createdAt.getTime() >= startOfLast7) messagesLast7d += 1;
+    if (createdAt.getTime() >= startOfLast30) messagesLast30d += 1;
+
+    if (createdAt.getTime() >= startOfLast30Day.getTime()) {
+      const y = createdAt.getFullYear();
+      const m = String(createdAt.getMonth() + 1).padStart(2, '0');
+      const d = String(createdAt.getDate()).padStart(2, '0');
+      const key = `${y}-${m}-${d}`;
+      dailyCounts.set(key, (dailyCounts.get(key) || 0) + 1);
+    }
+
+    let row = messagesByConv.get(convId);
+    if (!row) {
+      row = [];
+      messagesByConv.set(convId, row);
+    }
+    row.push({ createdAt, senderId, content, attachments });
+
+    // Off-platform detection.
+    const categories = [];
+    for (const pat of OFF_PLATFORM_PATTERNS) {
+      if (pat.regex.test(content)) {
+        categories.push(pat.key);
+        flagCategoryCounts[pat.key] = (flagCategoryCounts[pat.key] || 0) + 1;
+      }
+    }
+    if (categories.length > 0) {
+      const senderName = userIdToName.get(senderId) || senderId || '(unknown)';
+      flaggedMessages.push({
+        conversationId: convId,
+        senderId,
+        senderName,
+        categories,
+        snippet: content.slice(0, 140),
+        createdAt,
+      });
+    }
+  });
+
+  // Sort per-conversation messages by createdAt asc so response-time
+  // math is straightforward.
+  for (const arr of messagesByConv.values()) {
+    arr.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+  }
+
+  // Response quality — for each conversation, look at the first
+  // message vs the first reply from a DIFFERENT sender. Duration
+  // in hours. Conversations with only one participant sending or
+  // fewer than 2 messages count as unanswered.
+  let respHoursTotal = 0;
+  let respSampleCount = 0;
+  let unanswered = 0;
+  let activeConversations30d = 0;
+  let newConversations7d = 0;
+
+  conversationsSnap.forEach((doc) => {
+    const data = doc.data() || {};
+    const convId = doc.id;
+    const createdAt = toDate(data.createdAt);
+    const updatedAt = toDate(data.updatedAt);
+
+    if (updatedAt && updatedAt.getTime() >= startOfLast30) activeConversations30d += 1;
+    if (createdAt && createdAt.getTime() >= startOfLast7) newConversations7d += 1;
+
+    const msgs = messagesByConv.get(convId) || [];
+    if (msgs.length < 2) {
+      if (msgs.length === 1) unanswered += 1;
+      return;
+    }
+    const first = msgs[0];
+    const reply = msgs.find((m) => m.senderId && m.senderId !== first.senderId);
+    if (!reply) {
+      unanswered += 1;
+      return;
+    }
+    const hours = (reply.createdAt.getTime() - first.createdAt.getTime()) / (60 * 60 * 1000);
+    respHoursTotal += hours;
+    respSampleCount += 1;
+
+    // Attribute to the responder.
+    const responderId = reply.senderId;
+    let s = senderStats.get(responderId);
+    if (!s) {
+      s = { messages: 0, responseSamples: [] };
+      senderStats.set(responderId, s);
+    }
+    s.responseSamples.push(hours);
+  });
+
+  // Add message counts per sender (all messages, not just first responses).
+  messagesSnap.forEach((doc) => {
+    const parent = doc.ref?.parent?.parent;
+    if (!parent || parent.parent?.id !== COLLECTIONS.CONVERSATIONS) return;
+    const senderId = doc.data()?.senderId;
+    if (!senderId) return;
+    let s = senderStats.get(senderId);
+    if (!s) {
+      s = { messages: 0, responseSamples: [] };
+      senderStats.set(senderId, s);
+    }
+    s.messages += 1;
+  });
+
+  const slowResponders = Array.from(senderStats.entries())
+    .filter(([, s]) => s.responseSamples.length >= 1)
+    .map(([uid, s]) => {
+      const avg = s.responseSamples.reduce((sum, n) => sum + n, 0) / s.responseSamples.length;
+      return {
+        uid,
+        name: userIdToName.get(uid) || uid,
+        avgResponseHours: Math.round(avg * 10) / 10,
+        sampleSize: s.responseSamples.length,
+      };
+    })
+    .sort((a, b) => b.avgResponseHours - a.avgResponseHours)
+    .slice(0, 12);
+
+  const totalMessages = messagesSnap.docs.filter((doc) => {
+    const parent = doc.ref?.parent?.parent;
+    return parent?.parent?.id === COLLECTIONS.CONVERSATIONS;
+  }).length;
+
+  const avgFirstResponseHours = respSampleCount > 0
+    ? Math.round((respHoursTotal / respSampleCount) * 10) / 10
+    : null;
+
+  const emptyMessageRate = totalMessages > 0
+    ? Math.round((emptyCount / totalMessages) * 100)
+    : 0;
+  const attachmentRate = totalMessages > 0
+    ? Math.round((attachmentCount / totalMessages) * 100)
+    : 0;
+
+  // 30-day zero-filled trend.
+  const dailyTrend = [];
+  for (let i = 0; i < 30; i++) {
+    const d = new Date(startOfLast30Day.getTime() + i * MS_PER_DAY);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    dailyTrend.push({ date: key, count: dailyCounts.get(key) || 0 });
+  }
+
+  flaggedMessages.sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
+
+  return {
+    snapshotAt: new Date(),
+    totalConversations: conversationsSnap.size,
+    activeConversations30d,
+    newConversations7d,
+    totalMessages,
+    messagesLast7d,
+    messagesLast30d,
+    uniqueSenders: uniqueSenders.size,
+    emptyMessageRate,
+    attachmentRate,
+    avgFirstResponseHours,
+    unansweredConversations: unanswered,
+    slowResponders,
+    dailyTrend,
+    flaggedMessages,
+    flagCategoryCounts,
+  };
+}
+
 // --- Product Catalog Health (Bölüm 20) ------------------------------------
 
 /**
