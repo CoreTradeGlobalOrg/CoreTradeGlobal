@@ -21,14 +21,14 @@ import { clarityUserRecordingsUrl } from '@/lib/analytics/tracking';
 import { COMPANY_TYPE_LABELS } from '@/core/constants/companyTypes';
 
 const DAY_RANGES = [
-  { value: 7, label: 'Son 7 gün' },
-  { value: 30, label: 'Son 30 gün' },
-  { value: 90, label: 'Son 90 gün' },
+  { value: 7, label: 'Last 7 days' },
+  { value: 30, label: 'Last 30 days' },
+  { value: 90, label: 'Last 90 days' },
 ];
 
 function formatDate(date) {
   if (!(date instanceof Date) || isNaN(date.getTime())) return '—';
-  return date.toLocaleDateString('tr-TR', { day: '2-digit', month: 'short', year: 'numeric' });
+  return date.toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
 function toCsv(rows) {
@@ -169,7 +169,7 @@ function RecentMembersTable() {
       <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
         <div className="flex items-center gap-2">
           <Users2 className="w-4 h-4 text-[#FFD700]" />
-          <h4 className="text-sm font-semibold text-white">Yeni Üyeler</h4>
+          <h4 className="text-sm font-semibold text-white">New Members</h4>
           {!loading && (
             <span className="text-xs text-[#A0A0A0]">
               ({filtered.length}{search && ` / ${rows.length}`})
@@ -183,7 +183,7 @@ function RecentMembersTable() {
               type="search"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="İsim, email, şirket, ülke..."
+              placeholder="Name, email, company, country..."
               className="pl-8 pr-3 py-1.5 rounded-lg bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] text-xs text-white placeholder:text-[#606060] focus:outline-none focus:border-[#FFD700]/50 w-56"
             />
           </div>
@@ -220,26 +220,26 @@ function RecentMembersTable() {
         <table className="w-full min-w-[720px] text-xs">
           <thead>
             <tr className="text-left text-[#A0A0A0] border-b border-[rgba(255,255,255,0.06)]">
-              <th className="py-2.5 pr-3 font-medium">İsim</th>
-              <th className="py-2.5 pr-3 font-medium">Şirket</th>
-              <th className="py-2.5 pr-3 font-medium">Ülke</th>
-              <th className="py-2.5 pr-3 font-medium">Tip</th>
-              <th className="py-2.5 pr-3 font-medium">Kayıt</th>
-              <th className="py-2.5 pr-3 font-medium">Durum</th>
+              <th className="py-2.5 pr-3 font-medium">Name</th>
+              <th className="py-2.5 pr-3 font-medium">Company</th>
+              <th className="py-2.5 pr-3 font-medium">Country</th>
+              <th className="py-2.5 pr-3 font-medium">Type</th>
+              <th className="py-2.5 pr-3 font-medium">Registered</th>
+              <th className="py-2.5 pr-3 font-medium">Status</th>
             </tr>
           </thead>
           <tbody>
             {loading && (
               <tr>
                 <td colSpan={6} className="py-10 text-center text-[#606060]">
-                  Yükleniyor...
+                  Loading...
                 </td>
               </tr>
             )}
             {!loading && filtered.length === 0 && (
               <tr>
                 <td colSpan={6} className="py-10 text-center text-[#606060]">
-                  Bu aralıkta yeni üye yok.
+                  No new members in this range.
                 </td>
               </tr>
             )}
@@ -261,7 +261,7 @@ function RecentMembersTable() {
                   <td className="py-2.5 pr-3 text-[#A0A0A0]">{formatDate(row.createdAt)}</td>
                   <td className="py-2.5 pr-3">
                     {row.isSuspended ? (
-                      <span className="text-red-400">Askıda</span>
+                      <span className="text-red-400">Suspended</span>
                     ) : row.isVerified ? (
                       <span className="text-green-400">Verified</span>
                     ) : (
@@ -313,15 +313,15 @@ function DistributionView() {
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-lg font-semibold text-white">Profil Dağılımı</h3>
+        <h3 className="text-lg font-semibold text-white">Profile Distribution</h3>
         {distribution?.total != null && (
-          <span className="text-xs text-[#A0A0A0]">Toplam {distribution.total} üye</span>
+          <span className="text-xs text-[#A0A0A0]">{distribution.total} members total</span>
         )}
       </div>
 
       {distError && (
         <div className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-300">
-          Dağılım yüklenemedi: {distError}
+          Distribution failed to load: {distError}
         </div>
       )}
 
@@ -338,19 +338,19 @@ function DistributionView() {
         ) : (
           <>
             <DistributionCard
-              title="Ülke Dağılımı (Top 10)"
+              title="Countries (Top 10)"
               buckets={distribution.byCountry}
               total={distribution.total}
               limit={10}
             />
             <DistributionCard
-              title="Şirket Tipi"
+              title="Company Type"
               buckets={byCompanyType}
               total={distribution.total}
               limit={10}
             />
             <div className="rounded-2xl border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-5">
-              <h4 className="text-sm font-semibold text-white mb-4">Verified Oranı</h4>
+              <h4 className="text-sm font-semibold text-white mb-4">Verified Ratio</h4>
               <div className="flex items-center gap-4">
                 <div
                   className="relative w-24 h-24 rounded-full"
@@ -420,32 +420,31 @@ function useActivitySnapshot() {
 }
 
 function formatDaysSince(days) {
-  if (days === null || days === undefined) return '— (hiç giriş yok)';
-  if (days === 0) return 'Bugün';
-  if (days === 1) return 'Dün';
-  if (days < 7) return `${days} gün önce`;
-  if (days < 30) return `${Math.floor(days / 7)} hafta önce`;
-  if (days < 60) return `${days} gün önce`;
-  return `${days} gün önce`;
+  if (days === null || days === undefined) return '— (never signed in)';
+  if (days === 0) return 'Today';
+  if (days === 1) return 'Yesterday';
+  if (days < 7) return `${days} days ago`;
+  if (days < 30) return `${Math.floor(days / 7)} weeks ago`;
+  return `${days} days ago`;
 }
 
 // --- 3.3 activity view -----------------------------------------------------
 
 const ACTIVITY_BUCKET_META = {
-  active7d: { label: 'Son 7 gün', color: '#10B981' },
-  active30d: { label: '8-30 gün', color: '#3B82F6' },
-  dormant30to60: { label: '31-60 gün', color: '#F59E0B' },
-  churn60to90: { label: '61-90 gün', color: '#F97316' },
-  churn90plus: { label: '90+ gün', color: '#EF4444' },
-  never: { label: 'Hiç giriş yok', color: '#6B7280' },
+  active7d: { label: 'Last 7 days', color: '#10B981' },
+  active30d: { label: '8-30 days', color: '#3B82F6' },
+  dormant30to60: { label: '31-60 days', color: '#F59E0B' },
+  churn60to90: { label: '61-90 days', color: '#F97316' },
+  churn90plus: { label: '90+ days', color: '#EF4444' },
+  never: { label: 'Never signed in', color: '#6B7280' },
 };
 
 const ACTIVITY_FILTERS = [
-  { value: 'all', label: 'Tümü' },
-  { value: 'active7d', label: 'Aktif (7g)' },
-  { value: 'active30d', label: 'Aktif (30g)' },
-  { value: 'active90d', label: 'Aktif (90g)' },
-  { value: 'dormant', label: 'Sessiz (30-90g)' },
+  { value: 'all', label: 'All' },
+  { value: 'active7d', label: 'Active (7d)' },
+  { value: 'active30d', label: 'Active (30d)' },
+  { value: 'active90d', label: 'Active (90d)' },
+  { value: 'dormant', label: 'Dormant (30-90d)' },
 ];
 
 function bucketMatchesFilter(bucket, filter) {
@@ -535,7 +534,7 @@ function ActivityView() {
         <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
           <div className="flex items-center gap-2">
             <Users2 className="w-4 h-4 text-[#FFD700]" />
-            <h4 className="text-sm font-semibold text-white">Aktivite Tablosu</h4>
+            <h4 className="text-sm font-semibold text-white">Activity Table</h4>
             {!loading && (
               <span className="text-xs text-[#A0A0A0]">({filtered.length})</span>
             )}
@@ -547,7 +546,7 @@ function ActivityView() {
                 type="search"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Ara..."
+                placeholder="Search..."
                 className="pl-8 pr-3 py-1.5 rounded-lg bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] text-xs text-white placeholder:text-[#606060] focus:outline-none focus:border-[#FFD700]/50 w-48"
               />
             </div>
@@ -575,12 +574,12 @@ function ActivityView() {
           <table className="w-full min-w-[720px] text-xs">
             <thead>
               <tr className="text-left text-[#A0A0A0] border-b border-[rgba(255,255,255,0.06)]">
-                <th className="py-2.5 pr-3 font-medium">Üye</th>
-                <th className="py-2.5 pr-3 font-medium">Şirket</th>
-                <th className="py-2.5 pr-3 font-medium">Ülke</th>
+                <th className="py-2.5 pr-3 font-medium">Member</th>
+                <th className="py-2.5 pr-3 font-medium">Company</th>
+                <th className="py-2.5 pr-3 font-medium">Country</th>
                 <th className="py-2.5 pr-3 font-medium">Bucket</th>
-                <th className="py-2.5 pr-3 font-medium">Son giriş</th>
-                <th className="py-2.5 pr-3 font-medium">Durum</th>
+                <th className="py-2.5 pr-3 font-medium">Last sign-in</th>
+                <th className="py-2.5 pr-3 font-medium">Status</th>
                 <th className="py-2.5 pr-3 font-medium" aria-label="Clarity" />
               </tr>
             </thead>
@@ -588,14 +587,14 @@ function ActivityView() {
               {loading && (
                 <tr>
                   <td colSpan={7} className="py-10 text-center text-[#606060]">
-                    Yükleniyor...
+                    Loading...
                   </td>
                 </tr>
               )}
               {!loading && filtered.length === 0 && (
                 <tr>
                   <td colSpan={7} className="py-10 text-center text-[#606060]">
-                    Bu filtreye uyan üye yok.
+                    No members match this filter.
                   </td>
                 </tr>
               )}
@@ -628,7 +627,7 @@ function ActivityView() {
                       </td>
                       <td className="py-2.5 pr-3">
                         {row.isSuspended ? (
-                          <span className="text-red-400">Askıda</span>
+                          <span className="text-red-400">Suspended</span>
                         ) : row.isVerified ? (
                           <span className="text-green-400">Verified</span>
                         ) : (
@@ -642,7 +641,7 @@ function ActivityView() {
                             target="_blank"
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-1 text-[11px] text-[#A0A0A0] hover:text-[#FFD700] transition-colors"
-                            title={`${row.displayName} için Clarity recordings`}
+                            title={`Clarity recordings for ${row.displayName}`}
                           >
                             <Eye className="w-3 h-3" />
                             Clarity
@@ -737,7 +736,7 @@ function ChurnView() {
                       onClick={() => handleExportEmails(bucket)}
                       disabled={count === 0}
                       className="text-[10px] text-[#A0A0A0] hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                      title="Bu bucket'ın emaillerini indir"
+                      title="Download emails for this bucket"
                     >
                       <Download className="w-3 h-3 inline" /> mail
                     </button>
@@ -751,7 +750,7 @@ function ChurnView() {
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <AlertTriangle className="w-4 h-4 text-amber-400" />
-            <h4 className="text-sm font-semibold text-white">Re-engagement Listesi</h4>
+            <h4 className="text-sm font-semibold text-white">Re-engagement List</h4>
             {!loading && (
               <span className="text-xs text-[#A0A0A0]">({atRisk.length})</span>
             )}
@@ -763,7 +762,7 @@ function ChurnView() {
             className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[rgba(255,215,0,0.08)] hover:bg-[rgba(255,215,0,0.14)] border border-[rgba(255,215,0,0.2)] text-xs text-[#FFD700] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <Download className="w-3.5 h-3.5" />
-            Tüm listeyi indir
+            Download full list
           </button>
         </div>
 
@@ -777,10 +776,10 @@ function ChurnView() {
           <table className="w-full min-w-[720px] text-xs">
             <thead>
               <tr className="text-left text-[#A0A0A0] border-b border-[rgba(255,255,255,0.06)]">
-                <th className="py-2.5 pr-3 font-medium">Üye</th>
-                <th className="py-2.5 pr-3 font-medium">Şirket</th>
-                <th className="py-2.5 pr-3 font-medium">Ülke</th>
-                <th className="py-2.5 pr-3 font-medium">Sessizlik</th>
+                <th className="py-2.5 pr-3 font-medium">Member</th>
+                <th className="py-2.5 pr-3 font-medium">Company</th>
+                <th className="py-2.5 pr-3 font-medium">Country</th>
+                <th className="py-2.5 pr-3 font-medium">Silence</th>
                 <th className="py-2.5 pr-3 font-medium">Bucket</th>
               </tr>
             </thead>
@@ -788,14 +787,14 @@ function ChurnView() {
               {loading && (
                 <tr>
                   <td colSpan={5} className="py-10 text-center text-[#606060]">
-                    Yükleniyor...
+                    Loading...
                   </td>
                 </tr>
               )}
               {!loading && atRisk.length === 0 && (
                 <tr>
                   <td colSpan={5} className="py-10 text-center text-[#606060]">
-                    Şu an risk altında üye yok — hepsi son 30 gün içinde girmiş.
+                    No members currently at risk — everyone signed in within the last 30 days.
                   </td>
                 </tr>
               )}
@@ -839,9 +838,9 @@ function ChurnView() {
 // --- section root ----------------------------------------------------------
 
 const SUB_TABS = [
-  { id: 'recent', label: 'Yeni Üyeler' },
-  { id: 'distribution', label: 'Profil Dağılımı' },
-  { id: 'activity', label: 'Aktivite' },
+  { id: 'recent', label: 'New Members' },
+  { id: 'distribution', label: 'Distribution' },
+  { id: 'activity', label: 'Activity' },
   { id: 'churn', label: 'Churn Risk' },
 ];
 

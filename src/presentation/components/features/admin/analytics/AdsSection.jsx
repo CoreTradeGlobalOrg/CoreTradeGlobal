@@ -37,7 +37,7 @@ import { AD_STATUS_LABELS, AD_TYPE_LABELS } from '@/core/constants/adTypes';
 
 function formatNumber(n) {
   if (n === null || n === undefined || Number.isNaN(n)) return '—';
-  return Number(n).toLocaleString('tr-TR');
+  return Number(n).toLocaleString('en-US');
 }
 
 function formatCtr(pct) {
@@ -48,7 +48,7 @@ function formatCtr(pct) {
 
 function formatDate(date) {
   if (!(date instanceof Date) || isNaN(date.getTime())) return '—';
-  return date.toLocaleDateString('tr-TR', { day: '2-digit', month: 'short', year: '2-digit' });
+  return date.toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: '2-digit' });
 }
 
 function statusPillClass(status) {
@@ -110,10 +110,10 @@ export function AdsSection() {
     () =>
       data
         ? [
-            { key: 'active', label: 'Aktif', count: data.activeCount, color: '#10B981' },
-            { key: 'scheduled', label: 'Zamanlanmış', count: data.scheduledCount, color: '#3B82F6' },
-            { key: 'paused', label: 'Duraklatılmış', count: data.pausedCount, color: '#F59E0B' },
-            { key: 'expired', label: 'Süresi Doldu', count: data.expiredCount, color: '#6B7280' },
+            { key: 'active', label: 'Active', count: data.activeCount, color: '#10B981' },
+            { key: 'scheduled', label: 'Scheduled', count: data.scheduledCount, color: '#3B82F6' },
+            { key: 'paused', label: 'Paused', count: data.pausedCount, color: '#F59E0B' },
+            { key: 'expired', label: 'Expired', count: data.expiredCount, color: '#6B7280' },
           ]
         : [],
     [data],
@@ -123,9 +123,9 @@ export function AdsSection() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold text-white">Reklam Performansı</h3>
+          <h3 className="text-lg font-semibold text-white">Ad Performance</h3>
           <p className="text-xs text-[#A0A0A0] mt-0.5">
-            Kampanya envanteri, konum bazlı performans, aktif reklamlar.
+            Campaign inventory, per-position performance, live campaigns.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -133,7 +133,7 @@ export function AdsSection() {
             href="/admin?tab=ad-campaigns"
             className="text-xs text-[#A0A0A0] hover:text-[#FFD700] transition-colors inline-flex items-center gap-1"
           >
-            Yönetim <ArrowRight className="w-3 h-3" />
+            Manage <ArrowRight className="w-3 h-3" />
           </Link>
           <button
             type="button"
@@ -142,7 +142,7 @@ export function AdsSection() {
             className="flex items-center gap-2 text-xs text-[#A0A0A0] hover:text-white transition-colors disabled:opacity-40"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-            Yenile
+            Refresh
           </button>
         </div>
       </div>
@@ -196,28 +196,28 @@ export function AdsSection() {
           <>
             <KpiCard
               icon={TrendingUp}
-              label="Toplam Impression"
+              label="Total Impressions"
               value={formatNumber(data.totalImpressions)}
-              sub="Aktif + geçmiş kampanyalar"
+              sub="Active + past campaigns"
             />
             <KpiCard
               icon={MousePointerClick}
-              label="Toplam Click"
+              label="Total Clicks"
               value={formatNumber(data.totalClicks)}
-              sub="Hero, sponsored, carousel toplam"
+              sub="Hero + sponsored + carousel combined"
             />
             <KpiCard
               icon={Target}
-              label="Ortalama CTR"
+              label="Average CTR"
               value={formatCtr(data.avgCtr)}
-              sub="Click / Impression"
+              sub="Clicks / Impressions"
             />
             <KpiCard
               icon={CheckCircle2}
               iconColor="#10B981"
-              label="Şu An Yayında"
+              label="Currently Running"
               value={formatNumber(data.activeCount)}
-              sub={`${data.total} toplam kampanya`}
+              sub={`${data.total} total campaigns`}
             />
           </>
         )}
@@ -231,7 +231,7 @@ export function AdsSection() {
               <div className="flex items-center gap-2 mb-3">
                 <Clock className="w-4 h-4 text-amber-400" />
                 <h4 className="text-sm font-semibold text-white">
-                  3 gün içinde bitecek ({data.endingSoon.length})
+                  Ending in 3 days ({data.endingSoon.length})
                 </h4>
               </div>
               <ul className="space-y-1.5 text-xs">
@@ -245,8 +245,8 @@ export function AdsSection() {
                     </span>
                     <span className="text-amber-400 tabular-nums whitespace-nowrap">
                       {row.daysRemaining === 0
-                        ? 'Bugün biter'
-                        : `${row.daysRemaining} gün`}
+                        ? 'Ends today'
+                        : `${row.daysRemaining} days`}
                     </span>
                   </li>
                 ))}
@@ -259,7 +259,7 @@ export function AdsSection() {
               <div className="flex items-center gap-2 mb-3">
                 <AlertTriangle className="w-4 h-4 text-red-400" />
                 <h4 className="text-sm font-semibold text-white">
-                  Bitmiş ama hâlâ &ldquo;active&rdquo; ({data.stalePastEnd.length})
+                  Past end date but still &ldquo;active&rdquo; ({data.stalePastEnd.length})
                 </h4>
               </div>
               <ul className="space-y-1.5 text-xs">
@@ -272,13 +272,13 @@ export function AdsSection() {
                       </span>
                     </span>
                     <span className="text-red-400 tabular-nums whitespace-nowrap">
-                      {row.daysOverdue} gün gecikmiş
+                      {row.daysOverdue} days overdue
                     </span>
                   </li>
                 ))}
               </ul>
               <p className="mt-3 text-[10px] text-[#606060]">
-                Bu kayıtlar admin panelinden manuel &ldquo;Expired&rdquo; işaretlenmeli.
+                These records need to be flagged &ldquo;Expired&rdquo; manually from the admin panel.
               </p>
             </div>
           )}
@@ -287,21 +287,21 @@ export function AdsSection() {
 
       {/* Per-position performance */}
       <div className="rounded-2xl border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-5">
-        <h4 className="text-sm font-semibold text-white mb-4">Konum Bazlı Performans</h4>
+        <h4 className="text-sm font-semibold text-white mb-4">Per-Position Performance</h4>
         {loading || !data ? (
           <div className="h-40 animate-pulse bg-[rgba(255,255,255,0.04)] rounded" />
         ) : data.byType.length === 0 ? (
-          <p className="text-xs text-[#606060]">Kampanya yok.</p>
+          <p className="text-xs text-[#606060]">No campaigns.</p>
         ) : (
           <div className="overflow-x-auto -mx-5 px-5">
             <table className="w-full min-w-[540px] text-xs">
               <thead>
                 <tr className="text-left text-[#A0A0A0] border-b border-[rgba(255,255,255,0.06)]">
-                  <th className="py-2 pr-3 font-medium">Konum</th>
-                  <th className="py-2 pr-3 font-medium text-right">Aktif</th>
-                  <th className="py-2 pr-3 font-medium text-right">Toplam</th>
-                  <th className="py-2 pr-3 font-medium text-right">Impression</th>
-                  <th className="py-2 pr-3 font-medium text-right">Click</th>
+                  <th className="py-2 pr-3 font-medium">Position</th>
+                  <th className="py-2 pr-3 font-medium text-right">Active</th>
+                  <th className="py-2 pr-3 font-medium text-right">Total</th>
+                  <th className="py-2 pr-3 font-medium text-right">Impressions</th>
+                  <th className="py-2 pr-3 font-medium text-right">Clicks</th>
                   <th className="py-2 pr-3 font-medium text-right">CTR</th>
                 </tr>
               </thead>
@@ -336,30 +336,30 @@ export function AdsSection() {
       {/* Active campaigns table */}
       <div className="rounded-2xl border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-5">
         <div className="flex items-center justify-between mb-4">
-          <h4 className="text-sm font-semibold text-white">Yayındaki Kampanyalar</h4>
+          <h4 className="text-sm font-semibold text-white">Live Campaigns</h4>
           {!loading && data && (
             <span className="text-xs text-[#A0A0A0]">
-              {data.activeCampaigns.length} kampanya
+              {data.activeCampaigns.length} campaigns
             </span>
           )}
         </div>
         {loading || !data ? (
           <div className="h-40 animate-pulse bg-[rgba(255,255,255,0.04)] rounded" />
         ) : data.activeCampaigns.length === 0 ? (
-          <p className="text-xs text-[#606060]">Şu an yayında olan reklam yok.</p>
+          <p className="text-xs text-[#606060]">No ads currently running.</p>
         ) : (
           <div className="overflow-x-auto -mx-5 px-5">
             <table className="w-full min-w-[720px] text-xs">
               <thead>
                 <tr className="text-left text-[#A0A0A0] border-b border-[rgba(255,255,255,0.06)]">
-                  <th className="py-2 pr-3 font-medium">Reklamveren</th>
-                  <th className="py-2 pr-3 font-medium">Konum</th>
-                  <th className="py-2 pr-3 font-medium">Tarih</th>
-                  <th className="py-2 pr-3 font-medium">Kalan</th>
-                  <th className="py-2 pr-3 font-medium text-right">Impression</th>
-                  <th className="py-2 pr-3 font-medium text-right">Click</th>
+                  <th className="py-2 pr-3 font-medium">Advertiser</th>
+                  <th className="py-2 pr-3 font-medium">Position</th>
+                  <th className="py-2 pr-3 font-medium">Range</th>
+                  <th className="py-2 pr-3 font-medium">Remaining</th>
+                  <th className="py-2 pr-3 font-medium text-right">Impressions</th>
+                  <th className="py-2 pr-3 font-medium text-right">Clicks</th>
                   <th className="py-2 pr-3 font-medium text-right">CTR</th>
-                  <th className="py-2 pr-3 font-medium">Durum</th>
+                  <th className="py-2 pr-3 font-medium">Status</th>
                 </tr>
               </thead>
               <tbody>
@@ -379,8 +379,8 @@ export function AdsSection() {
                       {row.daysRemaining === null
                         ? '—'
                         : row.daysRemaining <= 0
-                          ? <span className="text-red-400">Bitmeli</span>
-                          : `${row.daysRemaining} gün`}
+                          ? <span className="text-red-400">Overdue</span>
+                          : `${row.daysRemaining} days`}
                     </td>
                     <td className="py-2 pr-3 text-[#A0A0A0] text-right tabular-nums">
                       {formatNumber(row.impressions)}
@@ -409,7 +409,7 @@ export function AdsSection() {
       {/* Top advertisers */}
       <div className="rounded-2xl border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-5">
         <h4 className="text-sm font-semibold text-white mb-4">
-          En Çok Yatırım Yapan Firmalar
+          Top Advertisers
         </h4>
         {loading || !data ? (
           <div className="space-y-2">
@@ -418,16 +418,16 @@ export function AdsSection() {
             ))}
           </div>
         ) : data.byCompany.length === 0 ? (
-          <p className="text-xs text-[#606060]">Veri yok.</p>
+          <p className="text-xs text-[#606060]">No data.</p>
         ) : (
           <div className="overflow-x-auto -mx-5 px-5">
             <table className="w-full min-w-[440px] text-xs">
               <thead>
                 <tr className="text-left text-[#A0A0A0] border-b border-[rgba(255,255,255,0.06)]">
-                  <th className="py-2 pr-3 font-medium">Firma</th>
-                  <th className="py-2 pr-3 font-medium text-right">Kampanya</th>
-                  <th className="py-2 pr-3 font-medium text-right">Impression</th>
-                  <th className="py-2 pr-3 font-medium text-right">Click</th>
+                  <th className="py-2 pr-3 font-medium">Company</th>
+                  <th className="py-2 pr-3 font-medium text-right">Campaigns</th>
+                  <th className="py-2 pr-3 font-medium text-right">Impressions</th>
+                  <th className="py-2 pr-3 font-medium text-right">Clicks</th>
                 </tr>
               </thead>
               <tbody>
@@ -455,7 +455,7 @@ export function AdsSection() {
 
       {data?.snapshotAt && (
         <p className="text-[11px] text-[#606060]">
-          Hesaplandı: {data.snapshotAt.toLocaleTimeString('tr-TR')}
+          Computed at {data.snapshotAt.toLocaleTimeString('en-US')}
         </p>
       )}
     </div>

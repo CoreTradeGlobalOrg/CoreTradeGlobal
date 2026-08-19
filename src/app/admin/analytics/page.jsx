@@ -97,7 +97,7 @@ function AnalyticsContent() {
             Analytics Dashboard
           </h2>
           <p className="text-sm text-[#A0A0A0]">
-            Platform metrikleri, üye yaşam döngüsü ve büyüme paneli.
+            Platform metrics, member lifecycle, and growth dashboard.
           </p>
         </div>
 

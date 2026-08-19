@@ -20,9 +20,9 @@ import { Download, RefreshCw, Search, Users2 } from 'lucide-react';
 import { getProfileCompleteness } from '@/lib/analytics/queries';
 
 const SEGMENT_META = {
-  weak: { label: 'Zayıf', range: '< 40%', color: '#EF4444' },
-  medium: { label: 'Orta', range: '40 – 79%', color: '#F59E0B' },
-  strong: { label: 'Tam', range: '≥ 80%', color: '#10B981' },
+  weak: { label: 'Weak', range: '< 40%', color: '#EF4444' },
+  medium: { label: 'Medium', range: '40 – 79%', color: '#F59E0B' },
+  strong: { label: 'Complete', range: '≥ 80%', color: '#10B981' },
 };
 
 const SEGMENT_ORDER = ['weak', 'medium', 'strong'];
@@ -106,9 +106,9 @@ export function ProfileCompletenessSection() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold text-white">Profil Doluluk</h3>
+          <h3 className="text-lg font-semibold text-white">Profile Health</h3>
           <p className="text-xs text-[#A0A0A0] mt-0.5">
-            Kimin profili tam, kim hatırlatma bekliyor. Skor 0-100.
+            Who's fully set up and who needs a nudge. Score 0-100.
           </p>
         </div>
         <button
@@ -118,7 +118,7 @@ export function ProfileCompletenessSection() {
           className="flex items-center gap-2 text-xs text-[#A0A0A0] hover:text-white transition-colors disabled:opacity-40"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-          Yenile
+          Refresh
         </button>
       </div>
 
@@ -141,7 +141,7 @@ export function ProfileCompletenessSection() {
           <>
             <div className="rounded-2xl border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.03)] p-5">
               <p className="text-xs uppercase tracking-wider text-[#A0A0A0] mb-2">
-                Platform Ortalaması
+                Platform Average
               </p>
               <div className="flex items-baseline gap-2">
                 <p
@@ -153,7 +153,7 @@ export function ProfileCompletenessSection() {
                 <p className="text-xs text-[#606060]">/ 100</p>
               </div>
               <p className="text-xs text-[#606060] mt-2">
-                {data.total} üye üzerinden
+                Across {data.total} members
               </p>
             </div>
 
@@ -187,7 +187,7 @@ export function ProfileCompletenessSection() {
                     disabled={count === 0}
                     className="mt-3 text-[10px] text-[#A0A0A0] hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed inline-flex items-center gap-1"
                   >
-                    <Download className="w-3 h-3" /> mail listesi
+                    <Download className="w-3 h-3" /> email list
                   </button>
                 </div>
               );
@@ -198,7 +198,7 @@ export function ProfileCompletenessSection() {
 
       {/* Sector averages */}
       <div className="rounded-2xl border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-5">
-        <h4 className="text-sm font-semibold text-white mb-4">Sektör Ortalamaları</h4>
+        <h4 className="text-sm font-semibold text-white mb-4">Sector Averages</h4>
         {loading || !data ? (
           <div className="space-y-2">
             {[0, 1, 2, 3, 4].map((i) => (
@@ -206,7 +206,7 @@ export function ProfileCompletenessSection() {
             ))}
           </div>
         ) : data.sectorAverages.length === 0 ? (
-          <p className="text-xs text-[#606060]">Veri yok.</p>
+          <p className="text-xs text-[#606060]">No data.</p>
         ) : (
           <div className="space-y-2.5">
             {data.sectorAverages.slice(0, 10).map((row) => (
@@ -231,7 +231,7 @@ export function ProfileCompletenessSection() {
             ))}
             {data.sectorAverages.length > 10 && (
               <p className="text-[11px] text-[#606060]">
-                +{data.sectorAverages.length - 10} sektör daha
+                +{data.sectorAverages.length - 10} more sectors
               </p>
             )}
           </div>
@@ -243,7 +243,7 @@ export function ProfileCompletenessSection() {
         <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
           <div className="flex items-center gap-2">
             <Users2 className="w-4 h-4 text-[#FFD700]" />
-            <h4 className="text-sm font-semibold text-white">Üye Bazlı Doluluk</h4>
+            <h4 className="text-sm font-semibold text-white">Per-Member Completeness</h4>
             {!loading && (
               <span className="text-xs text-[#A0A0A0]">({filteredRows.length})</span>
             )}
@@ -255,7 +255,7 @@ export function ProfileCompletenessSection() {
                 type="search"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="İsim, şirket, sektör..."
+                placeholder="Name, company, sector..."
                 className="pl-8 pr-3 py-1.5 rounded-lg bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] text-xs text-white placeholder:text-[#606060] focus:outline-none focus:border-[#FFD700]/50 w-56"
               />
             </div>
@@ -264,10 +264,10 @@ export function ProfileCompletenessSection() {
               onChange={(e) => setFilter(e.target.value)}
               className="px-2.5 py-1.5 rounded-lg bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] text-xs text-white focus:outline-none focus:border-[#FFD700]/50"
             >
-              <option value="all">Tüm segmentler</option>
-              <option value="weak">Zayıf (&lt; 40%)</option>
-              <option value="medium">Orta (40-79%)</option>
-              <option value="strong">Tam (≥ 80%)</option>
+              <option value="all">All segments</option>
+              <option value="weak">Weak (&lt; 40%)</option>
+              <option value="medium">Medium (40-79%)</option>
+              <option value="strong">Complete (≥ 80%)</option>
             </select>
             <button
               type="button"
@@ -276,7 +276,7 @@ export function ProfileCompletenessSection() {
               className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[rgba(255,215,0,0.08)] hover:bg-[rgba(255,215,0,0.14)] border border-[rgba(255,215,0,0.2)] text-xs text-[#FFD700] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <Download className="w-3.5 h-3.5" />
-              Mail
+              Email
             </button>
           </div>
         </div>
@@ -285,26 +285,26 @@ export function ProfileCompletenessSection() {
           <table className="w-full min-w-[860px] text-xs">
             <thead>
               <tr className="text-left text-[#A0A0A0] border-b border-[rgba(255,255,255,0.06)]">
-                <th className="py-2.5 pr-3 font-medium">Üye</th>
-                <th className="py-2.5 pr-3 font-medium">Sektör</th>
-                <th className="py-2.5 pr-3 font-medium">Ülke</th>
-                <th className="py-2.5 pr-3 font-medium">Skor</th>
-                <th className="py-2.5 pr-3 font-medium">Kritik eksik</th>
-                <th className="py-2.5 pr-3 font-medium">Eksik alanlar</th>
+                <th className="py-2.5 pr-3 font-medium">Member</th>
+                <th className="py-2.5 pr-3 font-medium">Sector</th>
+                <th className="py-2.5 pr-3 font-medium">Country</th>
+                <th className="py-2.5 pr-3 font-medium">Score</th>
+                <th className="py-2.5 pr-3 font-medium">Required missing</th>
+                <th className="py-2.5 pr-3 font-medium">Missing fields</th>
               </tr>
             </thead>
             <tbody>
               {loading && (
                 <tr>
                   <td colSpan={6} className="py-10 text-center text-[#606060]">
-                    Yükleniyor...
+                    Loading...
                   </td>
                 </tr>
               )}
               {!loading && filteredRows.length === 0 && (
                 <tr>
                   <td colSpan={6} className="py-10 text-center text-[#606060]">
-                    Bu filtreye uyan üye yok.
+                    No members match this filter.
                   </td>
                 </tr>
               )}
@@ -363,7 +363,7 @@ export function ProfileCompletenessSection() {
                                 ? 'text-red-400 border-red-400/30 bg-red-400/5'
                                 : 'text-[#A0A0A0] border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)]',
                             ].join(' ')}
-                            title={`${f.label} (${f.weight}p${f.required ? ', zorunlu' : ''})`}
+                            title={`${f.label} (${f.weight}p${f.required ? ', required' : ''})`}
                           >
                             {f.label}
                           </span>
@@ -374,7 +374,7 @@ export function ProfileCompletenessSection() {
                           </span>
                         )}
                         {row.missingFields.length === 0 && (
-                          <span className="text-[10px] text-green-400">Tam ✓</span>
+                          <span className="text-[10px] text-green-400">Complete ✓</span>
                         )}
                       </div>
                     </td>
@@ -387,7 +387,7 @@ export function ProfileCompletenessSection() {
 
       {data?.snapshotAt && (
         <p className="text-[11px] text-[#606060]">
-          Hesaplandı: {data.snapshotAt.toLocaleTimeString('tr-TR')}
+          Computed at {data.snapshotAt.toLocaleTimeString('en-US')}
         </p>
       )}
     </div>

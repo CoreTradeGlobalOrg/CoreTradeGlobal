@@ -30,9 +30,9 @@ import {
 } from '@/lib/analytics/teamLog';
 
 const RANGES = [
-  { value: 'today', label: 'Bugün' },
-  { value: 'week', label: 'Bu Hafta' },
-  { value: 'month', label: 'Bu Ay' },
+  { value: 'today', label: 'Today' },
+  { value: 'week', label: 'This Week' },
+  { value: 'month', label: 'This Month' },
 ];
 
 function emptyChannels() {
@@ -43,14 +43,14 @@ function formatRelative(date) {
   if (!(date instanceof Date) || isNaN(date.getTime())) return '—';
   const diffMs = Date.now() - date.getTime();
   const mins = Math.floor(diffMs / 60000);
-  if (mins < 1) return 'az önce';
-  if (mins < 60) return `${mins} dk önce`;
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins} min ago`;
   const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs} sa önce`;
+  if (hrs < 24) return `${hrs} h ago`;
   const days = Math.floor(hrs / 24);
-  if (days === 1) return 'Dün';
-  if (days < 7) return `${days} gün önce`;
-  return date.toLocaleDateString('tr-TR', { day: '2-digit', month: 'short' });
+  if (days === 1) return 'Yesterday';
+  if (days < 7) return `${days} days ago`;
+  return date.toLocaleDateString('en-US', { day: '2-digit', month: 'short' });
 }
 
 // --- Left column: entry form ------------------------------------------------
@@ -124,12 +124,12 @@ function EntryForm({ teamMembers, currentUid, onSaved }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!selectedUid) {
-      toast.error('Bir isim seç.');
+      toast.error('Pick a name first.');
       return;
     }
     if (hasExisting) {
       const ok = window.confirm(
-        'Bu gün için zaten giriş var. Üzerine yazayım mı?',
+        'An entry already exists for this day. Overwrite it?',
       );
       if (!ok) return;
     }
@@ -143,11 +143,11 @@ function EntryForm({ teamMembers, currentUid, onSaved }) {
         channels,
         note,
       });
-      toast.success(`Kaydedildi — bugünkü senin toplamın: ${saved.total} mesaj`);
+      toast.success(`Saved — your total for today: ${saved.total} messages`);
       setHasExisting(true);
       onSaved?.(saved);
     } catch (err) {
-      toast.error(`Kaydedilemedi: ${err.message || 'bilinmeyen hata'}`);
+      toast.error(`Save failed: ${err.message || 'unknown error'}`);
     } finally {
       setSaving(false);
     }
@@ -160,23 +160,23 @@ function EntryForm({ teamMembers, currentUid, onSaved }) {
     >
       <div className="flex items-center gap-2 mb-4">
         <Users2 className="w-4 h-4 text-[#FFD700]" />
-        <h4 className="text-sm font-semibold text-white">Günlük Giriş</h4>
+        <h4 className="text-sm font-semibold text-white">Daily Log Entry</h4>
         {hasExisting && (
           <span className="text-[10px] uppercase tracking-wider text-amber-400 border border-amber-400/40 px-1.5 py-0.5 rounded">
-            Mevcut giriş
+            Existing entry
           </span>
         )}
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
         <label className="block">
-          <span className="text-xs text-[#A0A0A0] mb-1 block">Kim giriyorsun?</span>
+          <span className="text-xs text-[#A0A0A0] mb-1 block">Who's logging?</span>
           <select
             value={selectedUid}
             onChange={(e) => setSelectedUid(e.target.value)}
             className="w-full bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#FFD700]/50"
           >
-            <option value="">Seç...</option>
+            <option value="">Select...</option>
             {teamMembers.map((m) => (
               <option key={m.uid} value={m.uid}>
                 {m.displayName}
@@ -185,7 +185,7 @@ function EntryForm({ teamMembers, currentUid, onSaved }) {
           </select>
         </label>
         <label className="block">
-          <span className="text-xs text-[#A0A0A0] mb-1 block">Tarih</span>
+          <span className="text-xs text-[#A0A0A0] mb-1 block">Date</span>
           <input
             type="date"
             value={dateKey}
@@ -198,7 +198,7 @@ function EntryForm({ teamMembers, currentUid, onSaved }) {
 
       {prefillLoading && (
         <div className="mb-3 text-xs text-[#606060] flex items-center gap-2">
-          <Loader2 className="w-3.5 h-3.5 animate-spin" /> Mevcut giriş kontrol ediliyor...
+          <Loader2 className="w-3.5 h-3.5 animate-spin" /> Checking for existing entry...
         </div>
       )}
 
@@ -231,19 +231,19 @@ function EntryForm({ teamMembers, currentUid, onSaved }) {
       </div>
 
       <label className="block mb-4">
-        <span className="text-xs text-[#A0A0A0] mb-1 block">Not (opsiyonel)</span>
+        <span className="text-xs text-[#A0A0A0] mb-1 block">Note (optional)</span>
         <textarea
           value={note}
           onChange={(e) => setNote(e.target.value)}
           rows={2}
-          placeholder="Örn. Fashion sektörüne yoğunlaştım"
+          placeholder="e.g. Focused on the fashion sector"
           className="w-full bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] rounded-lg px-3 py-2 text-sm text-white placeholder:text-[#606060] focus:outline-none focus:border-[#FFD700]/50 resize-none"
         />
       </label>
 
       <div className="flex items-center justify-between">
         <p className="text-xs text-[#A0A0A0]">
-          Toplam: <span className="text-white font-semibold">{total}</span> mesaj
+          Total: <span className="text-white font-semibold">{total}</span> messages
         </p>
         <button
           type="submit"
@@ -251,7 +251,7 @@ function EntryForm({ teamMembers, currentUid, onSaved }) {
           className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#FFD700] hover:bg-[#B59325] text-black font-semibold text-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-          Kaydet
+          Save
         </button>
       </div>
     </form>
@@ -265,32 +265,32 @@ function OverviewTable({ range, summary, loading, refreshTick }) {
     <div className="rounded-2xl border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-5">
       <div className="flex items-center justify-between mb-4">
         <h4 className="text-sm font-semibold text-white">
-          Ekip Toplamı — {RANGES.find((r) => r.value === range)?.label}
+          Team Total — {RANGES.find((r) => r.value === range)?.label}
         </h4>
         {!loading && summary && (
           <span className="text-xs text-[#A0A0A0]">
-            <span className="text-white font-semibold">{summary.totalMessages}</span> mesaj
+            <span className="text-white font-semibold">{summary.totalMessages}</span> messages
           </span>
         )}
       </div>
 
       {loading ? (
-        <div className="py-10 text-center text-[#606060] text-sm">Yükleniyor...</div>
+        <div className="py-10 text-center text-[#606060] text-sm">Loading...</div>
       ) : !summary || summary.perEmployee.length === 0 ? (
         <div className="py-10 text-center text-[#606060] text-sm">
-          Bu aralıkta giriş yok.
+          No entries in this range.
         </div>
       ) : (
         <div className="overflow-x-auto -mx-5 px-5">
           <table className="w-full min-w-[520px] text-xs">
             <thead>
               <tr className="text-left text-[#A0A0A0] border-b border-[rgba(255,255,255,0.06)]">
-                <th className="py-2 pr-3 font-medium">Çalışan</th>
+                <th className="py-2 pr-3 font-medium">Employee</th>
                 <th className="py-2 pr-3 font-medium text-right">LinkedIn</th>
                 <th className="py-2 pr-3 font-medium text-right">Email</th>
-                <th className="py-2 pr-3 font-medium text-right">Diğer</th>
-                <th className="py-2 pr-3 font-medium text-right">TOPLAM</th>
-                <th className="py-2 pr-3 font-medium">Son Giriş</th>
+                <th className="py-2 pr-3 font-medium text-right">Other</th>
+                <th className="py-2 pr-3 font-medium text-right">TOTAL</th>
+                <th className="py-2 pr-3 font-medium">Last Entry</th>
               </tr>
             </thead>
             <tbody>
@@ -320,7 +320,7 @@ function OverviewTable({ range, summary, loading, refreshTick }) {
                 );
               })}
               <tr className="bg-[rgba(255,215,0,0.04)]">
-                <td className="py-2 pr-3 text-[#FFD700] font-semibold">TAKIM TOPLAMI</td>
+                <td className="py-2 pr-3 text-[#FFD700] font-semibold">TEAM TOTAL</td>
                 <td className="py-2 pr-3 text-[#FFD700] text-right font-semibold tabular-nums">
                   {summary.channelTotals.linkedinConnect +
                     summary.channelTotals.linkedinDM +
@@ -352,7 +352,7 @@ function MissingWarnings({ warnings }) {
   return (
     <div className="rounded-2xl border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-4">
       <p className="text-xs font-semibold uppercase tracking-wider text-[#A0A0A0] mb-2">
-        Eksik Giriş
+        Missing Entries
       </p>
       <ul className="space-y-1.5">
         {flagged.map((w) => (
@@ -365,10 +365,10 @@ function MissingWarnings({ warnings }) {
             <span className="text-white">{w.displayName}</span>
             <span className="text-[#606060]">
               {w.daysSince === null
-                ? '— hiç giriş yok'
+                ? '— no entries yet'
                 : w.daysSince === 0
-                  ? '— bugün henüz girmedi'
-                  : `— ${w.daysSince} gündür giriş yok`}
+                  ? '— no entry today yet'
+                  : `— silent for ${w.daysSince} days`}
             </span>
           </li>
         ))}
@@ -386,17 +386,17 @@ function TrendBars({ trend, loading }) {
   return (
     <div className="rounded-2xl border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-5">
       <div className="flex items-center justify-between mb-3">
-        <h4 className="text-sm font-semibold text-white">Son 30 Gün Trend</h4>
+        <h4 className="text-sm font-semibold text-white">Last 30 Days Trend</h4>
         {!loading && trend?.length > 0 && (
           <span className="text-xs text-[#A0A0A0]">
-            Zirve: <span className="text-white font-semibold">{max}</span>
+            Peak: <span className="text-white font-semibold">{max}</span>
           </span>
         )}
       </div>
       {loading ? (
         <div className="h-24 bg-[rgba(255,255,255,0.04)] rounded animate-pulse" />
       ) : !trend || trend.length === 0 ? (
-        <p className="text-xs text-[#606060]">Trend için veri yok.</p>
+        <p className="text-xs text-[#606060]">No data for the trend.</p>
       ) : (
         <div className="flex items-end gap-[3px] h-24">
           {trend.map((d) => {

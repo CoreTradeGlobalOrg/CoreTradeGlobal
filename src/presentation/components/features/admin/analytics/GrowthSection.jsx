@@ -29,7 +29,7 @@ import { COMPANY_TYPE_LABELS } from '@/core/constants/companyTypes';
 // input later if the team wants to change it from the panel.
 const DEFAULT_MONTHLY_TARGET = 30;
 
-const MONTH_LABEL_FMT = new Intl.DateTimeFormat('tr-TR', { month: 'short', year: '2-digit' });
+const MONTH_LABEL_FMT = new Intl.DateTimeFormat('en-US', { month: 'short', year: '2-digit' });
 
 function monthLabel(monthKey) {
   const [y, m] = monthKey.split('-').map(Number);
@@ -46,13 +46,13 @@ function formatPercent(p) {
 function momentumMeta(momentum) {
   switch (momentum) {
     case 'accelerating':
-      return { label: 'Hızlanıyor', color: '#10B981', Icon: ArrowUpRight };
+      return { label: 'Accelerating', color: '#10B981', Icon: ArrowUpRight };
     case 'slowing':
-      return { label: 'Yavaşlıyor', color: '#EF4444', Icon: ArrowDownRight };
+      return { label: 'Slowing', color: '#EF4444', Icon: ArrowDownRight };
     case 'steady':
-      return { label: 'Sabit', color: '#3B82F6', Icon: ArrowRight };
+      return { label: 'Steady', color: '#3B82F6', Icon: ArrowRight };
     default:
-      return { label: 'Yetersiz veri', color: '#6B7280', Icon: ArrowRight };
+      return { label: 'Insufficient data', color: '#6B7280', Icon: ArrowRight };
   }
 }
 
@@ -201,9 +201,9 @@ export function GrowthSection() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold text-white">Büyüme Analitiği</h3>
+          <h3 className="text-lg font-semibold text-white">Growth Analytics</h3>
           <p className="text-xs text-[#A0A0A0] mt-0.5">
-            Aylık hedef: <span className="text-white">{DEFAULT_MONTHLY_TARGET}</span> yeni üye
+            Monthly target: <span className="text-white">{DEFAULT_MONTHLY_TARGET}</span> new members
           </p>
         </div>
         <button
@@ -213,7 +213,7 @@ export function GrowthSection() {
           className="flex items-center gap-2 text-xs text-[#A0A0A0] hover:text-white transition-colors disabled:opacity-40"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-          Yenile
+          Refresh
         </button>
       </div>
 
@@ -236,20 +236,20 @@ export function GrowthSection() {
           <>
             <KpiCard
               icon={TrendingUp}
-              label="MoM Büyüme"
+              label="MoM Growth"
               value={formatPercent(data.momPercent)}
-              sub={`Bu ay ${data.thisMonthCount} · Geçen ay ${data.lastMonthCount}`}
+              sub={`This month ${data.thisMonthCount} · Last month ${data.lastMonthCount}`}
               tone={momTone}
             />
             <KpiCard
               icon={mom.Icon}
               label="Momentum"
               value={<span style={{ color: mom.color }}>{mom.label}</span>}
-              sub="Son 3 tam ayın eğimi"
+              sub="Slope of the last 3 full months"
             />
             <KpiCard
               icon={Target}
-              label={`Aylık Hedef (${DEFAULT_MONTHLY_TARGET})`}
+              label={`Monthly Target (${DEFAULT_MONTHLY_TARGET})`}
               value={
                 <span>
                   {data.thisMonthCount}
@@ -273,16 +273,16 @@ export function GrowthSection() {
                     />
                   </div>
                   <p className="text-[10px] text-[#606060] mt-1">
-                    {data.targetProgressPercent}% tamamlandı
+                    {data.targetProgressPercent}% complete
                   </p>
                 </div>
               }
             />
             <KpiCard
               icon={TrendingUp}
-              label="30g Projeksiyon"
+              label="30d Forecast"
               value={`~${data.forecastNext30}`}
-              sub="Son 30 gün ortalamasıyla"
+              sub="Based on the last 30-day average"
             />
           </>
         )}
@@ -291,7 +291,7 @@ export function GrowthSection() {
       {/* Monthly bar + cumulative curve */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="rounded-2xl border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-5">
-          <h4 className="text-sm font-semibold text-white mb-4">Aylık Kayıtlar (12 ay)</h4>
+          <h4 className="text-sm font-semibold text-white mb-4">Monthly Registrations (12 months)</h4>
           {loading || !data ? (
             <div className="h-40 animate-pulse bg-[rgba(255,255,255,0.04)] rounded" />
           ) : (
@@ -305,10 +305,10 @@ export function GrowthSection() {
         </div>
         <div className="rounded-2xl border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-5">
           <div className="flex items-center justify-between mb-4">
-            <h4 className="text-sm font-semibold text-white">Kümülatif Büyüme (90 gün)</h4>
+            <h4 className="text-sm font-semibold text-white">Cumulative Growth (90 days)</h4>
             {data?.total != null && (
               <span className="text-xs text-[#A0A0A0]">
-                Toplam <span className="text-white font-semibold">{data.total}</span>
+                Total <span className="text-white font-semibold">{data.total}</span>
               </span>
             )}
           </div>
@@ -324,7 +324,7 @@ export function GrowthSection() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="rounded-2xl border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-5">
           <h4 className="text-sm font-semibold text-white mb-4">
-            Ülke Bazlı Büyüme (bu ay vs geçen ay)
+            Growth by Country (this month vs last month)
           </h4>
           {loading || !data ? (
             <div className="space-y-2">
@@ -333,15 +333,15 @@ export function GrowthSection() {
               ))}
             </div>
           ) : data.countryDelta.length === 0 ? (
-            <p className="text-xs text-[#606060]">Bu iki ayda kayıt yok.</p>
+            <p className="text-xs text-[#606060]">No registrations in the last two months.</p>
           ) : (
             <div className="overflow-x-auto -mx-5 px-5">
               <table className="w-full min-w-[440px] text-xs">
                 <thead>
                   <tr className="text-left text-[#A0A0A0] border-b border-[rgba(255,255,255,0.06)]">
-                    <th className="py-2 pr-3 font-medium">Ülke</th>
-                    <th className="py-2 pr-3 font-medium text-right">Bu ay</th>
-                    <th className="py-2 pr-3 font-medium text-right">Geçen ay</th>
+                    <th className="py-2 pr-3 font-medium">Country</th>
+                    <th className="py-2 pr-3 font-medium text-right">This month</th>
+                    <th className="py-2 pr-3 font-medium text-right">Last month</th>
                     <th className="py-2 pr-3 font-medium text-right">Δ</th>
                   </tr>
                 </thead>
@@ -375,7 +375,7 @@ export function GrowthSection() {
               </table>
               {data.countryDelta.length > 12 && (
                 <p className="mt-2 text-[11px] text-[#606060]">
-                  +{data.countryDelta.length - 12} daha
+                  +{data.countryDelta.length - 12} more
                 </p>
               )}
             </div>
@@ -383,7 +383,7 @@ export function GrowthSection() {
         </div>
 
         <div className="rounded-2xl border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-5">
-          <h4 className="text-sm font-semibold text-white mb-4">Şirket Tipi — Aylık Trend</h4>
+          <h4 className="text-sm font-semibold text-white mb-4">Company Type — Monthly Trend</h4>
           {loading || !data ? (
             <div className="space-y-3">
               {[0, 1, 2].map((i) => (
@@ -391,7 +391,7 @@ export function GrowthSection() {
               ))}
             </div>
           ) : data.companyTypeSeries.length === 0 ? (
-            <p className="text-xs text-[#606060]">Bu pencerede kayıt yok.</p>
+            <p className="text-xs text-[#606060]">No registrations in this window.</p>
           ) : (
             <div className="space-y-4">
               {data.companyTypeSeries.map((row) => {
@@ -407,7 +407,7 @@ export function GrowthSection() {
                         {COMPANY_TYPE_LABELS[row.companyType] || row.companyType}
                       </span>
                       <span className="text-[11px] text-[#A0A0A0] tabular-nums">
-                        {total} toplam
+                        {total} total
                       </span>
                     </div>
                     <div className="flex items-end gap-[2px] h-8">
@@ -433,7 +433,7 @@ export function GrowthSection() {
 
       {data?.snapshotAt && (
         <p className="text-[11px] text-[#606060]">
-          Hesaplandı: {data.snapshotAt.toLocaleTimeString('tr-TR')}
+          Computed at {data.snapshotAt.toLocaleTimeString('en-US')}
         </p>
       )}
     </div>

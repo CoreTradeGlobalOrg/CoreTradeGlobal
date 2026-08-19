@@ -125,8 +125,8 @@ export function SiteAnalyticsSection() {
       <div>
         <h3 className="text-lg font-semibold text-white">Site Analytics</h3>
         <p className="text-xs text-[#A0A0A0] mt-1">
-          GA4 + Microsoft Clarity + Vercel Analytics — bağlantı durumu, dashboard'lara hızlı geçiş,
-          neyin izlendiği açıklaması.
+          GA4 + Microsoft Clarity + Vercel Analytics — connection status, quick links to each dashboard,
+          and what each provider tracks.
         </p>
       </div>
 
@@ -134,17 +134,17 @@ export function SiteAnalyticsSection() {
       <div className="rounded-2xl border border-[rgba(59,130,246,0.25)] bg-[rgba(59,130,246,0.06)] p-4 flex items-start gap-3">
         <Info className="w-4 h-4 text-blue-400 mt-0.5 flex-shrink-0" />
         <div className="text-xs text-[#A0A0A0]">
-          <p className="text-white font-semibold mb-1">Neden burada rakam yok?</p>
+          <p className="text-white font-semibold mb-1">Why no numbers here yet?</p>
           <p>
-            GA4 Data API ve Clarity Export API service-account veya ücretli tier iş
-            gerektiriyor — inline chart'ları buraya çekmek ayrı bir sprint. Şimdilik
-            bu panel <strong>control tower</strong> gibi çalışıyor: bağlantıların
-            sağlıklı olduğunu gösteriyor ve tek tıkla ilgili dashboard'a atıyor.
+            The GA4 Data API and Clarity Export API both require service-account
+            or paid-tier work — pulling inline charts in is its own sprint. For now
+            this panel acts as a <strong>control tower</strong>: it shows the
+            connections are healthy and jumps you into each dashboard in one click.
             <br />
             <br />
             <span className="text-[#606060]">
-              Backend migration sonrası (kendi API'miz) GA4 verisi cron ile
-              lokale çekilir, buraya inline grafik konur.
+              After the backend migration (own API), GA4 data will be pulled locally
+              via cron and inline charts will land here.
             </span>
           </p>
         </div>
@@ -159,14 +159,14 @@ export function SiteAnalyticsSection() {
           statusText={clarityConnected ? 'Connected' : 'Missing env var'}
           description={
             clarityConnected
-              ? 'Session recordings, heatmap, rage/dead clicks. Kayıtlı üyeler identify() ile etiketleniyor — per-user filtreleme aktif.'
-              : 'NEXT_PUBLIC_CLARITY_PROJECT_ID environment variable eksik. Vercel dashboard → Environment Variables üzerinden ekle.'
+              ? 'Session recordings, heatmaps, rage/dead clicks. Signed-in members are tagged via identify() — per-user filtering is live.'
+              : 'NEXT_PUBLIC_CLARITY_PROJECT_ID environment variable is missing. Add it in Vercel dashboard → Environment Variables.'
           }
           bulletPoints={[
-            'Session recording — kullanıcının ekran hareketi',
-            'Heatmap — click/scroll yoğunluğu',
-            'Rage & dead click tespiti',
-            'Custom user tag: role, companyType, verified, country',
+            'Session recording — user screen activity',
+            'Heatmap — click / scroll density',
+            'Rage & dead click detection',
+            'Custom user tags: role, companyType, verified, country',
             'JavaScript error tracking',
           ]}
           dashboardUrl={clarityDashboardUrl}
@@ -183,15 +183,15 @@ export function SiteAnalyticsSection() {
           statusText={gaConnected ? 'Connected' : 'Missing env var'}
           description={
             gaConnected
-              ? 'Trafik kaynakları, sayfa görüntüleme, dönüşüm huniları. gtag() layout.js üzerinde lazy-load ediliyor.'
-              : 'NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID environment variable eksik.'
+              ? 'Traffic sources, page views, conversion funnels. gtag() lazy-loaded from layout.js.'
+              : 'NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID environment variable is missing.'
           }
           bulletPoints={[
-            'Trafik kaynağı (organic / direct / referral / social)',
-            'Sayfa bazlı görüntülenme + oturum süresi',
-            'Bounce rate, ortalama session süresi',
-            'Cihaz, tarayıcı, işletim sistemi kırılımı',
-            'Coğrafya bazlı ziyaretçi haritası',
+            'Traffic source (organic / direct / referral / social)',
+            'Per-page views + session duration',
+            'Bounce rate, average session length',
+            'Device, browser, and OS breakdown',
+            'Geographic visitor map',
           ]}
           dashboardUrl={gaDashboardUrl}
           dashboardLabel="Open GA4"
@@ -205,16 +205,16 @@ export function SiteAnalyticsSection() {
           title="Vercel Analytics"
           connected
           statusText="Connected"
-          description="Speed Insights + Web Analytics: gerçek kullanıcı Core Web Vitals + basit trafik. @vercel/analytics + @vercel/speed-insights paketleri layout'ta wire'lı."
+          description="Speed Insights + Web Analytics: real-user Core Web Vitals + simple traffic. @vercel/analytics + @vercel/speed-insights are wired in layout."
           bulletPoints={[
-            'Gerçek kullanıcı LCP / INP / CLS ölçümü',
-            'Yol bazlı trafik (sadece Vercel dashboard içinde)',
-            'Cihaz kırılımı',
-            'Coğrafya (edge log)',
+            'Real-user LCP / INP / CLS measurement',
+            'Per-path traffic (visible in the Vercel dashboard only)',
+            'Device breakdown',
+            'Geography (from edge logs)',
           ]}
           dashboardUrl={vercelAnalyticsUrl}
           dashboardLabel="Open Vercel"
-          footer="Team dashboard'da Analytics sekmesi"
+          footer="Analytics tab on the team dashboard"
         />
       </div>
 
@@ -224,35 +224,35 @@ export function SiteAnalyticsSection() {
           <Users2 className="w-5 h-5 text-[#FFD700] mt-0.5 flex-shrink-0" />
           <div>
             <h4 className="text-sm font-semibold text-white mb-1">
-              Per-User Clarity Filtering — aktif
+              Per-User Clarity Filtering — live
             </h4>
             <p className="text-xs text-[#A0A0A0] mb-3">
-              Login yapan her üye Clarity oturumunda `identify(uid, email)` ile
-              etiketleniyor + custom tag'ler (role, companyType, verified, country,
-              joinDate) set ediliyor. Sonuç: Clarity dashboard'da:
+              Every signed-in member's Clarity session is tagged with
+              `identify(uid, email)` plus custom tags (role, companyType,
+              verified, country, joinDate). Result — inside the Clarity dashboard:
             </p>
             <ul className="text-[11px] text-[#A0A0A0] space-y-1 mb-3">
               <li className="flex items-start gap-2">
                 <span className="text-[#606060] mt-[3px]">•</span>
                 <span>
-                  Filter → <code className="text-[#FFD700]">CustomUserId = &lt;uid&gt;</code> ile tek üyenin tüm oturumları
+                  Filter → <code className="text-[#FFD700]">CustomUserId = &lt;uid&gt;</code> to see one member's sessions
                 </span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-[#606060] mt-[3px]">•</span>
                 <span>
-                  Segment → <code className="text-[#FFD700]">verified = yes</code> gibi tag filtreleri
+                  Segment → tag filters like <code className="text-[#FFD700]">verified = yes</code>
                 </span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-[#606060] mt-[3px]">•</span>
                 <span>
-                  Members → Aktivite tablosunda her satır için doğrudan Clarity linki (o üyenin recordings görünümü)
+                  Members → Activity table has a direct Clarity link on every row (that user's recordings)
                 </span>
               </li>
             </ul>
             <p className="text-[10px] text-[#606060]">
-              Not: Clarity ücretsiz planında recordings 30 gün saklanıyor. Bir üyenin daha eski davranışına bakman gerekirse Clarity Pro'ya geçmek gerekir.
+              Note: Clarity's free plan retains recordings for 30 days. To review older sessions, upgrade to Clarity Pro.
             </p>
           </div>
         </div>
@@ -264,13 +264,14 @@ export function SiteAnalyticsSection() {
           <Globe className="w-5 h-5 text-[#606060] mt-0.5 flex-shrink-0" />
           <div>
             <h4 className="text-sm font-semibold text-white mb-1">
-              Inline metrikler (roadmap)
+              Inline metrics (roadmap)
             </h4>
             <p className="text-xs text-[#A0A0A0]">
-              GA4 Data API + Clarity Export API bağlandığında bu bölüme eklenecekler:
-              günlük trafik trendi, top 10 landing page, kaynak kırılımı, cihaz oranı,
-              LCP/INP/CLS dağılımı, rage-click hot spot listesi. Panel iskeletine
-              dokunmadan eklenebilir.
+              Once the GA4 Data API and Clarity Export API are wired in, this
+              section will grow: daily traffic trend, top 10 landing pages,
+              source breakdown, device split, LCP/INP/CLS distribution, and a
+              rage-click hot-spot list. All will slot in without touching the
+              section shell.
             </p>
           </div>
         </div>

@@ -66,42 +66,42 @@ export function OverviewSection() {
   const cards = [
     {
       icon: Users,
-      label: 'Toplam Üye',
-      value: data?.totalMembers?.toLocaleString('tr-TR'),
+      label: 'Total Members',
+      value: data?.totalMembers?.toLocaleString('en-US'),
     },
     {
       icon: UserPlus,
-      label: 'Bu Hafta Yeni Üye',
-      value: data?.newMembersThisWeek?.toLocaleString('tr-TR'),
-      hint: 'Son 7 gün',
+      label: 'New This Week',
+      value: data?.newMembersThisWeek?.toLocaleString('en-US'),
+      hint: 'Last 7 days',
     },
     {
       icon: Activity,
-      label: 'Aktif Üye (30g)',
-      value: data?.activeMembers30d?.toLocaleString('tr-TR'),
-      hint: 'Son 30 gün içinde giriş yapan',
+      label: 'Active (30d)',
+      value: data?.activeMembers30d?.toLocaleString('en-US'),
+      hint: 'Signed in within the last 30 days',
     },
     {
       icon: Package,
-      label: 'Toplam Ürün',
-      value: data?.totalProducts?.toLocaleString('tr-TR'),
+      label: 'Total Products',
+      value: data?.totalProducts?.toLocaleString('en-US'),
     },
     {
       icon: Megaphone,
-      label: 'Aktif Reklam',
-      value: data?.activeAds?.toLocaleString('tr-TR'),
+      label: 'Active Ads',
+      value: data?.activeAds?.toLocaleString('en-US'),
     },
     {
       icon: MessageSquare,
-      label: 'Toplam Konuşma',
-      value: data?.activeConversations?.toLocaleString('tr-TR'),
+      label: 'Total Conversations',
+      value: data?.activeConversations?.toLocaleString('en-US'),
     },
   ];
 
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-white">Platform Nabzı</h3>
+        <h3 className="text-lg font-semibold text-white">Platform Pulse</h3>
         <button
           type="button"
           onClick={() => setRefreshTick((t) => t + 1)}
@@ -109,13 +109,13 @@ export function OverviewSection() {
           className="flex items-center gap-2 text-xs text-[#A0A0A0] hover:text-white transition-colors disabled:opacity-40"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-          Yenile
+          Refresh
         </button>
       </div>
 
       {error && (
         <div className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-300">
-          KPI'lar yüklenemedi: {error}
+          KPIs failed to load: {error}
         </div>
       )}
 
@@ -127,7 +127,7 @@ export function OverviewSection() {
 
       {data?.computedAt && (
         <p className="mt-3 text-[11px] text-[#606060]">
-          Hesaplandı: {data.computedAt.toLocaleTimeString('tr-TR')}
+          Computed at {data.computedAt.toLocaleTimeString('en-US')}
         </p>
       )}
     </div>

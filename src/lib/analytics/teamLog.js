@@ -36,13 +36,13 @@ export const TEAM_LOG_COLLECTION = 'teamDailyLog';
  * new channel added in one place breaks the other loudly.
  */
 export const CHANNELS = [
-  { key: 'linkedinConnect', label: 'LinkedIn Bağlantı', group: 'LinkedIn' },
+  { key: 'linkedinConnect', label: 'LinkedIn Connection', group: 'LinkedIn' },
   { key: 'linkedinDM', label: 'LinkedIn InMail / DM', group: 'LinkedIn' },
-  { key: 'linkedinComment', label: 'LinkedIn Yorum', group: 'LinkedIn' },
-  { key: 'emailBulk', label: 'Email — Toplu', group: 'Email' },
-  { key: 'emailPersonal', label: 'Email — Kişisel', group: 'Email' },
-  { key: 'whatsapp', label: 'WhatsApp', group: 'Diğer' },
-  { key: 'other', label: 'Diğer', group: 'Diğer' },
+  { key: 'linkedinComment', label: 'LinkedIn Comment', group: 'LinkedIn' },
+  { key: 'emailBulk', label: 'Email — Bulk', group: 'Email' },
+  { key: 'emailPersonal', label: 'Email — Personal', group: 'Email' },
+  { key: 'whatsapp', label: 'WhatsApp', group: 'Other' },
+  { key: 'other', label: 'Other', group: 'Other' },
 ];
 
 export const CHANNEL_KEYS = CHANNELS.map((c) => c.key);
