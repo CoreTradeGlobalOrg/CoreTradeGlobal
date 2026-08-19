@@ -1049,6 +1049,320 @@ export async function getAdsPerformance() {
   };
 }
 
+// --- Marketplace Liquidity (Bölüm 22.5) -----------------------------------
+
+/**
+ * Marketplace-liquidity vitals — the composite "is this marketplace
+ * actually alive" metric set. Answers three questions the operator
+ * asks first:
+ *
+ *   1. How many businesses touched anything this week? (WAB)
+ *   2. When a buyer posts an RFQ, how fast does a quote arrive?
+ *   3. When a member registers, how long until they close a deal?
+ *
+ * Plus the arz-talep (supply/demand) balance and dead-listing
+ * ratio for a health-at-a-glance strip.
+ */
+
+function medianOf(nums) {
+  if (nums.length === 0) return null;
+  const sorted = nums.slice().sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 === 0
+    ? Math.round(((sorted[mid - 1] + sorted[mid]) / 2) * 10) / 10
+    : Math.round(sorted[mid] * 10) / 10;
+}
+
+/**
+ * @returns {Promise<{
+ *   snapshotAt: Date,
+ *   wab: { current: number, previous: number, deltaPct: number|null, breakdown: Record<string,number> },
+ *   timeToFirstQuoteHours: { avg: number|null, median: number|null, sampleSize: number },
+ *   timeToFirstTransactionDays: { avg: number|null, median: number|null, sampleSize: number },
+ *   supplyDemand: { buyers: number, sellers: number, both: number, ratio: number|null, activeBuyers: number, activeSellers: number },
+ *   deadListingsRatio: number,        // 0-100
+ *   activeRfqsUnanswered: number,
+ *   pulse: { weeklyMessages: number, weeklyRfqs: number, weeklyDeals: number, weeklyProducts: number },
+ * }>}
+ */
+export async function getMarketplaceLiquidity() {
+  const now = Date.now();
+  const startOfLast7 = now - 7 * MS_PER_DAY;
+  const startOfLast14 = now - 14 * MS_PER_DAY;
+  const startOfLast30 = now - 30 * MS_PER_DAY;
+  const startOfLast90 = now - 90 * MS_PER_DAY;
+
+  const [usersSnap, requestsSnap, productsSnap, dealsSnap, conversationsSnap, messagesSnap] = await Promise.all([
+    getDocs(collection(db, COLLECTIONS.USERS)),
+    getDocs(collection(db, COLLECTIONS.REQUESTS)),
+    getDocs(collection(db, COLLECTIONS.PRODUCTS)),
+    getDocs(collection(db, COLLECTIONS.DEALS)),
+    getDocs(collection(db, COLLECTIONS.CONVERSATIONS)),
+    getDocs(collectionGroup(db, 'messages')),
+  ]);
+
+  // Every uid we know about, plus lastLoginAt for activity gating.
+  const userLastLogin = new Map();
+  usersSnap.forEach((doc) => {
+    userLastLogin.set(doc.id, toDate(doc.data()?.lastLoginAt) || null);
+  });
+
+  // --- WAB (Weekly Active Businesses) ---
+  // A business "touched the platform" if in the last 7d they:
+  //   - sent a message
+  //   - created an RFQ (request)
+  //   - created a deal (as buyer or seller)
+  //   - listed a product
+  //   - signed in (lastLoginAt)
+  // Previous week (day 7-14 ago) computed the same way for the WoW delta.
+  const activeCurrent = new Set();
+  const activePrevious = new Set();
+  const activeBreakdown = { message: new Set(), rfq: new Set(), deal: new Set(), product: new Set(), login: new Set() };
+  const inWindow = (t, start, end) => t >= start && t < end;
+
+  // Message activity — collectionGroup includes legalMessages, filter.
+  messagesSnap.forEach((doc) => {
+    const parent = doc.ref?.parent?.parent;
+    if (!parent || parent.parent?.id !== COLLECTIONS.CONVERSATIONS) return;
+    const uid = doc.data()?.senderId;
+    const createdAt = toDate(doc.data()?.createdAt);
+    if (!uid || !createdAt) return;
+    const t = createdAt.getTime();
+    if (inWindow(t, startOfLast7, now)) {
+      activeCurrent.add(uid);
+      activeBreakdown.message.add(uid);
+    } else if (inWindow(t, startOfLast14, startOfLast7)) {
+      activePrevious.add(uid);
+    }
+  });
+
+  requestsSnap.forEach((doc) => {
+    const d = doc.data() || {};
+    const uid = d.userId;
+    const createdAt = toDate(d.createdAt);
+    if (!uid || !createdAt) return;
+    const t = createdAt.getTime();
+    if (inWindow(t, startOfLast7, now)) {
+      activeCurrent.add(uid);
+      activeBreakdown.rfq.add(uid);
+    } else if (inWindow(t, startOfLast14, startOfLast7)) {
+      activePrevious.add(uid);
+    }
+  });
+
+  dealsSnap.forEach((doc) => {
+    const d = doc.data() || {};
+    const createdAt = toDate(d.createdAt);
+    if (!createdAt) return;
+    const t = createdAt.getTime();
+    const uids = [d.buyerId, d.sellerId].filter(Boolean);
+    for (const uid of uids) {
+      if (inWindow(t, startOfLast7, now)) {
+        activeCurrent.add(uid);
+        activeBreakdown.deal.add(uid);
+      } else if (inWindow(t, startOfLast14, startOfLast7)) {
+        activePrevious.add(uid);
+      }
+    }
+  });
+
+  productsSnap.forEach((doc) => {
+    const d = doc.data() || {};
+    const uid = d.userId;
+    const createdAt = toDate(d.createdAt);
+    if (!uid || !createdAt) return;
+    const t = createdAt.getTime();
+    if (inWindow(t, startOfLast7, now)) {
+      activeCurrent.add(uid);
+      activeBreakdown.product.add(uid);
+    } else if (inWindow(t, startOfLast14, startOfLast7)) {
+      activePrevious.add(uid);
+    }
+  });
+
+  usersSnap.forEach((doc) => {
+    const t = toDate(doc.data()?.lastLoginAt)?.getTime();
+    if (!t) return;
+    if (inWindow(t, startOfLast7, now)) {
+      activeCurrent.add(doc.id);
+      activeBreakdown.login.add(doc.id);
+    } else if (inWindow(t, startOfLast14, startOfLast7)) {
+      activePrevious.add(doc.id);
+    }
+  });
+
+  const wabCurrent = activeCurrent.size;
+  const wabPrevious = activePrevious.size;
+  const wabDelta = wabPrevious > 0
+    ? Math.round(((wabCurrent - wabPrevious) / wabPrevious) * 100)
+    : null;
+
+  // --- Time to first quote ---
+  const ttfqHours = [];
+  requestsSnap.forEach((doc) => {
+    const d = doc.data() || {};
+    const created = toDate(d.createdAt);
+    const firstQuoteAt = toDate(d.lastQuoteAt);
+    const count = Number(d.quoteCount) || 0;
+    if (!created || !firstQuoteAt || count < 1) return;
+    const hours = (firstQuoteAt.getTime() - created.getTime()) / (60 * 60 * 1000);
+    if (hours >= 0) ttfqHours.push(hours);
+  });
+  const ttfqAvg = ttfqHours.length > 0
+    ? Math.round((ttfqHours.reduce((s, n) => s + n, 0) / ttfqHours.length) * 10) / 10
+    : null;
+  const ttfqMedian = medianOf(ttfqHours);
+
+  // Active RFQs still waiting for the first quote.
+  let activeRfqsUnanswered = 0;
+  requestsSnap.forEach((doc) => {
+    const d = doc.data() || {};
+    if (d.status !== 'active') return;
+    if (Number(d.quoteCount) > 0) return;
+    const created = toDate(d.createdAt);
+    if (!created) return;
+    activeRfqsUnanswered += 1;
+  });
+
+  // --- Time to first transaction ---
+  // For every user who has at least one deal, days between their
+  // registration and their earliest deal (as buyer or seller).
+  const firstDealByUid = new Map();
+  dealsSnap.forEach((doc) => {
+    const d = doc.data() || {};
+    const created = toDate(d.createdAt);
+    if (!created) return;
+    for (const uid of [d.buyerId, d.sellerId].filter(Boolean)) {
+      const prev = firstDealByUid.get(uid);
+      if (!prev || created < prev) firstDealByUid.set(uid, created);
+    }
+  });
+  const ttftDays = [];
+  usersSnap.forEach((doc) => {
+    const uid = doc.id;
+    const created = toDate(doc.data()?.createdAt);
+    const first = firstDealByUid.get(uid);
+    if (!created || !first) return;
+    const days = (first.getTime() - created.getTime()) / MS_PER_DAY;
+    if (days >= 0) ttftDays.push(days);
+  });
+  const ttftAvg = ttftDays.length > 0
+    ? Math.round((ttftDays.reduce((s, n) => s + n, 0) / ttftDays.length) * 10) / 10
+    : null;
+  const ttftMedian = medianOf(ttftDays);
+
+  // --- Supply / demand balance ---
+  // A user counts as a buyer if they've EVER submitted an RFQ or been
+  // the buyer on a deal. Similarly for seller (product / deal seller).
+  // Both = someone active on both sides. Active = signed in ≤30d.
+  const buyerSet = new Set();
+  const sellerSet = new Set();
+  requestsSnap.forEach((doc) => {
+    const uid = doc.data()?.userId;
+    if (uid) buyerSet.add(uid);
+  });
+  dealsSnap.forEach((doc) => {
+    const d = doc.data() || {};
+    if (d.buyerId) buyerSet.add(d.buyerId);
+    if (d.sellerId) sellerSet.add(d.sellerId);
+  });
+  productsSnap.forEach((doc) => {
+    const uid = doc.data()?.userId;
+    if (uid) sellerSet.add(uid);
+  });
+
+  const bothSet = new Set([...buyerSet].filter((uid) => sellerSet.has(uid)));
+  const activeUids = new Set();
+  usersSnap.forEach((doc) => {
+    const last = toDate(doc.data()?.lastLoginAt);
+    if (last && last.getTime() >= startOfLast30) activeUids.add(doc.id);
+  });
+  const activeBuyers = [...buyerSet].filter((uid) => activeUids.has(uid)).length;
+  const activeSellers = [...sellerSet].filter((uid) => activeUids.has(uid)).length;
+  const ratio = activeSellers > 0
+    ? Math.round((activeBuyers / activeSellers) * 100) / 100
+    : null;
+
+  // --- Dead-listing ratio (already in Catalog Health, but included
+  // here so the panel is self-contained for the "marketplace vitals"
+  // reader). >90d since last update.
+  let dead = 0;
+  let productTotal = 0;
+  productsSnap.forEach((doc) => {
+    productTotal += 1;
+    const updated = toDate(doc.data()?.updatedAt) || toDate(doc.data()?.createdAt);
+    if (!updated) return;
+    if (updated.getTime() < startOfLast90) dead += 1;
+  });
+  const deadListingsRatio = productTotal > 0 ? Math.round((dead / productTotal) * 100) : 0;
+
+  // --- Weekly pulse counters ---
+  let weeklyMessages = 0;
+  messagesSnap.forEach((doc) => {
+    const parent = doc.ref?.parent?.parent;
+    if (!parent || parent.parent?.id !== COLLECTIONS.CONVERSATIONS) return;
+    const t = toDate(doc.data()?.createdAt)?.getTime();
+    if (t && t >= startOfLast7) weeklyMessages += 1;
+  });
+  let weeklyRfqs = 0;
+  requestsSnap.forEach((doc) => {
+    const t = toDate(doc.data()?.createdAt)?.getTime();
+    if (t && t >= startOfLast7) weeklyRfqs += 1;
+  });
+  let weeklyDeals = 0;
+  dealsSnap.forEach((doc) => {
+    const t = toDate(doc.data()?.createdAt)?.getTime();
+    if (t && t >= startOfLast7) weeklyDeals += 1;
+  });
+  let weeklyProducts = 0;
+  productsSnap.forEach((doc) => {
+    const t = toDate(doc.data()?.createdAt)?.getTime();
+    if (t && t >= startOfLast7) weeklyProducts += 1;
+  });
+
+  return {
+    snapshotAt: new Date(),
+    wab: {
+      current: wabCurrent,
+      previous: wabPrevious,
+      deltaPct: wabDelta,
+      breakdown: {
+        message: activeBreakdown.message.size,
+        rfq: activeBreakdown.rfq.size,
+        deal: activeBreakdown.deal.size,
+        product: activeBreakdown.product.size,
+        login: activeBreakdown.login.size,
+      },
+    },
+    timeToFirstQuoteHours: {
+      avg: ttfqAvg,
+      median: ttfqMedian,
+      sampleSize: ttfqHours.length,
+    },
+    timeToFirstTransactionDays: {
+      avg: ttftAvg,
+      median: ttftMedian,
+      sampleSize: ttftDays.length,
+    },
+    supplyDemand: {
+      buyers: buyerSet.size,
+      sellers: sellerSet.size,
+      both: bothSet.size,
+      ratio,
+      activeBuyers,
+      activeSellers,
+    },
+    deadListingsRatio,
+    activeRfqsUnanswered,
+    pulse: {
+      weeklyMessages,
+      weeklyRfqs,
+      weeklyDeals,
+      weeklyProducts,
+    },
+  };
+}
+
 // --- In-platform Messaging Analytics (Bölüm 21) ---------------------------
 
 /**
