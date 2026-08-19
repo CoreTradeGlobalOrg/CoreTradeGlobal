@@ -27,6 +27,7 @@ import {
   LayoutGrid,
   UserCheck,
   Package,
+  Bell,
 } from 'lucide-react';
 import { useAuth } from '@/presentation/contexts/AuthContext';
 import { OverviewSection } from '@/presentation/components/features/admin/analytics/OverviewSection';
@@ -37,9 +38,11 @@ import { SiteAnalyticsSection } from '@/presentation/components/features/admin/a
 import { AdsSection } from '@/presentation/components/features/admin/analytics/AdsSection';
 import { ProfileCompletenessSection } from '@/presentation/components/features/admin/analytics/ProfileCompletenessSection';
 import { TradeFlowSection } from '@/presentation/components/features/admin/analytics/TradeFlowSection';
+import { AlertCenterSection } from '@/presentation/components/features/admin/analytics/AlertCenterSection';
 
 const SECTIONS = [
   { id: 'overview', label: 'Overview', icon: BarChart3 },
+  { id: 'alerts', label: 'Alerts', icon: Bell },
   { id: 'members', label: 'Members', icon: Users },
   { id: 'profile', label: 'Profile Health', icon: UserCheck },
   { id: 'growth', label: 'Growth', icon: TrendingUp },
@@ -139,6 +142,7 @@ function AnalyticsContent() {
           {/* Main */}
           <main>
             {active.id === 'overview' && <OverviewSection />}
+            {active.id === 'alerts' && <AlertCenterSection />}
             {active.id === 'members' && <MembersSection />}
             {active.id === 'profile' && <ProfileCompletenessSection />}
             {active.id === 'team-log' && <TeamLogSection />}

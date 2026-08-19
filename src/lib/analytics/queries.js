@@ -146,6 +146,234 @@ export async function getRecentMembers({ days = 30 } = {}) {
   return rows;
 }
 
+// --- Alert Center (Bölüm 11) ----------------------------------------------
+
+/**
+ * Alert levels ordered by severity. UI colours + display labels
+ * are derived from this in one place.
+ */
+export const ALERT_LEVELS = ['critical', 'high', 'medium', 'low'];
+
+export const ALERT_LEVEL_META = {
+  critical: { label: 'Critical', color: '#EF4444', order: 0 },
+  high: { label: 'High', color: '#F97316', order: 1 },
+  medium: { label: 'Medium', color: '#F59E0B', order: 2 },
+  low: { label: 'Low', color: '#3B82F6', order: 3 },
+};
+
+/**
+ * Aggregate alert center — collects warnings from every other panel
+ * into one prioritised list. First pass reads live from the same
+ * queries the individual sections use; a persisted `alerts` table
+ * with snooze/acknowledge lands when the engagement + backend work
+ * follows.
+ *
+ * Rules (severity in parens):
+ *   - Deal in shipment >30 days (critical)
+ *   - Ad past end date but still 'active' (critical)
+ *   - Member churn — 60+ days silent, not suspended (critical)
+ *   - Ad ending in ≤3 days (high)
+ *   - Team-log missing ≥3 days for an admin (high)
+ *   - RFQ open >7 days with no quotes (high)
+ *   - Deal negotiating >5 days (high)
+ *   - Member dormant 30-60 days (medium)
+ *   - Profile with a required field missing (medium)
+ *   - Team-log missing 1-2 days (medium)
+ *   - Active RFQ (informational, low)
+ *
+ * Each alert carries: id, level, category, title, detail, actor,
+ * ageDays, actionHref (deep link into the section that owns the
+ * signal).
+ *
+ * @returns {Promise<{
+ *   snapshotAt: Date,
+ *   counts: Record<'critical'|'high'|'medium'|'low', number>,
+ *   alerts: Array<{
+ *     id: string,
+ *     level: string,
+ *     category: string,
+ *     title: string,
+ *     detail: string,
+ *     actor: string,
+ *     ageDays: number|null,
+ *     actionHref: string|null,
+ *   }>,
+ * }>}
+ */
+export async function getAlertCenter() {
+  // Reuse the source-of-truth queries so alert logic stays in one
+  // place per signal. Parallel fetch since none of them depend on
+  // each other.
+  const [
+    activity,
+    ads,
+    profile,
+    tradeFlow,
+    missingTeamLog,
+  ] = await Promise.all([
+    getMemberActivitySnapshot(),
+    getAdsPerformance(),
+    getProfileCompleteness(),
+    getTradeFlowMetrics(),
+    (async () => {
+      // Lazy import to avoid a circular reference through teamLog.js —
+      // it also imports getDocs and would otherwise hit the query
+      // module in an unhealthy order.
+      const mod = await import('./teamLog');
+      return mod.getMissingEntryWarnings({ days: 3 });
+    })(),
+  ]);
+
+  const alerts = [];
+  let nextId = 0;
+  const pushAlert = (level, category, title, detail, opts = {}) => {
+    alerts.push({
+      id: `${category}-${nextId++}`,
+      level,
+      category,
+      title,
+      detail,
+      actor: opts.actor || '',
+      ageDays: opts.ageDays ?? null,
+      actionHref: opts.actionHref || null,
+    });
+  };
+
+  // --- Trade flow: stalled deals ---
+  for (const s of tradeFlow.stalled) {
+    if (s.type === 'deal') {
+      const isShipment = s.label.startsWith('In shipment');
+      pushAlert(
+        isShipment ? 'critical' : 'high',
+        'trade-flow',
+        isShipment ? 'Shipment stalled' : 'Negotiation stalled',
+        s.label,
+        {
+          actor: s.actor,
+          ageDays: s.ageDays,
+          actionHref: '/admin/analytics#trade-flow',
+        },
+      );
+    } else if (s.type === 'rfq') {
+      pushAlert('high', 'trade-flow', 'RFQ with no quotes', s.label, {
+        actor: s.actor,
+        ageDays: s.ageDays,
+        actionHref: '/admin/analytics#trade-flow',
+      });
+    }
+  }
+
+  // --- Ads: past-due + ending soon ---
+  for (const row of ads.stalePastEnd) {
+    pushAlert('critical', 'ads', 'Ad past end date but still active', row.companyName, {
+      actor: row.companyName,
+      ageDays: row.daysOverdue,
+      actionHref: '/admin?tab=ad-campaigns',
+    });
+  }
+  for (const row of ads.endingSoon) {
+    pushAlert(
+      'high',
+      'ads',
+      row.daysRemaining === 0 ? 'Ad ends today' : 'Ad ending soon',
+      row.daysRemaining === 0
+        ? `${row.companyName} campaign closes today`
+        : `${row.companyName} — ${row.daysRemaining} days remaining`,
+      {
+        actor: row.companyName,
+        ageDays: null,
+        actionHref: '/admin?tab=ad-campaigns',
+      },
+    );
+  }
+
+  // --- Members: churn + dormant ---
+  for (const row of activity.rows) {
+    if (row.isSuspended) continue;
+    if (row.bucket === 'churn90plus') {
+      pushAlert('critical', 'members', 'Critical churn (90+ days silent)', row.email || row.displayName, {
+        actor: row.displayName,
+        ageDays: row.daysSinceLogin,
+        actionHref: '/admin/analytics#members',
+      });
+    } else if (row.bucket === 'churn60to90') {
+      pushAlert('high', 'members', 'Churn risk (60-90 days silent)', row.email || row.displayName, {
+        actor: row.displayName,
+        ageDays: row.daysSinceLogin,
+        actionHref: '/admin/analytics#members',
+      });
+    } else if (row.bucket === 'dormant30to60') {
+      pushAlert('medium', 'members', 'Dormant member (30-60 days silent)', row.email || row.displayName, {
+        actor: row.displayName,
+        ageDays: row.daysSinceLogin,
+        actionHref: '/admin/analytics#members',
+      });
+    }
+  }
+
+  // --- Team log: missing entries ---
+  for (const w of missingTeamLog) {
+    if (w.severity === 'red') {
+      pushAlert(
+        'high',
+        'team-log',
+        w.daysSince === null ? 'Team member never logged' : 'Team log silence (3+ days)',
+        w.displayName,
+        {
+          actor: w.displayName,
+          ageDays: w.daysSince,
+          actionHref: '/admin/analytics#team-log',
+        },
+      );
+    } else if (w.severity === 'amber') {
+      pushAlert('medium', 'team-log', 'Team log missed', w.displayName, {
+        actor: w.displayName,
+        ageDays: w.daysSince,
+        actionHref: '/admin/analytics#team-log',
+      });
+    }
+  }
+
+  // --- Profile: required-field gaps ---
+  for (const row of profile.rows) {
+    if (row.isSuspended) continue;
+    if (row.missingRequiredCount > 0) {
+      pushAlert(
+        'medium',
+        'profile',
+        `Profile missing ${row.missingRequiredCount} required field${row.missingRequiredCount === 1 ? '' : 's'}`,
+        `${row.percent}% complete · ${row.companyName || row.email}`,
+        {
+          actor: row.displayName,
+          ageDays: null,
+          actionHref: '/admin/analytics#profile',
+        },
+      );
+    }
+  }
+
+  const counts = { critical: 0, high: 0, medium: 0, low: 0 };
+  alerts.forEach((a) => {
+    counts[a.level] = (counts[a.level] || 0) + 1;
+  });
+
+  // Level severity first, then oldest-age first inside a level, then
+  // category alphabetical for stability.
+  alerts.sort((a, b) => {
+    const lvlDiff = ALERT_LEVEL_META[a.level].order - ALERT_LEVEL_META[b.level].order;
+    if (lvlDiff !== 0) return lvlDiff;
+    const ageDiff = (b.ageDays ?? 0) - (a.ageDays ?? 0);
+    if (ageDiff !== 0) return ageDiff;
+    return a.category.localeCompare(b.category);
+  });
+
+  return {
+    snapshotAt: new Date(),
+    counts,
+    alerts,
+  };
+}
+
 // --- Profile completeness (Bölüm 10) ---------------------------------------
 
 /**
