@@ -26,6 +26,7 @@ import {
   ClipboardList,
   LayoutGrid,
   UserCheck,
+  Package,
 } from 'lucide-react';
 import { useAuth } from '@/presentation/contexts/AuthContext';
 import { OverviewSection } from '@/presentation/components/features/admin/analytics/OverviewSection';
@@ -35,12 +36,14 @@ import { GrowthSection } from '@/presentation/components/features/admin/analytic
 import { SiteAnalyticsSection } from '@/presentation/components/features/admin/analytics/SiteAnalyticsSection';
 import { AdsSection } from '@/presentation/components/features/admin/analytics/AdsSection';
 import { ProfileCompletenessSection } from '@/presentation/components/features/admin/analytics/ProfileCompletenessSection';
+import { TradeFlowSection } from '@/presentation/components/features/admin/analytics/TradeFlowSection';
 
 const SECTIONS = [
   { id: 'overview', label: 'Overview', icon: BarChart3 },
   { id: 'members', label: 'Members', icon: Users },
   { id: 'profile', label: 'Profile Health', icon: UserCheck },
   { id: 'growth', label: 'Growth', icon: TrendingUp },
+  { id: 'trade-flow', label: 'Trade Flow', icon: Package },
   { id: 'hubspot', label: 'HubSpot CRM', icon: Mail, comingSoon: true },
   { id: 'site', label: 'Site Analytics', icon: Globe },
   { id: 'ads', label: 'Ads', icon: LayoutGrid },
@@ -141,6 +144,7 @@ function AnalyticsContent() {
             {active.id === 'team-log' && <TeamLogSection />}
             {active.id === 'growth' && <GrowthSection />}
             {active.id === 'site' && <SiteAnalyticsSection />}
+            {active.id === 'trade-flow' && <TradeFlowSection />}
             {active.id === 'ads' && <AdsSection />}
             {active.comingSoon && <ComingSoon label={active.label} />}
           </main>

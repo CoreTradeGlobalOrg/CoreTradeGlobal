@@ -376,6 +376,253 @@ export async function getProfileCompleteness() {
   };
 }
 
+// --- Trade Flow Map (Bölüm 19) ---------------------------------------------
+
+/**
+ * Deal-status → funnel-stage mapping. The platform's DEAL_STATUS
+ * (negotiating / accepted / contract_approved / providers_selected /
+ * delivered / rejected / expired / withdrawn) collapses into five
+ * forward-flow stages plus one "dropped" bucket so the funnel reads
+ * as a real progression rather than a status dump.
+ */
+const DEAL_STAGE_MAP = {
+  negotiating: 'negotiation',
+  accepted: 'accepted',
+  contract_approved: 'accepted',
+  providers_selected: 'in_shipment',
+  delivered: 'delivered',
+  rejected: 'dropped',
+  expired: 'dropped',
+  withdrawn: 'dropped',
+};
+
+export const TRADE_FLOW_STAGES = [
+  { id: 'rfq_active', label: 'Active RFQ', source: 'request' },
+  { id: 'negotiation', label: 'Negotiating', source: 'deal' },
+  { id: 'accepted', label: 'Accepted / Contract', source: 'deal' },
+  { id: 'in_shipment', label: 'In Shipment', source: 'deal' },
+  { id: 'delivered', label: 'Delivered', source: 'deal' },
+];
+
+/**
+ * Everything the Trade Flow panel needs, in one shot:
+ *   - Funnel counts across the 5 forward stages
+ *   - Terminal state counts (rejected / expired / withdrawn) so the
+ *     drop rate is visible
+ *   - This-month delivered count and delivered-this-month value
+ *     placeholder (deal snapshots don't carry stable pricing so we
+ *     only surface count until that lands)
+ *   - Active deal roster (one row per non-terminal deal) with
+ *     seller / buyer names + countries resolved
+ *   - Country trade routes (seller → buyer country) with counts
+ *   - Stalled-deal list — negotiations older than 5 days, in-shipment
+ *     older than 30 days, active RFQs older than 7 days
+ *   - Time-in-stage averages when a deal has enough statusHistory
+ *     to derive one; skipped gracefully when it doesn't
+ *
+ * @returns {Promise<{
+ *   snapshotAt: Date,
+ *   funnel: Record<string, number>,
+ *   deliveredThisMonth: number,
+ *   dropped: { rejected: number, expired: number, withdrawn: number, total: number },
+ *   totals: { deals: number, requests: number },
+ *   conversion: { rfqToDeal: number|null, negoToAccepted: number|null, overallDeliver: number|null },
+ *   averages: { negotiationDays: number|null, shipmentDays: number|null },
+ *   activeDeals: Array<{ ... }>,
+ *   routes: Array<{ sellerCountry: string, buyerCountry: string, count: number }>,
+ *   stalled: Array<{ id, type, label, ageDays, actor }>,
+ * }>}
+ */
+export async function getTradeFlowMetrics() {
+  const [dealsSnap, requestsSnap, usersSnap] = await Promise.all([
+    getDocs(collection(db, COLLECTIONS.DEALS)),
+    getDocs(collection(db, COLLECTIONS.REQUESTS)),
+    getDocs(collection(db, COLLECTIONS.USERS)),
+  ]);
+
+  // uid → { companyName, country } lookup for the seller/buyer joins.
+  const userLookup = new Map();
+  usersSnap.forEach((doc) => {
+    const data = doc.data() || {};
+    userLookup.set(doc.id, {
+      companyName: data.companyName || data.displayName || data.email || doc.id,
+      country: (data.country || '').trim() || 'Unknown',
+    });
+  });
+
+  const now = Date.now();
+  const monthStart = (() => {
+    const d = new Date();
+    return new Date(d.getFullYear(), d.getMonth(), 1).getTime();
+  })();
+
+  const funnel = {
+    rfq_active: 0,
+    negotiation: 0,
+    accepted: 0,
+    in_shipment: 0,
+    delivered: 0,
+  };
+  const dropped = { rejected: 0, expired: 0, withdrawn: 0, total: 0 };
+  const routeCounts = new Map(); // "seller|buyer" -> count
+  const activeDeals = [];
+  const stalled = [];
+  let deliveredThisMonth = 0;
+
+  // Track duration samples for the two long-running stages.
+  const negotiationDurations = [];
+  const shipmentDurations = [];
+
+  // --- deals ---
+  dealsSnap.forEach((doc) => {
+    const data = doc.data() || {};
+    const status = data.status || 'negotiating';
+    const stage = DEAL_STAGE_MAP[status] || 'dropped';
+    const createdAt = toDate(data.createdAt);
+    const updatedAt = toDate(data.updatedAt);
+    const ageDays = createdAt
+      ? Math.floor((now - createdAt.getTime()) / MS_PER_DAY)
+      : null;
+
+    if (stage === 'dropped') {
+      dropped[status] = (dropped[status] || 0) + 1;
+      dropped.total += 1;
+      return;
+    }
+
+    funnel[stage] += 1;
+
+    const seller = userLookup.get(data.sellerId);
+    const buyer = userLookup.get(data.buyerId);
+    const sellerCountry = seller?.country || 'Unknown';
+    const buyerCountry = buyer?.country || 'Unknown';
+
+    // Delivered this month uses updatedAt as the delivery moment
+    // (there isn't a dedicated deliveredAt field). Good-enough
+    // approximation while the funnel is still small.
+    if (stage === 'delivered' && updatedAt && updatedAt.getTime() >= monthStart) {
+      deliveredThisMonth += 1;
+    }
+
+    // Duration samples — only when we can pin both endpoints.
+    if (stage === 'accepted' && createdAt && updatedAt) {
+      negotiationDurations.push((updatedAt.getTime() - createdAt.getTime()) / MS_PER_DAY);
+    }
+    if (stage === 'delivered' && createdAt && updatedAt) {
+      shipmentDurations.push((updatedAt.getTime() - createdAt.getTime()) / MS_PER_DAY);
+    }
+
+    if (stage !== 'delivered') {
+      // Active roster — anything short of delivered still needs eyes on it.
+      activeDeals.push({
+        id: doc.id,
+        stage,
+        stageLabel: TRADE_FLOW_STAGES.find((s) => s.id === stage)?.label || stage,
+        status,
+        productName: data.productName || '(no product)',
+        seller: seller?.companyName || 'Unknown',
+        sellerCountry,
+        buyer: buyer?.companyName || 'Unknown',
+        buyerCountry,
+        createdAt,
+        updatedAt,
+        ageDays,
+      });
+
+      // Stall thresholds per the plan: negotiating >5d, in_shipment >30d.
+      if (stage === 'negotiation' && ageDays !== null && ageDays > 5) {
+        stalled.push({
+          id: doc.id,
+          type: 'deal',
+          label: `Negotiating for ${ageDays} days`,
+          ageDays,
+          actor: `${seller?.companyName || 'Seller'} ↔ ${buyer?.companyName || 'Buyer'}`,
+        });
+      }
+      if (stage === 'in_shipment' && ageDays !== null && ageDays > 30) {
+        stalled.push({
+          id: doc.id,
+          type: 'deal',
+          label: `In shipment for ${ageDays} days`,
+          ageDays,
+          actor: `${seller?.companyName || 'Seller'} ↔ ${buyer?.companyName || 'Buyer'}`,
+        });
+      }
+    }
+
+    // Trade route tally (only successful flow contributes so a
+    // rejected deal doesn't get counted as a real route).
+    const routeKey = `${sellerCountry}|${buyerCountry}`;
+    routeCounts.set(routeKey, (routeCounts.get(routeKey) || 0) + 1);
+  });
+
+  // --- requests (RFQs) ---
+  requestsSnap.forEach((doc) => {
+    const data = doc.data() || {};
+    if (data.status !== 'active') return;
+    funnel.rfq_active += 1;
+
+    const createdAt = toDate(data.createdAt);
+    const ageDays = createdAt
+      ? Math.floor((now - createdAt.getTime()) / MS_PER_DAY)
+      : null;
+    if (ageDays !== null && ageDays > 7 && (data.quoteCount || 0) === 0) {
+      const buyer = userLookup.get(data.userId);
+      stalled.push({
+        id: doc.id,
+        type: 'rfq',
+        label: `RFQ open for ${ageDays} days, no quotes`,
+        ageDays,
+        actor: buyer?.companyName || 'Unknown buyer',
+      });
+    }
+  });
+
+  // Sorted route list, top routes first.
+  const routes = Array.from(routeCounts.entries())
+    .map(([key, count]) => {
+      const [sellerCountry, buyerCountry] = key.split('|');
+      return { sellerCountry, buyerCountry, count };
+    })
+    .sort((a, b) => b.count - a.count);
+
+  activeDeals.sort((a, b) => (b.ageDays ?? 0) - (a.ageDays ?? 0));
+  stalled.sort((a, b) => b.ageDays - a.ageDays);
+
+  const avg = (arr) =>
+    arr.length > 0 ? Math.round((arr.reduce((s, n) => s + n, 0) / arr.length) * 10) / 10 : null;
+
+  // Conversion signals. Ratios are best-effort at current scale — the
+  // panel makes the small-N caveat explicit in the UI.
+  const totalDeals = dealsSnap.size;
+  const totalRequests = requestsSnap.size;
+  const negoIn = funnel.negotiation + funnel.accepted + funnel.in_shipment + funnel.delivered + dropped.total;
+  const conversion = {
+    rfqToDeal: totalRequests > 0 ? (totalDeals / totalRequests) * 100 : null,
+    negoToAccepted:
+      negoIn > 0
+        ? ((funnel.accepted + funnel.in_shipment + funnel.delivered) / negoIn) * 100
+        : null,
+    overallDeliver: totalDeals > 0 ? (funnel.delivered / totalDeals) * 100 : null,
+  };
+
+  return {
+    snapshotAt: new Date(),
+    funnel,
+    deliveredThisMonth,
+    dropped,
+    totals: { deals: totalDeals, requests: totalRequests },
+    conversion,
+    averages: {
+      negotiationDays: avg(negotiationDurations),
+      shipmentDays: avg(shipmentDurations),
+    },
+    activeDeals,
+    routes,
+    stalled,
+  };
+}
+
 // --- Ads: campaign performance ---------------------------------------------
 
 /**
