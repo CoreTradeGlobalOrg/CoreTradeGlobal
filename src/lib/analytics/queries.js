@@ -18,6 +18,7 @@
 
 import {
   collection,
+  collectionGroup,
   getCountFromServer,
   getDocs,
   query,
@@ -1045,6 +1046,644 @@ export async function getAdsPerformance() {
     activeCampaigns,
     endingSoon,
     stalePastEnd,
+  };
+}
+
+// --- Engagement Score — 5-layer model (Bölüm 18) --------------------------
+
+/**
+ * The five weighted layers described in the plan. Layer weights sum
+ * to 100 by construction; a dev-mode assertion catches drift when
+ * any weight is retuned.
+ *
+ * Sub-signals within each layer that require event-log data
+ * (session duration, page depth, message quality, listing update
+ * cadence, referral count) fall through to zero for now — the
+ * layer is still capped at its full weight so a member who lights
+ * up every derivable signal can still hit 100.
+ */
+export const ENGAGEMENT_LAYERS = [
+  { id: 'activity', label: 'Activity', weight: 35, color: '#10B981' },
+  { id: 'value', label: 'Value Production', weight: 25, color: '#3B82F6' },
+  { id: 'profile', label: 'Profile Completeness', weight: 15, color: '#8B5CF6' },
+  { id: 'commercial', label: 'Commercial Interaction', weight: 15, color: '#F59E0B' },
+  { id: 'social', label: 'Social / Contribution', weight: 10, color: '#EF4444' },
+];
+
+if (
+  ENGAGEMENT_LAYERS.reduce((s, l) => s + l.weight, 0) !== 100 &&
+  process.env.NODE_ENV !== 'production'
+) {
+  // eslint-disable-next-line no-console
+  console.warn('[analytics:engagement] ENGAGEMENT_LAYERS weights do not sum to 100');
+}
+
+/**
+ * Read every signal we need for scoring in one round-trip. Reused by
+ * getEngagementSnapshot below and available to future consumers that
+ * want the raw signal shape.
+ */
+async function loadEngagementSignals() {
+  const [usersSnap, productsSnap, requestsSnap, conversationsSnap, adsSnap, categoriesSnap] = await Promise.all([
+    getDocs(collection(db, COLLECTIONS.USERS)),
+    getDocs(collection(db, COLLECTIONS.PRODUCTS)),
+    getDocs(collection(db, COLLECTIONS.REQUESTS)),
+    getDocs(collection(db, COLLECTIONS.CONVERSATIONS)),
+    getDocs(collection(db, 'ads')),
+    getDocs(collection(db, COLLECTIONS.CATEGORIES)),
+  ]);
+
+  const productsByUser = new Map();
+  const productUpdatesByUser = new Map(); // last updateAt per uid
+  productsSnap.forEach((doc) => {
+    const d = doc.data() || {};
+    const uid = d.userId;
+    if (!uid) return;
+    productsByUser.set(uid, (productsByUser.get(uid) || 0) + 1);
+    const updated = toDate(d.updatedAt) || toDate(d.createdAt);
+    if (updated) {
+      const prev = productUpdatesByUser.get(uid);
+      if (!prev || updated > prev) productUpdatesByUser.set(uid, updated);
+    }
+  });
+
+  const rfqsByUser = new Map();
+  requestsSnap.forEach((doc) => {
+    const uid = doc.data()?.userId;
+    if (uid) rfqsByUser.set(uid, (rfqsByUser.get(uid) || 0) + 1);
+  });
+
+  // uid → { received: 0, conversationPartners: Set }
+  const messagingByUser = new Map();
+  conversationsSnap.forEach((doc) => {
+    const parts = Array.isArray(doc.data()?.participants) ? doc.data().participants : [];
+    for (const uid of parts) {
+      let row = messagingByUser.get(uid);
+      if (!row) {
+        row = { received: 0, partners: new Set() };
+        messagingByUser.set(uid, row);
+      }
+      row.received += 1; // count of conversations = message threads
+      for (const other of parts) {
+        if (other !== uid) row.partners.add(other);
+      }
+    }
+  });
+
+  // Approximated "has advertised" join via companyName (see note in Bölüm 14).
+  const advertisedCompanies = new Set();
+  adsSnap.forEach((doc) => {
+    const cn = (doc.data()?.companyName || '').trim().toLowerCase();
+    if (cn) advertisedCompanies.add(cn);
+  });
+
+  const categoryIdToName = new Map();
+  categoriesSnap.forEach((doc) => {
+    const name = doc.data()?.name;
+    if (name) categoryIdToName.set(doc.id, name);
+  });
+
+  return {
+    usersSnap,
+    productsByUser,
+    productUpdatesByUser,
+    rfqsByUser,
+    messagingByUser,
+    advertisedCompanies,
+    categoryIdToName,
+  };
+}
+
+/**
+ * Score one user across the five layers. Returns the total plus a
+ * per-layer breakdown so panels can show which layer is dragging.
+ */
+export function computeEngagementScore(userData, signals) {
+  const now = Date.now();
+  const data = userData;
+  const activityDays = signals.lastLoginAt
+    ? Math.floor((now - signals.lastLoginAt.getTime()) / MS_PER_DAY)
+    : null;
+  const productCount = signals.productCount || 0;
+  const rfqCount = signals.rfqCount || 0;
+  const messageRow = signals.messageRow || { received: 0, partners: new Set() };
+  const hasAdvertised = !!signals.hasAdvertised;
+  const productUpdatedRecently = signals.lastProductUpdate
+    ? (now - signals.lastProductUpdate.getTime()) / MS_PER_DAY <= 30
+    : false;
+
+  // --- Activity: 35 pts ---
+  // signed-in-recently 10 + login-cadence 10 + (session length + page
+  // depth are event-log-only, contribute 0 today)
+  let activity = 0;
+  if (activityDays !== null) {
+    if (activityDays <= 7) activity += 10;
+    if (activityDays <= 30) activity += 10;
+  }
+  // Nothing to bank until the event log lands.
+  // activity += sessionsCount → up to 15 more
+
+  // --- Value production: 25 pts ---
+  // products up to 8 + RFQs up to 7 + message-quality (skip) 0 + freshness 5
+  let value = 0;
+  value += Math.min(productCount * 2, 8);
+  value += Math.min(rfqCount * 2, 7);
+  if (productUpdatedRecently) value += 5;
+  value = Math.min(value, 25);
+
+  // --- Profile completeness: 15 pts ---
+  // Same field weights the Profile Health section uses, rescaled to 15.
+  const PROFILE_WEIGHTS = [
+    { weight: 5, ok: (d) => (d.companyName || '').trim() !== '' },
+    { weight: 5, ok: (d) => (d.phone || '').trim() !== '' },
+    { weight: 8, ok: (d) => (d.companyCategory || '').trim() !== '' },
+    { weight: 4, ok: (d) => (d.firstName || '').trim() !== '' && (d.lastName || '').trim() !== '' },
+    { weight: 12, ok: (d) => (d.companyLogo || '').trim() !== '' },
+    { weight: 15, ok: (d) => (d.about || '').trim().length >= 40 },
+    { weight: 8, ok: (d) => (d.companyWebsite || '').trim() !== '' },
+    { weight: 5, ok: (d) => (d.linkedinProfile || '').trim() !== '' },
+    { weight: 5, ok: (d) => (d.country || '').trim() !== '' },
+    { weight: 5, ok: (d) => (d.position || '').trim() !== '' },
+    { weight: 18, ok: (d) => Array.isArray(d.companyDocuments) && d.companyDocuments.length > 0 },
+    { weight: 10, ok: (d) => !!d.emailVerified && !!d.adminApproved },
+  ];
+  const profileRaw = PROFILE_WEIGHTS.reduce(
+    (s, f) => s + (f.ok(data) ? f.weight : 0),
+    0,
+  ); // 0-100
+  const profile = Math.round((profileRaw / 100) * 15);
+
+  // --- Commercial interaction: 15 pts ---
+  // received-messages 5 + advertising 5 + conversation-diversity 5
+  let commercial = 0;
+  if (messageRow.received >= 10) commercial += 5;
+  else if (messageRow.received > 0) commercial += Math.round((messageRow.received / 10) * 5);
+  if (hasAdvertised) commercial += 5;
+  const diversity = messageRow.partners?.size || 0;
+  if (diversity >= 5) commercial += 5;
+  else if (diversity > 0) commercial += Math.round((diversity / 5) * 5);
+  commercial = Math.min(commercial, 15);
+
+  // --- Social / contribution: 10 pts ---
+  // reviews / referrals / forum. None of these exist as data yet, so
+  // this layer is 0 by design until those features land. Keeping the
+  // slot means when they arrive we drop into the same panel.
+  const social = 0;
+
+  const total = Math.min(100, activity + value + profile + commercial + social);
+  return {
+    total,
+    breakdown: { activity, value, profile, commercial, social },
+  };
+}
+
+/**
+ * Score every non-suspended user with the deeper 5-layer model and
+ * return the whole roster + distribution stats.
+ *
+ * @returns {Promise<{
+ *   snapshotAt: Date,
+ *   total: number,
+ *   average: number,
+ *   distribution: number[],                        // 10 buckets of 10 points
+ *   percentiles: { p25: number, p50: number, p75: number, p90: number },
+ *   rows: Array<{
+ *     uid, displayName, email, companyName, country, sector,
+ *     score: number, breakdown: Record<string, number>, activityDays: number|null
+ *   }>,
+ *   layerAverages: Record<string, number>,         // average of each layer
+ *   verifiedLift: number|null,                     // avg verified − avg unverified
+ * }>}
+ */
+export async function getEngagementSnapshot() {
+  const now = Date.now();
+  const signals = await loadEngagementSignals();
+
+  const resolveSector = (raw) => {
+    const v = (raw || '').trim();
+    if (!v) return 'Unknown';
+    return signals.categoryIdToName.get(v) || v;
+  };
+
+  const rows = [];
+  signals.usersSnap.forEach((doc) => {
+    const data = doc.data() || {};
+    if (data.isSuspended) return;
+    const uid = doc.id;
+    const lastLoginAt = toDate(data.lastLoginAt);
+    const companyName = (data.companyName || '').trim();
+    const perUserSignals = {
+      lastLoginAt,
+      productCount: signals.productsByUser.get(uid) || 0,
+      rfqCount: signals.rfqsByUser.get(uid) || 0,
+      messageRow: signals.messagingByUser.get(uid) || { received: 0, partners: new Set() },
+      hasAdvertised: companyName && signals.advertisedCompanies.has(companyName.toLowerCase()),
+      lastProductUpdate: signals.productUpdatesByUser.get(uid) || null,
+    };
+    const { total, breakdown } = computeEngagementScore(data, perUserSignals);
+    rows.push({
+      uid,
+      displayName: data.fullName || data.displayName || '(no name)',
+      email: data.email || '',
+      companyName,
+      country: (data.country || '').trim() || 'Unknown',
+      sector: resolveSector(data.companyCategory),
+      score: total,
+      breakdown,
+      activityDays: lastLoginAt
+        ? Math.floor((now - lastLoginAt.getTime()) / MS_PER_DAY)
+        : null,
+      isVerified: !!data.emailVerified && !!data.adminApproved,
+    });
+  });
+
+  const total = rows.length;
+  const average = total > 0
+    ? Math.round(rows.reduce((s, r) => s + r.score, 0) / total)
+    : 0;
+
+  // 10 buckets of 10 points (0-9, 10-19, ..., 90-100)
+  const distribution = new Array(10).fill(0);
+  for (const r of rows) {
+    const idx = Math.min(9, Math.floor(r.score / 10));
+    distribution[idx] += 1;
+  }
+
+  const sortedScores = rows.map((r) => r.score).sort((a, b) => a - b);
+  const pctile = (p) => {
+    if (sortedScores.length === 0) return 0;
+    const idx = Math.min(sortedScores.length - 1, Math.floor((p / 100) * sortedScores.length));
+    return sortedScores[idx];
+  };
+
+  // Per-layer average.
+  const layerAverages = {};
+  for (const layer of ENGAGEMENT_LAYERS) {
+    const sum = rows.reduce((s, r) => s + (r.breakdown[layer.id] || 0), 0);
+    layerAverages[layer.id] = total > 0 ? Math.round((sum / total) * 10) / 10 : 0;
+  }
+
+  // Verified lift.
+  const verifiedRows = rows.filter((r) => r.isVerified);
+  const unverifiedRows = rows.filter((r) => !r.isVerified);
+  const verifiedAvg = verifiedRows.length > 0
+    ? verifiedRows.reduce((s, r) => s + r.score, 0) / verifiedRows.length
+    : null;
+  const unverifiedAvg = unverifiedRows.length > 0
+    ? unverifiedRows.reduce((s, r) => s + r.score, 0) / unverifiedRows.length
+    : null;
+  const verifiedLift = verifiedAvg !== null && unverifiedAvg !== null
+    ? Math.round(verifiedAvg - unverifiedAvg)
+    : null;
+
+  return {
+    snapshotAt: new Date(),
+    total,
+    average,
+    distribution,
+    percentiles: {
+      p25: pctile(25),
+      p50: pctile(50),
+      p75: pctile(75),
+      p90: pctile(90),
+    },
+    rows: rows.sort((a, b) => b.score - a.score),
+    layerAverages,
+    verifiedLift,
+  };
+}
+
+// --- Verified / Trust (Bölüm 16) -------------------------------------------
+
+/**
+ * Trust-panel snapshot: how many members are verified, how many are
+ * still waiting for admin approval, who has uploaded KYC / firma
+ * documents, and how those trust signals split by country and sector.
+ *
+ * @returns {Promise<{
+ *   snapshotAt: Date,
+ *   total: number,
+ *   verified: number,
+ *   pendingEmail: number,
+ *   pendingApproval: number,
+ *   suspended: number,
+ *   verifiedRatio: number,        // 0-100
+ *   docsUploaded: number,         // members with ≥1 companyDocument
+ *   docsMissing: number,          // members without a companyDocument
+ *   approvalQueue: Array<{ uid, displayName, email, companyName, country, ageDays, emailVerified }>,
+ *   emailPendingList: Array<{ uid, displayName, email, ageDays }>,
+ *   verifiedByCountry: Array<{ country: string, verified: number, total: number, ratio: number }>,
+ *   verifiedBySector: Array<{ sector: string, verified: number, total: number, ratio: number }>,
+ * }>}
+ */
+export async function getTrustSnapshot() {
+  const now = Date.now();
+
+  const [usersSnap, categoriesSnap] = await Promise.all([
+    getDocs(collection(db, COLLECTIONS.USERS)),
+    getDocs(collection(db, COLLECTIONS.CATEGORIES)),
+  ]);
+
+  const categoryIdToName = new Map();
+  categoriesSnap.forEach((doc) => {
+    const data = doc.data() || {};
+    if (data.name) categoryIdToName.set(doc.id, data.name);
+  });
+  const resolveSector = (raw) => {
+    const v = (raw || '').trim();
+    if (!v) return 'Unknown';
+    return categoryIdToName.get(v) || v;
+  };
+
+  let verified = 0;
+  let pendingEmail = 0;
+  let pendingApproval = 0;
+  let suspended = 0;
+  let docsUploaded = 0;
+  let docsMissing = 0;
+
+  const approvalQueue = [];
+  const emailPendingList = [];
+
+  const byCountry = new Map(); // country -> { verified, total }
+  const bySector = new Map();
+
+  usersSnap.forEach((doc) => {
+    const data = doc.data() || {};
+    const uid = doc.id;
+    const createdAt = toDate(data.createdAt);
+    const ageDays = createdAt
+      ? Math.floor((now - createdAt.getTime()) / MS_PER_DAY)
+      : null;
+    const displayName = data.fullName || data.displayName || '(no name)';
+    const emailVerified = !!data.emailVerified;
+    const adminApproved = !!data.adminApproved;
+    const isSuspended = !!data.isSuspended;
+    const isVerified = emailVerified && adminApproved && !isSuspended;
+    const hasDocs = Array.isArray(data.companyDocuments) && data.companyDocuments.length > 0;
+    const country = (data.country || '').trim() || 'Unknown';
+    const sector = resolveSector(data.companyCategory);
+
+    if (isSuspended) suspended += 1;
+    else if (isVerified) verified += 1;
+    else if (!emailVerified) pendingEmail += 1;
+    else pendingApproval += 1;
+
+    if (hasDocs) docsUploaded += 1;
+    else docsMissing += 1;
+
+    if (!byCountry.has(country)) byCountry.set(country, { verified: 0, total: 0 });
+    const c = byCountry.get(country);
+    c.total += 1;
+    if (isVerified) c.verified += 1;
+
+    if (!bySector.has(sector)) bySector.set(sector, { verified: 0, total: 0 });
+    const s = bySector.get(sector);
+    s.total += 1;
+    if (isVerified) s.verified += 1;
+
+    // Queues.
+    if (!isSuspended && emailVerified && !adminApproved) {
+      approvalQueue.push({
+        uid,
+        displayName,
+        email: data.email || '',
+        companyName: (data.companyName || '').trim(),
+        country,
+        ageDays,
+        emailVerified,
+        hasDocs,
+      });
+    }
+    if (!isSuspended && !emailVerified) {
+      emailPendingList.push({
+        uid,
+        displayName,
+        email: data.email || '',
+        ageDays,
+      });
+    }
+  });
+
+  approvalQueue.sort((a, b) => (b.ageDays ?? 0) - (a.ageDays ?? 0));
+  emailPendingList.sort((a, b) => (b.ageDays ?? 0) - (a.ageDays ?? 0));
+
+  const total = usersSnap.size;
+  const verifiedRatio = total > 0 ? Math.round((verified / total) * 100) : 0;
+
+  const toRatioRows = (map, keyName) =>
+    Array.from(map.entries())
+      .map(([key, agg]) => ({
+        [keyName]: key,
+        verified: agg.verified,
+        total: agg.total,
+        ratio: agg.total > 0 ? Math.round((agg.verified / agg.total) * 100) : 0,
+      }))
+      .sort((a, b) => b.total - a.total);
+
+  return {
+    snapshotAt: new Date(),
+    total,
+    verified,
+    pendingEmail,
+    pendingApproval,
+    suspended,
+    verifiedRatio,
+    docsUploaded,
+    docsMissing,
+    approvalQueue,
+    emailPendingList,
+    verifiedByCountry: toRatioRows(byCountry, 'country'),
+    verifiedBySector: toRatioRows(bySector, 'sector'),
+  };
+}
+
+// --- Communication Hygiene (Bölüm 15) -------------------------------------
+
+/**
+ * Fatigue buckets, computed against a member's last-7-day notification
+ * count. Thresholds match the plan: 5+ / 10+ = amber / red flags.
+ */
+function fatigueBucket(sevenDayCount) {
+  if (sevenDayCount >= 10) return 'over';
+  if (sevenDayCount >= 5) return 'high';
+  if (sevenDayCount === 0) return 'silent';
+  return 'ok';
+}
+
+/**
+ * Read every user's in-app notifications via a collectionGroup query
+ * and roll into hygiene stats. Only tracks the in-app channel today —
+ * email volume needs the Resend log (backend integration) and
+ * WhatsApp doesn't exist yet. Panel calls that out inline.
+ *
+ * @returns {Promise<{
+ *   snapshotAt: Date,
+ *   total: number,
+ *   last7d: number,
+ *   last30d: number,
+ *   readRate: number|null,
+ *   averagePerMemberWeek: number|null,
+ *   fatigueCounts: { over: number, high: number, ok: number, silent: number },
+ *   silentMembers: Array<{ uid, displayName, email, companyName, lastAt: Date|null, daysSince: number|null }>,
+ *   overFatigued: Array<{ uid, displayName, email, companyName, count7d: number, lastAt: Date|null }>,
+ *   byType: Array<{ type: string, count: number }>,
+ *   dailyTrend: Array<{ date: string, count: number }>,
+ * }>}
+ */
+export async function getCommunicationHygiene() {
+  const now = Date.now();
+  const startOfLast7 = now - 7 * MS_PER_DAY;
+  const startOfLast30 = now - 30 * MS_PER_DAY;
+
+  const [usersSnap, notifSnap] = await Promise.all([
+    getDocs(collection(db, COLLECTIONS.USERS)),
+    getDocs(collectionGroup(db, 'notifications')),
+  ]);
+
+  // uid → { companyName, displayName, email, isSuspended }
+  const userLookup = new Map();
+  usersSnap.forEach((doc) => {
+    const data = doc.data() || {};
+    userLookup.set(doc.id, {
+      displayName: data.fullName || data.displayName || '(no name)',
+      email: data.email || '',
+      companyName: (data.companyName || '').trim(),
+      isSuspended: !!data.isSuspended,
+    });
+  });
+
+  // Per-user aggregate rows.
+  const perUser = new Map(); // uid -> { total, last7d, last30d, lastAt, readCount, byType }
+  const byType = new Map();
+  const dailyCounts = new Map(); // yyyy-mm-dd -> count
+  let total = 0;
+  let last7d = 0;
+  let last30d = 0;
+  let readCount = 0;
+
+  const startOfLast30Day = new Date(now - 29 * MS_PER_DAY);
+  startOfLast30Day.setHours(0, 0, 0, 0);
+  const startOfLast30Time = startOfLast30Day.getTime();
+
+  notifSnap.forEach((doc) => {
+    // Parent path: users/{uid}/notifications/{notifId}
+    const parentUser = doc.ref?.parent?.parent;
+    if (!parentUser) return;
+    const uid = parentUser.id;
+    const data = doc.data() || {};
+    const createdAt = toDate(data.createdAt);
+    if (!createdAt) return;
+
+    total += 1;
+    const type = (data.type || 'other').toString();
+    byType.set(type, (byType.get(type) || 0) + 1);
+
+    if (data.isRead) readCount += 1;
+
+    const isLast7 = createdAt.getTime() >= startOfLast7;
+    const isLast30 = createdAt.getTime() >= startOfLast30;
+    if (isLast7) last7d += 1;
+    if (isLast30) last30d += 1;
+
+    if (createdAt.getTime() >= startOfLast30Time) {
+      const y = createdAt.getFullYear();
+      const m = String(createdAt.getMonth() + 1).padStart(2, '0');
+      const d = String(createdAt.getDate()).padStart(2, '0');
+      const key = `${y}-${m}-${d}`;
+      dailyCounts.set(key, (dailyCounts.get(key) || 0) + 1);
+    }
+
+    let row = perUser.get(uid);
+    if (!row) {
+      row = { total: 0, last7d: 0, last30d: 0, lastAt: null, readCount: 0 };
+      perUser.set(uid, row);
+    }
+    row.total += 1;
+    if (isLast7) row.last7d += 1;
+    if (isLast30) row.last30d += 1;
+    if (data.isRead) row.readCount += 1;
+    if (!row.lastAt || createdAt > row.lastAt) row.lastAt = createdAt;
+  });
+
+  // Fatigue buckets — every non-suspended member gets counted (a
+  // silent member with a user doc is still a member, absence of
+  // notifications is itself the bucket signal).
+  const fatigueCounts = { over: 0, high: 0, ok: 0, silent: 0 };
+  const silentMembers = [];
+  const overFatigued = [];
+
+  usersSnap.forEach((doc) => {
+    const uid = doc.id;
+    const meta = userLookup.get(uid);
+    if (meta?.isSuspended) return;
+    const row = perUser.get(uid);
+    const count7d = row?.last7d || 0;
+    const bucket = fatigueBucket(count7d);
+    fatigueCounts[bucket] += 1;
+
+    if (bucket === 'silent') {
+      const lastAt = row?.lastAt || null;
+      const daysSince = lastAt
+        ? Math.floor((now - lastAt.getTime()) / MS_PER_DAY)
+        : null;
+      // Cap the panel list at reasonable size — sorted below.
+      silentMembers.push({
+        uid,
+        displayName: meta.displayName,
+        email: meta.email,
+        companyName: meta.companyName,
+        lastAt,
+        daysSince,
+      });
+    }
+    if (bucket === 'over' || bucket === 'high') {
+      overFatigued.push({
+        uid,
+        displayName: meta.displayName,
+        email: meta.email,
+        companyName: meta.companyName,
+        count7d,
+        lastAt: row?.lastAt || null,
+        bucket,
+      });
+    }
+  });
+
+  silentMembers.sort((a, b) => (b.daysSince ?? Infinity) - (a.daysSince ?? Infinity));
+  overFatigued.sort((a, b) => b.count7d - a.count7d);
+
+  const byTypeList = Array.from(byType.entries())
+    .map(([type, count]) => ({ type, count }))
+    .sort((a, b) => b.count - a.count);
+
+  // Zero-filled daily series for the last 30 days.
+  const dailyTrend = [];
+  for (let i = 0; i < 30; i++) {
+    const d = new Date(startOfLast30Time + i * MS_PER_DAY);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    dailyTrend.push({ date: key, count: dailyCounts.get(key) || 0 });
+  }
+
+  const activeMemberCount = usersSnap.docs.filter((doc) => !(doc.data()?.isSuspended)).length;
+  const averagePerMemberWeek =
+    activeMemberCount > 0
+      ? Math.round((last7d / activeMemberCount) * 10) / 10
+      : null;
+  const readRate = total > 0 ? Math.round((readCount / total) * 100) : null;
+
+  return {
+    snapshotAt: new Date(),
+    total,
+    last7d,
+    last30d,
+    readRate,
+    averagePerMemberWeek,
+    fatigueCounts,
+    silentMembers,
+    overFatigued,
+    byType: byTypeList,
+    dailyTrend,
   };
 }
 
