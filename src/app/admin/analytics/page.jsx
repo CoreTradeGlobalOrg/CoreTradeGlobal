@@ -29,6 +29,7 @@ import {
   Package,
   Bell,
   Rocket,
+  Layers,
 } from 'lucide-react';
 import { useAuth } from '@/presentation/contexts/AuthContext';
 import { OverviewSection } from '@/presentation/components/features/admin/analytics/OverviewSection';
@@ -41,6 +42,7 @@ import { ProfileCompletenessSection } from '@/presentation/components/features/a
 import { TradeFlowSection } from '@/presentation/components/features/admin/analytics/TradeFlowSection';
 import { AlertCenterSection } from '@/presentation/components/features/admin/analytics/AlertCenterSection';
 import { OnboardingFunnelSection } from '@/presentation/components/features/admin/analytics/OnboardingFunnelSection';
+import { SegmentationSection } from '@/presentation/components/features/admin/analytics/SegmentationSection';
 
 const SECTIONS = [
   { id: 'overview', label: 'Overview', icon: BarChart3 },
@@ -48,6 +50,7 @@ const SECTIONS = [
   { id: 'members', label: 'Members', icon: Users },
   { id: 'onboarding', label: 'Onboarding', icon: Rocket },
   { id: 'profile', label: 'Profile Health', icon: UserCheck },
+  { id: 'segments', label: 'Segments', icon: Layers },
   { id: 'growth', label: 'Growth', icon: TrendingUp },
   { id: 'trade-flow', label: 'Trade Flow', icon: Package },
   { id: 'hubspot', label: 'HubSpot CRM', icon: Mail, comingSoon: true },
@@ -149,6 +152,7 @@ function AnalyticsContent() {
             {active.id === 'members' && <MembersSection />}
             {active.id === 'onboarding' && <OnboardingFunnelSection />}
             {active.id === 'profile' && <ProfileCompletenessSection />}
+            {active.id === 'segments' && <SegmentationSection />}
             {active.id === 'team-log' && <TeamLogSection />}
             {active.id === 'growth' && <GrowthSection />}
             {active.id === 'site' && <SiteAnalyticsSection />}

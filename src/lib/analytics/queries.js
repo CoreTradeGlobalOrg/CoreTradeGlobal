@@ -1048,6 +1048,287 @@ export async function getAdsPerformance() {
   };
 }
 
+// --- Segmentation / Persona (Bölüm 14) ------------------------------------
+
+/**
+ * Predefined member segments with the criteria that place a member
+ * into each and the recommended action. Rules are order-independent
+ * — a member can land in more than one segment (a churn candidate
+ * with an incomplete profile shows up in both).
+ */
+export const MEMBER_SEGMENTS = [
+  {
+    id: 'vip_candidate',
+    label: 'VIP Candidate',
+    emoji: '🌟',
+    color: '#FFD700',
+    action: 'Suggest VIP badge / priority support',
+    detail: 'Score ≥75, verified, ≥2 products, active in last 30 days',
+  },
+  {
+    id: 'high_value_buyer',
+    label: 'High-value Buyer',
+    emoji: '💎',
+    color: '#8B5CF6',
+    action: 'Route to concierge onboarding',
+    detail: '3+ RFQs sent, active in last 30 days',
+  },
+  {
+    id: 'passive_seller',
+    label: 'Passive Seller',
+    emoji: '😴',
+    color: '#F59E0B',
+    action: 'Nurture email — "haven\'t seen you in a while"',
+    detail: 'Has products, no login in 14+ days',
+  },
+  {
+    id: 'ad_potential',
+    label: 'Ad Potential',
+    emoji: '📢',
+    color: '#06B6D4',
+    action: 'Ad-package outreach',
+    detail: 'Score ≥70, verified, never advertised',
+  },
+  {
+    id: 'critical_churn',
+    label: 'Critical Churn',
+    emoji: '🚨',
+    color: '#EF4444',
+    action: 'Last-chance re-engagement campaign',
+    detail: 'Score ≤35, no login in 45+ days',
+  },
+  {
+    id: 'new_starter',
+    label: 'New Starter',
+    emoji: '🌱',
+    color: '#10B981',
+    action: 'Onboarding guidance / walkthrough',
+    detail: 'Registered <14 days, ≤2 onboarding steps done',
+  },
+  {
+    id: 'onboarded',
+    label: 'Onboarded',
+    emoji: '✅',
+    color: '#3B82F6',
+    action: 'Feature-discovery drip email',
+    detail: 'Registered <60 days, 4+ onboarding steps done',
+  },
+];
+
+/**
+ * Compute segments across all members. Reuses the same base signals
+ * as Onboarding + Profile + Ads so a member's segment matches what
+ * they see on the other panels. Reads a snapshot of every dependency
+ * collection in one round-trip.
+ *
+ * A member can belong to zero, one, or many segments. Segment lists
+ * exclude suspended accounts by default (they're not actionable).
+ *
+ * @returns {Promise<{
+ *   snapshotAt: Date,
+ *   total: number,
+ *   segments: Array<{
+ *     id, label, emoji, color, action, detail,
+ *     count: number,
+ *     members: Array<{ uid, displayName, email, companyName, country, score }>,
+ *   }>,
+ *   scoreDistribution: { p25: number, p50: number, p75: number, avg: number },
+ * }>}
+ */
+export async function getMemberSegments() {
+  const now = Date.now();
+
+  const [
+    usersSnap,
+    productsSnap,
+    requestsSnap,
+    conversationsSnap,
+    adsSnap,
+  ] = await Promise.all([
+    getDocs(collection(db, COLLECTIONS.USERS)),
+    getDocs(collection(db, COLLECTIONS.PRODUCTS)),
+    getDocs(collection(db, COLLECTIONS.REQUESTS)),
+    getDocs(collection(db, COLLECTIONS.CONVERSATIONS)),
+    getDocs(collection(db, 'ads')),
+  ]);
+
+  // Roll-ups per uid.
+  const productCount = new Map();
+  productsSnap.forEach((doc) => {
+    const uid = doc.data()?.userId;
+    if (uid) productCount.set(uid, (productCount.get(uid) || 0) + 1);
+  });
+
+  const requestCount = new Map();
+  requestsSnap.forEach((doc) => {
+    const uid = doc.data()?.userId;
+    if (uid) requestCount.set(uid, (requestCount.get(uid) || 0) + 1);
+  });
+
+  const messagingUids = new Set();
+  conversationsSnap.forEach((doc) => {
+    const parts = Array.isArray(doc.data()?.participants) ? doc.data().participants : [];
+    for (const uid of parts) messagingUids.add(uid);
+  });
+
+  // Ads collection stores companyName not userId, so we approximate
+  // "has ever advertised" by fuzzy-matching the user's companyName
+  // against the ad's. Case-insensitive, trimmed. Good enough at
+  // this scale; when a userId field lands on ad docs, swap the join.
+  const advertisedCompanies = new Set();
+  adsSnap.forEach((doc) => {
+    const cn = (doc.data()?.companyName || '').trim().toLowerCase();
+    if (cn) advertisedCompanies.add(cn);
+  });
+
+  // Field weights for the composite score. Mirrors the flavor of the
+  // future full Bölüm 18 model (activity + value + profile + trust)
+  // at ~40 lines instead of 100, so a segment doesn't rely on a
+  // panel that isn't built yet.
+  const PROFILE_WEIGHTS = [
+    { weight: 5, ok: (d) => (d.companyName || '').trim() !== '' },
+    { weight: 5, ok: (d) => (d.phone || '').trim() !== '' },
+    { weight: 5, ok: (d) => (d.companyCategory || '').trim() !== '' },
+    { weight: 8, ok: (d) => (d.companyLogo || '').trim() !== '' },
+    { weight: 10, ok: (d) => (d.about || '').trim().length >= 40 },
+    { weight: 5, ok: (d) => (d.companyWebsite || '').trim() !== '' },
+    { weight: 12, ok: (d) => Array.isArray(d.companyDocuments) && d.companyDocuments.length > 0 },
+  ];
+
+  function computeScore(data, activity, hasProducts, hasRfq, hasMessages) {
+    // Profile: 50 pts. Sum of PROFILE_WEIGHTS is 50 by design.
+    let profile = 0;
+    for (const f of PROFILE_WEIGHTS) if (f.ok(data)) profile += f.weight;
+
+    // Activity: 25 pts.
+    // 25 for login in last 7 days, 18 for 8-30, 8 for 31-60, 0 after.
+    let activityPts = 0;
+    if (activity !== null) {
+      if (activity <= 7) activityPts = 25;
+      else if (activity <= 30) activityPts = 18;
+      else if (activity <= 60) activityPts = 8;
+    }
+
+    // Value production: 15 pts.
+    // Products (up to 10) + RFQs (up to 5).
+    const valuePts = Math.min(hasProducts * 2, 10) + Math.min(hasRfq * 2, 5);
+
+    // Engagement: 10 pts.
+    const engagementPts = hasMessages ? 10 : 0;
+
+    return Math.min(100, profile + activityPts + valuePts + engagementPts);
+  }
+
+  const rows = [];
+  usersSnap.forEach((doc) => {
+    const data = doc.data() || {};
+    if (data.isSuspended) return;
+    const uid = doc.id;
+    const createdAt = toDate(data.createdAt);
+    const lastLoginAt = toDate(data.lastLoginAt);
+    const activity = lastLoginAt
+      ? Math.floor((now - lastLoginAt.getTime()) / MS_PER_DAY)
+      : null;
+    const ageDays = createdAt
+      ? Math.floor((now - createdAt.getTime()) / MS_PER_DAY)
+      : null;
+    const products = productCount.get(uid) || 0;
+    const rfqs = requestCount.get(uid) || 0;
+    const messages = messagingUids.has(uid);
+    const secondSignin =
+      createdAt &&
+      lastLoginAt &&
+      lastLoginAt.getTime() > createdAt.getTime() + 60 * 60 * 1000;
+    const verified = !!data.emailVerified && !!data.adminApproved;
+
+    // Onboarding-step count reuses the same rules the funnel section uses.
+    const profilePct =
+      PROFILE_WEIGHTS.reduce((s, f) => s + (f.ok(data) ? f.weight : 0), 0) * 2;
+    let onboardingStepsDone = 0;
+    if (data.emailVerified) onboardingStepsDone += 1;
+    if (profilePct >= 50) onboardingStepsDone += 1;
+    if (products > 0 || rfqs > 0) onboardingStepsDone += 1;
+    if (messages) onboardingStepsDone += 1;
+    if (secondSignin) onboardingStepsDone += 1;
+
+    const score = computeScore(data, activity, products, rfqs, messages);
+
+    const companyName = (data.companyName || '').trim();
+    const hasAdvertised =
+      companyName && advertisedCompanies.has(companyName.toLowerCase());
+
+    rows.push({
+      uid,
+      displayName: data.fullName || data.displayName || '(no name)',
+      email: data.email || '',
+      companyName,
+      country: (data.country || '').trim() || 'Unknown',
+      score,
+      activityDays: activity,
+      ageDays,
+      products,
+      rfqs,
+      hasMessages: messages,
+      verified,
+      hasAdvertised,
+      onboardingStepsDone,
+    });
+  });
+
+  // Segment assignment. Order-independent — a member can be in many.
+  const isVip = (r) => r.score >= 75 && r.verified && r.products >= 2 && (r.activityDays !== null && r.activityDays <= 30);
+  const isHighValueBuyer = (r) => r.rfqs >= 3 && (r.activityDays !== null && r.activityDays <= 30);
+  const isPassiveSeller = (r) => r.products > 0 && (r.activityDays === null || r.activityDays >= 14);
+  const isAdPotential = (r) => r.score >= 70 && r.verified && !r.hasAdvertised;
+  const isCriticalChurn = (r) => r.score <= 35 && (r.activityDays === null || r.activityDays >= 45);
+  const isNewStarter = (r) => r.ageDays !== null && r.ageDays < 14 && r.onboardingStepsDone <= 2;
+  const isOnboarded = (r) => r.ageDays !== null && r.ageDays < 60 && r.onboardingStepsDone >= 4;
+
+  const predicateFor = {
+    vip_candidate: isVip,
+    high_value_buyer: isHighValueBuyer,
+    passive_seller: isPassiveSeller,
+    ad_potential: isAdPotential,
+    critical_churn: isCriticalChurn,
+    new_starter: isNewStarter,
+    onboarded: isOnboarded,
+  };
+
+  const segments = MEMBER_SEGMENTS.map((seg) => {
+    const members = rows.filter(predicateFor[seg.id]).map((r) => ({
+      uid: r.uid,
+      displayName: r.displayName,
+      email: r.email,
+      companyName: r.companyName,
+      country: r.country,
+      score: r.score,
+    }));
+    members.sort((a, b) => b.score - a.score);
+    return { ...seg, count: members.length, members };
+  });
+
+  // Score distribution for the header strip.
+  const scores = rows.map((r) => r.score).sort((a, b) => a - b);
+  const percentile = (p) => {
+    if (scores.length === 0) return 0;
+    const idx = Math.min(scores.length - 1, Math.floor((p / 100) * scores.length));
+    return scores[idx];
+  };
+  const avgScore = scores.length > 0 ? Math.round(scores.reduce((s, n) => s + n, 0) / scores.length) : 0;
+
+  return {
+    snapshotAt: new Date(),
+    total: rows.length,
+    segments,
+    scoreDistribution: {
+      p25: percentile(25),
+      p50: percentile(50),
+      p75: percentile(75),
+      avg: avgScore,
+    },
+  };
+}
+
 // --- Onboarding funnel (Bölüm 12) -----------------------------------------
 
 /**
