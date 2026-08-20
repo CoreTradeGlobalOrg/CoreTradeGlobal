@@ -36,6 +36,7 @@ import {
   PackageSearch,
   MessagesSquare,
   Activity,
+  GitBranch,
 } from 'lucide-react';
 import { useAuth } from '@/presentation/contexts/AuthContext';
 import { OverviewSection } from '@/presentation/components/features/admin/analytics/OverviewSection';
@@ -55,12 +56,14 @@ import { EngagementSection } from '@/presentation/components/features/admin/anal
 import { CatalogHealthSection } from '@/presentation/components/features/admin/analytics/CatalogHealthSection';
 import { MessagingSection } from '@/presentation/components/features/admin/analytics/MessagingSection';
 import { LiquiditySection } from '@/presentation/components/features/admin/analytics/LiquiditySection';
+import { OnboardingPathSection } from '@/presentation/components/features/admin/analytics/OnboardingPathSection';
 
 const SECTIONS = [
   { id: 'overview', label: 'Overview', icon: BarChart3 },
   { id: 'alerts', label: 'Alerts', icon: Bell },
   { id: 'members', label: 'Members', icon: Users },
   { id: 'onboarding', label: 'Onboarding', icon: Rocket },
+  { id: 'onboarding-path', label: 'Path Compare', icon: GitBranch },
   { id: 'profile', label: 'Profile Health', icon: UserCheck },
   { id: 'segments', label: 'Segments', icon: Layers },
   { id: 'engagement', label: 'Engagement', icon: Gauge },
@@ -169,6 +172,7 @@ function AnalyticsContent() {
             {active.id === 'alerts' && <AlertCenterSection />}
             {active.id === 'members' && <MembersSection />}
             {active.id === 'onboarding' && <OnboardingFunnelSection />}
+            {active.id === 'onboarding-path' && <OnboardingPathSection />}
             {active.id === 'profile' && <ProfileCompletenessSection />}
             {active.id === 'segments' && <SegmentationSection />}
             {active.id === 'engagement' && <EngagementSection />}

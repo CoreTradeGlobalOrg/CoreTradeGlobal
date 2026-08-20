@@ -1049,6 +1049,192 @@ export async function getAdsPerformance() {
   };
 }
 
+// --- Onboarding Path Comparison (Bölüm 22.10) -----------------------------
+
+/**
+ * Splits the onboarding-completion picture into paths so the operator
+ * can see whether one member type is systematically harder to activate
+ * than another. Buyers, sellers, and providers do not have the same
+ * happy path — the Bölüm 12 funnel treats them uniformly, which hides
+ * exactly the story this section makes visible.
+ *
+ * @returns {Promise<{
+ *   snapshotAt: Date,
+ *   byRole: Array<{ id, label, size, steps: Array<{id,label,completed,percent}>, avgSteps: number|null }>,
+ *   byAuthProvider: Array<{ id, label, size, avgSteps: number|null, activatedRatio: number }>,
+ *   byCountry: Array<{ country: string, size: number, avgSteps: number|null, activatedRatio: number }>,
+ * }>}
+ */
+export async function getOnboardingPathComparison() {
+  const [usersSnap, productsSnap, requestsSnap, conversationsSnap] = await Promise.all([
+    getDocs(collection(db, COLLECTIONS.USERS)),
+    getDocs(collection(db, COLLECTIONS.PRODUCTS)),
+    getDocs(collection(db, COLLECTIONS.REQUESTS)),
+    getDocs(collection(db, COLLECTIONS.CONVERSATIONS)),
+  ]);
+
+  const productsByUser = new Map();
+  productsSnap.forEach((doc) => {
+    const uid = doc.data()?.userId;
+    if (uid) productsByUser.set(uid, (productsByUser.get(uid) || 0) + 1);
+  });
+  const rfqsByUser = new Map();
+  requestsSnap.forEach((doc) => {
+    const uid = doc.data()?.userId;
+    if (uid) rfqsByUser.set(uid, (rfqsByUser.get(uid) || 0) + 1);
+  });
+  const messagingUids = new Set();
+  conversationsSnap.forEach((doc) => {
+    const parts = Array.isArray(doc.data()?.participants) ? doc.data().participants : [];
+    for (const uid of parts) messagingUids.add(uid);
+  });
+
+  // Compact profile-weight table — enough to compute the ≥50% threshold.
+  const PROFILE_WEIGHTS = [
+    { weight: 5, ok: (d) => (d.companyName || '').trim() !== '' },
+    { weight: 5, ok: (d) => (d.phone || '').trim() !== '' },
+    { weight: 8, ok: (d) => (d.companyCategory || '').trim() !== '' },
+    { weight: 4, ok: (d) => (d.firstName || '').trim() !== '' && (d.lastName || '').trim() !== '' },
+    { weight: 12, ok: (d) => (d.companyLogo || '').trim() !== '' },
+    { weight: 15, ok: (d) => (d.about || '').trim().length >= 40 },
+    { weight: 8, ok: (d) => (d.companyWebsite || '').trim() !== '' },
+    { weight: 5, ok: (d) => (d.linkedinProfile || '').trim() !== '' },
+    { weight: 5, ok: (d) => (d.country || '').trim() !== '' },
+    { weight: 5, ok: (d) => (d.position || '').trim() !== '' },
+    { weight: 18, ok: (d) => Array.isArray(d.companyDocuments) && d.companyDocuments.length > 0 },
+    { weight: 10, ok: (d) => !!d.emailVerified && !!d.adminApproved },
+  ];
+
+  const rows = usersSnap.docs
+    .map((doc) => {
+      const data = doc.data() || {};
+      if (data.isSuspended) return null;
+      const uid = doc.id;
+      const role = data.role || 'member';
+      const authProvider = (data.authProvider || 'password').toLowerCase();
+      const country = (data.country || '').trim() || 'Unknown';
+
+      const productCount = productsByUser.get(uid) || 0;
+      const rfqCount = rfqsByUser.get(uid) || 0;
+      const hasMessages = messagingUids.has(uid);
+      const emailVerified = !!data.emailVerified;
+      const createdAt = toDate(data.createdAt);
+      const lastLoginAt = toDate(data.lastLoginAt);
+      const secondSignin =
+        createdAt &&
+        lastLoginAt &&
+        lastLoginAt.getTime() > createdAt.getTime() + 60 * 60 * 1000;
+
+      const profilePct =
+        PROFILE_WEIGHTS.reduce((s, f) => s + (f.ok(data) ? f.weight : 0), 0);
+
+      const steps = {
+        email_verified: emailVerified,
+        profile_half: profilePct >= 50,
+        first_content: productCount > 0 || rfqCount > 0,
+        first_message: hasMessages,
+        second_signin: !!secondSignin,
+      };
+      const stepsDone = Object.values(steps).filter(Boolean).length;
+
+      return {
+        uid,
+        role,
+        authProvider,
+        country,
+        steps,
+        stepsDone,
+      };
+    })
+    .filter(Boolean);
+
+  const STEP_DEFS = ONBOARDING_STEPS;
+
+  const groupBy = (keyFn) => {
+    const map = new Map();
+    for (const r of rows) {
+      const key = keyFn(r);
+      if (!map.has(key)) map.set(key, []);
+      map.get(key).push(r);
+    }
+    return map;
+  };
+
+  const stepStats = (group) =>
+    STEP_DEFS.map((step) => {
+      const done = group.reduce((n, r) => n + (r.steps[step.id] ? 1 : 0), 0);
+      const percent = group.length > 0 ? Math.round((done / group.length) * 100) : 0;
+      return { id: step.id, label: step.label, completed: done, percent };
+    });
+
+  const avgStepsDone = (group) => {
+    if (group.length === 0) return null;
+    const total = group.reduce((s, r) => s + r.stepsDone, 0);
+    return Math.round((total / group.length) * 10) / 10;
+  };
+
+  const activatedRatio = (group) => {
+    if (group.length === 0) return 0;
+    const activated = group.filter((r) => r.stepsDone >= 4).length;
+    return Math.round((activated / group.length) * 100);
+  };
+
+  // Role labels — map internal role → friendly path label.
+  const ROLE_LABEL = {
+    member: 'Trade / Buyer + Seller',
+    logistics_provider: 'Logistics Provider',
+    insurance_provider: 'Insurance Provider',
+    admin: 'Admin',
+    lawyer: 'Lawyer',
+  };
+  const byRole = Array.from(groupBy((r) => r.role).entries())
+    .map(([role, group]) => ({
+      id: role,
+      label: ROLE_LABEL[role] || role,
+      size: group.length,
+      steps: stepStats(group),
+      avgSteps: avgStepsDone(group),
+      activatedRatio: activatedRatio(group),
+    }))
+    .sort((a, b) => b.size - a.size);
+
+  // Auth provider — where did they come from?
+  const PROVIDER_LABEL = {
+    password: 'Email / Password',
+    google: 'Google',
+    linkedin: 'LinkedIn',
+    'google.com': 'Google',
+  };
+  const byAuthProvider = Array.from(groupBy((r) => r.authProvider).entries())
+    .map(([id, group]) => ({
+      id,
+      label: PROVIDER_LABEL[id] || id,
+      size: group.length,
+      avgSteps: avgStepsDone(group),
+      activatedRatio: activatedRatio(group),
+    }))
+    .sort((a, b) => b.size - a.size);
+
+  // Country — top 10 by cohort size, so tiny cohorts don't create noise.
+  const byCountry = Array.from(groupBy((r) => r.country).entries())
+    .map(([country, group]) => ({
+      country,
+      size: group.length,
+      avgSteps: avgStepsDone(group),
+      activatedRatio: activatedRatio(group),
+    }))
+    .filter((row) => row.size >= 3) // guard against noise from single-user countries
+    .sort((a, b) => b.size - a.size)
+    .slice(0, 12);
+
+  return {
+    snapshotAt: new Date(),
+    byRole,
+    byAuthProvider,
+    byCountry,
+  };
+}
+
 // --- Marketplace Liquidity (Bölüm 22.5) -----------------------------------
 
 /**
