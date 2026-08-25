@@ -1235,6 +1235,291 @@ export async function getOnboardingPathComparison() {
   };
 }
 
+// --- Fraud & Risk — self-hosted first pass (Bölüm 22.1) --------------------
+
+/**
+ * Common free-email providers we intentionally ignore in the
+ * "same-domain cluster" detector — a hundred gmail accounts
+ * doesn't mean fraud, they're just how most B2B leads sign up.
+ */
+const FREE_EMAIL_PROVIDERS = new Set([
+  'gmail.com', 'googlemail.com',
+  'yahoo.com', 'yahoo.co.uk', 'yahoo.co.in', 'ymail.com',
+  'outlook.com', 'hotmail.com', 'live.com', 'msn.com',
+  'icloud.com', 'me.com', 'mac.com',
+  'aol.com',
+  'protonmail.com', 'proton.me',
+  'yandex.com', 'yandex.ru',
+  'mail.com', 'mail.ru',
+  'gmx.com', 'gmx.de',
+  'zoho.com',
+  'qq.com', '163.com', '126.com', 'sina.com',
+]);
+
+/**
+ * Regex patterns reused from Messaging analytics — off-platform
+ * steering signals aggregated per sender for the fraud panel.
+ */
+const OFF_PLATFORM_PATTERNS_FRAUD = [
+  /[\w.+-]+@[\w-]+\.[\w.-]{2,}/i,                    // email
+  /(?:\+?\d[\s.-]?){8,}\d/,                          // phone
+  /\bwhat[\s-]*s\s*app\b|wa\.me|whatsapp/i,          // WhatsApp
+  /\btelegram\b|t\.me\/|@\w+_bot\b/i,                // Telegram
+  /\bskype[\s:.]*[\w-]+/i,                           // Skype
+  /\b[A-Z]{2}\d{2}[A-Z0-9\s]{10,30}\b/,              // IBAN
+];
+
+function domainOf(email) {
+  const at = (email || '').lastIndexOf('@');
+  if (at < 0) return null;
+  return email.slice(at + 1).trim().toLowerCase() || null;
+}
+
+/**
+ * Self-hosted first-pass fraud & risk snapshot. Derives every
+ * signal from Firestore data we already have — no SEON / Sift /
+ * MaxMind subscription. Fidelity is limited (no IP intelligence,
+ * no device fingerprinting), but the six signals below catch the
+ * common cases at current scale.
+ *
+ * Signals:
+ *   1. Same corporate-email-domain clusters — 3+ registrations from
+ *      the same non-free-provider domain
+ *   2. Rapid signup clusters — 3+ users registered within a 15-min
+ *      window (bot-signup pattern)
+ *   3. Duplicate company names — multiple non-suspended users with
+ *      identical companyName
+ *   4. Off-platform mesage senders — top talkers by count of
+ *      messages that leaked email/phone/WhatsApp/etc.
+ *   5. Stale unverified — registered >7 days ago, email still
+ *      unconfirmed (never-verified junk signup)
+ *   6. High-activity unverified — unverified user with 3+ products
+ *      or RFQs (unusual pattern, usually means we forgot to verify)
+ */
+export async function getRiskSignals() {
+  const now = Date.now();
+  const RAPID_WINDOW_MS = 15 * 60 * 1000;
+
+  const [usersSnap, productsSnap, requestsSnap, messagesSnap] = await Promise.all([
+    getDocs(collection(db, COLLECTIONS.USERS)),
+    getDocs(collection(db, COLLECTIONS.PRODUCTS)),
+    getDocs(collection(db, COLLECTIONS.REQUESTS)),
+    getDocs(collectionGroup(db, 'messages')),
+  ]);
+
+  const productsByUser = new Map();
+  productsSnap.forEach((doc) => {
+    const uid = doc.data()?.userId;
+    if (uid) productsByUser.set(uid, (productsByUser.get(uid) || 0) + 1);
+  });
+  const rfqsByUser = new Map();
+  requestsSnap.forEach((doc) => {
+    const uid = doc.data()?.userId;
+    if (uid) rfqsByUser.set(uid, (rfqsByUser.get(uid) || 0) + 1);
+  });
+
+  // Off-platform leak counter per sender.
+  const offPlatformByUser = new Map();
+  messagesSnap.forEach((doc) => {
+    const parent = doc.ref?.parent?.parent;
+    if (!parent || parent.parent?.id !== COLLECTIONS.CONVERSATIONS) return;
+    const uid = doc.data()?.senderId;
+    const content = (doc.data()?.content || '').trim();
+    if (!uid || !content) return;
+    for (const pat of OFF_PLATFORM_PATTERNS_FRAUD) {
+      if (pat.test(content)) {
+        offPlatformByUser.set(uid, (offPlatformByUser.get(uid) || 0) + 1);
+        break;
+      }
+    }
+  });
+
+  // Build per-user rows with the fields we need.
+  const users = usersSnap.docs.map((doc) => {
+    const data = doc.data() || {};
+    const createdAt = toDate(data.createdAt);
+    const emailDomain = domainOf(data.email);
+    return {
+      uid: doc.id,
+      email: data.email || '',
+      displayName: data.fullName || data.displayName || '',
+      companyName: (data.companyName || '').trim(),
+      country: data.country || '',
+      role: data.role || 'member',
+      emailVerified: !!data.emailVerified,
+      adminApproved: !!data.adminApproved,
+      isSuspended: !!data.isSuspended,
+      createdAt,
+      emailDomain,
+      products: productsByUser.get(doc.id) || 0,
+      rfqs: rfqsByUser.get(doc.id) || 0,
+      offPlatformMsgs: offPlatformByUser.get(doc.id) || 0,
+    };
+  });
+
+  // Signal 1: same corporate-domain clusters.
+  const domainClusters = new Map();
+  for (const u of users) {
+    if (!u.emailDomain) continue;
+    if (FREE_EMAIL_PROVIDERS.has(u.emailDomain)) continue;
+    if (!domainClusters.has(u.emailDomain)) domainClusters.set(u.emailDomain, []);
+    domainClusters.get(u.emailDomain).push(u);
+  }
+  const domainRisk = Array.from(domainClusters.entries())
+    .filter(([, list]) => list.length >= 3)
+    .map(([domain, list]) => ({
+      domain,
+      count: list.length,
+      members: list.map((u) => ({
+        uid: u.uid,
+        displayName: u.displayName,
+        email: u.email,
+        companyName: u.companyName,
+        isSuspended: u.isSuspended,
+      })),
+    }))
+    .sort((a, b) => b.count - a.count);
+
+  // Signal 2: rapid signup clusters.
+  const sortedByCreated = users
+    .filter((u) => u.createdAt)
+    .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+  const rapidClusters = [];
+  let clusterStart = 0;
+  for (let i = 1; i < sortedByCreated.length; i++) {
+    const gap = sortedByCreated[i].createdAt.getTime() -
+                sortedByCreated[i - 1].createdAt.getTime();
+    if (gap > RAPID_WINDOW_MS) {
+      // Close the previous cluster.
+      const slice = sortedByCreated.slice(clusterStart, i);
+      if (slice.length >= 3) {
+        rapidClusters.push({
+          firstAt: slice[0].createdAt,
+          lastAt: slice[slice.length - 1].createdAt,
+          count: slice.length,
+          members: slice.map((u) => ({
+            uid: u.uid,
+            displayName: u.displayName,
+            email: u.email,
+            createdAt: u.createdAt,
+          })),
+        });
+      }
+      clusterStart = i;
+    }
+  }
+  // Tail cluster.
+  const tail = sortedByCreated.slice(clusterStart);
+  if (tail.length >= 3) {
+    rapidClusters.push({
+      firstAt: tail[0].createdAt,
+      lastAt: tail[tail.length - 1].createdAt,
+      count: tail.length,
+      members: tail.map((u) => ({
+        uid: u.uid,
+        displayName: u.displayName,
+        email: u.email,
+        createdAt: u.createdAt,
+      })),
+    });
+  }
+  rapidClusters.sort((a, b) => b.count - a.count);
+
+  // Signal 3: duplicate company names (non-suspended only).
+  const companyMap = new Map();
+  for (const u of users) {
+    if (u.isSuspended) continue;
+    const name = u.companyName.toLowerCase();
+    if (!name) continue;
+    if (!companyMap.has(name)) companyMap.set(name, []);
+    companyMap.get(name).push(u);
+  }
+  const duplicateCompanies = Array.from(companyMap.entries())
+    .filter(([, list]) => list.length >= 2)
+    .map(([name, list]) => ({
+      companyName: list[0].companyName,
+      count: list.length,
+      members: list.map((u) => ({
+        uid: u.uid,
+        displayName: u.displayName,
+        email: u.email,
+      })),
+    }))
+    .sort((a, b) => b.count - a.count);
+
+  // Signal 4: off-platform steerers.
+  const topOffPlatformSenders = users
+    .filter((u) => u.offPlatformMsgs > 0)
+    .sort((a, b) => b.offPlatformMsgs - a.offPlatformMsgs)
+    .slice(0, 15)
+    .map((u) => ({
+      uid: u.uid,
+      displayName: u.displayName,
+      email: u.email,
+      companyName: u.companyName,
+      count: u.offPlatformMsgs,
+      isSuspended: u.isSuspended,
+    }));
+
+  // Signal 5: stale unverified.
+  const staleUnverified = users
+    .filter(
+      (u) =>
+        !u.emailVerified &&
+        !u.isSuspended &&
+        u.createdAt &&
+        now - u.createdAt.getTime() > 7 * MS_PER_DAY,
+    )
+    .map((u) => ({
+      uid: u.uid,
+      displayName: u.displayName,
+      email: u.email,
+      companyName: u.companyName,
+      country: u.country,
+      daysSinceRegister: Math.floor((now - u.createdAt.getTime()) / MS_PER_DAY),
+    }))
+    .sort((a, b) => b.daysSinceRegister - a.daysSinceRegister);
+
+  // Signal 6: high-activity unverified.
+  const highActivityUnverified = users
+    .filter(
+      (u) =>
+        (!u.emailVerified || !u.adminApproved) &&
+        !u.isSuspended &&
+        (u.products + u.rfqs) >= 3,
+    )
+    .map((u) => ({
+      uid: u.uid,
+      displayName: u.displayName,
+      email: u.email,
+      companyName: u.companyName,
+      products: u.products,
+      rfqs: u.rfqs,
+      emailVerified: u.emailVerified,
+      adminApproved: u.adminApproved,
+    }))
+    .sort((a, b) => b.products + b.rfqs - (a.products + a.rfqs));
+
+  return {
+    snapshotAt: new Date(),
+    totalUsers: users.length,
+    counts: {
+      domainRisk: domainRisk.length,
+      rapidClusters: rapidClusters.length,
+      duplicateCompanies: duplicateCompanies.length,
+      offPlatformSenders: topOffPlatformSenders.length,
+      staleUnverified: staleUnverified.length,
+      highActivityUnverified: highActivityUnverified.length,
+    },
+    domainRisk,
+    rapidClusters,
+    duplicateCompanies,
+    topOffPlatformSenders,
+    staleUnverified,
+    highActivityUnverified,
+  };
+}
+
 // --- Marketplace Liquidity (Bölüm 22.5) -----------------------------------
 
 /**

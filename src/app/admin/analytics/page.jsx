@@ -38,6 +38,8 @@ import {
   Activity,
   GitBranch,
   RefreshCcw,
+  Shield,
+  Radio,
 } from 'lucide-react';
 import { useAuth } from '@/presentation/contexts/AuthContext';
 import { OverviewSection } from '@/presentation/components/features/admin/analytics/OverviewSection';
@@ -60,6 +62,8 @@ import { LiquiditySection } from '@/presentation/components/features/admin/analy
 import { OnboardingPathSection } from '@/presentation/components/features/admin/analytics/OnboardingPathSection';
 import { HubSpotSection } from '@/presentation/components/features/admin/analytics/HubSpotSection';
 import { HubSpotSyncSection } from '@/presentation/components/features/admin/analytics/HubSpotSyncSection';
+import { FraudSection } from '@/presentation/components/features/admin/analytics/FraudSection';
+import { PartnerHealthSection } from '@/presentation/components/features/admin/analytics/PartnerHealthSection';
 
 const SECTIONS = [
   { id: 'overview', label: 'Overview', icon: BarChart3 },
@@ -72,6 +76,8 @@ const SECTIONS = [
   { id: 'engagement', label: 'Engagement', icon: Gauge },
   { id: 'hygiene', label: 'Comms Hygiene', icon: MessageCircle },
   { id: 'trust', label: 'Trust', icon: ShieldCheck },
+  { id: 'fraud', label: 'Fraud & Risk', icon: Shield },
+  { id: 'partner-health', label: 'Partner Health', icon: Radio },
   { id: 'growth', label: 'Growth', icon: TrendingUp },
   { id: 'trade-flow', label: 'Trade Flow', icon: Package },
   { id: 'liquidity', label: 'Liquidity', icon: Activity },
@@ -182,6 +188,8 @@ function AnalyticsContent() {
             {active.id === 'engagement' && <EngagementSection />}
             {active.id === 'hygiene' && <CommunicationHygieneSection />}
             {active.id === 'trust' && <TrustSection />}
+            {active.id === 'fraud' && <FraudSection />}
+            {active.id === 'partner-health' && <PartnerHealthSection />}
             {active.id === 'team-log' && <TeamLogSection />}
             {active.id === 'growth' && <GrowthSection />}
             {active.id === 'hubspot' && <HubSpotSection />}
