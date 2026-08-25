@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 import { Ga4LiveBlock } from '@/presentation/components/features/admin/analytics/Ga4LiveBlock';
 import { ClarityLiveBlock } from '@/presentation/components/features/admin/analytics/ClarityLiveBlock';
+import { VercelLiveBlock } from '@/presentation/components/features/admin/analytics/VercelLiveBlock';
 
 const CLARITY_PROJECT_ID = process.env.NEXT_PUBLIC_CLARITY_PROJECT_ID || null;
 const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID || null;
@@ -138,18 +139,8 @@ export function SiteAnalyticsSection() {
       {/* Live Clarity block — inline UX-friction signals via /api/analytics/clarity */}
       <ClarityLiveBlock />
 
-      {/* Info banner on the remaining deep-link provider */}
-      <div className="rounded-2xl border border-[rgba(59,130,246,0.25)] bg-[rgba(59,130,246,0.06)] p-4 flex items-start gap-3">
-        <Info className="w-4 h-4 text-blue-400 mt-0.5 flex-shrink-0" />
-        <div className="text-xs text-[#A0A0A0]">
-          <p className="text-white font-semibold mb-1">Vercel Analytics stays as a deep-link</p>
-          <p>
-            Vercel Web Analytics' REST API is Pro-plan-only and Core Web Vitals data at
-            our traffic scale reads cleaner in Vercel's own UI. The "Open Vercel" button
-            on the provider card below jumps straight into the native dashboard.
-          </p>
-        </div>
-      </div>
+      {/* Live Vercel Web Analytics block */}
+      <VercelLiveBlock />
 
       {/* Provider cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
