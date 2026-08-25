@@ -40,6 +40,7 @@ import {
   RefreshCcw,
   Shield,
   Radio,
+  SearchCode,
 } from 'lucide-react';
 import { useAuth } from '@/presentation/contexts/AuthContext';
 import { OverviewSection } from '@/presentation/components/features/admin/analytics/OverviewSection';
@@ -64,6 +65,7 @@ import { HubSpotSection } from '@/presentation/components/features/admin/analyti
 import { HubSpotSyncSection } from '@/presentation/components/features/admin/analytics/HubSpotSyncSection';
 import { FraudSection } from '@/presentation/components/features/admin/analytics/FraudSection';
 import { PartnerHealthSection } from '@/presentation/components/features/admin/analytics/PartnerHealthSection';
+import { SeoSection } from '@/presentation/components/features/admin/analytics/SeoSection';
 
 const SECTIONS = [
   { id: 'overview', label: 'Overview', icon: BarChart3 },
@@ -86,6 +88,7 @@ const SECTIONS = [
   { id: 'hubspot', label: 'HubSpot CRM', icon: Mail },
   { id: 'hubspot-sync', label: 'HubSpot Sync', icon: RefreshCcw },
   { id: 'site', label: 'Site Analytics', icon: Globe },
+  { id: 'seo', label: 'SEO', icon: SearchCode },
   { id: 'ads', label: 'Ads', icon: LayoutGrid },
   { id: 'outreach', label: 'Outreach', icon: Megaphone, comingSoon: true },
   { id: 'team-log', label: 'Team Daily Log', icon: ClipboardList },
@@ -195,6 +198,7 @@ function AnalyticsContent() {
             {active.id === 'hubspot' && <HubSpotSection />}
             {active.id === 'hubspot-sync' && <HubSpotSyncSection />}
             {active.id === 'site' && <SiteAnalyticsSection />}
+            {active.id === 'seo' && <SeoSection />}
             {active.id === 'trade-flow' && <TradeFlowSection />}
             {active.id === 'liquidity' && <LiquiditySection />}
             {active.id === 'catalog' && <CatalogHealthSection />}
