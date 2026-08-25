@@ -1,81 +1,25 @@
 /**
- * /api/analytics/hubspot — HubSpot CRM read-only aggregator.
+ * /api/analytics/hubspot — HubSpot CRM summary aggregator.
  *
- * The Private App access token is server-only; it never leaves this
- * route. Client calls this endpoint, gets a plain JSON summary, and
- * renders it in the HubSpot section.
+ * See src/lib/analytics/hubspotServer.js for the shared client
+ * (rate-limit retry, serial runner, upsert helpers). This route
+ * only concerns itself with the discovery + summary shape rendered
+ * by the HubSpot section.
  *
- * Two constraints shape the implementation:
- *   1. HubSpot Search API has a 5 req/s rate limit on Free tier.
- *      We batch the ~19 discovery calls in chunks of 3 with tiny
- *      pauses so we stay under the SECONDLY policy.
- *   2. Panel opens are cheap on the client but HubSpot's quotas
- *      are not — cache the whole summary in module scope for 5
- *      minutes so a page refresh doesn't hit HubSpot again.
- *
- * Bölüm 13 (sync-to-Firestore via cron) is the follow-up that
- * eliminates the per-panel-open HubSpot round-trip entirely.
+ * Caching:
+ *   Module-scope memo, 5 minutes. Coalesces simultaneous cache
+ *   misses so a page refresh burst doesn't kick off two batches.
+ *   ?refresh=1 bypasses the cache.
  */
 
 import { NextResponse } from 'next/server';
+import { hs, runSerial } from '@/lib/analytics/hubspotServer';
 
-const HUBSPOT_API = 'https://api.hubapi.com';
-const CACHE_TTL_MS = 5 * 60 * 1000;   // 5 minutes
-// HubSpot Free tier's search endpoint caps at 4 req/s per portal
-// across ALL private apps. Anything faster than one request every
-// 300 ms trips SECONDLY. Serial execution with a slight buffer
-// keeps us out of trouble even if another job on the same portal
-// is also hitting the API.
-const REQUEST_INTERVAL_MS = 350;
-const RETRY_ATTEMPTS = 4;
-const RETRY_BASE_DELAY_MS = 1500;
+const CACHE_TTL_MS = 5 * 60 * 1000;
 
-// Module-scope cache. Route handlers on Vercel Fluid Compute share
-// instances across concurrent invocations, so this is a real cache,
-// not per-request. On cold start it resets — that's fine, still
-// beats hitting HubSpot every panel open.
 let cachedPayload = null;
 let cachedAt = 0;
 let inFlight = null;
-
-function sleep(ms) {
-  return new Promise((r) => setTimeout(r, ms));
-}
-
-async function hs(path, options = {}) {
-  const token = process.env.HUBSPOT_ACCESS_TOKEN;
-  if (!token) throw new Error('HUBSPOT_ACCESS_TOKEN missing');
-
-  let lastErr = null;
-  for (let attempt = 0; attempt < RETRY_ATTEMPTS; attempt++) {
-    const res = await fetch(`${HUBSPOT_API}${path}`, {
-      ...options,
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-        ...(options.headers || {}),
-      },
-      cache: 'no-store',
-    });
-
-    if (res.ok) return res.json();
-
-    // 429 = rate limit. Honour Retry-After if present, else back off
-    // exponentially. Also retry 5xx once or twice — HubSpot has
-    // occasional 503s that clear immediately.
-    const retryable = res.status === 429 || res.status >= 500;
-    const body = await res.text().catch(() => '');
-    lastErr = new Error(`HubSpot ${res.status}: ${body.slice(0, 200)}`);
-    if (!retryable || attempt === RETRY_ATTEMPTS - 1) throw lastErr;
-
-    const retryAfterHeader = res.headers.get('Retry-After');
-    const retryAfterMs = retryAfterHeader
-      ? Math.min(30000, Number(retryAfterHeader) * 1000)
-      : Math.min(15000, RETRY_BASE_DELAY_MS * 2 ** attempt);
-    await sleep(retryAfterMs);
-  }
-  throw lastErr || new Error('HubSpot: max retries exceeded');
-}
 
 async function countWithFilter(objectType, filterGroups = []) {
   const data = await hs(`/crm/v3/objects/${objectType}/search`, {
@@ -83,27 +27,6 @@ async function countWithFilter(objectType, filterGroups = []) {
     body: JSON.stringify({ filterGroups, limit: 1, properties: ['hs_object_id'] }),
   });
   return data.total ?? 0;
-}
-
-/**
- * Run `tasks` (array of thunks returning promises) strictly serial
- * with a fixed gap between requests. HubSpot Free tier's search
- * endpoint tolerates a bit under 4 req/s but has no burst forgiveness
- * — the moment two requests land in the same second the SECONDLY
- * policy fires. Serial + 350 ms gap keeps us under the limit even
- * if the previous request returned instantly.
- */
-async function runSerial(tasks) {
-  const results = [];
-  for (let i = 0; i < tasks.length; i++) {
-    // eslint-disable-next-line no-await-in-loop
-    results.push(await tasks[i]());
-    if (i < tasks.length - 1) {
-      // eslint-disable-next-line no-await-in-loop
-      await sleep(REQUEST_INTERVAL_MS);
-    }
-  }
-  return results;
 }
 
 async function loadHubspotSummary() {
@@ -123,7 +46,6 @@ async function loadHubspotSummary() {
   ];
 
   const tasks = [
-    // Count tasks — 8 of these
     () => countWithFilter('contacts').then((v) => ['contactsTotal', v]),
     () => countWithFilter('contacts', [
       { filters: [{ propertyName: 'createdate', operator: 'GTE', value: startOfLast7 }] },
@@ -142,7 +64,6 @@ async function loadHubspotSummary() {
     () => countWithFilter('deals', [
       { filters: [{ propertyName: 'dealstage', operator: 'EQ', value: 'closedlost' }] },
     ]).then((v) => ['dealsLost', v]),
-    // Recent lists — 2 more
     () => hs('/crm/v3/objects/contacts/search', {
       method: 'POST',
       body: JSON.stringify({
@@ -159,7 +80,6 @@ async function loadHubspotSummary() {
         limit: 10,
       }),
     }).then((v) => ['recentDealsRes', v]),
-    // Lifecycle counts — 8 more
     ...LIFECYCLE_STAGES.map((stage) => () =>
       countWithFilter('contacts', [
         { filters: [{ propertyName: 'lifecyclestage', operator: 'EQ', value: stage }] },
@@ -229,7 +149,6 @@ export async function GET(request) {
   const bypass = url.searchParams.get('refresh') === '1';
   const now = Date.now();
 
-  // Cache hit — return the memoised payload untouched.
   if (!bypass && cachedPayload && now - cachedAt < CACHE_TTL_MS) {
     return NextResponse.json({
       ...cachedPayload,
@@ -238,8 +157,6 @@ export async function GET(request) {
     });
   }
 
-  // Coalesce simultaneous cache misses — if a request is already in
-  // flight, join it instead of firing a second full batch.
   if (!bypass && inFlight) {
     try {
       const payload = await inFlight;
