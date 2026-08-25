@@ -75,7 +75,10 @@ export function HubSpotSection() {
     let cancelled = false;
     setLoading(true);
     setError(null);
-    fetch('/api/analytics/hubspot', { cache: 'no-store' })
+    const url = refreshTick > 0
+      ? '/api/analytics/hubspot?refresh=1'
+      : '/api/analytics/hubspot';
+    fetch(url, { cache: 'no-store' })
       .then(async (r) => {
         const body = await r.json().catch(() => null);
         if (!r.ok || !body?.ok) {
