@@ -30,6 +30,7 @@ import {
   Users2,
   XCircle,
 } from 'lucide-react';
+import { Ga4LiveBlock } from '@/presentation/components/features/admin/analytics/Ga4LiveBlock';
 
 const CLARITY_PROJECT_ID = process.env.NEXT_PUBLIC_CLARITY_PROJECT_ID || null;
 const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID || null;
@@ -130,22 +131,19 @@ export function SiteAnalyticsSection() {
         </p>
       </div>
 
-      {/* Info banner on the deferred inline dashboard */}
+      {/* Live GA4 block — inline metrics via /api/analytics/ga4 */}
+      <Ga4LiveBlock />
+
+      {/* Info banner on the still-deep-link providers */}
       <div className="rounded-2xl border border-[rgba(59,130,246,0.25)] bg-[rgba(59,130,246,0.06)] p-4 flex items-start gap-3">
         <Info className="w-4 h-4 text-blue-400 mt-0.5 flex-shrink-0" />
         <div className="text-xs text-[#A0A0A0]">
-          <p className="text-white font-semibold mb-1">Why no numbers here yet?</p>
+          <p className="text-white font-semibold mb-1">Clarity + Vercel Analytics stay as deep-links</p>
           <p>
-            The GA4 Data API and Clarity Export API both require service-account
-            or paid-tier work — pulling inline charts in is its own sprint. For now
-            this panel acts as a <strong>control tower</strong>: it shows the
-            connections are healthy and jumps you into each dashboard in one click.
-            <br />
-            <br />
-            <span className="text-[#606060]">
-              After the backend migration (own API), GA4 data will be pulled locally
-              via cron and inline charts will land here.
-            </span>
+            Microsoft Clarity's Data Export API is Pro-plan only, and Vercel Web Analytics'
+            REST API requires the Pro subscription too. Neither is worth the monthly
+            cost at current traffic scale — the "Open dashboard" buttons on the provider
+            cards below jump straight into each provider's native UI.
           </p>
         </div>
       </div>
