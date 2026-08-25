@@ -6674,3 +6674,203 @@ exports.trackAdClick = onCall(async (request) => {
 });
 
 
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HubSpot CRM sync (Bölüm 5 + 13, automatic tier)
+// ─────────────────────────────────────────────────────────────────────────────
+// Every write here is fire-and-forget from the origin operation's point of
+// view. HubSpot outages, rate limits, or auth failures must NEVER fail a
+// user registration, an ad inquiry submission, or a deal update.
+//
+// All three functions no-op with a log when HUBSPOT_ACCESS_TOKEN is missing
+// so a partial config (e.g. staging without the token wired) doesn't
+// spam function-error logs.
+//
+// Idempotency: each function stores the created HubSpot ID back on the
+// source doc (`hubspotContactId`, `hubspotDealId`) so a re-trigger PATCHes
+// instead of duplicating.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const hubspot = require('./hubspotClient');
+
+/**
+ * Upsert the HubSpot contact whenever a user doc is created or
+ * updated. Handles email/password, Google, LinkedIn, and admin-
+ * approval paths uniformly — HubSpot always ends up with the
+ * latest snapshot within seconds.
+ */
+exports.syncUserToHubspot = onDocumentWritten('users/{uid}', async (event) => {
+  if (!hubspot.isConfigured()) {
+    console.log('[hubspot] syncUserToHubspot skipped — HUBSPOT_ACCESS_TOKEN not set');
+    return;
+  }
+
+  const after = event.data?.after?.data();
+  if (!after) return; // user was deleted — nothing to sync
+
+  // Skip suspended users — we don't want to keep pushing state for
+  // an account that's been kicked off the platform.
+  if (after.isSuspended) {
+    console.log(`[hubspot] syncUserToHubspot skipped ${event.params.uid} — suspended`);
+    return;
+  }
+
+  const uid = event.params.uid;
+  const user = { uid, ...after };
+
+  try {
+    const result = await hubspot.upsertContact(user);
+    if (result.skipped) {
+      console.log(`[hubspot] syncUserToHubspot skipped ${uid}: ${result.reason} (${result.email || ''})`);
+      return;
+    }
+    // Store the HubSpot id back on the doc so future writes can
+    // reference it. Guard against a write loop by only patching
+    // when it actually changed.
+    if (result.hubspotId && after.hubspotContactId !== result.hubspotId) {
+      await db.collection('users').doc(uid).update({
+        hubspotContactId: result.hubspotId,
+        hubspotSyncedAt: Timestamp.now(),
+      });
+    }
+    console.log(`[hubspot] syncUserToHubspot ${result.created ? 'created' : 'updated'} ${uid} → ${result.hubspotId}`);
+  } catch (err) {
+    // Log loudly but do not throw — throwing would put the function
+    // in the retry loop and eventually into the dead-letter queue,
+    // both of which are wrong for analytics writes.
+    console.error(`[hubspot] syncUserToHubspot FAILED for ${uid}:`, err.message);
+  }
+});
+
+/**
+ * When a member submits an ad inquiry, create a HubSpot deal in the
+ * Platform Revenue pipeline so the sales side sees it immediately.
+ * Associates to the inquirer's contact via email if present.
+ */
+exports.syncAdInquiryToHubspot = onDocumentCreated('adInquiries/{id}', async (event) => {
+  if (!hubspot.isConfigured()) {
+    console.log('[hubspot] syncAdInquiryToHubspot skipped — HUBSPOT_ACCESS_TOKEN not set');
+    return;
+  }
+
+  const data = event.data?.data();
+  if (!data) return;
+  const id = event.params.id;
+
+  const dealname = `Ad Inquiry — ${data.package || 'Unknown package'} · ${data.company || data.contactName || 'Unknown'}`;
+  const productName = data.productSnapshot?.name || '';
+  const amount = data.productSnapshot?.price;
+
+  try {
+    const { hubspotId, created } = await hubspot.upsertDeal({
+      dealname,
+      amount,
+      // Free tier default pipeline stages: appointmentscheduled,
+      // qualifiedtobuy, presentationscheduled, decisionmakerboughtin,
+      // contractsent, closedwon, closedlost.
+      dealstage: 'appointmentscheduled',
+      pipeline: 'default',
+      contactEmail: data.email,
+      extraProps: {
+        // Notes-ish extra properties: store CTG-side references so a
+        // sales rep can jump back to the inquiry in the admin panel.
+        // These go into HubSpot's built-in notes/description if the
+        // property doesn't exist as custom.
+        description: [
+          data.brief && `Brief: ${data.brief}`,
+          productName && `Product: ${productName}`,
+          data.campaignMonth && `Campaign month: ${data.campaignMonth}`,
+          data.campaignWeek && `Week: ${data.campaignWeek}`,
+          data.website && `Website: ${data.website}`,
+          `CTG inquiry id: ${id}`,
+        ].filter(Boolean).join('\n'),
+      },
+    });
+
+    await db.collection('adInquiries').doc(id).update({
+      hubspotDealId: hubspotId,
+      hubspotSyncedAt: Timestamp.now(),
+    });
+    console.log(`[hubspot] syncAdInquiryToHubspot ${created ? 'created' : 'updated'} ${id} → ${hubspotId}`);
+  } catch (err) {
+    console.error(`[hubspot] syncAdInquiryToHubspot FAILED for ${id}:`, err.message);
+  }
+});
+
+/**
+ * Trade deals live in the deals collection. Mirror them into HubSpot
+ * so the ops team has one funnel view. Stage maps to HubSpot's
+ * default pipeline stages.
+ */
+const DEAL_STAGE_TO_HUBSPOT = {
+  negotiating: 'qualifiedtobuy',
+  accepted: 'decisionmakerboughtin',
+  contract_approved: 'decisionmakerboughtin',
+  providers_selected: 'contractsent',
+  delivered: 'closedwon',
+  rejected: 'closedlost',
+  expired: 'closedlost',
+  withdrawn: 'closedlost',
+};
+
+exports.syncDealToHubspot = onDocumentWritten('deals/{id}', async (event) => {
+  if (!hubspot.isConfigured()) return;
+
+  const after = event.data?.after?.data();
+  if (!after) return; // deal deleted
+  const id = event.params.id;
+
+  const status = after.status || 'negotiating';
+  const dealstage = DEAL_STAGE_TO_HUBSPOT[status] || 'qualifiedtobuy';
+  const productName = after.productName || after.productId || 'Unknown product';
+  const dealname = `Trade — ${productName}`;
+
+  // Pull buyer email for association (deals hold buyerId/sellerId, not emails).
+  let contactEmail = null;
+  try {
+    if (after.buyerId) {
+      const buyerSnap = await db.collection('users').doc(after.buyerId).get();
+      contactEmail = buyerSnap.exists ? (buyerSnap.data().email || null) : null;
+    }
+  } catch (lookupErr) {
+    console.warn(`[hubspot] syncDealToHubspot buyer lookup failed for ${id}:`, lookupErr.message);
+  }
+
+  // Amount from latest offer snapshot if present.
+  const offer = after.latestOfferSnapshot || {};
+  const amount = offer.amount || offer.totalAmount || null;
+
+  try {
+    const existingId = after.hubspotDealId || null;
+    const { hubspotId, created } = await hubspot.upsertDeal({
+      dealId: existingId,
+      dealname,
+      amount,
+      dealstage,
+      pipeline: 'default',
+      contactEmail,
+      extraProps: {
+        description: [
+          `Status: ${status}`,
+          `Round: ${after.round ?? 1}`,
+          after.productCategory && `Category: ${after.productCategory}`,
+          `CTG deal id: ${id}`,
+        ].filter(Boolean).join('\n'),
+      },
+    });
+
+    if (!existingId && hubspotId) {
+      await db.collection('deals').doc(id).update({
+        hubspotDealId: hubspotId,
+        hubspotSyncedAt: Timestamp.now(),
+      });
+    } else if (existingId) {
+      await db.collection('deals').doc(id).update({
+        hubspotSyncedAt: Timestamp.now(),
+      });
+    }
+    console.log(`[hubspot] syncDealToHubspot ${created ? 'created' : 'updated'} ${id} → ${hubspotId} (stage=${dealstage})`);
+  } catch (err) {
+    console.error(`[hubspot] syncDealToHubspot FAILED for ${id}:`, err.message);
+  }
+});
