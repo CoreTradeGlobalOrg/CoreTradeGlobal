@@ -57,6 +57,7 @@ import { CatalogHealthSection } from '@/presentation/components/features/admin/a
 import { MessagingSection } from '@/presentation/components/features/admin/analytics/MessagingSection';
 import { LiquiditySection } from '@/presentation/components/features/admin/analytics/LiquiditySection';
 import { OnboardingPathSection } from '@/presentation/components/features/admin/analytics/OnboardingPathSection';
+import { HubSpotSection } from '@/presentation/components/features/admin/analytics/HubSpotSection';
 
 const SECTIONS = [
   { id: 'overview', label: 'Overview', icon: BarChart3 },
@@ -74,7 +75,7 @@ const SECTIONS = [
   { id: 'liquidity', label: 'Liquidity', icon: Activity },
   { id: 'catalog', label: 'Catalog Health', icon: PackageSearch },
   { id: 'messaging', label: 'Messaging', icon: MessagesSquare },
-  { id: 'hubspot', label: 'HubSpot CRM', icon: Mail, comingSoon: true },
+  { id: 'hubspot', label: 'HubSpot CRM', icon: Mail },
   { id: 'site', label: 'Site Analytics', icon: Globe },
   { id: 'ads', label: 'Ads', icon: LayoutGrid },
   { id: 'outreach', label: 'Outreach', icon: Megaphone, comingSoon: true },
@@ -180,6 +181,7 @@ function AnalyticsContent() {
             {active.id === 'trust' && <TrustSection />}
             {active.id === 'team-log' && <TeamLogSection />}
             {active.id === 'growth' && <GrowthSection />}
+            {active.id === 'hubspot' && <HubSpotSection />}
             {active.id === 'site' && <SiteAnalyticsSection />}
             {active.id === 'trade-flow' && <TradeFlowSection />}
             {active.id === 'liquidity' && <LiquiditySection />}
