@@ -21,8 +21,14 @@ import { NextResponse } from 'next/server';
 
 const HUBSPOT_API = 'https://api.hubapi.com';
 const CACHE_TTL_MS = 5 * 60 * 1000;   // 5 minutes
-const REQUEST_CONCURRENCY = 3;         // stay under the 5 req/s search-API limit
-const REQUEST_STAGGER_MS = 350;        // gap between batches
+// HubSpot Free tier's search endpoint caps at 4 req/s per portal
+// across ALL private apps. Anything faster than one request every
+// 300 ms trips SECONDLY. Serial execution with a slight buffer
+// keeps us out of trouble even if another job on the same portal
+// is also hitting the API.
+const REQUEST_INTERVAL_MS = 350;
+const RETRY_ATTEMPTS = 4;
+const RETRY_BASE_DELAY_MS = 1500;
 
 // Module-scope cache. Route handlers on Vercel Fluid Compute share
 // instances across concurrent invocations, so this is a real cache,
@@ -32,23 +38,43 @@ let cachedPayload = null;
 let cachedAt = 0;
 let inFlight = null;
 
+function sleep(ms) {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
 async function hs(path, options = {}) {
   const token = process.env.HUBSPOT_ACCESS_TOKEN;
   if (!token) throw new Error('HUBSPOT_ACCESS_TOKEN missing');
-  const res = await fetch(`${HUBSPOT_API}${path}`, {
-    ...options,
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-      ...(options.headers || {}),
-    },
-    cache: 'no-store',
-  });
-  if (!res.ok) {
+
+  let lastErr = null;
+  for (let attempt = 0; attempt < RETRY_ATTEMPTS; attempt++) {
+    const res = await fetch(`${HUBSPOT_API}${path}`, {
+      ...options,
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        ...(options.headers || {}),
+      },
+      cache: 'no-store',
+    });
+
+    if (res.ok) return res.json();
+
+    // 429 = rate limit. Honour Retry-After if present, else back off
+    // exponentially. Also retry 5xx once or twice — HubSpot has
+    // occasional 503s that clear immediately.
+    const retryable = res.status === 429 || res.status >= 500;
     const body = await res.text().catch(() => '');
-    throw new Error(`HubSpot ${res.status}: ${body.slice(0, 200)}`);
+    lastErr = new Error(`HubSpot ${res.status}: ${body.slice(0, 200)}`);
+    if (!retryable || attempt === RETRY_ATTEMPTS - 1) throw lastErr;
+
+    const retryAfterHeader = res.headers.get('Retry-After');
+    const retryAfterMs = retryAfterHeader
+      ? Math.min(30000, Number(retryAfterHeader) * 1000)
+      : Math.min(15000, RETRY_BASE_DELAY_MS * 2 ** attempt);
+    await sleep(retryAfterMs);
   }
-  return res.json();
+  throw lastErr || new Error('HubSpot: max retries exceeded');
 }
 
 async function countWithFilter(objectType, filterGroups = []) {
@@ -60,21 +86,21 @@ async function countWithFilter(objectType, filterGroups = []) {
 }
 
 /**
- * Run `tasks` (array of thunks returning promises) in batches of
- * REQUEST_CONCURRENCY with a short pause between batches. Keeps
- * us safely under HubSpot's 5 req/s search-endpoint quota while
- * still parallelising what we can.
+ * Run `tasks` (array of thunks returning promises) strictly serial
+ * with a fixed gap between requests. HubSpot Free tier's search
+ * endpoint tolerates a bit under 4 req/s but has no burst forgiveness
+ * — the moment two requests land in the same second the SECONDLY
+ * policy fires. Serial + 350 ms gap keeps us under the limit even
+ * if the previous request returned instantly.
  */
-async function runChunked(tasks) {
+async function runSerial(tasks) {
   const results = [];
-  for (let i = 0; i < tasks.length; i += REQUEST_CONCURRENCY) {
-    const chunk = tasks.slice(i, i + REQUEST_CONCURRENCY);
+  for (let i = 0; i < tasks.length; i++) {
     // eslint-disable-next-line no-await-in-loop
-    const settled = await Promise.all(chunk.map((fn) => fn()));
-    results.push(...settled);
-    if (i + REQUEST_CONCURRENCY < tasks.length) {
+    results.push(await tasks[i]());
+    if (i < tasks.length - 1) {
       // eslint-disable-next-line no-await-in-loop
-      await new Promise((r) => setTimeout(r, REQUEST_STAGGER_MS));
+      await sleep(REQUEST_INTERVAL_MS);
     }
   }
   return results;
@@ -141,7 +167,7 @@ async function loadHubspotSummary() {
     ),
   ];
 
-  const settled = await runChunked(tasks);
+  const settled = await runSerial(tasks);
   const map = Object.fromEntries(settled);
 
   const recentContacts = (map.recentContactsRes?.results || []).map((c) => ({
