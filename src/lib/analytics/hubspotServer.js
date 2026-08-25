@@ -201,24 +201,61 @@ export function buildContactPropertiesFromUser(user, extras = {}) {
 }
 
 /**
+ * Basic email shape check that mirrors HubSpot's own validator
+ * closely enough to catch the common cases without a round-trip:
+ * requires an @, a domain with at least one dot, and a TLD of at
+ * least two letters. Not RFC-perfect on purpose — HubSpot's own
+ * validator is stricter than the RFC too.
+ */
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i;
+
+export function looksLikeEmail(email) {
+  return typeof email === 'string' && EMAIL_RE.test(email.trim());
+}
+
+/**
  * Upsert a contact — search by email, PATCH if exists, POST if not.
- * Returns { hubspotId, created: boolean }.
+ * Returns { hubspotId, created, skipped, reason }.
+ *
+ * Throws only on unexpected HubSpot failures. Known "we can't push
+ * this" cases (missing email, HubSpot-invalid email shape) return
+ * { skipped: true, reason } so the caller can move on without
+ * failing the whole bulk.
  */
 export async function upsertContact(user, extras = {}) {
-  if (!user?.email) throw new Error('Cannot upsert without email');
-  const properties = buildContactPropertiesFromUser(user, extras);
+  if (!user?.email) {
+    return { skipped: true, reason: 'missing_email' };
+  }
+  const email = user.email.trim();
+  if (!looksLikeEmail(email)) {
+    return { skipped: true, reason: 'invalid_email_shape', email };
+  }
 
-  const existing = await findContactByEmail(user.email);
-  if (existing) {
-    await hs(`/crm/v3/objects/contacts/${existing.id}`, {
-      method: 'PATCH',
+  const properties = buildContactPropertiesFromUser({ ...user, email }, extras);
+
+  try {
+    const existing = await findContactByEmail(email);
+    if (existing) {
+      await hs(`/crm/v3/objects/contacts/${existing.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ properties }),
+      });
+      return { hubspotId: existing.id, created: false };
+    }
+    const created = await hs('/crm/v3/objects/contacts', {
+      method: 'POST',
       body: JSON.stringify({ properties }),
     });
-    return { hubspotId: existing.id, created: false };
+    return { hubspotId: created.id, created: true };
+  } catch (err) {
+    // HubSpot returns 400 INVALID_EMAIL for TLDs its validator
+    // doesn't recognise (.mb, .test, etc.). Treat as skipped, not
+    // as an error — surfacing it as failure blocks bulk sync on
+    // one bad row.
+    const message = err?.message || '';
+    if (err?.status === 400 && /INVALID_EMAIL|invalid[\s_-]?email/i.test(message)) {
+      return { skipped: true, reason: 'hubspot_rejected_email', email };
+    }
+    throw err;
   }
-  const created = await hs('/crm/v3/objects/contacts', {
-    method: 'POST',
-    body: JSON.stringify({ properties }),
-  });
-  return { hubspotId: created.id, created: true };
 }

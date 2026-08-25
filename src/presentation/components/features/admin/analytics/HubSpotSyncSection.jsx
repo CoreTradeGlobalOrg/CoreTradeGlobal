@@ -92,7 +92,14 @@ export function HubSpotSyncSection() {
       });
       const body = await res.json().catch(() => null);
       if (!res.ok || !body?.ok) throw new Error(body?.error || `HTTP ${res.status}`);
-      toast.success(body.created ? 'Created in HubSpot' : 'Updated in HubSpot');
+      if (body.skipped) {
+        const reason = body.reason === 'hubspot_rejected_email' || body.reason === 'invalid_email_shape'
+          ? `Skipped — HubSpot rejected email (${body.email || 'invalid format'})`
+          : `Skipped — ${body.reason}`;
+        toast(reason, { icon: '⚠️' });
+      } else {
+        toast.success(body.created ? 'Created in HubSpot' : 'Updated in HubSpot');
+      }
       return body;
     } catch (err) {
       toast.error(err.message || 'Sync failed');
@@ -111,21 +118,26 @@ export function HubSpotSyncSection() {
     const users = data.onlyPlatform;
     setBulkSyncing(true);
     let done = 0;
+    let skipped = 0;
     let failed = 0;
     // Serial — the HubSpot API here goes through the same 4 req/s
     // search cap. syncOne is already ~1-2 requests each.
     for (const u of users) {
       try {
         // eslint-disable-next-line no-await-in-loop
-        await syncOne(u.uid);
-        done += 1;
+        const result = await syncOne(u.uid);
+        if (result?.skipped) skipped += 1;
+        else done += 1;
       } catch {
         failed += 1;
       }
       // eslint-disable-next-line no-await-in-loop
       await new Promise((r) => setTimeout(r, 400));
     }
-    toast.success(`Bulk sync complete — ${done} synced${failed ? `, ${failed} failed` : ''}`);
+    const parts = [`${done} synced`];
+    if (skipped) parts.push(`${skipped} skipped (bad email)`);
+    if (failed) parts.push(`${failed} failed`);
+    toast.success(`Bulk sync complete — ${parts.join(', ')}`);
     setBulkSyncing(false);
     setRefreshTick((t) => t + 1);
   }

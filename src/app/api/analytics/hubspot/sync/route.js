@@ -48,8 +48,11 @@ export async function POST(request) {
     }
     const user = { uid, ...data };
 
-    const { hubspotId, created } = await upsertContact(user);
-    return NextResponse.json({ ok: true, hubspotId, created });
+    const result = await upsertContact(user);
+    if (result.skipped) {
+      return NextResponse.json({ ok: true, skipped: true, reason: result.reason, email: result.email });
+    }
+    return NextResponse.json({ ok: true, hubspotId: result.hubspotId, created: result.created });
   } catch (err) {
     return NextResponse.json(
       { ok: false, error: err.message || 'Sync failed', status: err.status },
