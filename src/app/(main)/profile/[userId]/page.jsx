@@ -66,6 +66,7 @@ function ProfileContent() {
   const searchParams = useSearchParams();
   const highlightIncomplete = searchParams.get('highlight') === 'incomplete';
   const focusField = searchParams.get('focus');
+  const scrollTarget = searchParams.get('scroll');
 
   const page = useProfilePage({ userId, currentUser, authLoading, isAuthenticated, logout });
 
@@ -82,6 +83,23 @@ function ProfileContent() {
     });
     return () => cancelAnimationFrame(raf);
   }, [focusField, page.loading, page.profileUser]);
+
+  // Scroll to a top-level section (from ?scroll=products) after the
+  // section's data has actually loaded. ProfileProducts is dynamic-
+  // imported and its data is fetched async — anchoring on
+  // productsLoading=false ensures the element is painted before we
+  // scroll. Guarded so a re-render doesn't re-trigger scroll.
+  useEffect(() => {
+    if (scrollTarget !== 'products') return;
+    if (page.loading || !page.profileUser || page.productsLoading) return;
+    const raf = requestAnimationFrame(() => {
+      const el = document.getElementById('products-section');
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+    return () => cancelAnimationFrame(raf);
+    // scrollTarget is a URL param — this effect runs once per navigation.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scrollTarget, page.loading, page.profileUser, page.productsLoading]);
 
   if (authLoading || page.loading) return SPINNER;
   if (!isAuthenticated || !page.profileUser) return null;
@@ -183,14 +201,16 @@ function ProfileContent() {
                 onDocumentsChange={(docs) => page.setProfileUser((p) => ({ ...p, companyDocuments: docs }))} />
             </div>
 
-            <ProfileProducts
-              userId={userId} products={page.products} productsLoading={page.productsLoading}
-              canEdit={page.canEdit} isOwnProfile={page.isOwnProfile} isAdmin={page.isAdmin}
-              productPage={page.productPage} setProductPage={page.setProductPage} itemsPerPage={page.itemsPerPage}
-              onOpenModal={() => router.push('/product/new')}
-              onEditProduct={(p) => router.push(`/product/${p.id}/edit`)}
-              onDeleteProduct={page.handleDeleteProduct} onToggleProductStatus={page.handleToggleProductStatus}
-            />
+            <div id="products-section" style={{ scrollMarginTop: '80px' }}>
+              <ProfileProducts
+                userId={userId} products={page.products} productsLoading={page.productsLoading}
+                canEdit={page.canEdit} isOwnProfile={page.isOwnProfile} isAdmin={page.isAdmin}
+                productPage={page.productPage} setProductPage={page.setProductPage} itemsPerPage={page.itemsPerPage}
+                onOpenModal={() => router.push('/product/new')}
+                onEditProduct={(p) => router.push(`/product/${p.id}/edit`)}
+                onDeleteProduct={page.handleDeleteProduct} onToggleProductStatus={page.handleToggleProductStatus}
+              />
+            </div>
 
             <ProfileRequests
               userId={userId} requests={page.requests} requestsLoading={page.requestsLoading}

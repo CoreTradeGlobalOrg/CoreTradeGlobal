@@ -495,7 +495,7 @@ export default function BulkUploadActionPage() {
                 )}
                 <div className="flex flex-wrap justify-center gap-2 mt-4">
                   <Link
-                    href={user?.uid ? `/profile/${user.uid}` : '/'}
+                    href={user?.uid ? `/profile/${user.uid}?scroll=products` : '/'}
                     className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-gradient-to-r from-[#FFD700] to-[#FDB931] text-[#0F1B2B] text-sm font-bold no-underline"
                     style={{ color: '#0F1B2B', WebkitTextFillColor: '#0F1B2B' }}
                   >
