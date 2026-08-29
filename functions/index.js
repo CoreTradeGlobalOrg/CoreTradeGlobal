@@ -5906,6 +5906,40 @@ exports.onNewMemberRegistered = onDocumentWritten(
   }
 );
 
+// ─────────────────────────────────────────────────────────────────────────────
+// RFQ Email Delivery — inactive-user re-engagement with daily budget
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// Resend's free tier caps at 100 emails/day. Firing an email per member
+// on every new RFQ blew through the cap the moment the member base grew
+// past a few hundred. New model:
+//
+//   1. onRFQCreated still delivers in-app + FCM push to every member
+//      immediately (no rate limit, no cost).
+//   2. Email is treated as a re-engagement nudge — only members whose
+//      lastLoginAt is older than RFQ_INACTIVE_WINDOW_DAYS get queued.
+//      Active users receive nothing new.
+//   3. onRFQCreated writes one row per eligible inactive user into
+//      rfqEmailQueue (doc id = `${rfqId}_${userId}` → natural dedup).
+//   4. processRfqEmailQueue runs hourly, respects RFQ_EMAIL_DAILY_LIMIT
+//      per UTC day (tracked in rfqEmailDailyBudget/{YYYY-MM-DD}), and
+//      re-verifies at send time (RFQ still open, user still inactive,
+//      email preference still on) so a queued email that becomes stale
+//      is skipped rather than sent.
+//
+// Environment (functions/.env):
+//   RFQ_EMAIL_DAILY_LIMIT   default 90   (10 kept for other flows)
+//   RFQ_INACTIVE_WINDOW     default 30   (days)
+const RFQ_INACTIVE_WINDOW_DAYS = Number(process.env.RFQ_INACTIVE_WINDOW || 30);
+const RFQ_EMAIL_DAILY_LIMIT = Number(process.env.RFQ_EMAIL_DAILY_LIMIT || 90);
+const RFQ_QUEUE_MAX_ATTEMPTS = 3;
+const RFQ_QUEUE_PER_RUN_CAP = 30;
+const RFQ_QUEUE_SEND_SPACING_MS = 200;
+
+function todayUtcDateString() {
+  return new Date().toISOString().slice(0, 10);
+}
+
 /**
  * onRFQCreated
  *
@@ -5913,9 +5947,11 @@ exports.onNewMemberRegistered = onDocumentWritten(
  * Notifies all members with in-app + FCM push when a new RFQ is posted.
  * Does NOT notify the creator of the RFQ.
  *
- * Channels: in-app notification + FCM push to all members.
- * Preference check: preferences?.providers?.push !== false (default true).
- * Email: preferences?.providers?.email !== false (default true).
+ * Channels:
+ *   - in-app notification: every member
+ *   - FCM push: every member with push preference enabled
+ *   - email: enqueued for inactive members only (drained by
+ *     processRfqEmailQueue under a daily Resend budget)
  */
 exports.onRFQCreated = onDocumentCreated(
   'requests/{requestId}',
@@ -5931,6 +5967,11 @@ exports.onRFQCreated = onDocumentCreated(
 
       const notifTitle = 'New RFQ Available';
       const notifBody = `A new request for quotation has been posted for ${productName}.`;
+
+      // Inactivity threshold for the email path: users whose last real
+      // login is older than this get an email, active users don't
+      // (they already got in-app + push above).
+      const INACTIVE_CUTOFF_MS = Date.now() - RFQ_INACTIVE_WINDOW_DAYS * 24 * 60 * 60 * 1000;
 
       // Query all members
       const membersSnap = await db.collection('users').where('role', '==', ROLES.MEMBER).get();
@@ -5978,21 +6019,38 @@ exports.onRFQCreated = onDocumentCreated(
           console.error(`onRFQCreated: FCM error for member ${memberId}:`, err);
         }
 
-        // --- c) Email notification (preference check) ---
+        // --- c) Email notification: enqueue for inactive users only ---
+        //
+        // Sending email inline used to burn through the Resend free-tier
+        // daily cap (100/day) as soon as a member base grew past a few
+        // hundred. New model: skip email for active users entirely
+        // (they get in-app + push above), and enqueue one row per
+        // inactive user (lastLoginAt < now - 30d) into rfqEmailQueue.
+        // A separate scheduled function (processRfqEmailQueue) drains
+        // the queue at a rate that respects the daily budget.
         try {
           const emailEnabled = memberData.preferences?.providers?.email !== false;
           const memberEmail = memberData.email;
-          if (memberEmail && emailEnabled) {
-            const rfqUrl = `${APP_URL}/request/${requestId}`;
-            const htmlBody = buildBrandedEmailHtml(
-              `<p style="margin:0 0 16px 0;">${notifBody}</p>`,
-              'View RFQ',
-              rfqUrl
-            );
-            await sendDealEmail(memberEmail, notifTitle, htmlBody);
-          }
+          if (!memberEmail || !emailEnabled) continue;
+
+          const lastLoginAt = memberData.lastLoginAt?.toDate?.()
+            || (memberData.lastLoginAt ? new Date(memberData.lastLoginAt) : null);
+          const isInactive = lastLoginAt && lastLoginAt.getTime() < INACTIVE_CUTOFF_MS;
+          if (!isInactive) continue;
+
+          const queueDocId = `${requestId}_${memberId}`;
+          await db.collection('rfqEmailQueue').doc(queueDocId).set({
+            rfqId: requestId,
+            productName,
+            recipientId: memberId,
+            recipientEmail: memberEmail,
+            status: 'pending',
+            attempts: 0,
+            createdAt: now,
+            updatedAt: now,
+          }, { merge: false });
         } catch (err) {
-          console.error(`onRFQCreated: email error for member ${memberId}:`, err);
+          console.error(`onRFQCreated: enqueue error for member ${memberId}:`, err);
         }
       }
 
@@ -6001,6 +6059,160 @@ exports.onRFQCreated = onDocumentCreated(
       console.error('onRFQCreated: unexpected error (non-fatal):', err);
     }
   }
+);
+
+/**
+ * processRfqEmailQueue
+ *
+ * Drains the rfqEmailQueue at a rate that respects Resend's daily
+ * budget. Runs every 60 minutes.
+ *
+ * Per invocation:
+ *   1. Read/init today's budget doc (rfqEmailDailyBudget/{YYYY-MM-DD}).
+ *   2. Bail out if sent >= RFQ_EMAIL_DAILY_LIMIT.
+ *   3. Pull up to min(RFQ_QUEUE_PER_RUN_CAP, remaining_budget) pending
+ *      rows ordered by createdAt asc.
+ *   4. For each row: re-verify (RFQ exists+open, user still inactive,
+ *      email pref still on). Send if all still true, else mark skipped.
+ *   5. On send success bump today's budget by 1. On failure increment
+ *      attempts; drop to 'failed' after RFQ_QUEUE_MAX_ATTEMPTS.
+ *   6. Small sleep between sends so the run doesn't spike Resend.
+ */
+exports.processRfqEmailQueue = onSchedule(
+  {
+    schedule: 'every 60 minutes',
+    timeZone: 'UTC',
+    retryCount: 1,
+    timeoutSeconds: 540,
+  },
+  async () => {
+    const dateKey = todayUtcDateString();
+    const budgetRef = db.collection('rfqEmailDailyBudget').doc(dateKey);
+    const budgetSnap = await budgetRef.get();
+    const budget = budgetSnap.exists ? budgetSnap.data() : { date: dateKey, sent: 0, limit: RFQ_EMAIL_DAILY_LIMIT };
+    if (!budgetSnap.exists) {
+      await budgetRef.set({ ...budget, updatedAt: Timestamp.now() });
+    }
+
+    const limit = Number(budget.limit || RFQ_EMAIL_DAILY_LIMIT);
+    const alreadySent = Number(budget.sent || 0);
+    const remaining = limit - alreadySent;
+    if (remaining <= 0) {
+      console.log(`processRfqEmailQueue: daily budget exhausted (${alreadySent}/${limit}) — skip.`);
+      return null;
+    }
+
+    const batchLimit = Math.min(RFQ_QUEUE_PER_RUN_CAP, remaining);
+    const pendingSnap = await db.collection('rfqEmailQueue')
+      .where('status', '==', 'pending')
+      .orderBy('createdAt', 'asc')
+      .limit(batchLimit)
+      .get();
+
+    if (pendingSnap.empty) {
+      console.log('processRfqEmailQueue: queue empty.');
+      return null;
+    }
+
+    const inactiveCutoffMs = Date.now() - RFQ_INACTIVE_WINDOW_DAYS * 24 * 60 * 60 * 1000;
+    let sent = 0;
+    let skipped = 0;
+    let failed = 0;
+
+    for (const doc of pendingSnap.docs) {
+      const row = doc.data();
+      const { rfqId, recipientId, recipientEmail, productName } = row;
+      const now = Timestamp.now();
+
+      try {
+        // ── Re-verify RFQ is still around and not closed ──────────────
+        const rfqDoc = await db.collection('requests').doc(rfqId).get();
+        if (!rfqDoc.exists) {
+          await doc.ref.update({ status: 'skipped', skipReason: 'rfq_missing', updatedAt: now });
+          skipped++;
+          continue;
+        }
+        const rfqData = rfqDoc.data();
+        if (rfqData.status === 'closed' || rfqData.status === 'expired' || rfqData.status === 'deleted') {
+          await doc.ref.update({ status: 'skipped', skipReason: `rfq_${rfqData.status}`, updatedAt: now });
+          skipped++;
+          continue;
+        }
+
+        // ── Re-verify user still inactive + email pref still on ───────
+        const userDoc = await db.collection('users').doc(recipientId).get();
+        if (!userDoc.exists) {
+          await doc.ref.update({ status: 'skipped', skipReason: 'user_missing', updatedAt: now });
+          skipped++;
+          continue;
+        }
+        const userData = userDoc.data();
+
+        if (userData.preferences?.providers?.email === false) {
+          await doc.ref.update({ status: 'skipped', skipReason: 'email_opted_out', updatedAt: now });
+          skipped++;
+          continue;
+        }
+
+        const lastLoginAt = userData.lastLoginAt?.toDate?.()
+          || (userData.lastLoginAt ? new Date(userData.lastLoginAt) : null);
+        if (!lastLoginAt || lastLoginAt.getTime() >= inactiveCutoffMs) {
+          await doc.ref.update({ status: 'skipped', skipReason: 'user_became_active', updatedAt: now });
+          skipped++;
+          continue;
+        }
+
+        // ── Send ──────────────────────────────────────────────────────
+        const notifTitle = 'New RFQ Available';
+        const notifBody = `A new request for quotation has been posted for ${productName}. We noticed you haven't stopped by lately — come see the latest deals.`;
+        const rfqUrl = `${APP_URL}/request/${rfqId}`;
+        const htmlBody = buildBrandedEmailHtml(
+          `<p style="margin:0 0 16px 0;">${notifBody}</p>`,
+          'View RFQ',
+          rfqUrl,
+        );
+
+        await sendDealEmail(recipientEmail, notifTitle, htmlBody);
+
+        await doc.ref.update({
+          status: 'sent',
+          sentAt: now,
+          updatedAt: now,
+        });
+        sent++;
+
+        // Small spacing between sends so the hour doesn't spike Resend.
+        if (sent < batchLimit) {
+          await new Promise((r) => setTimeout(r, RFQ_QUEUE_SEND_SPACING_MS));
+        }
+      } catch (err) {
+        const attempts = Number(row.attempts || 0) + 1;
+        const isTerminal = attempts >= RFQ_QUEUE_MAX_ATTEMPTS;
+        console.error(`processRfqEmailQueue: send failed for ${doc.id} (attempt ${attempts}):`, err);
+        await doc.ref.update({
+          status: isTerminal ? 'failed' : 'pending',
+          attempts,
+          failReason: err?.message || 'send_failed',
+          updatedAt: now,
+        });
+        if (isTerminal) failed++;
+      }
+    }
+
+    if (sent > 0) {
+      await budgetRef.set({
+        date: dateKey,
+        sent: alreadySent + sent,
+        limit,
+        updatedAt: Timestamp.now(),
+      });
+    }
+
+    console.log(
+      `processRfqEmailQueue: sent=${sent} skipped=${skipped} failed=${failed} budget=${alreadySent + sent}/${limit}`,
+    );
+    return null;
+  },
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -6343,6 +6555,13 @@ exports.bulkUploadProducts = onCall(
         const productRef = db.collection('products').doc();
         const productId = productRef.id;
 
+        // Prefer client-staged URLs (self-serve members upload images
+        // straight to Storage during the preview step and pass the
+        // resulting download URLs here). Falls back to the legacy
+        // `imageUrls` string (admin CSVs that still carry an "Image
+        // URLs" column) only when no staged array was sent.
+        const stagedImages = Array.isArray(row.images) ? row.images.filter(Boolean) : [];
+
         await productRef.set({
           // Normalize product name to Title Case so CSV rows go into
           // the DB in the same shape as products created via the form.
@@ -6354,7 +6573,7 @@ exports.bulkUploadProducts = onCall(
           stockQuantity: row.quantity, // ProductCard reads stockQuantity; store both for consistency
           unit: row.unit,
           description: row.description || '',
-          images: [],
+          images: stagedImages,
           userId,
           createdByAdmin: true,
           status: 'active',
@@ -6362,22 +6581,25 @@ exports.bulkUploadProducts = onCall(
           updatedAt: now,
         });
 
-        // Process image URLs if provided
-        const rawImageUrls = row.imageUrls || '';
-        const imageUrlList = rawImageUrls
-          .split(',')
-          .map((u) => u.trim())
-          .filter(Boolean);
+        // Legacy path — admin CSV "Image URLs" column. Only run when
+        // the caller did NOT stage images client-side.
+        if (stagedImages.length === 0) {
+          const rawImageUrls = row.imageUrls || '';
+          const imageUrlList = rawImageUrls
+            .split(',')
+            .map((u) => u.trim())
+            .filter(Boolean);
 
-        if (imageUrlList.length > 0) {
-          const downloadedUrls = [];
-          for (let i = 0; i < imageUrlList.length; i++) {
-            const url = await downloadAndStoreImage(imageUrlList[i], userId, productId, i);
-            if (url) downloadedUrls.push(url);
-          }
+          if (imageUrlList.length > 0) {
+            const downloadedUrls = [];
+            for (let i = 0; i < imageUrlList.length; i++) {
+              const url = await downloadAndStoreImage(imageUrlList[i], userId, productId, i);
+              if (url) downloadedUrls.push(url);
+            }
 
-          if (downloadedUrls.length > 0) {
-            await productRef.update({ images: downloadedUrls, updatedAt: FieldValue.serverTimestamp() });
+            if (downloadedUrls.length > 0) {
+              await productRef.update({ images: downloadedUrls, updatedAt: FieldValue.serverTimestamp() });
+            }
           }
         }
 

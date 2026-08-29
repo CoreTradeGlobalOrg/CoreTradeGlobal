@@ -66,10 +66,6 @@ const AnnouncementManager = dynamic(
   () => import('@/presentation/components/features/admin/AnnouncementManager/AnnouncementManager').then(m => ({ default: m.default })),
   { loading: () => <AdminTabSkeleton />, ssr: false }
 );
-const ProductUploadRequestsManager = dynamic(
-  () => import('@/presentation/components/features/admin/ProductUploadRequestsManager/ProductUploadRequestsManager').then(m => ({ default: m.ProductUploadRequestsManager })),
-  { loading: () => <AdminTabSkeleton />, ssr: false }
-);
 const TradesManager = dynamic(
   () => import('@/presentation/components/features/admin/TradesManager/TradesManager').then(m => ({ default: m.TradesManager })),
   { loading: () => <AdminTabSkeleton />, ssr: false }
@@ -179,7 +175,7 @@ function AdminPageContent() {
   const searchParams = useSearchParams();
   const { user, loading: authLoading, profileLoading, isAuthenticated } = useAuth();
   const { users, loading, error, refetch } = useGetAllUsers();
-  const validTabs = ['users', 'trades', 'messages', 'categories', 'fairs', 'news', 'testimonials', 'announcements', 'product-requests', 'ad-inquiries', 'ad-campaigns'];
+  const validTabs = ['users', 'trades', 'messages', 'categories', 'fairs', 'news', 'testimonials', 'announcements', 'ad-inquiries', 'ad-campaigns'];
   const tabFromUrl = searchParams.get('tab');
   const [activeTab, setActiveTab] = useState(
     validTabs.includes(tabFromUrl) ? tabFromUrl : 'users'
@@ -265,7 +261,7 @@ function AdminPageContent() {
       {/* Tabs - Scrollable on mobile */}
       <div className="mb-6 md:mb-8 border-b border-[rgba(255,255,255,0.1)] -mx-4 px-4 md:mx-0 md:px-0">
         <nav className="-mb-px flex space-x-4 md:space-x-8 overflow-x-auto scrollbar-hide pb-px">
-          {['users', 'trades', 'messages', 'categories', 'fairs', 'news', 'testimonials', 'announcements', 'product-requests', 'ad-inquiries', 'ad-campaigns'].map((tab) => {
+          {['users', 'trades', 'messages', 'categories', 'fairs', 'news', 'testimonials', 'announcements', 'ad-inquiries', 'ad-campaigns'].map((tab) => {
             const tabLabels = {
               users: 'Users',
               trades: 'Trades',
@@ -275,7 +271,6 @@ function AdminPageContent() {
               news: 'News',
               testimonials: 'Testimonials',
               announcements: 'Announcements',
-              'product-requests': 'Product Requests',
               'ad-inquiries': 'Ad Inquiries',
               'ad-campaigns': 'Ad Campaigns',
             };
@@ -372,13 +367,6 @@ function AdminPageContent() {
       {activeTab === 'announcements' && (
         <div className="text-white">
           <AnnouncementManager />
-        </div>
-      )}
-
-      {/* Product Requests Tab */}
-      {activeTab === 'product-requests' && (
-        <div className="text-white">
-          <ProductUploadRequestsManager users={users} />
         </div>
       )}
 
