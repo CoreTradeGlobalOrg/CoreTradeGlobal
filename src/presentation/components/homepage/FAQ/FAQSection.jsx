@@ -140,7 +140,7 @@ const getFaqSections = (onAddProduct) => [
         id: 14,
         question: 'Is there a guarantee for trade payments?',
         answer: (
-          <>CoreTradeGlobal&apos;s primary function is to digitally facilitate connections for companies worldwide to discover new customers, suppliers, and business partners. Commercial payments, financial transfers, and contract terms are executed entirely between the companies themselves and remain under their own responsibility. However, if businesses wish to legally secure their transactions, they can utilize the advisory legal services offered on our platform at any time.</>
+          <>CoreTradeGlobal&apos;s primary function is to digitally facilitate connections for companies worldwide to discover new customers, suppliers, and business partners. Commercial payments, financial transfers, and contract terms are executed entirely between the companies themselves and remain under their own responsibility.</>
         ),
       },
     ],
