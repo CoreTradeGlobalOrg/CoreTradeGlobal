@@ -16,12 +16,26 @@ import { PasswordChecklist } from '@/presentation/components/common/PasswordChec
 import { COUNTRIES, COUNTRY_PHONE_CODES, PHONE_CODE_OPTIONS } from '@/core/constants/countries';
 import { COMPANY_TYPES } from '@/core/constants/companyTypes';
 import { Eye, EyeOff } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 
 export function RegisterFormFields({ step, register, errors, loading, setValue, watch, categories, categoriesLoading }) {
   const country = watch('country');
   const companyCategory = watch('companyCategory');
   const companyType = watch('companyType');
+
+  // Fallback shown in the category dropdown when a search yields no
+  // hits — matches the "Other Products / Services" catch-all in the
+  // Firestore category list. Null-safe: if that category isn't in the
+  // list, the dropdown falls back to the plain "No results found"
+  // text so users don't select a value that doesn't exist server-side.
+  const otherCategoryOption = useMemo(() => {
+    if (!categories?.length) return null;
+    return (
+      categories.find((c) => c.name?.toLowerCase().startsWith('other'))
+      || categories.find((c) => c.value?.toLowerCase().startsWith('other'))
+      || null
+    );
+  }, [categories]);
   const email = watch('email');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -296,6 +310,7 @@ export function RegisterFormFields({ step, register, errors, loading, setValue, 
             disabled={loading || categoriesLoading}
             error={!!errors.companyCategory}
             className="dark-select"
+            fallbackOption={otherCategoryOption}
           />
           {errors.companyCategory && (
             <p className="mt-1 text-xs text-red-400">{errors.companyCategory.message}</p>

@@ -164,9 +164,7 @@ function ProfileContent() {
         )}
 
         {page.isOwnProfile && (
-          <div className="flex justify-start">
-            <ProductUploadRequestButton user={currentUser} />
-          </div>
+          <ProductUploadRequestButton user={currentUser} />
         )}
 
         {page.isOwnProfile && (

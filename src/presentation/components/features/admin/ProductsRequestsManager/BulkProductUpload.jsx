@@ -74,8 +74,10 @@ function validateRow(row, index, categoryMap) {
   const priceRaw = row['Price'];
   const hasPrice = priceRaw !== undefined && priceRaw !== null && String(priceRaw).trim() !== '';
   const price = hasPrice ? parseFloat(priceRaw) : null;
-  if (hasPrice && (isNaN(price) || price < 0)) {
-    errors.push('Price must be a non-negative number (0 or blank is allowed)');
+  if (!hasPrice) {
+    errors.push('Price is required');
+  } else if (isNaN(price) || price < 0) {
+    errors.push('Price must be a non-negative number');
   }
 
   const currency = row['Currency']?.trim().toUpperCase();
@@ -86,8 +88,12 @@ function validateRow(row, index, categoryMap) {
   const quantityRaw = row['Quantity'];
   const hasQuantity = quantityRaw !== undefined && quantityRaw !== null && String(quantityRaw).trim() !== '';
   const quantity = hasQuantity ? parseFloat(quantityRaw) : null;
-  if (hasQuantity && (isNaN(quantity) || quantity < 0)) {
-    errors.push('Quantity must be a non-negative number (0 or blank is allowed)');
+  if (!hasQuantity) {
+    // Blank quantities used to slip through and land as stockQuantity=0
+    // which reads as "out of stock" on the product page.
+    errors.push('Quantity is required');
+  } else if (isNaN(quantity) || quantity < 0) {
+    errors.push('Quantity must be a non-negative number');
   }
 
   if (!row['Unit']?.trim()) {
@@ -153,6 +159,7 @@ export function BulkProductUpload({ users, categories, onClose, initialMemberId,
     Papa.parse(csvText, {
       header: true,
       skipEmptyLines: true,
+      transformHeader: (h) => h.replace(/^\uFEFF/, '').trim(),
       complete: (results) => {
         if (!results.data || results.data.length === 0) {
           setParseError('The CSV file is empty or has no data rows.');
@@ -220,6 +227,7 @@ export function BulkProductUpload({ users, categories, onClose, initialMemberId,
     Papa.parse(file, {
       header: true,
       skipEmptyLines: true,
+      transformHeader: (h) => h.replace(/^\uFEFF/, '').trim(),
       complete: (results) => {
         if (!results.data || results.data.length === 0) {
           setParseError('The CSV file is empty or has no data rows.');

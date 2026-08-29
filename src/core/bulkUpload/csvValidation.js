@@ -11,7 +11,14 @@
  * resolution) so both consumers can render their own UIs on top.
  *
  * CSV columns expected: Product Name, Category (optional), Price,
- * Currency, Quantity, Unit, Description, Image URLs.
+ * Currency, Quantity, Unit, Description.
+ *
+ * Note — self-serve members no longer paste image URLs into the CSV.
+ * After the upload publishes, the /product/bulk success screen lets
+ * them attach files directly per product. The admin path (which lets
+ * an operator run an existing member's CSV that might still carry an
+ * "Image URLs" column) is untouched and Cloud Function still honors
+ * `row.imageUrls` when present.
  */
 
 import { CURRENCIES } from '@/core/constants/currencies';
@@ -81,8 +88,10 @@ export function validateRow(row, index, categoryMap) {
   const priceRaw = row['Price'];
   const hasPrice = priceRaw !== undefined && priceRaw !== null && String(priceRaw).trim() !== '';
   const price = hasPrice ? parseFloat(priceRaw) : null;
-  if (hasPrice && (isNaN(price) || price < 0)) {
-    errors.push('Price must be a non-negative number (0 or blank is allowed)');
+  if (!hasPrice) {
+    errors.push('Price is required');
+  } else if (isNaN(price) || price < 0) {
+    errors.push('Price must be a non-negative number');
   }
 
   const currency = row['Currency']?.trim().toUpperCase();
@@ -93,8 +102,13 @@ export function validateRow(row, index, categoryMap) {
   const quantityRaw = row['Quantity'];
   const hasQuantity = quantityRaw !== undefined && quantityRaw !== null && String(quantityRaw).trim() !== '';
   const quantity = hasQuantity ? parseFloat(quantityRaw) : null;
-  if (hasQuantity && (isNaN(quantity) || quantity < 0)) {
-    errors.push('Quantity must be a non-negative number (0 or blank is allowed)');
+  if (!hasQuantity) {
+    // Silently letting blank quantities through used to publish
+    // products that read as "out of stock" on the product page
+    // (stockQuantity falls back to 0). Force the column to be filled.
+    errors.push('Quantity is required');
+  } else if (isNaN(quantity) || quantity < 0) {
+    errors.push('Quantity must be a non-negative number');
   }
 
   if (!row['Unit']?.trim()) {
@@ -111,6 +125,10 @@ export function validateRow(row, index, categoryMap) {
     quantity: quantity !== null && !isNaN(quantity) ? quantity : null,
     unit: row['Unit']?.trim() || '',
     description: row['Description']?.trim() || '',
+    // Kept optional for backwards-compat with admin-uploaded CSVs that
+    // still carry the old "Image URLs" column. Self-serve members no
+    // longer see this column in the downloaded template and attach
+    // images through the post-publish uploader instead.
     imageUrls: row['Image URLs']?.trim() || '',
     errors,
     isValid: errors.length === 0,

@@ -52,6 +52,11 @@ export function SearchableSelect({
   showFlags = false,
   dropdownClassName = '',
   renderSelectedLabel = null,
+  // When a search returns no matches, render this option as a
+  // clickable fallback instead of the dead "No results found" state.
+  // Consumers pass an existing option object (e.g. the "Other Products
+  // / Services" category) so selecting it produces a valid value.
+  fallbackOption = null,
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -205,6 +210,25 @@ export function SearchableSelect({
                   {renderOptionContent(option)}
                 </button>
               ))
+            ) : fallbackOption && searchTerm.trim() ? (
+              <button
+                key={fallbackOption.value}
+                type="button"
+                onClick={() => handleSelect(fallbackOption)}
+                className={`
+                  w-full px-4 py-3 text-left text-[15px] transition-colors duration-150
+                  ${fallbackOption.value === value
+                    ? (isDark ? 'font-medium' : 'bg-blue-100 text-blue-900 font-medium')
+                    : (isDark ? 'text-[#A0A0A0] hover:bg-[rgba(255,255,255,0.05)] hover:text-white' : 'text-slate-700 hover:bg-blue-50')
+                  }
+                `}
+                style={fallbackOption.value === value && isDark ? {
+                  backgroundColor: `${accentColorRgba}0.15)`,
+                  color: accentColor,
+                } : {}}
+              >
+                {renderOptionContent(fallbackOption)}
+              </button>
             ) : (
               <div className={`px-4 py-8 text-center ${isDark ? 'text-[#A0A0A0]' : 'text-slate-500'}`}>
                 No results found

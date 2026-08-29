@@ -8,13 +8,24 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 import { Bell, X } from 'lucide-react';
 import { usePushNotifications } from '@/presentation/hooks/usePushNotifications';
 import { useAuth } from '@/presentation/contexts/AuthContext';
 import './NotificationPrompt.css';
 
+// Trigger rule: show the notification prompt only after the user has
+// finished the onboarding tour AND on their first visit to a /profile/
+// route. Rationale — signup landing was drowning in stacked CTAs
+// (tour overlay + notification banner + profile-completion card).
+// Profile is where messaging becomes meaningful, so the ask lands
+// with context instead of on cold arrival.
+const SHOWN_KEY = 'notification-prompt-shown';
+const PROFILE_ROUTE_PREFIX = '/profile/';
+
 export function NotificationPrompt() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
+  const pathname = usePathname();
   const {
     permission,
     isSupported,
@@ -25,6 +36,13 @@ export function NotificationPrompt() {
 
   const [dismissed, setDismissed] = useState(false);
   const [requesting, setRequesting] = useState(false);
+  const [alreadyShown, setAlreadyShown] = useState(true); // start true; flipped after client-side check
+
+  // Client-side check of the "already shown once" flag — SSR safe.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    setAlreadyShown(localStorage.getItem(SHOWN_KEY) === 'true');
+  }, []);
 
   // Check if user has dismissed the prompt before
   // But if permission was reset to 'default', show prompt again
@@ -49,20 +67,37 @@ export function NotificationPrompt() {
     }
   }, [permission]);
 
+  const onProfileRoute = pathname?.startsWith(PROFILE_ROUTE_PREFIX);
+  const tourFinished = user?.onboardingTourCompleted === true;
+
+  // Once the render conditions line up, mark the prompt as shown so
+  // subsequent visits don't re-surface it (dismiss is a separate,
+  // permission-reset-aware flag preserved from the old behavior).
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (!isAuthenticated || !isSupported || loading) return;
+    if (permission !== 'default') return;
+    if (!onProfileRoute || !tourFinished || dismissed || alreadyShown) return;
+    localStorage.setItem(SHOWN_KEY, 'true');
+  }, [isAuthenticated, isSupported, loading, permission, onProfileRoute, tourFinished, dismissed, alreadyShown]);
+
   // Don't show if:
-  // - Not authenticated
-  // - Not supported
-  // - Already granted (permission already given)
-  // - Already denied (can't ask again)
-  // - Already dismissed
-  // - Still loading
+  // - Not authenticated / not supported / still loading
+  // - Permission already granted or denied
+  // - User dismissed a prior prompt
+  // - Onboarding tour hasn't finished yet (would stack with tour overlay)
+  // - Not on a /profile/ route (this is the deliberate trigger point)
+  // - Already surfaced once (persisted across sessions)
   if (
     !isAuthenticated ||
     !isSupported ||
     permission === 'granted' ||
     permission === 'denied' ||
     dismissed ||
-    loading
+    loading ||
+    !tourFinished ||
+    !onProfileRoute ||
+    alreadyShown
   ) {
     return null;
   }

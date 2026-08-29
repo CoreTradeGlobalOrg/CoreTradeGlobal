@@ -47,11 +47,11 @@ const FAQ = [
   },
   {
     q: 'What formats work for images?',
-    a: 'Any publicly reachable URL that returns a JPG/PNG/WebP. Comma-separate multiple URLs in the Image URLs column and we\'ll pull them into your product gallery.',
+    a: 'JPG, PNG, or WebP. You attach photos per product in the preview table after the CSV is validated — files are auto-compressed to WebP before upload.',
   },
   {
     q: 'Can I upload thousands at once?',
-    a: 'Self-serve uploads are capped at 100 products per file so image fetches finish within the request window. Need more? Split the file, or use "Request Help" and our team will handle bigger catalogs.',
+    a: 'Uploads are capped at 100 products per file so the publish step finishes within the request window. For bigger catalogs, split the CSV and upload in batches.',
   },
   {
     q: 'What happens if a row fails?',
