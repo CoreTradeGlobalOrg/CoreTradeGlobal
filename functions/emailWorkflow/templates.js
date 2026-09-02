@@ -83,18 +83,18 @@ function wf1_2_formAbandonmentSecond({ firstName }) {
 // WF2 — Email Verification
 // ─────────────────────────────────────────────────────────────────
 
-function wf2_1_emailVerification({ firstName, verifyUrl }) {
+function wf2_1_emailVerification({ firstName, magicLink }) {
   const name = pick(firstName, 'there');
   return {
-    subject: 'Verify your CoreTradeGlobal account',
-    preheader: 'Please verify your email address to access the platform.',
+    subject: 'Welcome to CoreTradeGlobal — sign in with one click',
+    preheader: 'Your account is ready. Jump straight in — no password prompts.',
     body: [
       paragraph(`Hi ${name},`),
       paragraph('Welcome to CoreTradeGlobal!'),
       paragraph(
-        'To secure your account and enable communication with other members on our B2B marketplace, please verify your email address by clicking the button below.',
+        'Your account is ready. Click the button below to sign in — no password prompts, no verify link to hunt down. You will land straight on the platform.',
       ),
-      ctaButton('Verify my email address', verifyUrl || `${APP_URL}/settings`),
+      ctaButton('Sign in to CoreTradeGlobal', magicLink || `${APP_URL}/login`),
     ].join(''),
   };
 }
@@ -261,7 +261,7 @@ function wf6_1_sponsoredListing({ firstName, companyName }) {
 const WORKFLOW_EMAILS = {
   wf1_1: { build: wf1_1_formAbandonmentFirst, description: 'Form abandonment first reminder', requiresMagicLink: false },
   wf1_2: { build: wf1_2_formAbandonmentSecond, description: 'Form abandonment second reminder', requiresMagicLink: false },
-  wf2_1: { build: wf2_1_emailVerification, description: 'Email verification (immediate)', requiresMagicLink: false },
+  wf2_1: { build: wf2_1_emailVerification, description: 'Welcome + magic-link sign-in (immediate)', requiresMagicLink: true },
   wf2_2: { build: wf2_2_verificationReminder, description: 'Email verification reminder with magic link', requiresMagicLink: true },
   wf3_1: { build: wf3_1_firstListing, description: 'Onboarding — publish first products', requiresMagicLink: false },
   wf3_2: { build: wf3_2_catalogSupport, description: 'Catalog upload support', requiresMagicLink: false },

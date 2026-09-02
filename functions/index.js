@@ -1646,8 +1646,12 @@ exports.sendWelcomeOnRegister = onDocumentCreated(
       return null;
     }
 
+    // Welcome email is now WF2.1 (branded + magic-link) — sendWelcomeEmail's
+    // legacy template was firing alongside it, hence the double-email in
+    // the inbox on the reg flow. WF2.1 fires from wfSendEmailVerification;
+    // this CF stays only to seed the Resend contact + admin notification.
     const displayName = userData.displayName || userData.firstName || 'there';
-    await sendWelcomeEmail(email, displayName, uid);
+    void displayName; // preserved for logging shape below
 
     // Mirror the new user into Resend so broadcasts (dashboard-scheduled
     // newsletters, campaigns) can reach them later.
@@ -1691,22 +1695,9 @@ exports.sendWelcomeOnRegister = onDocumentCreated(
       }
     }
 
-    // Seed an in-app notification prompting the user to verify their email.
-    // Skip for OAuth users (Google/LinkedIn) whose email is already verified.
-    if (!userData.emailVerified) {
-      try {
-        await db.collection('users').doc(uid).collection('notifications').add({
-          type: 'verify_email',
-          title: 'Verify your email',
-          body: 'Please check your mailbox and verify your email address.',
-          isRead: false,
-          createdAt: Timestamp.now(),
-          link: '/verify-email',
-        });
-      } catch (err) {
-        console.error(`sendWelcomeOnRegister: failed to create verify-email notification for ${uid}:`, err);
-      }
-    }
+    // No more "verify your email" notification — users are auto-verified
+    // in wfSendEmailVerification. Keeping the notification would surface
+    // a CTA pointing at a page the flow no longer needs.
 
     // Fan out an "awaiting approval" notification to every admin so they
     // can review + approve the new user. Previously this ran client-side
@@ -7564,26 +7555,27 @@ exports.wfSendEmailVerification = onDocumentCreated('users/{uid}', async (event)
     if (data.emailVerified) return; // already verified via OAuth path
     if (data.isSuspended) return;
 
-    // Real verify link from Firebase Auth. Client-side
-    // sendEmailVerification is intentionally NOT called during
-    // registration (see RegisterUseCase) so this branded email is
-    // the only verify email in the inbox.
-    let verifyUrl = `${APP_URL}/verify-email`;
+    // Auto-verify server-side. The account owner already proved they
+    // own the address by receiving our magic-link welcome — a separate
+    // verify email would just be noise. Mark both Firebase Auth and
+    // the Firestore mirror so downstream gates read consistently.
     try {
-      verifyUrl = await admin.auth().generateEmailVerificationLink(data.email, {
-        url: `${APP_URL}/`,
-        handleCodeInApp: false,
+      await admin.auth().updateUser(event.params.uid, { emailVerified: true });
+      await db.collection('users').doc(event.params.uid).update({
+        emailVerified: true,
+        updatedAt: Timestamp.now(),
       });
-    } catch (linkErr) {
-      console.error('wfSendEmailVerification: generateEmailVerificationLink failed:', linkErr.message);
+    } catch (verifyErr) {
+      console.warn('wfSendEmailVerification: auto-verify failed:', verifyErr.message);
     }
+    // WF2.1 is a welcome + magic-link email. Dispatcher injects the
+    // magic link from ctx (requiresMagicLink: true in the registry).
     await workflowDispatcher.sendWorkflowEmail(workflowDeps(), {
       workflowId: 'wf2_1',
       recipientEmail: data.email,
       uid: event.params.uid,
       ctx: {
         firstName: data.firstName || data.fullName?.split(' ')[0] || '',
-        verifyUrl,
       },
       skipBudget: true,
     });
