@@ -218,10 +218,22 @@ export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter, cou
 
         if (searchQuery) {
             const lowerQ = searchQuery.toLowerCase();
+            // Pull every category whose name matches the query, then
+            // include products in those categories — so typing
+            // "electron" surfaces both "Industrial Electronics" (name
+            // match) and every product filed under the "Electronics"
+            // category, even ones whose own name doesn't contain the
+            // query. Product docs only carry categoryId, so the map
+            // lookup does the string comparison.
+            const matchedCategoryIds = new Set(
+                (categories || [])
+                    .filter((c) => c.name?.toLowerCase().includes(lowerQ))
+                    .map((c) => c.value)
+            );
             result = result.filter(p =>
-                p.name.toLowerCase().includes(lowerQ) ||
+                (p.name && p.name.toLowerCase().includes(lowerQ)) ||
                 (p.description && p.description.toLowerCase().includes(lowerQ)) ||
-                (p.category && p.category.toLowerCase().includes(lowerQ))
+                (p.categoryId && matchedCategoryIds.has(p.categoryId))
             );
         }
 
@@ -242,7 +254,7 @@ export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter, cou
 
         setFilteredProducts([...result].sort(sortByImageThenDate));
 
-    }, [products, searchQuery, categoryFilter, categoryIdFilter, countryFilter]);
+    }, [products, searchQuery, categoryFilter, categoryIdFilter, countryFilter, categories]);
 
     // Numbered pagination (client-side over the filtered set).
     // The Sponsored Product slot renders on EVERY page as the first

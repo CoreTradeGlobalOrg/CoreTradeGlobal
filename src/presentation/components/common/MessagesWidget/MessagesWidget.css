@@ -236,17 +236,21 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.05);
-  border: none;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 10px;
-  color: #64748b;
+  /* Was #64748b (dark slate) — read as disabled against the widget's
+     dark header. Lift to near-white so the minimize affordance is
+     obvious at a glance. */
+  color: rgba(255, 255, 255, 0.92);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .messages-widget-close:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: white;
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
 }
 
 /* Tab Bar */

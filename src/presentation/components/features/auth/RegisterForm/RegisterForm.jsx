@@ -27,6 +27,7 @@ import { COMPANY_TYPE_TO_ROLE } from '@/core/constants/companyTypes';
 import { toTitleCase } from '@/core/utils/nameCase';
 import { RegisterFormFields } from './RegisterFormFields';
 import { SocialAuthButtons } from '@/presentation/components/features/auth/SocialAuthButtons/SocialAuthButtons';
+import { clearFormAbandonment, reportFormAbandonment } from '@/lib/formAbandonment';
 
 // SECURITY: Google's test reCAPTCHA key - should NEVER be used in production
 const RECAPTCHA_TEST_KEY = '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI';
@@ -94,7 +95,10 @@ export function RegisterForm() {
       email: '',
       phone: '',
       position: '',
-      companyType: '',
+      // Trade is the far most common signup path — default it so
+       // members don't have to click to confirm the obvious choice.
+       // Logistics / Insurance providers can still switch.
+      companyType: 'trade',
       companyName: '',
       companyCategory: '',
       country: '',
@@ -108,7 +112,14 @@ export function RegisterForm() {
     const fields = STEP_FIELDS[step];
     const valid = await trigger(fields);
     if (valid) {
-      setStep((s) => s + 1);
+      const nextStep = step + 1;
+      setStep(nextStep);
+      // WF1 abandonment tracking — the user has an email + they moved
+      // past the first step, so record the intent. If they never make
+      // it to step 3, the CF sweep chases them with WF1.1 / WF1.2.
+      // Fire-and-forget so a slow write never blocks the transition.
+      const currentEmail = watch('email');
+      if (currentEmail) reportFormAbandonment(currentEmail, nextStep);
     }
   };
 
@@ -165,6 +176,9 @@ export function RegisterForm() {
 
       await registerUser(registerData);
       trackSignUp('email');
+      // Successful registration — clear the abandonment marker so
+      // the CF sweep doesn't chase this email with WF1.1.
+      clearFormAbandonment(data.email);
 
       // Provider role claim + forced token refresh run in the background.
       // Cold-start on setRoleClaimOnRegistration can add 3-5 s; we don't

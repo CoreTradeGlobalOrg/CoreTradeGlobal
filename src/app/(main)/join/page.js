@@ -213,9 +213,9 @@ export default function JoinPage() {
       </section>
 
       {/* ── About Section ── */}
-      <section className="px-5 py-8 flex justify-center">
+      <section className="join-about-section px-5 pt-8 pb-2 flex justify-center">
         <div className="w-full max-w-[1100px]">
-          <div className="text-center mb-10">
+          <div className="text-center mb-2">
             <h2
               className="text-3xl md:text-[40px] font-extrabold mb-4"
               style={{

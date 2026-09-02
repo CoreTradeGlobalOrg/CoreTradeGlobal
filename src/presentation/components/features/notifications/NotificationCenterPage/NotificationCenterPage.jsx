@@ -151,6 +151,11 @@ export function NotificationCenterPage() {
       // Navigate based on notification type/link
       if (notification.link) {
         router.push(notification.link);
+      } else if (notification.type === 'report_reviewed') {
+        // Old CF writes shipped no `link` field; route by type instead.
+        router.push('/my-reports');
+      } else if (notification.type === 'member_report') {
+        router.push('/admin/reports');
       } else if (notification.type === 'new_user_approval' && notification.data?.userId) {
         router.push('/admin?tab=users');
       } else if (notification.type === 'quote_received' && notification.data?.requestId) {

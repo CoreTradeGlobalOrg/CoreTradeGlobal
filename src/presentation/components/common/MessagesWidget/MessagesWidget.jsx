@@ -10,7 +10,8 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { MessageCircle, X, ArrowLeft, Minimize2, FileText, Package, MapPin, DollarSign, Handshake } from 'lucide-react';
+import { MessageCircle, X, ArrowLeft, Minimize2, FileText, Package, MapPin, DollarSign, Handshake, Flag } from 'lucide-react';
+import { ReportModal } from '@/presentation/components/common/ReportModal/ReportModal';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useMessages } from '@/presentation/contexts/MessagesContext';
@@ -36,6 +37,7 @@ export function MessagesWidget() {
 
   const [isMobile, setIsMobile] = useState(false);
   const [rfqDialogOpen, setRfqDialogOpen] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
   const widgetRef = useRef(null);
 
   // Check for mobile viewport
@@ -243,6 +245,19 @@ export function MessagesWidget() {
                   <span className="hidden sm:inline">Deal</span>
                 </Link>
               ) : null}
+              {/* Report — only when we know the other participant's uid
+                  (direct conversations) and it's not the current user. */}
+              {conversationInfo?.userId && conversationInfo.userId !== user?.uid && (
+                <button
+                  type="button"
+                  onClick={() => setReportOpen(true)}
+                  title="Report this member"
+                  aria-label="Report this member"
+                  className="w-9 h-9 flex items-center justify-center rounded-lg bg-white/5 hover:bg-red-500/15 border border-white/10 hover:border-red-500/40 text-white/80 hover:text-red-300 transition-colors"
+                >
+                  <Flag className="w-4 h-4" />
+                </button>
+              )}
               <button
                 className="messages-widget-close"
                 onClick={() => setIsWidgetOpen(false)}
@@ -416,6 +431,19 @@ export function MessagesWidget() {
             </Link>
           </div>
         </Modal>
+      )}
+
+      {/* Report modal — mounted at the root so its overlay sits above
+          the widget shell without stacking-context surprises. */}
+      {conversationInfo?.userId && conversationInfo.userId !== user?.uid && (
+        <ReportModal
+          open={reportOpen}
+          onClose={() => setReportOpen(false)}
+          subjectUserId={conversationInfo.userId}
+          subjectDisplayName={conversationInfo.companyName || conversationInfo.name}
+          source="messaging"
+          contextConversationId={activeConversationId}
+        />
       )}
     </>
   );

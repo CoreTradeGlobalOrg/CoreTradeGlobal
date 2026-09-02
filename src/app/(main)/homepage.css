@@ -1482,6 +1482,14 @@ html {
     min-height: 460px;
 }
 
+/* On /join the About block sits directly above the products carousel.
+   Homepage needs 60px top for hero breathing, but here the h2 + copy
+   already read as a section header so drop the top padding to a tight
+   band — matches the visual density of the surrounding join sections. */
+.join-about-section + .featured-products-section {
+    padding-top: 8px;
+}
+
 .featured-products-container {
     width: 100%;
     max-width: 100%;

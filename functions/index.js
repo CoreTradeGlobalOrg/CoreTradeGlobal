@@ -7096,3 +7096,691 @@ exports.syncDealToHubspot = onDocumentWritten('deals/{id}', async (event) => {
     console.error(`[hubspot] syncDealToHubspot FAILED for ${id}:`, err.message);
   }
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Social Media Post Generation (LinkedIn / Facebook / WhatsApp)
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// When a product doc is created we synthesise a ready-to-share caption
+// (see socialPost/captionTemplate.js) and reference the product's own
+// first image. No CF-side image compositing — the product photo IS the
+// social image, so no Sharp dep, no font issues, no cold-start hit.
+//
+// The generated post lands in `socialPosts/{postId}` with
+// status=pending. Admin reviews at /admin/social-posts and copies the
+// caption + downloads the image to publish manually on each network.
+//
+// Rate limit: at most SOCIAL_POST_DAILY_PER_USER new pending/approved
+// posts per user per UTC day so a 100-row bulk upload doesn't fan out
+// into 100 posts. Extras land as status='rate_limited' for visibility
+// but don't clutter the pending queue.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const socialCaption = require('./socialPost/captionTemplate');
+const SOCIAL_POST_DAILY_PER_USER = Number(process.env.SOCIAL_POST_DAILY_PER_USER || 3);
+const SOCIAL_POST_TARGET_PLATFORMS = ['linkedin', 'facebook', 'whatsapp'];
+
+async function countUsersActivePostsToday(userId) {
+  const startOfDay = new Date();
+  startOfDay.setUTCHours(0, 0, 0, 0);
+  const snap = await db.collection('socialPosts')
+    .where('userId', '==', userId)
+    .where('createdAt', '>=', Timestamp.fromDate(startOfDay))
+    .where('status', 'in', ['pending', 'approved', 'published'])
+    .get();
+  return snap.size;
+}
+
+exports.generateSocialPost = onDocumentCreated(
+  'products/{productId}',
+  async (event) => {
+    try {
+      const product = event.data?.data();
+      if (!product) return;
+      const productId = event.params.productId;
+      const userId = product.userId;
+      if (!userId) return;
+
+      // Doc id fixed to the product so retries stay idempotent.
+      const postRef = db.collection('socialPosts').doc(productId);
+      const existing = await postRef.get();
+      if (existing.exists) return;
+
+      const images = Array.isArray(product.images) ? product.images : [];
+      const primaryImage = images.find(Boolean);
+      const now = Timestamp.now();
+
+      // No image → no post. Log skip status so admin can see why.
+      if (!primaryImage) {
+        await postRef.set({
+          productId,
+          userId,
+          status: 'skipped_no_image',
+          createdAt: now,
+          updatedAt: now,
+        });
+        console.log(`generateSocialPost: skipped ${productId} — no image`);
+        return;
+      }
+
+      // Rate limit check — if user already has N active posts today
+      // this one lands as rate_limited (visible but not in queue).
+      const activeToday = await countUsersActivePostsToday(userId);
+      const status = activeToday >= SOCIAL_POST_DAILY_PER_USER ? 'rate_limited' : 'pending';
+
+      // Enrich snapshot with company + category display names.
+      let companyName = '';
+      let country = '';
+      try {
+        const userSnap = await db.collection('users').doc(userId).get();
+        const userData = userSnap.exists ? userSnap.data() : null;
+        companyName = userData?.companyName || '';
+        country = userData?.country || '';
+      } catch (err) {
+        console.warn(`generateSocialPost: user lookup failed for ${userId}:`, err.message);
+      }
+
+      let categoryLabel = '';
+      if (product.categoryId) {
+        try {
+          const catSnap = await db.collection('categories').doc(product.categoryId).get();
+          categoryLabel = catSnap.exists ? (catSnap.data().name || '') : '';
+        } catch (err) {
+          console.warn(`generateSocialPost: category lookup failed for ${product.categoryId}:`, err.message);
+        }
+      }
+
+      const { caption, hashtags, ctaUrl } = socialCaption.buildProductLaunchPost({
+        productId,
+        productName: product.name || 'a new product',
+        categoryLabel,
+        price: product.price,
+        currency: product.currency,
+        unit: product.unit,
+        companyName,
+        country,
+      });
+
+      await postRef.set({
+        productId,
+        userId,
+        status,
+        template: 'product_launch',
+        content: { caption, hashtags, ctaUrl },
+        productSnapshot: {
+          name: product.name || '',
+          categoryLabel,
+          price: product.price ?? null,
+          currency: product.currency || '',
+          unit: product.unit || '',
+          companyName,
+          country,
+          imageUrl: primaryImage,
+        },
+        targetPlatforms: SOCIAL_POST_TARGET_PLATFORMS,
+        createdAt: now,
+        updatedAt: now,
+      });
+
+      console.log(`generateSocialPost: ${status} post created for product ${productId} (userId=${userId})`);
+    } catch (err) {
+      console.error('generateSocialPost: failed:', err);
+    }
+  },
+);
+
+/**
+ * Admin action: approve / reject / mark-as-published on a social post.
+ *
+ * Callable body: { postId, action, reason? }
+ *   action = 'approve' | 'reject' | 'publish'
+ *   reason = optional string, used for reject
+ */
+exports.updateSocialPostStatus = onCall(async (request) => {
+  const { auth, data } = request;
+  if (!auth) throw new HttpsError('unauthenticated', 'Sign in first.');
+  const adminOk = await isUserAdmin(auth.uid);
+  if (!adminOk) throw new HttpsError('permission-denied', 'Admin only.');
+
+  const postId = String(data?.postId || '').trim();
+  const action = String(data?.action || '').trim();
+  const reason = String(data?.reason || '').trim();
+  if (!postId) throw new HttpsError('invalid-argument', 'postId required.');
+  if (!['approve', 'reject', 'publish'].includes(action)) {
+    throw new HttpsError('invalid-argument', 'action must be approve|reject|publish.');
+  }
+
+  const ref = db.collection('socialPosts').doc(postId);
+  const snap = await ref.get();
+  if (!snap.exists) throw new HttpsError('not-found', 'Post not found.');
+
+  const now = Timestamp.now();
+  const patch = { updatedAt: now };
+
+  if (action === 'approve') {
+    patch.status = 'approved';
+    patch.approvedAt = now;
+    patch.approvedBy = auth.uid;
+  } else if (action === 'reject') {
+    patch.status = 'rejected';
+    patch.rejectedAt = now;
+    patch.rejectedBy = auth.uid;
+    if (reason) patch.rejectedReason = reason;
+  } else if (action === 'publish') {
+    patch.status = 'published';
+    patch.publishedAt = now;
+    patch.publishedBy = auth.uid;
+  }
+
+  await ref.update(patch);
+  return { ok: true, status: patch.status };
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Member Reports (moderation queue)
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// Any authenticated (non-suspended) member can report another member from
+// the messaging widget or the profile card. Reports land in
+// `reports/{reportId}` with status='pending' and fan out an in-app
+// notification + email to every admin. Admins triage from
+// /admin/reports and resolve via updateReportStatus which pings the
+// reporter back with the outcome bucket (not the details).
+//
+// Guardrails:
+//   - Auth required
+//   - Reporter cannot be the subject (block self-report)
+//   - Suspended users cannot report
+//   - Per-user rate limit (3 reports/hour)
+//   - Dedup: max 1 pending report per (reporter, subject)
+//   - Reason 10-1000 chars, category from a fixed list
+//   - Reports are never deleted (audit trail)
+// ─────────────────────────────────────────────────────────────────────────────
+
+const REPORT_CATEGORIES = new Set([
+  'spam',
+  'off_platform',
+  'harassment',
+  'fraud',
+  'fake_profile',
+  'inappropriate',
+  'other',
+]);
+const REPORT_SOURCES = new Set(['profile', 'messaging']);
+const REPORT_RATE_LIMIT_PER_HOUR = Number(process.env.REPORT_RATE_LIMIT_PER_HOUR || 3);
+const REPORT_REASON_MIN = 10;
+const REPORT_REASON_MAX = 1000;
+
+/**
+ * submitReport (callable)
+ *
+ * Body:
+ *   subjectUserId: string
+ *   source: 'profile' | 'messaging'
+ *   contextConversationId?: string
+ *   category?: string (defaults to 'other')
+ *   reason: string
+ *
+ * Returns { ok: true, reportId }
+ */
+exports.submitReport = onCall(async (request) => {
+  const { auth, data } = request;
+  if (!auth) throw new HttpsError('unauthenticated', 'Please sign in to report.');
+
+  const reporterId = auth.uid;
+  const subjectUserId = String(data?.subjectUserId || '').trim();
+  const source = String(data?.source || '').trim();
+  const contextConversationId = data?.contextConversationId ? String(data.contextConversationId).trim() : null;
+  const category = String(data?.category || 'other').trim();
+  const reason = String(data?.reason || '').trim();
+
+  if (!subjectUserId) throw new HttpsError('invalid-argument', 'subjectUserId required.');
+  if (subjectUserId === reporterId) throw new HttpsError('failed-precondition', 'You cannot report yourself.');
+  if (!REPORT_SOURCES.has(source)) throw new HttpsError('invalid-argument', 'Invalid source.');
+  if (!REPORT_CATEGORIES.has(category)) throw new HttpsError('invalid-argument', 'Invalid category.');
+  if (reason.length < REPORT_REASON_MIN || reason.length > REPORT_REASON_MAX) {
+    throw new HttpsError('invalid-argument', `Reason must be ${REPORT_REASON_MIN}-${REPORT_REASON_MAX} characters.`);
+  }
+
+  // Reporter must exist and not be suspended.
+  const reporterDoc = await db.collection('users').doc(reporterId).get();
+  if (!reporterDoc.exists) throw new HttpsError('not-found', 'Reporter profile missing.');
+  const reporterData = reporterDoc.data() || {};
+  if (reporterData.isSuspended) {
+    throw new HttpsError('permission-denied', 'Suspended accounts cannot submit reports.');
+  }
+
+  // Subject must exist too (avoid ghost reports).
+  const subjectDoc = await db.collection('users').doc(subjectUserId).get();
+  if (!subjectDoc.exists) throw new HttpsError('not-found', 'The member you are reporting does not exist.');
+  const subjectData = subjectDoc.data() || {};
+
+  // Rate limit — count reports this reporter has filed in the past hour.
+  // Explicit orderBy DESC aligns with the deployed composite index
+  // (reporterId ASC, createdAt DESC). Without it Firestore expects
+  // an ASC-direction index and refuses the query.
+  const hourAgo = Timestamp.fromDate(new Date(Date.now() - 60 * 60 * 1000));
+  const recentSnap = await db.collection('reports')
+    .where('reporterId', '==', reporterId)
+    .where('createdAt', '>=', hourAgo)
+    .orderBy('createdAt', 'desc')
+    .get();
+  if (recentSnap.size >= REPORT_RATE_LIMIT_PER_HOUR) {
+    throw new HttpsError('resource-exhausted', 'You have filed too many reports in the last hour. Please wait before submitting another.');
+  }
+
+  // Dedup — one pending report per (reporter, subject) is enough.
+  const dupSnap = await db.collection('reports')
+    .where('reporterId', '==', reporterId)
+    .where('subjectUserId', '==', subjectUserId)
+    .where('status', '==', 'pending')
+    .limit(1)
+    .get();
+  if (!dupSnap.empty) {
+    throw new HttpsError('already-exists', 'You already have a pending report about this member. Our team is reviewing it.');
+  }
+
+  const now = Timestamp.now();
+  const reportRef = db.collection('reports').doc();
+
+  const reportPayload = {
+    reporterId,
+    subjectUserId,
+    subjectType: 'user',
+    source,
+    contextConversationId,
+    category,
+    reason,
+    status: 'pending',
+    createdAt: now,
+    updatedAt: now,
+    reporterSnapshot: {
+      displayName: reporterData.fullName || reporterData.displayName || '',
+      email: reporterData.email || '',
+    },
+    subjectSnapshot: {
+      displayName: subjectData.fullName || subjectData.displayName || '',
+      email: subjectData.email || '',
+      companyName: subjectData.companyName || '',
+    },
+  };
+  await reportRef.set(reportPayload);
+
+  return { ok: true, reportId: reportRef.id };
+});
+
+/**
+ * onReportCreated — fanout to admins (in-app notification + email).
+ *
+ * Kept as a separate trigger so submitReport stays snappy for the
+ * reporter; the fanout runs in the background.
+ */
+exports.onReportCreated = onDocumentCreated('reports/{reportId}', async (event) => {
+  try {
+    const report = event.data?.data();
+    if (!report) return;
+    const reportId = event.params.reportId;
+
+    const adminsSnap = await db.collection('users').where('role', '==', 'admin').limit(50).get();
+    if (adminsSnap.empty) return;
+
+    const link = '/admin/reports';
+    const now = Timestamp.now();
+    const notifTitle = 'New member report';
+    const notifBody = `${report.reporterSnapshot?.displayName || 'A member'} reported ${
+      report.subjectSnapshot?.displayName || 'another member'
+    } — category: ${report.category}.`;
+
+    for (const adminDoc of adminsSnap.docs) {
+      const adminId = adminDoc.id;
+      const adminData = adminDoc.data() || {};
+
+      // In-app notification.
+      try {
+        await db.collection('users').doc(adminId).collection('notifications').add({
+          type: 'member_report',
+          title: notifTitle,
+          body: notifBody,
+          link,
+          reportId,
+          isRead: false,
+          createdAt: now,
+        });
+      } catch (err) {
+        console.error(`onReportCreated: in-app notification failed for admin ${adminId}:`, err);
+      }
+
+      // Email — respect admin's own email preference so we don't
+      // spam an operator who's opted out of transactional email.
+      try {
+        const emailEnabled = adminData.preferences?.providers?.email !== false;
+        if (adminData.email && emailEnabled) {
+          const emailHtml = buildBrandedEmailHtml(
+            `<p style="margin:0 0 12px 0;"><strong>${notifBody}</strong></p>` +
+              `<p style="margin:0 0 4px 0;color:#606060;">Reason preview:</p>` +
+              `<p style="margin:0;white-space:pre-wrap;">${(report.reason || '').slice(0, 400)}</p>`,
+            'Open reports queue',
+            `${APP_URL}${link}`,
+          );
+          await sendDealEmail(adminData.email, notifTitle, emailHtml);
+        }
+      } catch (err) {
+        console.error(`onReportCreated: email failed for admin ${adminId}:`, err);
+      }
+    }
+    console.log(`onReportCreated: notified ${adminsSnap.size} admin(s) of report ${reportId}`);
+  } catch (err) {
+    console.error('onReportCreated: unexpected failure:', err);
+  }
+});
+
+/**
+ * updateReportStatus (callable)
+ *
+ * Admin-only. Transitions a report to reviewed / action_taken /
+ * dismissed and notifies the reporter that their submission was
+ * looked at (without exposing the outcome details).
+ */
+exports.updateReportStatus = onCall(async (request) => {
+  const { auth, data } = request;
+  if (!auth) throw new HttpsError('unauthenticated', 'Sign in first.');
+  if (!(await isUserAdmin(auth.uid))) throw new HttpsError('permission-denied', 'Admin only.');
+
+  const reportId = String(data?.reportId || '').trim();
+  const nextStatus = String(data?.status || '').trim();
+  const resolutionNote = String(data?.resolutionNote || '').trim();
+  if (!reportId) throw new HttpsError('invalid-argument', 'reportId required.');
+  if (!['reviewed', 'action_taken', 'dismissed'].includes(nextStatus)) {
+    throw new HttpsError('invalid-argument', 'status must be reviewed|action_taken|dismissed.');
+  }
+
+  const ref = db.collection('reports').doc(reportId);
+  const snap = await ref.get();
+  if (!snap.exists) throw new HttpsError('not-found', 'Report not found.');
+  const report = snap.data();
+
+  const now = Timestamp.now();
+  await ref.update({
+    status: nextStatus,
+    reviewedAt: now,
+    reviewedBy: auth.uid,
+    resolutionNote: resolutionNote || null,
+    updatedAt: now,
+  });
+
+  // Reporter feedback — vague on outcome, honest on the fact that a
+  // human looked at it.
+  try {
+    await db.collection('users').doc(report.reporterId).collection('notifications').add({
+      type: 'report_reviewed',
+      title: 'Your report was reviewed',
+      body: 'Our team has reviewed your report. Thank you for helping keep the platform safe.',
+      link: '/my-reports',
+      reportId,
+      isRead: false,
+      createdAt: now,
+    });
+  } catch (err) {
+    console.error(`updateReportStatus: reporter notification failed for ${report.reporterId}:`, err);
+  }
+
+  return { ok: true, status: nextStatus };
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Workflow Email Automations (WF1..WF6) — HubSpot-style journeys
+// Powered entirely by Firestore triggers + scheduled crons + Resend.
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// Templates live in functions/emailWorkflow/templates.js. The dispatcher in
+// functions/emailWorkflow/dispatcher.js centralises budget checks, dedup
+// (user.emailsSent[workflowId]), magic-link resolution, and brand wrapping.
+// Each trigger below is deliberately thin — pick a workflow, pull the target
+// user snapshot, call the dispatcher.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const workflowDispatcher = require('./emailWorkflow/dispatcher');
+
+// Deps we pass into the dispatcher so it doesn't reach into this module's globals.
+function workflowDeps() {
+  return {
+    db,
+    Timestamp,
+    sendEmail: sendDealEmail,
+    wrapHtml: (body) => buildBrandedEmailHtml(body, null, null),
+  };
+}
+
+/**
+ * WF2.1 — Email Verification (immediate, on new user creation).
+ * Fires the moment a user doc is created via any registration path.
+ * `skipBudget: true` because this is transactional-critical; we do not
+ * want a busy day of marketing emails to block a verify email.
+ */
+exports.wfSendEmailVerification = onDocumentCreated('users/{uid}', async (event) => {
+  try {
+    const data = event.data?.data();
+    if (!data?.email) return;
+    if (data.emailVerified) return; // already verified via OAuth path
+    if (data.isSuspended) return;
+
+    // Firebase Auth already ships a verify link via sendEmailVerification
+    // on the client, but hitting our own template gives us branded copy
+    // + control. The action URL points to /settings, where the user can
+    // trigger a fresh verify request if the direct link is stale.
+    const verifyUrl = `${APP_URL}/settings`;
+    await workflowDispatcher.sendWorkflowEmail(workflowDeps(), {
+      workflowId: 'wf2_1',
+      recipientEmail: data.email,
+      uid: event.params.uid,
+      ctx: {
+        firstName: data.firstName || data.fullName?.split(' ')[0] || '',
+        verifyUrl,
+      },
+      skipBudget: true,
+    });
+  } catch (err) {
+    console.error('wfSendEmailVerification failed:', err);
+  }
+});
+
+/**
+ * Common scheduled sweep — one cron worker walks the whole user
+ * base every hour and fans out any workflow that matches the sweep's
+ * predicate. Keeps CF count low; per-workflow dispatchers stay tiny.
+ */
+exports.wfHourlyEmailSweep = onSchedule(
+  {
+    schedule: 'every 60 minutes',
+    timeZone: 'UTC',
+    retryCount: 1,
+    timeoutSeconds: 540,
+  },
+  async () => {
+    const nowMs = Date.now();
+    const deps = workflowDeps();
+    const D = 24 * 60 * 60 * 1000;
+
+    // Windows — [minAge, maxAge] in ms since createdAt / lastLoginAt.
+    const WINDOWS = {
+      wf2_2: { field: 'createdAt', min: 24 * 60 * 60 * 1000, max: 72 * 60 * 60 * 1000, predicate: (u) => u.email && !u.emailVerified },
+      wf3_1: { field: 'createdAt', min: 24 * 60 * 60 * 1000, max: 48 * 60 * 60 * 1000, predicate: (u) => u.email && (u.productIds || []).length === 0 },
+      wf3_2: { field: 'createdAt', min: 96 * 60 * 60 * 1000, max: 120 * 60 * 60 * 1000, predicate: (u) => u.email && (u.productIds || []).length === 0 },
+      wf4_1: { field: 'createdAt', min: 48 * 60 * 60 * 1000, max: 96 * 60 * 60 * 1000, predicate: profileIncomplete },
+      wf5_1: { field: 'lastLoginAt', min: 14 * D, max: 45 * D, predicate: (u) => !!u.email },
+      wf5_2: { field: 'lastLoginAt', min: 45 * D, max: 120 * D, predicate: (u) => !!u.email },
+      // WF6 — pitch sponsored listing to established members. Fires
+      // once between day 30 and day 45 after signup, once the member
+      // has at least three products but no active ads.
+      wf6_1: {
+        field: 'createdAt',
+        min: 30 * D,
+        max: 45 * D,
+        predicate: (u) => !!u.email && (u.productIds || []).length >= 3 && !u.hasActiveAd,
+      },
+    };
+
+    function profileIncomplete(u) {
+      if (!u.email) return false;
+      const filled =
+        (u.companyName ? 1 : 0) +
+        (u.about && u.about.length >= 40 ? 1 : 0) +
+        (u.companyWebsite ? 1 : 0) +
+        (u.companyLogo ? 1 : 0) +
+        (u.phone ? 1 : 0);
+      return filled < 3;
+    }
+
+    const usersSnap = await db.collection('users').where('isSuspended', '!=', true).get();
+    let considered = 0;
+    let sent = 0;
+    let skipped = 0;
+
+    for (const doc of usersSnap.docs) {
+      const u = doc.data();
+      if (!u.email) continue;
+      if (u.preferences?.providers?.email === false) continue;
+
+      for (const [workflowId, w] of Object.entries(WINDOWS)) {
+        // Dedup lives in user.emailsSent; dispatcher also checks it, but
+        // an early check here avoids ~all the loop work.
+        if (u.emailsSent && u.emailsSent[workflowId]) continue;
+
+        const fieldValue = u[w.field]?.toDate?.() || (u[w.field] ? new Date(u[w.field]) : null);
+        if (!fieldValue) continue;
+        const age = nowMs - fieldValue.getTime();
+        if (age < w.min || age > w.max) continue;
+        if (!w.predicate(u)) continue;
+
+        considered++;
+        const result = await workflowDispatcher.sendWorkflowEmail(deps, {
+          workflowId,
+          recipientEmail: u.email,
+          uid: doc.id,
+          ctx: {
+            firstName: u.firstName || u.fullName?.split(' ')[0] || '',
+            companyName: u.companyName || '',
+            uid: doc.id,
+          },
+        });
+        if (result.sent) sent++;
+        else skipped++;
+
+        // Only run one workflow per user per sweep so a lapsed member
+        // doesn't receive three emails back-to-back.
+        break;
+      }
+    }
+
+    console.log(`wfHourlyEmailSweep: considered=${considered} sent=${sent} skipped=${skipped}`);
+    return null;
+  },
+);
+
+/**
+ * WF1 — form-abandonment sweep. Walks `formAbandonment/{emailHash}`
+ * every hour: docs stuck below step 3 for 20 min+ (and not
+ * matched to a real user) get WF1.1; still stuck 3 days later get
+ * WF1.2 as a final nudge, then the doc is retired.
+ */
+exports.wfFormAbandonmentSweep = onSchedule(
+  {
+    schedule: 'every 60 minutes',
+    timeZone: 'UTC',
+    retryCount: 1,
+    timeoutSeconds: 540,
+  },
+  async () => {
+    const nowMs = Date.now();
+    const twentyMinAgo = new Date(nowMs - 20 * 60 * 1000);
+    const deps = workflowDeps();
+
+    // Anything created less than 20 min ago is still a "give them a
+    // chance to finish" window — skip. The sweep runs hourly so a
+    // fresh doc is on the next pass anyway.
+    const snap = await db.collection('formAbandonment')
+      .where('startedAt', '<=', Timestamp.fromDate(twentyMinAgo))
+      .limit(200)
+      .get();
+
+    if (snap.empty) {
+      console.log('wfFormAbandonmentSweep: queue empty.');
+      return null;
+    }
+
+    let sent = 0;
+    let cleared = 0;
+    let skipped = 0;
+
+    for (const doc of snap.docs) {
+      const row = doc.data() || {};
+      const email = row.emailLower || (row.email || '').toLowerCase();
+      if (!email) {
+        await doc.ref.delete().catch(() => {});
+        cleared++;
+        continue;
+      }
+
+      // Belt-and-braces: if a user actually exists with this email
+      // (client-side clear could have missed), we should NEVER send
+      // the abandonment email. Retire the doc.
+      const userSnap = await db.collection('users').where('email', '==', email).limit(1).get();
+      if (!userSnap.empty) {
+        await doc.ref.delete().catch(() => {});
+        cleared++;
+        continue;
+      }
+
+      const startedMs = row.startedAt?.toDate?.().getTime() || row.startedAt?.seconds * 1000 || nowMs;
+      const ageMs = nowMs - startedMs;
+      const firstSent = !!row.wf1_1_sentAt;
+      const secondSent = !!row.wf1_2_sentAt;
+
+      // Ready for WF1.1 after 20 minutes.
+      if (!firstSent && ageMs >= 20 * 60 * 1000) {
+        const firstName = (row.email || '').split('@')[0]; // no name yet; fall back to local-part
+        const result = await workflowDispatcher.sendWorkflowEmail(deps, {
+          workflowId: 'wf1_1',
+          recipientEmail: email,
+          uid: null,
+          ctx: { firstName },
+        });
+        if (result.sent) {
+          await doc.ref.update({ wf1_1_sentAt: Timestamp.now() });
+          sent++;
+        } else {
+          skipped++;
+        }
+        continue;
+      }
+
+      // Ready for WF1.2 after 3 days from WF1.1.
+      if (firstSent && !secondSent && Date.now() - row.wf1_1_sentAt.toDate().getTime() >= 3 * 24 * 60 * 60 * 1000) {
+        const firstName = (row.email || '').split('@')[0];
+        const result = await workflowDispatcher.sendWorkflowEmail(deps, {
+          workflowId: 'wf1_2',
+          recipientEmail: email,
+          uid: null,
+          ctx: { firstName },
+        });
+        if (result.sent) {
+          await doc.ref.update({ wf1_2_sentAt: Timestamp.now() });
+          sent++;
+        } else {
+          skipped++;
+        }
+        continue;
+      }
+
+      // WF1.2 sent — retire the doc; if they still convert, the register
+      // path itself will handle greeting.
+      if (secondSent) {
+        await doc.ref.delete().catch(() => {});
+        cleared++;
+      }
+    }
+
+    console.log(`wfFormAbandonmentSweep: sent=${sent} cleared=${cleared} skipped=${skipped}`);
+    return null;
+  },
+);

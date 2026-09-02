@@ -6,7 +6,7 @@
  */
 'use client';
 
-import { Suspense, useEffect } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useAuth } from '@/presentation/contexts/AuthContext';
 import { useLogout } from '@/presentation/hooks/auth/useLogout';
@@ -17,6 +17,9 @@ import { ProfileStickyHeader } from './ProfileStickyHeader';
 import { ProfileCard } from './ProfileCard';
 import { useProfilePage } from './useProfilePage';
 import { ProductUploadRequestButton } from '@/presentation/components/features/profile/ProductUploadRequestButton/ProductUploadRequestButton';
+import { ReportModal } from '@/presentation/components/common/ReportModal/ReportModal';
+import { AdminMessageButton } from '@/presentation/components/features/profile/AdminMessageButton/AdminMessageButton';
+import { Flag } from 'lucide-react';
 
 // ProfileCompletionCard reads sessionStorage — must be client-side only
 const ProfileCompletionCard = dynamic(
@@ -69,6 +72,7 @@ function ProfileContent() {
   const scrollTarget = searchParams.get('scroll');
 
   const page = useProfilePage({ userId, currentUser, authLoading, isAuthenticated, logout });
+  const [reportOpen, setReportOpen] = useState(false);
 
   // Scroll to the requested field (from ?focus=<key>) once the profile
   // loads. Waits one frame so React has painted the target element,
@@ -150,6 +154,30 @@ function ProfileContent() {
           highlightFields={incompleteFields}
         />
 
+        {/* Admin-only outreach button — opens a direct conversation
+            with the profile owner via the existing MessagesWidget. */}
+        {!page.isOwnProfile && userId && currentUser?.role === 'admin' && (
+          <div className="flex justify-end">
+            <AdminMessageButton targetUserId={userId} />
+          </div>
+        )}
+
+        {/* Report — visible on other members' profiles only. Tertiary
+            styling on purpose so it doesn't overshadow the message /
+            deal CTAs owned by ProfileCard's own action row. */}
+        {!page.isOwnProfile && userId && (
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={() => setReportOpen(true)}
+              className="inline-flex items-center gap-1.5 text-xs text-[#A0A0A0] hover:text-red-300 transition-colors"
+            >
+              <Flag className="w-3.5 h-3.5" />
+              Report this member
+            </button>
+          </div>
+        )}
+
         {/* Profile completion card — own profile only, hides at 100%.
             Persistent so the X collapses (doesn't dismiss for session)
             and prior dismissals from the floating layout copy are
@@ -224,6 +252,20 @@ function ProfileContent() {
           </>
         )}
       </main>
+
+      {!page.isOwnProfile && userId && (
+        <ReportModal
+          open={reportOpen}
+          onClose={() => setReportOpen(false)}
+          subjectUserId={userId}
+          subjectDisplayName={
+            page.profileUser?.companyName
+            || page.profileUser?.fullName
+            || page.profileUser?.displayName
+          }
+          source="profile"
+        />
+      )}
     </div>
   );
 }

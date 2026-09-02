@@ -57,6 +57,15 @@ export function NotificationBell() {
     } else if (notification.type === 'deal' && (notification.dealId || notification.link)) {
       // Navigate to deal detail page
       router.push(notification.link || `/deals/${notification.dealId}`);
+    } else if (notification.type === 'report_reviewed') {
+      // Report resolution — reporter clicks through to their own
+      // report history. Newer CF writes ship this via `notification.link`
+      // already; the type-based fallback covers older notifications
+      // that predate that fix.
+      router.push(notification.link || '/my-reports');
+    } else if (notification.type === 'member_report') {
+      // Admin notification for a new member report.
+      router.push(notification.link || '/admin/reports');
     } else if (notification.link) {
       // Navigate using the notification's link field (e.g., product_upload_request)
       router.push(notification.link);
