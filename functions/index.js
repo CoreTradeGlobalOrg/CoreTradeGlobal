@@ -7564,11 +7564,19 @@ exports.wfSendEmailVerification = onDocumentCreated('users/{uid}', async (event)
     if (data.emailVerified) return; // already verified via OAuth path
     if (data.isSuspended) return;
 
-    // Firebase Auth already ships a verify link via sendEmailVerification
-    // on the client, but hitting our own template gives us branded copy
-    // + control. The action URL points to /settings, where the user can
-    // trigger a fresh verify request if the direct link is stale.
-    const verifyUrl = `${APP_URL}/settings`;
+    // Real verify link from Firebase Auth. Client-side
+    // sendEmailVerification is intentionally NOT called during
+    // registration (see RegisterUseCase) so this branded email is
+    // the only verify email in the inbox.
+    let verifyUrl = `${APP_URL}/verify-email`;
+    try {
+      verifyUrl = await admin.auth().generateEmailVerificationLink(data.email, {
+        url: `${APP_URL}/`,
+        handleCodeInApp: false,
+      });
+    } catch (linkErr) {
+      console.error('wfSendEmailVerification: generateEmailVerificationLink failed:', linkErr.message);
+    }
     await workflowDispatcher.sendWorkflowEmail(workflowDeps(), {
       workflowId: 'wf2_1',
       recipientEmail: data.email,

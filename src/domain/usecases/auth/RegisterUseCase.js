@@ -119,12 +119,12 @@ export class RegisterUseCase {
           });
       }
 
-      this.authRepository.sendEmailVerification().catch((verifyError) => {
-        console.error(
-          '❌ [RegisterUseCase] Background sendEmailVerification failed:',
-          verifyError.message
-        );
-      });
+      // Firebase's default verify email is deliberately not sent here;
+      // the wfSendEmailVerification Cloud Function sends a branded
+      // WF2.1 email with a server-generated verify link on user doc
+      // create. Sending both produced a double-email in the inbox.
+      // The /verify-email page still exposes an explicit "resend"
+      // button that calls sendEmailVerification directly.
 
       return user;
     } catch (error) {
