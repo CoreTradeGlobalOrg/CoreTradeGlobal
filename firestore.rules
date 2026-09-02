@@ -485,6 +485,61 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // Social Post queue (LinkedIn / Facebook / WhatsApp)
+    //
+    // Written by generateSocialPost CF, state changes flow through the
+    // updateSocialPostStatus callable so client writes stay closed.
+    // ─────────────────────────────────────────────────────────────────────────
+
+    match /socialPosts/{postId} {
+      allow read: if isAdmin() || resource.data.userId == request.auth.uid;
+      allow write: if false;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Member reports (moderation queue)
+    //
+    // Reporter can read their own reports; admin can read all; no
+    // client writes (submitReport / updateReportStatus callables
+    // handle every state transition + validation).
+    // ─────────────────────────────────────────────────────────────────────────
+
+    match /reports/{reportId} {
+      allow read: if isAdmin() || (isAuthenticated() && resource.data.reporterId == request.auth.uid);
+      allow write: if false;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Form abandonment queue — WF1 recovery workflow
+    //
+    // Anyone can create/update their OWN row keyed by sha256(email) — the
+    // register form is public and the CF sweep needs the intent captured
+    // even for logged-out visitors. Reads and deletes are CF-only via
+    // admin SDK so users can't peek at each other's rows.
+    // ─────────────────────────────────────────────────────────────────────────
+
+    match /formAbandonment/{emailHash} {
+      allow read: if isAdmin();
+      allow create, update: if
+        request.resource.data.email is string
+        && request.resource.data.email.size() <= 254
+        && request.resource.data.step in [1, 2, 3];
+      allow delete: if false;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Workflow email daily budget (WF1..WF6)
+    //
+    // Shared cap across every workflow trigger. CF-only writes; admins may
+    // read to monitor how close we are to the Resend free-tier ceiling.
+    // ─────────────────────────────────────────────────────────────────────────
+
+    match /workflowEmailDailyBudget/{dateKey} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
     match /rfqEmailDailyBudget/{dateKey} {
       allow read: if isAdmin();
       allow write: if false;

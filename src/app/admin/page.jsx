@@ -17,7 +17,7 @@ import dynamic from 'next/dynamic';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { collection, getDocs, where, query } from 'firebase/firestore';
-import { Handshake, Truck, CheckCircle2, BarChart3 } from 'lucide-react';
+import { Handshake, Truck, CheckCircle2, BarChart3, Megaphone, Flag } from 'lucide-react';
 import { useAuth } from '@/presentation/contexts/AuthContext';
 import { useGetAllUsers } from '@/presentation/hooks/admin/useGetAllUsers';
 import { db } from '@/core/config/firebase.config';
@@ -287,6 +287,24 @@ function AdminPageContent() {
               </button>
             );
           })}
+
+          {/* External tab entries — dedicated pages. Styled like sibling
+              tabs so the row reads as one strip, but navigate away
+              instead of switching inline content. */}
+          <Link
+            href="/admin/reports"
+            className="whitespace-nowrap py-3 md:py-4 px-1 border-b-2 border-transparent font-medium text-xs md:text-sm transition-colors flex-shrink-0 inline-flex items-center gap-1.5 text-gray-400 hover:text-red-300 hover:border-red-400/40"
+          >
+            <Flag className="w-3.5 h-3.5" />
+            Reports
+          </Link>
+          <Link
+            href="/admin/social-posts"
+            className="whitespace-nowrap py-3 md:py-4 px-1 border-b-2 border-transparent font-medium text-xs md:text-sm transition-colors flex-shrink-0 inline-flex items-center gap-1.5 text-gray-400 hover:text-white hover:border-gray-500"
+          >
+            <Megaphone className="w-3.5 h-3.5" />
+            Social Posts
+          </Link>
         </nav>
       </div>
 

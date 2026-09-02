@@ -83,13 +83,12 @@ const getNavGroups = (user) => [
       { label: 'Fairs', href: '/fairs' },
     ],
   },
-  {
-    label: 'Pricing',
-    items: [
-      { label: 'Pricing', href: '/pricing' },
-      { label: 'Advertising', href: '/advertising' },
-    ],
-  },
+  // Pricing and Advertising each stand on their own — the combined
+  // dropdown was doing two clicks' worth of work for pages that
+  // aren't a category. Direct-link mode renders them as top-level
+  // nav links with no chevron / dropdown chrome.
+  { label: 'Pricing', direct: true, href: '/pricing' },
+  { label: 'Advertising', direct: true, href: '/advertising' },
   {
     label: 'My Account',
     authOnly: true,
@@ -133,7 +132,10 @@ function DesktopDropdown({ group, isActive, onNavigate }) {
     return () => clearTimeout(timeoutRef.current);
   }, []);
 
-  const hasActiveChild = group.items.some((item) => isActive(item.href));
+  // group.items is absent when the entry is a direct-link shortcut
+  // (see below); optional chain keeps this hook order stable without
+  // crashing on the "Pricing" / "Advertising" flat entries.
+  const hasActiveChild = group.items?.some((item) => isActive(item.href)) ?? false;
 
   // Direct-link mode — the group is rendered as a plain top-level link
   // with no dropdown or chevron. Used when a group is a single-target
@@ -397,13 +399,18 @@ export function Navbar() {
         if (group.authOnly && !isAuthenticated) return false;
         return true;
       })
-      .map((group) => ({
-        ...group,
-        items: group.items.filter(
-          (item) => !item.roles || (user && item.roles.includes(user.role))
-        ),
-      }))
-      .filter((group) => group.items.length > 0);
+      .map((group) => {
+        // Direct-link entries (Pricing, Advertising) have no items
+        // array — pass them through untouched.
+        if (group.direct) return group;
+        return {
+          ...group,
+          items: group.items.filter(
+            (item) => !item.roles || (user && item.roles.includes(user.role))
+          ),
+        };
+      })
+      .filter((group) => group.direct || (group.items && group.items.length > 0));
   }, [user, user?.role, isAuthenticated]);
 
   const closeMobileMenu = useCallback(() => setIsMobileMenuOpen(false), []);
