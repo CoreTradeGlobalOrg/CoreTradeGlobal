@@ -15,6 +15,7 @@ import { COUNTRIES } from '@/core/constants/countries';
 import { QuantityUnit } from '@/presentation/components/common/QuantityUnit/QuantityUnit';
 import { CountryFlag } from '@/presentation/components/common/CountryFlag/CountryFlag';
 import { useCategories } from '@/presentation/hooks/category/useCategories';
+import { useOwnerRoles } from '@/presentation/hooks/user/useOwnerRoles';
 import { useResponsiveLimit, useScrollLoadMore } from '@/presentation/hooks/useResponsiveLimit';
 
 // Helper to get country name from ISO code
@@ -113,9 +114,16 @@ const DEFAULT_RFQS = [
   }
 ];
 
-function RFQCard({ rfq }) {
+function RFQCard({ rfq, ownerRole }) {
   return (
-    <Link href={`/request/${rfq.id}`} className="rfq-card block no-underline hover:no-underline">
+    <Link
+      href={`/request/${rfq.id}`}
+      className={
+        ownerRole === 'logistics_provider'
+          ? 'rfq-card rfq-card--logistics block no-underline hover:no-underline'
+          : 'rfq-card block no-underline hover:no-underline'
+      }
+    >
       <div className="flex justify-between items-start mb-4">
         <div className="flex items-center gap-1.5 text-[13px] text-white">
           <CountryFlag countryCode={rfq.country} size={16} />
@@ -155,6 +163,9 @@ function RFQCard({ rfq }) {
 
 export function FeaturedRFQs() {
   const [rfqs, setRfqs] = useState(DEFAULT_RFQS);
+  // Batch-load owner role so logistics-provider RFQs pick up the
+  // custom border tint without a per-card lookup.
+  const ownerRoles = useOwnerRoles(rfqs.map((r) => r.userId));
   const [allRfqs, setAllRfqs] = useState([]); // Store all fetched RFQs
   const [displayRfqs, setDisplayRfqs] = useState(DEFAULT_RFQS);
   const [loading, setLoading] = useState(true);
@@ -325,7 +336,7 @@ export function FeaturedRFQs() {
                   ))}
                 </>
               ) : (
-                displayRfqs.map((rfq) => <RFQCard key={rfq.id} rfq={rfq} />)
+                displayRfqs.map((rfq) => <RFQCard key={rfq.id} rfq={rfq} ownerRole={ownerRoles.get(rfq.userId)} />)
               )}
             </div>
           </div>

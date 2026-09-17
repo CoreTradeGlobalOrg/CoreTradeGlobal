@@ -144,7 +144,7 @@ export default function ProductDetailPage() {
         </button>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-          {/* Left Column - Gallery & Seller */}
+          {/* Left Column - Gallery */}
           <div className="flex flex-col gap-4">
             <ProductGallery
               images={images} currentImageIndex={currentImageIndex} imageLoading={imageLoading} productName={product.name}
@@ -153,17 +153,9 @@ export default function ProductDetailPage() {
               onThumbnailClick={(i) => { setImageLoading(true); setCurrentImageIndex(i); }}
               onImageLoad={() => setImageLoading(false)}
             />
-            {seller && currentUser?.uid !== product?.userId && (
-              <ProductSellerCard
-                seller={seller}
-                sendingMessage={sendingMessage}
-                onSendMessage={handleSendMessage}
-                dealHref={currentUser?.uid && !isOwnProduct ? `/deals/new?productId=${product.id}&sellerId=${product.userId}` : null}
-              />
-            )}
           </div>
 
-          {/* Right Column - Details */}
+          {/* Right Column - Product Info + Seller Card + Owner Actions */}
           <div className="flex flex-col gap-6">
             <div className="glass-card p-8 relative overflow-hidden">
               <div className="flex flex-col gap-4 relative z-10">
@@ -225,20 +217,14 @@ export default function ProductDetailPage() {
               </div>
             </div>
 
-            <div className="glass-card p-8 cursor-pointer transition-all duration-300 hover:border-[#FFD700]/30 flex-1" onClick={() => product.description?.length > 400 && setDescriptionExpanded(!descriptionExpanded)}>
-              <div className="text-sm uppercase tracking-wider text-[#FFD700] font-bold mb-4 flex items-center justify-between">
-                <span>Description</span>
-                {product.description?.length > 400 && <span className="text-xs normal-case tracking-normal font-medium text-gray-400">{descriptionExpanded ? 'Click to collapse' : 'Click to expand'}</span>}
-              </div>
-              <div className={`overflow-hidden transition-all duration-300 ${descriptionExpanded ? 'max-h-[2000px]' : 'max-h-[200px]'}`}>
-                <p className="text-gray-300 whitespace-pre-wrap leading-relaxed text-lg font-light">{product.description}</p>
-              </div>
-              {product.description?.length > 400 && (
-                <button className="mt-4 text-[#FFD700] font-semibold text-sm hover:text-white transition-colors flex items-center gap-2" onClick={(e) => { e.stopPropagation(); setDescriptionExpanded(!descriptionExpanded); }}>
-                  {descriptionExpanded ? <>Show Less <svg className="w-4 h-4 rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg></> : <>Read More <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg></>}
-                </button>
-              )}
-            </div>
+            {seller && currentUser?.uid !== product?.userId && (
+              <ProductSellerCard
+                seller={seller}
+                sendingMessage={sendingMessage}
+                onSendMessage={handleSendMessage}
+                dealHref={currentUser?.uid && !isOwnProduct ? `/deals/new?productId=${product.id}&sellerId=${product.userId}` : null}
+              />
+            )}
 
             {isOwnProduct && (
               <div className="pt-4 space-y-4">
@@ -254,6 +240,37 @@ export default function ProductDetailPage() {
                   <Power className="w-5 h-5" /> {product.status === 'active' ? 'Deactivate Product' : 'Activate Product'}
                 </Button>
               </div>
+            )}
+          </div>
+        </div>
+
+        {/* Description - full width, spans below the two columns */}
+        <div className="mt-10">
+          <div className="glass-card p-8 transition-colors duration-300 hover:border-[#FFD700]/30">
+            <div className="text-sm uppercase tracking-wider text-[#FFD700] font-bold mb-4">Description</div>
+            <p
+              className={`text-gray-300 whitespace-pre-wrap leading-relaxed text-lg font-light ${
+                !descriptionExpanded && product.description?.length > 400 ? 'line-clamp-6' : ''
+              }`}
+            >
+              {product.description}
+            </p>
+            {product.description?.length > 400 && (
+              <button
+                type="button"
+                onClick={() => setDescriptionExpanded((v) => !v)}
+                className="mt-6 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-[#FFD700]/40 bg-[#FFD700]/5 text-[#FFD700] font-semibold text-sm hover:bg-[#FFD700]/15 hover:border-[#FFD700]/60 transition-colors"
+              >
+                {descriptionExpanded ? 'Show Less' : 'Show More'}
+                <svg
+                  className={`w-4 h-4 transition-transform duration-200 ${descriptionExpanded ? 'rotate-180' : ''}`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
             )}
           </div>
         </div>

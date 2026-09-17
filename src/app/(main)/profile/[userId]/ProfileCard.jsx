@@ -526,7 +526,20 @@ export function ProfileCard({
             className={`bg-[rgba(255,255,255,0.04)] rounded-2xl p-5 border border-[rgba(255,255,255,0.05)]${hl('companyName')}`}
           >
             <p className="text-sm font-semibold uppercase tracking-wider mb-2 bg-gradient-to-r from-[#C0C0C0] via-[#FFFFFF] to-[#C0C0C0] bg-clip-text text-transparent">Company</p>
-            <p className="text-white font-semibold text-lg truncate">{profileUser?.companyName || 'Not set'}</p>
+            <div className="flex items-center gap-2 min-w-0">
+              <p className="text-white font-semibold text-lg truncate">{profileUser?.companyName || 'Not set'}</p>
+              {profileUser?.companyVerified && (
+                <span
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-300 border border-emerald-500/40 shrink-0"
+                  title="Company verified by admin review"
+                >
+                  <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <path d="M12 2l2.39 2.45L17.66 4l1.13 3.27L22 8.34l-1.13 3.27L22 15.66l-3.21 1.07L17.66 20l-3.27-.45L12 22l-2.39-2.45L6.34 20l-1.13-3.27L2 15.66l1.13-3.27L2 8.34l3.21-1.07L6.34 4l3.27.45L12 2zm-1.2 13.4l6.2-6.2-1.4-1.4-4.8 4.8-2.2-2.2-1.4 1.4 3.6 3.6z" />
+                  </svg>
+                  Verified
+                </span>
+              )}
+            </div>
           </div>
 
           <div className="bg-[rgba(255,255,255,0.04)] rounded-2xl p-5 border border-[rgba(255,255,255,0.05)]">

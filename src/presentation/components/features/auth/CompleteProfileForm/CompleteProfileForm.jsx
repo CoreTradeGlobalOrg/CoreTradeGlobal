@@ -55,7 +55,7 @@ export function CompleteProfileForm() {
       lastName: prefillLast,
       phone: '',
       position: '',
-      companyType: '',
+      companyType: 'trade',
       companyName: '',
       companyCategory: '',
       country: '',

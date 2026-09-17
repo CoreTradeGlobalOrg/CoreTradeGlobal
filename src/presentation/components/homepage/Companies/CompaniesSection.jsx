@@ -84,7 +84,13 @@ function CompanyCard({ company, categories }) {
 
   return (
     <Link href={`/profile/${company.id}`} className="company-card-link block no-underline text-inherit hover:no-underline">
-      <div className="company-card-inner">
+      <div
+        className={
+          company.role === 'logistics_provider'
+            ? 'company-card-inner company-card-inner--logistics'
+            : 'company-card-inner'
+        }
+      >
         {/* Header: Logo + Info */}
         <div className="flex items-start gap-4 mb-4">
           {/* Logo */}

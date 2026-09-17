@@ -172,6 +172,26 @@
   white-space: pre-wrap;
 }
 
+.message-link {
+  color: #60a5fa;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  word-break: break-all;
+  overflow-wrap: anywhere;
+}
+
+.message-link:hover {
+  color: #93c5fd;
+}
+
+.message-bubble.own .message-link {
+  color: #0f1b2b;
+}
+
+.message-bubble.own .message-link:hover {
+  color: #1a283b;
+}
+
 .message-time {
   font-size: 10px;
   opacity: 0.6;

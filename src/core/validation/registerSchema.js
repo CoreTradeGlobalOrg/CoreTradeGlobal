@@ -71,9 +71,7 @@ export const registerSchema = z
       .min(2, 'Company name must be at least 2 characters')
       .max(200, 'Company name is too long'),
 
-    companyCategory: z
-      .string()
-      .min(1, 'Please select a company category'),
+    companyCategory: z.string().optional(),
 
     country: z
       .string()
@@ -103,6 +101,15 @@ export const registerSchema = z
   .refine((data) => data.password === data.confirmPassword, {
     message: 'Passwords do not match',
     path: ['confirmPassword'],
-  });
+  })
+  .refine(
+    (data) =>
+      data.companyType !== 'trade' ||
+      (data.companyCategory && data.companyCategory.trim().length > 0),
+    {
+      message: 'Please select a company category',
+      path: ['companyCategory'],
+    },
+  );
 
 export default registerSchema;

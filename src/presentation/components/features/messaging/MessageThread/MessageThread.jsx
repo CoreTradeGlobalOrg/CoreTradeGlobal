@@ -16,6 +16,47 @@ import { useDeleteMessage } from '@/presentation/hooks/messaging/useDeleteMessag
 import toast from 'react-hot-toast';
 import './MessageThread.css';
 
+// Splits message text into plain segments and clickable links. Matches
+// http(s):// URLs and bare www.* URLs so users don't have to type the
+// scheme for the link to be recognised. Trailing punctuation (.,;:!?)
+// is kept out of the href so ending a sentence with a URL still works.
+const URL_REGEX = /(https?:\/\/[^\s<]+|www\.[^\s<]+)/gi;
+
+function renderMessageContent(text) {
+  if (!text) return null;
+  const parts = [];
+  let last = 0;
+  let match;
+  const re = new RegExp(URL_REGEX.source, 'gi');
+  while ((match = re.exec(text)) !== null) {
+    const start = match.index;
+    if (start > last) parts.push(text.slice(last, start));
+    let url = match[0];
+    let trailing = '';
+    const trailMatch = url.match(/[.,;:!?)\]]+$/);
+    if (trailMatch) {
+      trailing = trailMatch[0];
+      url = url.slice(0, -trailing.length);
+    }
+    const href = url.startsWith('http') ? url : `https://${url}`;
+    parts.push(
+      <a
+        key={`lnk-${start}`}
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer nofollow"
+        className="message-link"
+      >
+        {url}
+      </a>,
+    );
+    if (trailing) parts.push(trailing);
+    last = start + match[0].length;
+  }
+  if (last < text.length) parts.push(text.slice(last));
+  return parts.length > 0 ? parts : text;
+}
+
 // Lightbox for viewing images
 function ImageLightbox({ src, alt, onClose, onDownload }) {
   return (
@@ -313,7 +354,7 @@ export function MessageThread({ conversationId, participantDetails = {} }) {
                               Re: {message.metadata.subject}
                             </div>
                           )}
-                          <p className="message-content">{message.content}</p>
+                          <p className="message-content">{renderMessageContent(message.content)}</p>
                           <span className="message-time">{formatTime(message.createdAt)}</span>
                         </div>
                       )}
@@ -371,7 +412,7 @@ export function MessageThread({ conversationId, participantDetails = {} }) {
                             Re: {message.metadata.subject}
                           </div>
                         )}
-                        <p className="message-content">{message.content}</p>
+                        <p className="message-content">{renderMessageContent(message.content)}</p>
                         <span className="message-time">{formatTime(message.createdAt)}</span>
                       </div>
                     )}

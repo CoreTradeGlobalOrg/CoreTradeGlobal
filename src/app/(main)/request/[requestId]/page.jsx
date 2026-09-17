@@ -333,7 +333,7 @@ export default function RequestDetailsPage() {
                   <span className="text-[#3B82F6]">•</span> Verify buyer identity before shipping.
                 </li>
                 <li className="flex gap-2">
-                  <span className="text-[#3B82F6]">•</span> Use secure payment methods (LC/Escrow).
+                  <span className="text-[#3B82F6]">•</span> Use secure payment methods.
                 </li>
                 <li className="flex gap-2">
                   <span className="text-[#3B82F6]">•</span> Report suspicious behavior instantly.

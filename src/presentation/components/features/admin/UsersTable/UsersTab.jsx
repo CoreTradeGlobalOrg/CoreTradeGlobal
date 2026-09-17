@@ -2,10 +2,11 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Star, Check, Ban, Trash2, Eye, Shield, ShieldX, ShieldOff, ChevronDown } from 'lucide-react';
+import { Star, Check, Ban, Trash2, Eye, Shield, ShieldX, ShieldOff, ChevronDown, MessageCircle, BadgeCheck } from 'lucide-react';
 import { COUNTRIES } from '@/core/constants/countries';
 import { ROLES, ROLE_DISPLAY_NAMES, ROLE_BADGE_COLORS } from '@/core/constants/roles';
 import { useCategories } from '@/presentation/hooks/category/useCategories';
+import { useAuth } from '@/presentation/contexts/AuthContext';
 
 function getCountryLabel(countryCode) {
   const country = COUNTRIES.find((c) => c.value === countryCode);
@@ -36,6 +37,7 @@ function getRoleBadgeClasses(role) {
 export function UsersTab({ users = [], onAction, onOpenDialog, actionLoading }) {
   const router = useRouter();
   const { categories } = useCategories();
+  const { user: currentUser } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterVerified, setFilterVerified] = useState('all');
   const [filterApproved, setFilterApproved] = useState('all');
@@ -75,7 +77,7 @@ export function UsersTab({ users = [], onAction, onOpenDialog, actionLoading }) 
 
   const handleSelectAction = (value, user) => {
     if (!value) return;
-    if (value === 'feature') onAction('feature', user);
+    if (value === 'feature' || value === 'message' || value === 'verifyCompany') onAction(value, user);
     else if (value === 'profile') router.push(`/profile/${user.id}`);
     else onOpenDialog(value, user);
   };
@@ -229,7 +231,9 @@ export function UsersTab({ users = [], onAction, onOpenDialog, actionLoading }) 
                         </>
                       ) : (
                         <>
+                          {!user.isSuspended && user.id !== currentUser?.uid && <option value="message">Message User</option>}
                           {!user.isSuspended && user.adminApproved && <option value="feature">{user.featured ? 'Unfeature User' : 'Feature User'}</option>}
+                          {!user.isSuspended && <option value="verifyCompany">{user.companyVerified ? 'Remove Verified Badge' : 'Mark Company Verified'}</option>}
                           {!user.isSuspended && user.adminApproved && <option value="admin">{user.role === 'admin' ? 'Remove Admin' : 'Make Admin'}</option>}
                           {!user.isSuspended && <option value="changeRole">Change Role</option>}
                           {!user.adminApproved && !user.isSuspended && <option value="approve">Approve User</option>}
@@ -324,7 +328,9 @@ export function UsersTab({ users = [], onAction, onOpenDialog, actionLoading }) 
                           </>
                         ) : (
                           <>
+                            {!user.isSuspended && user.id !== currentUser?.uid && <button type="button" onClick={() => { closeMobileDropdown(); onAction('message', user); }} className="w-full px-4 py-3 text-left text-base text-[#FFD700] hover:bg-[#243444] flex items-center gap-3"><MessageCircle className="w-5 h-5" /> Message User</button>}
                             {!user.isSuspended && user.adminApproved && <button type="button" onClick={() => { closeMobileDropdown(); onAction('feature', user); }} className="w-full px-4 py-3 text-left text-base text-white hover:bg-[#243444] flex items-center gap-3"><Star className="w-5 h-5" /> {user.featured ? 'Unfeature User' : 'Feature User'}</button>}
+                            {!user.isSuspended && <button type="button" onClick={() => { closeMobileDropdown(); onAction('verifyCompany', user); }} className="w-full px-4 py-3 text-left text-base text-emerald-400 hover:bg-[#243444] flex items-center gap-3"><BadgeCheck className="w-5 h-5" /> {user.companyVerified ? 'Remove Verified Badge' : 'Mark Company Verified'}</button>}
                             {!user.isSuspended && user.adminApproved && <button type="button" onClick={() => { closeMobileDropdown(); onOpenDialog('admin', user); }} className="w-full px-4 py-3 text-left text-base text-purple-400 hover:bg-[#243444] flex items-center gap-3"><Shield className="w-5 h-5" /> {user.role === 'admin' ? 'Remove Admin' : 'Make Admin'}</button>}
                             {!user.isSuspended && <button type="button" onClick={() => { closeMobileDropdown(); onOpenDialog('changeRole', user); }} className="w-full px-4 py-3 text-left text-base text-cyan-400 hover:bg-[#243444] flex items-center gap-3"><Shield className="w-5 h-5" /> Change Role</button>}
                             {!user.adminApproved && !user.isSuspended && <button type="button" onClick={() => { closeMobileDropdown(); onOpenDialog('approve', user); }} className="w-full px-4 py-3 text-left text-base text-green-400 hover:bg-[#243444] flex items-center gap-3"><Check className="w-5 h-5" /> Approve User</button>}

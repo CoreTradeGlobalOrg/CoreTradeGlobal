@@ -14,6 +14,7 @@ import { container } from '@/core/di/container';
 import { COUNTRIES } from '@/core/constants/countries';
 import { CountryFlag } from '@/presentation/components/common/CountryFlag/CountryFlag';
 import { useCategories } from '@/presentation/hooks/category/useCategories';
+import { useOwnerRoles } from '@/presentation/hooks/user/useOwnerRoles';
 
 // Helper to get country name from ISO code
 const getCountryName = (countryCode) => {
@@ -112,6 +113,7 @@ const DEFAULT_RFQS = [
 export function RequestGrid({ searchQuery, categoryFilter }) {
     const [requests, setRequests] = useState(DEFAULT_RFQS);
     const [filteredRequests, setFilteredRequests] = useState(DEFAULT_RFQS);
+    const ownerRoles = useOwnerRoles(filteredRequests.map((r) => r.userId));
     const [loading, setLoading] = useState(true);
     const { categories } = useCategories();
 
@@ -201,9 +203,16 @@ export function RequestGrid({ searchQuery, categoryFilter }) {
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredRequests.map((rfq) => (
+            {filteredRequests.map((rfq) => {
+                const logistics = ownerRoles.get(rfq.userId) === 'logistics_provider';
+                return (
                 <Link key={rfq.id} href={`/request/${rfq.id}`} className="block">
-                    <div className="rfq-card cursor-pointer hover:border-[#3b82f6]/50 hover:shadow-[0_0_30px_rgba(59,130,246,0.15)] transition-all duration-300 !w-auto !min-w-0 !max-w-none">
+                    <div
+                        className={
+                            'rfq-card cursor-pointer hover:shadow-[0_0_30px_rgba(59,130,246,0.15)] transition-all duration-300 !w-auto !min-w-0 !max-w-none'
+                            + (logistics ? ' rfq-card--logistics' : ' hover:border-[#3b82f6]/50')
+                        }
+                    >
                         <div className="flex justify-between items-start mb-4">
                             <div className="flex items-center gap-1.5 text-[13px] text-white">
                                 <CountryFlag countryCode={rfq.country} size={16} />
@@ -253,7 +262,8 @@ export function RequestGrid({ searchQuery, categoryFilter }) {
                         </div>
                     </div>
                 </Link>
-            ))}
+                );
+            })}
         </div>
     );
 }

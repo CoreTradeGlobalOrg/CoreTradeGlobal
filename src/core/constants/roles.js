@@ -60,10 +60,14 @@ export const ROLE_BADGE_COLORS = {
     color: 'blue',
   },
   [ROLES.LOGISTICS_PROVIDER]: {
-    bg: 'bg-green-100',
-    text: 'text-green-800',
-    border: 'border-green-200',
-    color: 'green',
+    // Custom accent (#E25822) instead of a Tailwind palette entry so the
+    // logistics-provider tone stays in sync with the frame overrides in
+    // homepage.css. Alpha values match the "idle" chip tint used in the
+    // product / company / rfq cards.
+    bg: 'bg-[#E25822]/15',
+    text: 'text-[#E25822]',
+    border: 'border-[#E25822]/40',
+    color: '#E25822',
   },
   [ROLES.INSURANCE_PROVIDER]: {
     bg: 'bg-orange-100',

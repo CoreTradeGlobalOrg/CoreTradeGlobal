@@ -12,7 +12,7 @@
 import { NextResponse } from 'next/server';
 
 const FRANKFURTER_URL =
-  'https://api.frankfurter.dev/v2/rates?base=EUR&quotes=USD,GBP,TRY,CNY,JPY,AED,SAR';
+  'https://api.frankfurter.dev/v2/rates?base=EUR&quotes=USD,GBP,TRY,JPY,CHF,CNY,INR,MXN,SGD,AUD,CAD,BRL,NZD,PLN,SEK,AED,SAR';
 
 export async function GET() {
   try {

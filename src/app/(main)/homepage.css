@@ -3086,6 +3086,40 @@ html {
     border-color: rgba(255, 215, 0, 0.5);
 }
 
+/* ────────────────────────────────────────────────────────────────
+   Logistics-provider frame overrides (#E25822).
+   Applied via parent-supplied `--logistics` modifier on the three
+   card families that surface members and their content — Products
+   grid, Companies grid, RFQ carousel. Nothing else about the card
+   changes; only the border tint + hover accent shift.
+   ──────────────────────────────────────────────────────────────── */
+
+#products .product-card.product-card--logistics,
+.product-card.product-card--logistics {
+    border-color: rgba(226, 88, 34, 0.32) !important;
+}
+#products .product-card.product-card--logistics:hover,
+.product-card.product-card--logistics:hover {
+    border-color: rgba(226, 88, 34, 0.65) !important;
+    box-shadow: 0 0 12px rgba(226, 88, 34, 0.15) !important;
+}
+
+#companies .company-card-inner--logistics {
+    border-color: rgba(226, 88, 34, 0.28);
+}
+#companies .company-card-link:hover .company-card-inner--logistics {
+    border-color: rgba(226, 88, 34, 0.6);
+    box-shadow: 0 0 12px rgba(226, 88, 34, 0.12);
+}
+
+.rfq-card--logistics {
+    border-color: rgba(226, 88, 34, 0.32);
+}
+.rfq-card--logistics:hover {
+    border-color: rgba(226, 88, 34, 0.65);
+    box-shadow: 0 0 12px rgba(226, 88, 34, 0.15);
+}
+
 .tab-content {
     align-items: stretch;
     display: flex;

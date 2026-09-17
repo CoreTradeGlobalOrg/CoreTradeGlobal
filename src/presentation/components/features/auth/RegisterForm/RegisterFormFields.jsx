@@ -265,7 +265,7 @@ export function RegisterFormFields({ step, register, errors, loading, setValue, 
                   aria-checked={selected}
                   disabled={loading}
                   onClick={() => setValue('companyType', opt.value, { shouldValidate: true })}
-                  className={`px-3 py-3 rounded-lg border text-sm font-semibold transition-all focus:outline-none focus:ring-2 focus:ring-[#FFD700] disabled:opacity-60 ${
+                  className={`min-h-[64px] px-3 py-3 rounded-lg border text-sm font-semibold text-center leading-tight flex items-center justify-center transition-colors focus:outline-none focus:ring-2 focus:ring-[#FFD700] disabled:opacity-60 ${
                     selected
                       ? 'bg-[rgba(255,215,0,0.15)] border-[#FFD700] text-[#FFD700]'
                       : 'bg-[rgba(255,255,255,0.04)] border-[rgba(255,255,255,0.12)] text-white hover:border-[rgba(255,215,0,0.5)]'
@@ -298,24 +298,26 @@ export function RegisterFormFields({ step, register, errors, loading, setValue, 
           )}
         </div>
 
-        <div>
-          <label htmlFor="companyCategory" className="block text-xs text-[#A0A0A0] font-semibold tracking-wider uppercase mb-1.5">
-            Company Category <span className="text-red-400">*</span>
-          </label>
-          <SearchableSelect
-            options={categories}
-            value={companyCategory}
-            onChange={(value) => setValue('companyCategory', value, { shouldValidate: true })}
-            placeholder={categoriesLoading ? "Loading categories..." : "Select category"}
-            disabled={loading || categoriesLoading}
-            error={!!errors.companyCategory}
-            className="dark-select"
-            fallbackOption={otherCategoryOption}
-          />
-          {errors.companyCategory && (
-            <p className="mt-1 text-xs text-red-400">{errors.companyCategory.message}</p>
-          )}
-        </div>
+        {companyType === 'trade' && (
+          <div>
+            <label htmlFor="companyCategory" className="block text-xs text-[#A0A0A0] font-semibold tracking-wider uppercase mb-1.5">
+              Company Category <span className="text-red-400">*</span>
+            </label>
+            <SearchableSelect
+              options={categories}
+              value={companyCategory}
+              onChange={(value) => setValue('companyCategory', value, { shouldValidate: true })}
+              placeholder={categoriesLoading ? "Loading categories..." : "Select category"}
+              disabled={loading || categoriesLoading}
+              error={!!errors.companyCategory}
+              className="dark-select"
+              fallbackOption={otherCategoryOption}
+            />
+            {errors.companyCategory && (
+              <p className="mt-1 text-xs text-red-400">{errors.companyCategory.message}</p>
+            )}
+          </div>
+        )}
 
         <div>
           <label htmlFor="country" className="block text-xs text-[#A0A0A0] font-semibold tracking-wider uppercase mb-1.5">
