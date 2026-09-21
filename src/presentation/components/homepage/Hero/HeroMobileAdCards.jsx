@@ -92,8 +92,15 @@ export function HeroMobileAdCards() {
   // by 157 px, accounting for ~0.2 CLS on top of the 0.05 baseline
   // this page otherwise measures. Rendering the container in SSR
   // reserves the slot from first paint.
-  const { ad: featuredProductAd } = useActiveAd(AD_TYPES.FEATURED);
-  const { ad: heroAd } = useActiveAd(AD_TYPES.HERO);
+  // Unified SPONSORED wins over per-slot legacy ads. Mobile shows
+  // simplified placeholders — desktop HeroDataCards owns the richer
+  // resolution logic (product / user doc lookup); on mobile the ad
+  // record's own snapshot fields are enough for the two compact slots.
+  const { ad: sponsoredAd } = useActiveAd(AD_TYPES.SPONSORED);
+  const { ad: legacyFeatured } = useActiveAd(AD_TYPES.FEATURED);
+  const { ad: legacyHero } = useActiveAd(AD_TYPES.HERO);
+  const featuredProductAd = sponsoredAd || legacyFeatured;
+  const heroAd = sponsoredAd || legacyHero;
 
   return (
     <div className="hero-mobile-ad-cards">
@@ -104,7 +111,7 @@ export function HeroMobileAdCards() {
           tag: 'Featured Product',
           title: 'Your Product Here',
           subtitle: 'Front-page product spotlight',
-          href: '/pricing/inquire?type=featured',
+          href: '/pricing/inquire?type=sponsored',
         }}
       />
       <AdSlot
@@ -114,7 +121,7 @@ export function HeroMobileAdCards() {
           tag: 'Hero Spotlight',
           title: 'Your Brand Here',
           subtitle: 'Front-page hero spotlight',
-          href: '/pricing/inquire?type=hero',
+          href: '/pricing/inquire?type=sponsored',
         }}
       />
     </div>

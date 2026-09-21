@@ -1933,8 +1933,12 @@ html {
     contain: layout;
 }
 
+/* Height reservation for the sponsored showcase — matches the
+   sponsored-section min-height so the loading placeholder in page.js
+   swaps into the real card without CLS. V3 layout ships all other
+   visuals from ShowcaseSection.css. */
 .showcase-section {
-    min-height: 850px;
+    min-height: 650px;
     contain: layout;
 }
 
@@ -2069,28 +2073,10 @@ html {
 }
 
 /* --- 12. SHOWCASE (3D CAROUSEL) --- */
-.showcase-section {
-    /* Header (~100) + carousel (450) + padding (10) ≈ 560; 580 gives a
-       thin buffer without leaving 280 px of dead space under the
-       carousel like the old 850 lock did. */
-    min-height: 580px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 5px 2rem;
-    position: relative;
-    background-color: #05080f;
-    background-image: radial-gradient(at 50% 0%, rgba(20, 40, 70, 0.4) 0%, transparent 60%), linear-gradient(to bottom, #0e1c2f 0%, #050608 100%);
-    overflow: hidden;
-}
-
-/* Hide showcase on mobile - using card stack instead */
-@media (max-width: 768px) {
-    .showcase-section {
-        display: none !important;
-    }
-}
+/* V3 sponsored showcase — the section is styled entirely by
+   ShowcaseSection.css. All the legacy 3D-carousel bg/padding and the
+   mobile hide rule are gone with the carousel itself; V3 renders the
+   same premium card on mobile. */
 
 .section-header {
     text-align: center;

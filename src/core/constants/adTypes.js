@@ -20,6 +20,15 @@ export const AD_TYPES = {
   SPONSORED_PRODUCT: 'sponsored_product',
   // 3D Featured Companies carousel + mobile card stack — rotating slots.
   CAROUSEL: 'carousel',
+  // Unified sponsorship — a single purchase fills every ad slot at once:
+  //   hero left  → sponsored.heroProductId
+  //   hero right → sponsored.userId (company card)
+  //   showcase   → sponsored.showcaseProductIds (up to 3 mini cards)
+  //   /products  → sponsored.productsListProductId
+  // New tier that replaces the four legacy types above going forward.
+  // Legacy ads are still honored for backwards compatibility until an
+  // admin expires them; the sponsored record takes priority when active.
+  SPONSORED: 'sponsored',
 };
 
 export const AD_TYPE_LABELS = {
@@ -27,6 +36,7 @@ export const AD_TYPE_LABELS = {
   [AD_TYPES.HERO]: 'Hero Company Ad',
   [AD_TYPES.SPONSORED_PRODUCT]: 'Sponsored Product Ad',
   [AD_TYPES.CAROUSEL]: 'Carousel Company Ad',
+  [AD_TYPES.SPONSORED]: 'Sponsored Package',
 };
 
 export const AD_STATUSES = {
@@ -133,6 +143,7 @@ export const AD_TIERS = [
 // Combined multi-placement is intentionally *not* a type — an admin
 // creates one ad per placement when converting a combined inquiry.
 export const AD_PACKAGES = [
+  { value: 'Sponsored Package', short: 'Sponsored', type: AD_TYPES.SPONSORED, weekly: 89, monthly: 299 },
   { value: 'Hero Product Ad', short: 'Hero Product Ad', type: AD_TYPES.FEATURED, weekly: 49, monthly: 149 },
   { value: 'Hero Company Ad', short: 'Hero Company Ad', type: AD_TYPES.HERO, weekly: 49, monthly: 149 },
   { value: 'Sponsored Product Ad', short: 'Sponsored Product Ad', type: AD_TYPES.SPONSORED_PRODUCT, weekly: 29, monthly: 99 },
@@ -151,6 +162,7 @@ export const AD_DURATIONS = [
 // URL query-param shortcut used by /advertising tier CTAs to preselect
 // a package on the inquiry form.
 export const TYPE_TO_PACKAGE = {
+  [AD_TYPES.SPONSORED]: 'Sponsored Package',
   [AD_TYPES.FEATURED]: 'Hero Product Ad',
   [AD_TYPES.HERO]: 'Hero Company Ad',
   [AD_TYPES.SPONSORED_PRODUCT]: 'Sponsored Product Ad',

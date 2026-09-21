@@ -14,8 +14,15 @@ import { CountryFlag } from '@/presentation/components/common/CountryFlag/Countr
 import { COUNTRIES } from '@/core/constants/countries';
 import { useActiveAd } from '@/presentation/hooks/ads/useActiveAd';
 import { useTrackAd } from '@/presentation/hooks/ads/useTrackAd';
+import { useProductsByIds } from '@/presentation/hooks/product/useProductsByIds';
+import { useUserProfile } from '@/presentation/hooks/user/useUserProfile';
 import { AD_TYPES } from '@/core/constants/adTypes';
 import { getUnitByCode, getUnitName, getUnitNamePluralized } from '@/core/constants/units';
+
+function truncate(text, max = 90) {
+  if (!text) return '';
+  return text.length > max ? text.slice(0, max).trim() + '…' : text;
+}
 
 // Helper to get country name from ISO code
 const getCountryName = (countryCode) => {
@@ -101,16 +108,77 @@ function Shimmer({ width = '100%', height = '14px', className = '' }) {
 export function HeroDataCards({ fetchData, dataLoading, latestProduct, latestRequest, latestFair, latestSupplier }) {
   // Show skeleton when fetchData is enabled but data hasn't arrived yet
   const showSkeleton = fetchData && dataLoading;
-  // Optional paid slot — when a hero ad is currently active, it takes
-  // over the fourth card. Falls back to the "Advertise Here" placeholder
-  // when no ad is live.
-  const { ad: heroAd } = useActiveAd(AD_TYPES.HERO);
-  const { setRef: setHeroAdRef, trackClick: trackHeroAdClick } = useTrackAd(heroAd?.id);
-  // Featured Product slot in the top-left hero corner. Falls back to
-  // a dashed "Spot Here" placeholder that routes to the pricing inquiry
-  // form pre-selected with the featured product tier.
-  const { ad: productAd } = useActiveAd(AD_TYPES.FEATURED);
-  const { setRef: setProductAdRef, trackClick: trackProductAdClick } = useTrackAd(productAd?.id);
+  // Unified sponsored package wins over legacy per-slot ads. When a
+  // SPONSORED campaign is active it drives BOTH hero cards from a
+  // single record (heroProductId → left, userId → right), so a buyer
+  // gets full-hero coverage in one purchase. Legacy FEATURED/HERO ads
+  // still work as fallbacks while pre-existing campaigns run out.
+  const { ad: sponsoredAd } = useActiveAd(AD_TYPES.SPONSORED);
+  const { ad: legacyHeroAd } = useActiveAd(AD_TYPES.HERO);
+  const { ad: legacyProductAd } = useActiveAd(AD_TYPES.FEATURED);
+
+  // Batch-resolve the sponsored hero product; user profile is a
+  // one-off getDoc. Both are inert (no reads) when there's no
+  // sponsored ad active.
+  const sponsoredProductMap = useProductsByIds(sponsoredAd?.heroProductId ? [sponsoredAd.heroProductId] : []);
+  const sponsoredHeroProduct = sponsoredAd?.heroProductId ? sponsoredProductMap.get(sponsoredAd.heroProductId) : null;
+  const { profile: sponsoredCompany } = useUserProfile(sponsoredAd?.userId);
+
+  // Precedence: sponsored package first, legacy slot ads next, then
+  // placeholder. Track refs plumbed against whichever ad ends up used.
+  const activeProductAd = sponsoredAd || legacyProductAd;
+  const activeHeroAd = sponsoredAd || legacyHeroAd;
+  const { setRef: setProductAdRef, trackClick: trackProductAdClick } = useTrackAd(activeProductAd?.id);
+  const { setRef: setHeroAdRef, trackClick: trackHeroAdClick } = useTrackAd(activeHeroAd?.id);
+
+  // Render-shape helpers turn whichever ad won into the fields the
+  // legacy JSX expects — companyLogo/name/description/linkUrl. For
+  // SPONSORED, everything is resolved from the live product + user
+  // docs so a name/logo/price change flows without an ad edit.
+  const productSlot = sponsoredAd
+    ? sponsoredHeroProduct
+      ? {
+          badgeText: sponsoredAd.badgeText || 'Featured Product',
+          companyLogo: sponsoredHeroProduct.images?.[0] || sponsoredCompany?.companyLogo || null,
+          companyName: sponsoredHeroProduct.name,
+          description: truncate(sponsoredHeroProduct.description),
+          linkUrl: `/product/${sponsoredHeroProduct.id}`,
+        }
+      : null
+    : legacyProductAd
+      ? {
+          badgeText: legacyProductAd.badgeText || 'Featured Product',
+          companyLogo: legacyProductAd.companyLogo,
+          companyName: legacyProductAd.companyName,
+          description: legacyProductAd.description,
+          linkUrl: legacyProductAd.linkUrl || '#',
+        }
+      : null;
+
+  const companySlot = sponsoredAd
+    ? sponsoredCompany
+      ? {
+          badgeText: sponsoredAd.badgeText || 'Sponsored',
+          companyLogo: sponsoredCompany.companyLogo || sponsoredCompany.photoURL || null,
+          companyName: sponsoredCompany.companyName || sponsoredCompany.displayName || 'Sponsored Company',
+          description: truncate(sponsoredCompany.companyDescription || sponsoredCompany.bio || 'Featured supplier — explore their catalog.'),
+          linkUrl: `/profile/${sponsoredCompany.id}`,
+        }
+      : null
+    : legacyHeroAd
+      ? {
+          badgeText: legacyHeroAd.badgeText || 'Sponsored',
+          companyLogo: legacyHeroAd.companyLogo,
+          companyName: legacyHeroAd.companyName,
+          description: legacyHeroAd.description,
+          linkUrl: legacyHeroAd.linkUrl || '#',
+        }
+      : null;
+
+  // The legacy JSX below reads productAd / heroAd — bind them to the
+  // resolved slot shapes so all downstream markup keeps working.
+  const productAd = productSlot;
+  const heroAd = companySlot;
   return (
     <>
       {/* Left Side Info Cards */}
@@ -151,7 +219,7 @@ export function HeroDataCards({ fetchData, dataLoading, latestProduct, latestReq
           </Link>
         ) : (
           <Link
-            href="/pricing/inquire?type=featured"
+            href="/pricing/inquire?type=sponsored"
             className="hero-info-card hero-product-card hero-ad-slot-card"
             aria-label="Feature your product here — inquire about the Featured Product placement"
           >
@@ -304,7 +372,7 @@ export function HeroDataCards({ fetchData, dataLoading, latestProduct, latestReq
           </Link>
         ) : (
           <Link
-            href="/pricing/inquire?type=featured"
+            href="/pricing/inquire?type=sponsored"
             className="hero-info-card hero-supplier-card hero-ad-slot-card"
             aria-label="Your company here — inquire about featured advertising"
           >

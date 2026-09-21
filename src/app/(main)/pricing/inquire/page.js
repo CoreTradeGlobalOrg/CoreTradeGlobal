@@ -103,16 +103,27 @@ function InquirePageInner() {
   const [errors, setErrors] = useState({});
   const firstErrorRef = useRef(null);
 
-  // Product picker state — only used when the Featured tier is chosen and
-  // the visitor is signed in. Stores the raw product docs + which one the
-  // user selected. `productsLoading` prevents the "no products" empty
+  // Product picker state — loaded once whenever the buyer picks a tier
+  // that needs a product creative (Featured or Sponsored). Stores the
+  // raw product docs. `productsLoading` prevents the "no products" empty
   // state from flashing on first render.
   const [myProducts, setMyProducts] = useState([]);
   const [productsLoading, setProductsLoading] = useState(false);
+  // Featured tier — single-product select.
   const [selectedProductId, setSelectedProductId] = useState('');
+  // Sponsored tier — three separate slots so the buyer can put a
+  // different product on each surface (hero left, 3 showcase mini
+  // cards, /products directory slot). Showcase is optional; the
+  // sponsored card auto-fills from hero + list when the buyer leaves
+  // it blank.
+  const [heroProductId, setHeroProductId] = useState('');
+  const [showcaseProductIds, setShowcaseProductIds] = useState([]); // string[]
+  const [productsListProductId, setProductsListProductId] = useState('');
 
   const pkgMeta = useMemo(() => PACKAGES.find((p) => p.value === pkg), [pkg]);
   const isFeatured = pkgMeta?.type === AD_TYPES.FEATURED;
+  const isSponsored = pkgMeta?.type === AD_TYPES.SPONSORED;
+  const needsProductPicker = isFeatured || isSponsored;
   // Monthly locks the end date to start + 27 days; weekly leaves it free
   // (subject to the 7-day cap). Toggling duration always snaps end back
   // to the duration's cap so the price banner stays truthful.
@@ -158,13 +169,17 @@ function InquirePageInner() {
     }
   }, [user]);
 
-  // Load the signed-in user's own product catalog when Featured is picked.
-  // We do NOT preselect one — the user must actively click a tile so the
-  // choice is intentional. Empty catalog is fine; admin will pick manually.
+  // Load the signed-in user's own product catalog when a picker-driven
+  // tier is chosen. We do NOT preselect anything — the user must click
+  // a tile so the choice is intentional. Empty catalog is fine; admin
+  // helps pick manually.
   useEffect(() => {
-    if (!user?.uid || !isFeatured) {
+    if (!user?.uid || !needsProductPicker) {
       setMyProducts([]);
       setSelectedProductId('');
+      setHeroProductId('');
+      setShowcaseProductIds([]);
+      setProductsListProductId('');
       return;
     }
     let cancelled = false;
@@ -195,7 +210,7 @@ function InquirePageInner() {
     return () => {
       cancelled = true;
     };
-  }, [user?.uid, isFeatured]);
+  }, [user?.uid, needsProductPicker]);
 
   // Keep the package field in sync when the user changes ?type= via nav.
   useEffect(() => {
@@ -211,6 +226,15 @@ function InquirePageInner() {
     if (!email.trim() || !EMAIL_RE.test(email.trim())) e.email = 'A valid business email is required.';
     if (!website.trim()) e.website = 'Company website is required.';
     if (!pkg) e.pkg = 'Select an ad placement.';
+    // Sponsored tier: hero + products-list product picks are required
+    // (they drive the hero left card and the /products slot). Showcase
+    // is optional and auto-fills when blank.
+    if (isSponsored && user?.uid) {
+      if (myProducts.length > 0) {
+        if (!heroProductId) e.heroProduct = 'Pick one product for the hero card.';
+        if (!productsListProductId) e.listProduct = 'Pick one product for the /products directory slot.';
+      }
+    }
     const range = validateCampaignRange(startDate, endDate, durationDays);
     if (!range.ok) e.range = range.reason;
     if (brief.length > 2000) e.brief = 'Brief must be under 2000 characters.';
@@ -285,6 +309,20 @@ function InquirePageInner() {
       if (selectedProduct) {
         payload.productId = selectedProduct.id;
         payload.productSnapshot = productSnapshot;
+      }
+      // Sponsored tier — persist the three slot picks. Fall back to
+      // hero + list when the buyer left showcase blank so the admin
+      // sees the same picks that will actually render on the card.
+      if (isSponsored) {
+        if (heroProductId) payload.heroProductId = heroProductId;
+        if (productsListProductId) payload.productsListProductId = productsListProductId;
+        const effectiveShowcase =
+          showcaseProductIds.length > 0
+            ? showcaseProductIds.filter(Boolean).slice(0, 3)
+            : Array.from(new Set([heroProductId, productsListProductId].filter(Boolean))).slice(0, 3);
+        if (effectiveShowcase.length > 0) {
+          payload.showcaseProductIds = effectiveShowcase;
+        }
       }
       await addDoc(collection(db, 'adInquiries'), payload);
       try {
@@ -421,6 +459,64 @@ function InquirePageInner() {
             </select>
             {errors.pkg && <p className="text-xs text-red-400 mt-1">{errors.pkg}</p>}
           </div>
+
+          {/* Sponsored tier — three separate product pickers. Buyer's
+              picks flow into the SPONSORED ad doc that drives every
+              slot (hero left, showcase mini cards, /products slot).
+              Hero + list are required; showcase is optional (falls back
+              to hero + list when blank). */}
+          {isSponsored && user && !productsLoading && myProducts.length > 0 && (
+            <>
+              <SponsoredPickerBlock
+                title="Hero Product (required)"
+                helper="Shown as the top-left sponsored card in the hero."
+                mode="single"
+                products={myProducts}
+                selectedIds={heroProductId ? [heroProductId] : []}
+                onToggle={(id) => setHeroProductId((prev) => (prev === id ? '' : id))}
+                error={errors.heroProduct}
+              />
+              <SponsoredPickerBlock
+                title="Showcase Products (optional — up to 3)"
+                helper="Featured mini-cards inside the sponsored company section. Blank falls back to hero + list picks."
+                mode="multi"
+                max={3}
+                products={myProducts}
+                selectedIds={showcaseProductIds}
+                onToggle={(id) => setShowcaseProductIds((prev) => {
+                  if (prev.includes(id)) return prev.filter((x) => x !== id);
+                  if (prev.length >= 3) return prev;
+                  return [...prev, id];
+                })}
+              />
+              <SponsoredPickerBlock
+                title="/products Directory Product (required)"
+                helper="Shown as the top sponsored tile on the /products page."
+                mode="single"
+                products={myProducts}
+                selectedIds={productsListProductId ? [productsListProductId] : []}
+                onToggle={(id) => setProductsListProductId((prev) => (prev === id ? '' : id))}
+                error={errors.listProduct}
+              />
+            </>
+          )}
+          {isSponsored && !user && (
+            <div className="rounded-xl border border-dashed border-[rgba(255,215,0,0.35)] bg-[rgba(255,215,0,0.04)] px-4 py-3 text-sm text-[#c8d3e0]">
+              <Link href="/login" className="text-[#FFD700] underline">Sign in</Link>{' '}
+              to pick products from your catalog. Otherwise our team will help pick the creatives after you submit.
+            </div>
+          )}
+          {isSponsored && user && productsLoading && (
+            <div className="rounded-xl border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.03)] px-4 py-3 text-sm text-[#A0A0A0] flex items-center gap-2">
+              <Loader2 className="w-4 h-4 animate-spin" /> Loading your products…
+            </div>
+          )}
+          {isSponsored && user && !productsLoading && myProducts.length === 0 && (
+            <div className="rounded-xl border border-dashed border-[rgba(255,255,255,0.15)] bg-[rgba(255,255,255,0.03)] px-4 py-3 text-sm text-[#c8d3e0]">
+              You don&apos;t have any active products yet.{' '}
+              <Link href="/product/new" className="text-[#FFD700] underline">Add a product</Link> first — the sponsored package showcases your catalog.
+            </div>
+          )}
 
           {/* Product picker — Featured tier only. Signed-in visitors can
               pin one of their own active products to the placement; that
@@ -599,6 +695,70 @@ function InquirePageInner() {
         </form>
       </div>
     </main>
+  );
+}
+
+// Sponsored tier product picker — same tile UI as the Featured single
+// picker, wrapped in a labelled section so all three sponsored slots
+// (hero / showcase / list) share one visual language. `mode="multi"`
+// gates a `max` cap so showcase can hold up to 3 without extra buttons.
+function SponsoredPickerBlock({ title, helper, mode, max, products, selectedIds, onToggle, error }) {
+  return (
+    <div>
+      <label className="block text-xs uppercase tracking-wider text-[#A0A0A0] font-semibold mb-1.5">
+        {title}
+      </label>
+      {helper && <p className="text-xs text-[#A0A0A0] mb-2">{helper}</p>}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 max-h-[300px] overflow-y-auto pr-1">
+        {products.map((p) => {
+          const selected = selectedIds.includes(p.id);
+          const capped = mode === 'multi' && !selected && selectedIds.length >= max;
+          const img = p.images?.[0];
+          return (
+            <button
+              key={p.id}
+              type="button"
+              disabled={capped}
+              onClick={() => onToggle(p.id)}
+              className={`relative rounded-xl overflow-hidden border text-left transition-all ${
+                selected
+                  ? 'border-[#FFD700] shadow-[0_0_0_2px_rgba(255,215,0,0.35)]'
+                  : capped
+                    ? 'border-[rgba(255,255,255,0.06)] opacity-40 cursor-not-allowed'
+                    : 'border-[rgba(255,255,255,0.1)] hover:border-[rgba(255,215,0,0.5)]'
+              }`}
+              style={{ background: 'rgba(255,255,255,0.04)' }}
+            >
+              <div className="aspect-square bg-[rgba(255,255,255,0.05)] flex items-center justify-center overflow-hidden">
+                {img ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={img} alt={p.name || 'Product'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                  <span className="text-[#A0A0A0] text-xs">No image</span>
+                )}
+              </div>
+              <div className="p-2">
+                <p className="text-xs text-white font-semibold truncate">{p.name || 'Untitled'}</p>
+                {Number.isFinite(Number(p.price)) && p.price > 0 && (
+                  <p className="text-[10px] text-[#FFD700] mt-0.5">
+                    {p.currency || 'USD'} {Number(p.price).toLocaleString()}
+                  </p>
+                )}
+              </div>
+              {selected && (
+                <span
+                  className="absolute top-2 right-2 flex items-center justify-center w-6 h-6 rounded-full"
+                  style={{ background: '#FFD700', color: '#0F1B2B' }}
+                >
+                  <Check className="w-4 h-4" strokeWidth={3} />
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+      {error && <p className="text-xs text-red-400 mt-2">{error}</p>}
+    </div>
   );
 }
 

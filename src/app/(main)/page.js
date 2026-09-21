@@ -41,7 +41,7 @@ import { CompaniesSection } from '@/presentation/components/homepage/Companies/C
 // delay + idle-fetch delay alone.
 const ShowcaseSection = dynamic(
   () => import('@/presentation/components/homepage/Showcase/ShowcaseSection').then((m) => m.ShowcaseSection),
-  { loading: () => <section className="showcase-section" style={{ minHeight: 580 }} /> }
+  { loading: () => <section className="showcase-section" style={{ minHeight: 650 }} /> }
 );
 const FairsSection = dynamic(
   () => import('@/presentation/components/homepage/Fairs/FairsSection').then((m) => m.FairsSection),

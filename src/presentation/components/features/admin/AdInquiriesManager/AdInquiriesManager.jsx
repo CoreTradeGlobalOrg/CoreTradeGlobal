@@ -474,6 +474,13 @@ function buildPrefillFromInquiry(inq) {
     // falls back to its own default (tomorrow + 7 days).
     startDate: inq.startDate || null,
     endDate: inq.endDate || null,
+    // Sponsored package: carry through the sponsor's userId and the
+    // three slot productId picks so the admin form loads them into
+    // the SPONSORED fieldset ready to save.
+    userId: inq.userId || null,
+    heroProductId: inq.heroProductId || null,
+    productsListProductId: inq.productsListProductId || null,
+    showcaseProductIds: Array.isArray(inq.showcaseProductIds) ? inq.showcaseProductIds : null,
   };
 }
 

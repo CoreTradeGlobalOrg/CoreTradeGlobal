@@ -433,7 +433,8 @@ service cloud.firestore {
                        'company', 'website', 'contactName', 'email',
                        'package', 'duration', 'startDate', 'endDate', 'brief',
                        'status', 'createdAt',
-                       'userId', 'productId', 'productSnapshot'
+                       'userId', 'productId', 'productSnapshot',
+                       'heroProductId', 'showcaseProductIds', 'productsListProductId'
                      ])
                    && request.resource.data.company is string
                    && request.resource.data.company.size() > 0
@@ -472,7 +473,16 @@ service cloud.firestore {
                        || (request.resource.data.productSnapshot is map
                            && request.resource.data.productSnapshot.keys().hasOnly(
                                 ['name', 'image', 'price', 'currency', 'description']
-                              )));
+                              )))
+                   && (!('heroProductId' in request.resource.data)
+                       || (request.resource.data.heroProductId is string
+                           && request.resource.data.heroProductId.size() <= 128))
+                   && (!('productsListProductId' in request.resource.data)
+                       || (request.resource.data.productsListProductId is string
+                           && request.resource.data.productsListProductId.size() <= 128))
+                   && (!('showcaseProductIds' in request.resource.data)
+                       || (request.resource.data.showcaseProductIds is list
+                           && request.resource.data.showcaseProductIds.size() <= 3));
       allow read, list: if isAdmin();
       allow update: if isAdmin()
                     && request.resource.data.diff(resource.data).affectedKeys()
