@@ -166,7 +166,7 @@ export function RegisterForm() {
         lastName,
         phone: data.phone,
         position: data.position,
-        companyCategory: data.companyCategory,
+        companyCategory: data.companyType === 'trade' ? data.companyCategory : '',
         companyType: data.companyType,
         country: data.country,
         role,

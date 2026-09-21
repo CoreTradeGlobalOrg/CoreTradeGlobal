@@ -51,13 +51,21 @@ service cloud.firestore {
       // Users can create their own profile during registration
       allow create: if isOwner(userId);
 
-      // Users can update their own profile, BUT cannot self-modify the 'role' field.
+      // Users can update their own profile, BUT cannot self-modify the 'role' field
+      // or the 'companyVerified' badge.
       // Role changes must go through the setUserRole Cloud Function (admin only).
-      allow update: if isOwner(userId) &&
+      // Admins can update any user (badges, moderation fields, etc.).
+      allow update: if isAdmin() || (
+        isOwner(userId) &&
         (
           !('role' in request.resource.data) ||
           request.resource.data.role == resource.data.role
-        );
+        ) &&
+        (
+          !('companyVerified' in request.resource.data) ||
+          request.resource.data.companyVerified == resource.data.companyVerified
+        )
+      );
 
       // Admin can delete user records (hard delete goes through deleteUser Cloud Function)
       allow delete: if isAdmin();

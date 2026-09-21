@@ -11,6 +11,7 @@ import { useSuspendUser } from '@/presentation/hooks/admin/useSuspendUser';
 import { useDeleteUser } from '@/presentation/hooks/admin/useDeleteUser';
 import { useBanUser } from '@/presentation/hooks/admin/useBanUser';
 import { useUnbanUser } from '@/presentation/hooks/admin/useUnbanUser';
+import { useConversations } from '@/presentation/hooks/messaging/useConversations';
 
 /**
  * useUserActions - All user management action handlers for the UsersTable.
@@ -26,6 +27,7 @@ export function useUserActions({ onRefresh }) {
   const { deleteUser } = useDeleteUser();
   const { banUser } = useBanUser();
   const { unbanUser } = useUnbanUser();
+  const { startDirectConversation } = useConversations();
 
   const openDialog = (type, user) => {
     setConfirmDialog({ isOpen: true, type, user });
@@ -47,6 +49,13 @@ export function useUserActions({ onRefresh }) {
       () => container.getUserRepository().update(userId, { featured: !currentStatus }),
       `${userName} is ${!currentStatus ? 'now featured!' : 'no longer featured.'}`,
       'Failed to update featured status'
+    );
+
+  const handleToggleCompanyVerified = (userId, currentStatus, userName) =>
+    run(userId,
+      () => container.getUserRepository().update(userId, { companyVerified: !currentStatus }),
+      `${userName}'s company is ${!currentStatus ? 'now verified!' : 'no longer verified.'}`,
+      'Failed to update verified status'
     );
 
   const handleToggleAdmin = (user) => {
@@ -97,8 +106,21 @@ export function useUserActions({ onRefresh }) {
     await map[type]?.(user);
   };
 
+  const handleMessageUser = async (user) => {
+    setActionLoading(user.id);
+    try {
+      await startDirectConversation(user.id, { source: 'admin_direct' }, null, '');
+    } catch (error) {
+      toast.error(`Failed to open conversation: ${error.message}`);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   const handleDirectAction = (type, user) => {
     if (type === 'feature') handleToggleFeatured(user.id, user.featured, user.displayName);
+    if (type === 'message') handleMessageUser(user);
+    if (type === 'verifyCompany') handleToggleCompanyVerified(user.id, user.companyVerified, user.displayName);
   };
 
   const getDialogConfig = () => {

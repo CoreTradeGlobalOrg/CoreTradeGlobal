@@ -10,12 +10,14 @@
 
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Star, MessageSquarePlus } from 'lucide-react';
 import { container } from '@/core/di/container';
 import { COUNTRIES } from '@/core/constants/countries';
 import { CountryFlag } from '@/presentation/components/common/CountryFlag/CountryFlag';
 import { useCategories } from '@/presentation/hooks/category/useCategories';
 import { useFavoriteProduct } from '@/presentation/hooks/product/useFavoriteProduct';
+import { useOwnerRoles } from '@/presentation/hooks/user/useOwnerRoles';
 import { useTrackEvent } from '@/presentation/hooks/analytics';
 import { useActiveAd } from '@/presentation/hooks/ads/useActiveAd';
 import { useTrackAd } from '@/presentation/hooks/ads/useTrackAd';
@@ -151,6 +153,9 @@ const PAGE_SIZE = 12;
 export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter, countryFilter, sidebarVisible = false }) {
     const [products, setProducts] = useState(DEFAULT_PRODUCTS);
     const [filteredProducts, setFilteredProducts] = useState(DEFAULT_PRODUCTS);
+    // Batch-load the owner role for every visible product so the
+    // logistics-provider accent lights up without a per-card read.
+    const ownerRoles = useOwnerRoles(filteredProducts.map((p) => p.userId));
     const [loading, setLoading] = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
     const gridTopRef = useRef(null);
@@ -382,6 +387,7 @@ export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter, cou
                                     categories={categories}
                                     isFavorited={isFavorited(product.id)}
                                     onToggleFavorite={toggleFavorite}
+                                    ownerRole={ownerRoles.get(product.userId)}
                                 />
                             ))}
                         </div>
@@ -420,6 +426,7 @@ export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter, cou
                         categories={categories}
                         isFavorited={isFavorited(product.id)}
                         onToggleFavorite={toggleFavorite}
+                        ownerRole={ownerRoles.get(product.userId)}
                     />
                 ))}
             </div>
@@ -470,17 +477,19 @@ export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter, cou
     );
 }
 
-function ProductCard({ product, categories, isFavorited, onToggleFavorite }) {
+function ProductCard({ product, categories, isFavorited, onToggleFavorite, ownerRole }) {
     const [imageLoading, setImageLoading] = useState(true);
 
     // Resolve category name from categoryId
     const category = categories?.find(c => c.value === product.categoryId);
     const categoryName = category?.name || product.category || '';
+    const isLogistics = ownerRole === 'logistics_provider';
 
     return (
         <Link
             href={`/product/${product.id}`}
             className="product-grid-card group"
+            style={isLogistics ? { borderColor: 'rgba(226, 88, 34, 0.55)' } : undefined}
         >
             {/* Image Area */}
             <div className="aspect-[4/3] w-full bg-[#1A283B] rounded-xl mb-4 overflow-hidden relative flex items-center justify-center">
@@ -602,11 +611,13 @@ function SponsoredProductCard({ ad }) {
             {/* Image Area — matches ProductCard aspect + wrapper */}
             <div className="aspect-[4/3] w-full bg-[#1A283B] rounded-xl mb-4 overflow-hidden relative flex items-center justify-center">
                 {ad.companyLogo ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
+                    <Image
                         src={ad.companyLogo}
                         alt={ad.companyName || 'Sponsored'}
-                        className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110"
+                        fill
+                        unoptimized
+                        sizes="(max-width: 639px) 100vw, (max-width: 900px) 50vw, (max-width: 1200px) 33vw, 300px"
+                        className="object-contain p-4 transition-transform duration-500 group-hover:scale-110"
                     />
                 ) : (
                     <div
@@ -661,7 +672,7 @@ function SponsoredProductPlaceholder() {
             className="product-grid-card group relative"
             style={{
                 border: '2px dashed rgba(255,215,0,0.55)',
-                background: 'linear-gradient(180deg, rgba(255,215,0,0.05), rgba(15,27,43,0.85))',
+                background: '#0f1b2b',
                 textDecoration: 'none',
             }}
         >
@@ -676,7 +687,7 @@ function SponsoredProductPlaceholder() {
                 "+" placeholder in place of the product image. */}
             <div className="aspect-[4/3] w-full rounded-xl mb-4 overflow-hidden relative flex items-center justify-center"
                  style={{
-                     background: 'linear-gradient(135deg, rgba(255,215,0,0.18), rgba(15,27,43,0.9))',
+                     background: '#0f1b2b',
                      border: '1px dashed rgba(255,215,0,0.4)',
                  }}
             >

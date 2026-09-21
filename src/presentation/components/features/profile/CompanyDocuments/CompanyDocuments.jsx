@@ -114,6 +114,12 @@ export function CompanyDocuments({ userId, documents = [], isOwnProfile = false,
         )}
       </div>
 
+      {isOwnProfile && (
+        <div className="mb-4 p-3 rounded-lg bg-[rgba(59,130,246,0.08)] border border-[rgba(59,130,246,0.25)] text-sm text-[#B8CCE6]">
+          After you upload your company documents, they will be reviewed and a verified badge will be granted to your profile.
+        </div>
+      )}
+
       {documents.length === 0 ? (
         <div className="text-center py-8 text-gray-400">
           <FileText className="w-12 h-12 mx-auto mb-3 opacity-30" />

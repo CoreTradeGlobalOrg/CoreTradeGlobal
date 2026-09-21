@@ -13,6 +13,7 @@ import Image from 'next/image';
 import { container } from '@/core/di/container';
 import { ChevronLeft, ChevronRight, Package, Star } from 'lucide-react';
 import { useCategories } from '@/presentation/hooks/category/useCategories';
+import { useOwnerRoles } from '@/presentation/hooks/user/useOwnerRoles';
 import { useResponsiveLimit, useScrollLoadMore } from '@/presentation/hooks/useResponsiveLimit';
 import { getUnitByCode, getUnitName } from '@/core/constants/units';
 
@@ -196,7 +197,7 @@ const ProductCardImage = memo(function ProductCardImage({ src, alt, unoptimized 
   );
 });
 
-export function ProductCard({ product, categories, isFavorited, onToggleFavorite }) {
+export function ProductCard({ product, categories, isFavorited, onToggleFavorite, ownerRole }) {
   // Get first image from images array
   const imageUrl = product.images?.[0] || product.imageUrl;
 
@@ -208,9 +209,18 @@ export function ProductCard({ product, categories, isFavorited, onToggleFavorite
   const category = categories?.find(c => c.value === product.categoryId);
   const categoryName = product.category || category?.label?.replace(/^[^\s]+\s/, '') || '';
   const categoryIcon = category?.icon || '';
+  const isLogistics = ownerRole === 'logistics_provider';
 
   return (
-    <Link href={`/product/${product.id}`} className="product-card block no-underline text-inherit hover:no-underline">
+    <Link
+      href={`/product/${product.id}`}
+      className={
+        isLogistics
+          ? 'product-card product-card--logistics block no-underline text-inherit hover:no-underline'
+          : 'product-card block no-underline text-inherit hover:no-underline'
+      }
+      style={isLogistics ? { borderColor: 'rgba(226, 88, 34, 0.55)' } : undefined}
+    >
       {/* Product Image */}
       <div className="product-card-image relative">
         <ProductCardImage src={imageUrl} alt={product.name} unoptimized={isUnoptimizedProduct(product)} />
@@ -298,6 +308,9 @@ export function FeaturedProducts() {
   const [showRightArrow, setShowRightArrow] = useState(true);
   const scrollRef = useRef(null);
   const { categories } = useCategories();
+  // Batch-load the owner role for every visible product so the
+  // logistics accent lands without a per-card Firestore read.
+  const ownerRoles = useOwnerRoles(products.map((p) => p.userId));
 
   // Responsive limits with lazy loading: mobile 4, tablet 8, desktop 12, max 30
   const { limit, displayCount, isReady, loadMore, hasMore } = useResponsiveLimit({
@@ -442,7 +455,12 @@ export function FeaturedProducts() {
                   section on throttled mobile — skeleton cards were
                   slightly shorter than the real card layout. */}
               {products.map((product) => (
-                <ProductCard key={product.id} product={product} categories={categories} />
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  categories={categories}
+                  ownerRole={ownerRoles.get(product.userId)}
+                />
               ))}
             </div>
           </div>
