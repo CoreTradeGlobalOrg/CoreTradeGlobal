@@ -389,9 +389,6 @@ function InquirePageInner() {
           <div ref={!errors.email && !errors.contactName && !errors.website && !errors.company && errors.month ? firstErrorRef : null}>
             <label className="block text-xs uppercase tracking-wider text-[#A0A0A0] font-semibold mb-1.5">
               Campaign Month <span className="text-red-400">*</span>
-              <span className="text-[#A0A0A0] normal-case font-normal ml-2">
-                (next available calendar month)
-              </span>
             </label>
             {monthsLoading ? (
               <div className="rounded-xl border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.03)] px-4 py-3 text-sm text-[#A0A0A0] flex items-center gap-2">

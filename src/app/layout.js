@@ -107,7 +107,7 @@ export const viewport = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en" className={inter.variable} suppressHydrationWarning>
-      <head>
+      <head suppressHydrationWarning>
         {/* Warm up TLS to origins we always hit from the homepage — the
             first Firestore listen and the first company/product image
             are on the LCP critical path. crossOrigin is omitted on the
@@ -223,7 +223,7 @@ export default function RootLayout({ children }) {
           </Script>
         )}
       </head>
-      <body className={inter.className}>
+      <body className={inter.className} suppressHydrationWarning>
         <InstrumentationHead />
         <AuthProvider>
           <AnalyticsProvider>

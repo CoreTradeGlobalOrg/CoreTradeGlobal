@@ -180,15 +180,30 @@ function SponsoredCard({ ad, categories }) {
   const linkUrl = ad.linkUrl || (ad.userId ? `/profile/${ad.userId}` : '/companies');
   const isExternal = /^https?:\/\//i.test(linkUrl);
 
+  // The outer card is a plain <div>, not a <Link>, because it contains
+  // its own set of anchors (mini product cards + View Company button).
+  // Nested <a> tags are invalid HTML and cause hydration errors. The
+  // ad-impression ref goes on the wrapper so tracking still fires on
+  // scroll-into-view; a click on the wrapper (outside a nested link)
+  // routes to the sponsored profile via handleCardClick.
+  const handleCardClick = (e) => {
+    // Let clicks on nested anchors / buttons through untouched.
+    if (e.target.closest('a, button')) return;
+    trackClick();
+    if (isExternal) {
+      window.open(linkUrl, '_blank', 'noopener,noreferrer');
+    } else {
+      window.location.assign(linkUrl);
+    }
+  };
+
   return (
-    <Link
+    <div
       ref={setRef}
-      onClick={trackClick}
-      href={linkUrl}
-      target={isExternal ? '_blank' : undefined}
-      rel={isExternal ? 'noopener noreferrer' : undefined}
+      onClick={handleCardClick}
       className="sponsored-card-v3"
-      style={{ textDecoration: 'none' }}
+      role="group"
+      aria-label={`Sponsored company: ${companyName}`}
     >
       <div className="brand-identity-row">
         <div className="company-logo">
@@ -239,12 +254,18 @@ function SponsoredCard({ ad, categories }) {
       )}
 
       <div className="card-footer">
-        <span className="btn-view-company">
+        <Link
+          href={linkUrl}
+          target={isExternal ? '_blank' : undefined}
+          rel={isExternal ? 'noopener noreferrer' : undefined}
+          onClick={trackClick}
+          className="btn-view-company"
+        >
           <span>View Company</span>
           <CtaArrow />
-        </span>
+        </Link>
       </div>
-    </Link>
+    </div>
   );
 }
 
