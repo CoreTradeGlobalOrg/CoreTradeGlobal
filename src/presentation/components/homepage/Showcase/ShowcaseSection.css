@@ -158,7 +158,11 @@
   gap: 8px;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
+/* Global `a:hover` in globals.css swaps text to the primary-dark accent,
+   which reads white-ish over the gold gradient and kills legibility. Pin
+   the color to navy on hover so the button label stays readable. */
 .sponsored-placeholder-cta:hover {
+  color: #0f1b2b;
   transform: translateY(-2px);
   box-shadow: 0 8px 30px rgba(255, 215, 0, 0.4);
 }

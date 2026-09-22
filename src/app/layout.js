@@ -99,9 +99,14 @@ export const viewport = {
   // auto-zoom case without disabling user zoom.
 };
 
+// suppressHydrationWarning on <html> only silences root-element mismatches
+// caused by browser extensions (Dark Reader, Grammarly, etc.) that stamp
+// <html>/<body> attributes and a <style> child before React hydrates. It
+// does NOT propagate — component-level mismatches inside the tree still
+// throw normally, so real hydration bugs stay visible.
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className={inter.variable}>
+    <html lang="en" className={inter.variable} suppressHydrationWarning>
       <head>
         {/* Warm up TLS to origins we always hit from the homepage — the
             first Firestore listen and the first company/product image

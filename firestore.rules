@@ -452,11 +452,12 @@ service cloud.firestore {
                    && request.resource.data.startDate is timestamp
                    && request.resource.data.endDate is timestamp
                    && request.resource.data.endDate.toMillis() >= request.resource.data.startDate.toMillis()
-                   // 28-day (4-week) absolute ceiling — matches the monthly
-                   // duration option. Weekly writes stay well under this
-                   // cap; client-side validation enforces the tighter 7-day
-                   // limit when duration='weekly'.
-                   && request.resource.data.endDate.toMillis() - request.resource.data.startDate.toMillis() <= 28 * 24 * 60 * 60 * 1000
+                   // 32-day absolute ceiling — enough for any calendar
+                   // month (max 31 days) plus one day of timezone slack.
+                   // The sponsored package is sold as a full-month
+                   // window; client validation nails start/end to the
+                   // first and last day of the picked month.
+                   && request.resource.data.endDate.toMillis() - request.resource.data.startDate.toMillis() <= 32 * 24 * 60 * 60 * 1000
                    && request.resource.data.brief is string
                    && request.resource.data.brief.size() <= 2000
                    && request.resource.data.status == 'new'

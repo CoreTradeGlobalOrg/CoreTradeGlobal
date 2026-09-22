@@ -169,13 +169,18 @@ export function AdCampaignForm({
   const validate = () => {
     const e = {};
     if (!companyName.trim()) e.companyName = 'Company name is required.';
-    if (!description.trim()) e.description = 'Short description is required.';
-    if (description.length > 240) e.description = 'Description must be under 240 characters.';
+    // Description + logo are resolved live from the sponsor's user profile
+    // for the SPONSORED tier, so we don't require the admin to type them.
+    // Legacy tiers still need both fields.
+    if (!isSponsored) {
+      if (!description.trim()) e.description = 'Short description is required.';
+      if (description.length > 300) e.description = 'Description must be under 300 characters.';
+      if (!isEdit && !logoFile && !logoPreview) e.logo = 'Upload a logo/creative.';
+    }
     if (!linkUrl.trim()) e.linkUrl = 'Link URL is required.';
     if (!type) e.type = 'Type is required.';
     const range = validateCampaignRange(startDate, endDate);
     if (!range.ok) e.range = range.reason;
-    if (!isEdit && !logoFile && !logoPreview) e.logo = 'Upload a logo/creative.';
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -468,26 +473,40 @@ export function AdCampaignForm({
             </div>
           </div>
 
-          {/* Description */}
-          <div>
-            <label className="block text-xs uppercase tracking-wider text-[#A0A0A0] font-semibold mb-1.5">
-              Description <span className="text-red-400">*</span>
-            </label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={3}
-              maxLength={240}
-              placeholder="Short tagline shown next to the logo in the ad slot."
-              className={inputClass(errors.description) + ' resize-y'}
-            />
-            <div className="flex items-center justify-between mt-1">
-              {errors.description && <p className="text-xs text-red-400">{errors.description}</p>}
-              <p className="text-xs text-[#A0A0A0] ml-auto">{description.length}/240</p>
+          {/* SPONSORED-only notice — description + logo are pulled live
+              from the sponsor's user profile at render time so admin
+              doesn't need to type them. Editing them here would only
+              be a fallback and would go stale the moment the user
+              updates their profile. */}
+          {isSponsored && (
+            <div className="rounded-xl border border-[rgba(56,189,248,0.25)] bg-[rgba(56,189,248,0.05)] px-4 py-3 text-xs text-[#c8d3e0]">
+              Description and company logo are auto-fetched from the sponsor&apos;s CTG profile when the ad renders — no upload or copy needed here.
             </div>
-          </div>
+          )}
 
-          {/* Logo upload */}
+          {/* Description — hidden for SPONSORED (auto-resolved). */}
+          {!isSponsored && (
+            <div>
+              <label className="block text-xs uppercase tracking-wider text-[#A0A0A0] font-semibold mb-1.5">
+                Description <span className="text-red-400">*</span>
+              </label>
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={3}
+                maxLength={300}
+                placeholder="Short tagline shown next to the logo in the ad slot."
+                className={inputClass(errors.description) + ' resize-y'}
+              />
+              <div className="flex items-center justify-between mt-1">
+                {errors.description && <p className="text-xs text-red-400">{errors.description}</p>}
+                <p className="text-xs text-[#A0A0A0] ml-auto">{description.length}/300</p>
+              </div>
+            </div>
+          )}
+
+          {/* Logo upload — hidden for SPONSORED (auto-resolved). */}
+          {!isSponsored && (
           <div>
             <label className="block text-xs uppercase tracking-wider text-[#A0A0A0] font-semibold mb-1.5">
               Company Logo / Creative {!isEdit && <span className="text-red-400">*</span>}
@@ -521,6 +540,7 @@ export function AdCampaignForm({
             </div>
             {errors.logo && <p className="text-xs text-red-400 mt-1">{errors.logo}</p>}
           </div>
+          )}
 
           {/* Campaign dates — start + end calendar, max MAX_CAMPAIGN_DAYS
               span. The end picker's maxDate keeps clicks physically

@@ -65,98 +65,49 @@ export function computeMonthlyDiscount(weekly, monthly) {
 }
 
 // Marketing copy powering the /advertising tier grid + inquiry form.
-// Each tier bundles one or more ad types under a single price row so
-// the buyer sees business language ("Hero Cards") instead of type IDs.
+// Post-consolidation we sell exactly one tier — the sponsored package
+// covers hero left + right, the homepage showcase, and the /products
+// directory slot in a single buy. Legacy AD_TYPES entries linger for
+// backwards compat but no longer appear as purchasable tiers.
 export const AD_TIERS = [
   {
-    id: 'hero-cards',
-    tag: 'Hero Cards',
-    title: 'Hero Cards',
-    // Two slots because the hero has one Sponsored Product card (left)
-    // and one Sponsored Company card (right). Both priced identically.
-    slotCount: 2,
-    slotLabel: '2 slots (1 product + 1 company)',
-    weeklyPrice: 49,
-    monthlyPrice: 149,
-    priceUnit: '/slot',
-    // Ad type ids the buyer chooses between when purchasing this tier.
-    typeOptions: [
-      { id: AD_TYPES.FEATURED, label: 'Hero Product Ad (left card)' },
-      { id: AD_TYPES.HERO, label: 'Hero Company Ad (right card)' },
-    ],
-    desc: 'Prime homepage placement. Every visitor sees your brand or product before scrolling. Choose the product slot, the company slot, or book both.',
-    features: [
-      'Front-page homepage hero placement',
-      'Choice of Product card (left) or Company card (right)',
-      'Desktop + mobile ad row coverage',
-      '3,000+ daily decision-makers landing on the platform',
-    ],
-    cta: 'Inquire About Hero Ads',
-    mockup: 'hero',
-  },
-  {
-    id: 'sponsored-product',
-    tag: 'Sponsored Product',
-    title: 'Sponsored Product',
-    slotCount: 1,
-    slotLabel: '1 slot',
-    weeklyPrice: 29,
-    monthlyPrice: 99,
+    id: 'sponsored-package',
+    tag: 'Sponsored Package',
+    title: 'Sponsored Package',
+    slotCount: 4,
+    slotLabel: 'Hero + Showcase + Products directory',
+    weeklyPrice: null,
+    monthlyPrice: 499,
     priceUnit: '',
     typeOptions: [
-      { id: AD_TYPES.SPONSORED_PRODUCT, label: 'Sponsored Product Ad (/products top slot)' },
+      { id: AD_TYPES.SPONSORED, label: 'Sponsored Package (full-site placement)' },
     ],
-    desc: 'Top-of-directory placement in front of buyers actively browsing the products catalogue.',
+    desc: 'One purchase, four surfaces. Your brand takes both hero cards, the sponsored company showcase, and the products directory sponsored tile — all resolved live from your CTG profile.',
     features: [
-      'Featured at the top of the B2B product directory',
-      '1,500–2,500 active weekly B2B buyers',
-      'Shown across 25+ global shipping routes and markets',
+      'Both homepage hero cards (product left + company right)',
+      'Full "Sponsored Company" showcase with your 3 picked products',
+      'Top-of-grid sponsored tile on /products',
+      'Sold monthly — one advertiser per calendar month, no overlap',
     ],
-    cta: 'Inquire About Sponsored Products',
-    mockup: 'featured',
-  },
-  {
-    id: 'carousel',
-    tag: 'Carousel',
-    title: 'Carousel Company Ad',
-    slotCount: 8,
-    slotLabel: '8 slots (rotating)',
-    weeklyPrice: 19,
-    monthlyPrice: 59,
-    priceUnit: '/slot',
-    typeOptions: [
-      { id: AD_TYPES.CAROUSEL, label: 'Carousel Company Ad (Featured Companies rotator)' },
-    ],
-    desc: 'Interactive horizontal brand showcase on the homepage, great for brand awareness campaigns. Up to 8 sponsored cards rotate through every week.',
-    features: [
-      '2,000–3,000 direct B2B importers & exporters weekly',
-      'Shown to active traders across 30+ countries',
-      'Rotates alongside organic company cards on desktop 3D carousel + mobile card stack',
-    ],
-    cta: 'Inquire About Carousel Ads',
-    mockup: 'carousel',
+    cta: 'Inquire About Sponsored Package',
+    mockup: 'sponsored',
   },
 ];
 
-// Ad inquiry form uses these package labels; each maps to an ad type
-// so a converted inquiry lands with the right slot pre-selected.
-// Combined multi-placement is intentionally *not* a type — an admin
-// creates one ad per placement when converting a combined inquiry.
+// Ad inquiry form package options. Only the sponsored package is
+// bookable; the constant is a single-entry array to keep the existing
+// (pkg, TYPE_TO_PACKAGE, pkgMeta) plumbing intact without special-case
+// branches.
 export const AD_PACKAGES = [
-  { value: 'Sponsored Package', short: 'Sponsored', type: AD_TYPES.SPONSORED, weekly: 89, monthly: 299 },
-  { value: 'Hero Product Ad', short: 'Hero Product Ad', type: AD_TYPES.FEATURED, weekly: 49, monthly: 149 },
-  { value: 'Hero Company Ad', short: 'Hero Company Ad', type: AD_TYPES.HERO, weekly: 49, monthly: 149 },
-  { value: 'Sponsored Product Ad', short: 'Sponsored Product Ad', type: AD_TYPES.SPONSORED_PRODUCT, weekly: 29, monthly: 99 },
-  { value: 'Carousel Company Ad', short: 'Carousel Company Ad', type: AD_TYPES.CAROUSEL, weekly: 19, monthly: 59 },
-  { value: 'Combined Multi-Placement Package', short: 'Combined', type: null, weekly: 89, monthly: 299 },
+  { value: 'Sponsored Package', short: 'Sponsored', type: AD_TYPES.SPONSORED, weekly: null, monthly: 499 },
 ];
 
-// Duration options offered to the buyer in the inquiry form. Weekly is
-// the default; Monthly bundles four weeks at a discount that varies per
-// package (calculated live via computeMonthlyDiscount).
+// Duration options offered to the buyer in the inquiry form. Post-
+// consolidation only monthly (full-calendar-month) is sold — weekly
+// entry is kept in the array for backwards compat with legacy admin
+// tools that still reference the id, but the inquiry UI hides it.
 export const AD_DURATIONS = [
-  { id: 'weekly', label: 'Weekly', unit: '/week' },
-  { id: 'monthly', label: 'Monthly (4 weeks)', unit: '/month' },
+  { id: 'monthly', label: 'Monthly (full calendar month)', unit: '/month' },
 ];
 
 // URL query-param shortcut used by /advertising tier CTAs to preselect
@@ -170,26 +121,50 @@ export const TYPE_TO_PACKAGE = {
   combined: 'Combined Multi-Placement Package',
 };
 
-// Max campaign span depends on the duration the buyer picked:
-//   - weekly  → 7-day window (Mon → Sun inclusive)
-//   - monthly → 28-day window (4 × 7 = 28 days inclusive, matches the
-//     "Monthly (4 weeks)" pricing option in AD_DURATIONS)
-// Admin can create ads without a duration constraint but the same
-// 28-day absolute ceiling still applies (and is what the Firestore
-// rules enforce on inquiry writes).
+// Campaign span cap — a full calendar month can be up to 31 days
+// (Jan/Mar/May/Jul/Aug/Oct/Dec). We cap at 32 so a start-of-month →
+// end-of-month range always fits with a day of slack for timezone
+// edge cases. Firestore rules are updated in lockstep.
 export const DURATION_DAYS = {
   weekly: 7,
-  monthly: 28,
+  monthly: 31,
 };
 
-export const MAX_CAMPAIGN_DAYS = DURATION_DAYS.monthly;
+export const MAX_CAMPAIGN_DAYS = 32;
 export const MAX_CAMPAIGN_MS = MAX_CAMPAIGN_DAYS * 24 * 60 * 60 * 1000;
 
 // Return the inclusive day-count cap for the given duration id. Unknown
-// or missing duration falls back to the weekly cap so a bad `?duration=`
-// query param can't silently unlock a 4× longer window.
+// or missing duration falls back to the monthly cap.
 export function daysForDuration(duration) {
-  return DURATION_DAYS[duration] ?? DURATION_DAYS.weekly;
+  return DURATION_DAYS[duration] ?? DURATION_DAYS.monthly;
+}
+
+// Return the start (day 1) and end (last day) of a calendar month in
+// local time. The `year` and `monthIndex` args match the Date API's
+// 0-indexed month convention (Jan = 0). Used by the inquiry form to
+// convert a picked "October 2026" into concrete campaign dates.
+export function monthRange(year, monthIndex) {
+  const start = new Date(year, monthIndex, 1, 0, 0, 0, 0);
+  const end = new Date(year, monthIndex + 1, 0, 23, 59, 59, 999);
+  return { start, end };
+}
+
+// Emit N successive calendar months starting from a given anchor month.
+// Returns `[{ year, monthIndex, label, key }]` — key is YYYY-MM so it can
+// match the ad doc's month field directly if we later normalize.
+export function upcomingMonths(anchor, count = 12) {
+  const out = [];
+  const y = anchor.getFullYear();
+  const m = anchor.getMonth();
+  for (let i = 0; i < count; i++) {
+    const d = new Date(y, m + i, 1);
+    const yy = d.getFullYear();
+    const mm = d.getMonth();
+    const label = d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    const key = `${yy}-${String(mm + 1).padStart(2, '0')}`;
+    out.push({ year: yy, monthIndex: mm, label, key });
+  }
+  return out;
 }
 
 /**
@@ -252,6 +227,8 @@ const adTypesExport = {
   daysForDuration,
   toDayStart,
   toDayEnd,
+  monthRange,
+  upcomingMonths,
   validateCampaignRange,
   computeMonthlyDiscount,
 };
