@@ -434,7 +434,8 @@ service cloud.firestore {
                        'package', 'duration', 'startDate', 'endDate', 'brief',
                        'status', 'createdAt',
                        'userId', 'productId', 'productSnapshot',
-                       'heroProductId', 'showcaseProductIds', 'productsListProductId'
+                       'heroProductId', 'showcaseProductIds', 'productsListProductId',
+                       'paymentStatus', 'paymentReference', 'monthReservedUntil'
                      ])
                    && request.resource.data.company is string
                    && request.resource.data.company.size() > 0
@@ -483,11 +484,33 @@ service cloud.firestore {
                            && request.resource.data.productsListProductId.size() <= 128))
                    && (!('showcaseProductIds' in request.resource.data)
                        || (request.resource.data.showcaseProductIds is list
-                           && request.resource.data.showcaseProductIds.size() <= 3));
-      allow read, list: if isAdmin();
-      allow update: if isAdmin()
-                    && request.resource.data.diff(resource.data).affectedKeys()
-                       .hasOnly(['status', 'handledAt', 'handledBy', 'adminNote', 'linkedAdId']);
+                           && request.resource.data.showcaseProductIds.size() <= 3))
+                   && (!('paymentStatus' in request.resource.data)
+                       || request.resource.data.paymentStatus == 'awaiting_payment')
+                   && (!('paymentReference' in request.resource.data)
+                       || (request.resource.data.paymentReference is string
+                           && request.resource.data.paymentReference.size() <= 32))
+                   && (!('monthReservedUntil' in request.resource.data)
+                       || request.resource.data.monthReservedUntil is timestamp);
+      // Read/list: admin sees everything; a signed-in user can read
+      // their own inquiries so /pricing/inquire/pay/[id] and the
+      // /my-sponsorships page can load without an admin round-trip.
+      allow read: if isAdmin() || (isAuthenticated()
+                                   && resource.data.userId == request.auth.uid);
+      allow list: if isAdmin();
+      // Admin updates the moderation + payment lifecycle. Users can
+      // flip their own inquiry from 'awaiting_payment' to 'reported'
+      // by clicking "I've sent the wire" — nothing else.
+      allow update: if (isAdmin()
+                       && request.resource.data.diff(resource.data).affectedKeys()
+                          .hasOnly(['status', 'handledAt', 'handledBy', 'adminNote', 'linkedAdId',
+                                    'paymentStatus', 'paymentConfirmedAt', 'paymentReminderCount']))
+                    || (isAuthenticated()
+                        && resource.data.userId == request.auth.uid
+                        && request.resource.data.diff(resource.data).affectedKeys()
+                           .hasOnly(['paymentStatus', 'paymentReportedAt'])
+                        && resource.data.paymentStatus == 'awaiting_payment'
+                        && request.resource.data.paymentStatus == 'reported');
       allow delete: if isAdmin();
     }
 

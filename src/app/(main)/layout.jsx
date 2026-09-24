@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { Navbar } from '@/presentation/components/homepage/Navbar/Navbar';
 import { Footer } from '@/presentation/components/homepage/Footer/Footer';
+import { PaymentNudgeBanner } from '@/presentation/components/common/PaymentNudgeBanner/PaymentNudgeBanner';
 import { ScrollToTop } from '@/presentation/components/common/ScrollToTop/ScrollToTop';
 import { ErrorBoundary } from '@/presentation/components/common/ErrorBoundary/ErrorBoundary';
 import { useAuth } from '@/presentation/contexts/AuthContext';
@@ -111,6 +112,7 @@ export default function MainLayout({ children }) {
     <>
       <ScrollToTop />
       <Navbar />
+      <PaymentNudgeBanner />
 
       {/* Onboarding tour — lives in layout so it persists across page navigation */}
       {showTour && (

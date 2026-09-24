@@ -34,6 +34,12 @@ import {
   monthRange,
   upcomingMonths,
 } from '@/core/constants/adTypes';
+import {
+  PAYMENT_STATUSES,
+  PAYMENT_RESERVATION_DAYS,
+  RESERVING_PAYMENT_STATUSES,
+  generatePaymentReference,
+} from '@/core/constants/wireTransfer';
 import { useAuth } from '@/presentation/contexts/AuthContext';
 
 const RATE_LIMIT_KEY = 'ad_inquiry_last_submit_at';
@@ -79,7 +85,16 @@ function monthKeysCoveredBy(startTs, endTs) {
 
 function InquirePageInner() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+
+  // Login-required — the inquiry ties to a userId that admins reference
+  // when confirming payment, and /my-sponsorships needs an owner to
+  // list against. Wait for auth to resolve, then push anonymous users
+  // to /login with a returnTo so they land back here after signing in.
+  useEffect(() => {
+    if (authLoading) return;
+    if (!user?.uid) router.replace('/login?returnTo=/pricing/inquire?type=sponsored');
+  }, [authLoading, user, router]);
 
   const [company, setCompany] = useState('');
   const [website, setWebsite] = useState('');
@@ -110,24 +125,38 @@ function InquirePageInner() {
     [candidateMonths, bookedKeys],
   );
 
-  // Fetch already-taken sponsored months. Reads run against the same
-  // scheduled/active/paused window as the ad-overlap check in
-  // AdCampaignForm.
+  // Fetch already-taken sponsored months. A month is unavailable when
+  // it's covered by an active/scheduled/paused ad OR by a pending
+  // inquiry that still holds a reservation (awaiting_payment / reported
+  // / paid). The two queries run in parallel; the union of their month
+  // keys is what disables the dropdown entries.
   useEffect(() => {
     let cancelled = false;
     setMonthsLoading(true);
     (async () => {
       try {
-        const snap = await getDocs(
-          query(
-            collection(db, 'ads'),
-            where('type', '==', AD_TYPES.SPONSORED),
-            where('status', 'in', [AD_STATUSES.SCHEDULED, AD_STATUSES.ACTIVE, AD_STATUSES.PAUSED]),
+        const [adSnap, inqSnap] = await Promise.all([
+          getDocs(
+            query(
+              collection(db, 'ads'),
+              where('type', '==', AD_TYPES.SPONSORED),
+              where('status', 'in', [AD_STATUSES.SCHEDULED, AD_STATUSES.ACTIVE, AD_STATUSES.PAUSED]),
+            ),
           ),
-        );
+          getDocs(
+            query(
+              collection(db, 'adInquiries'),
+              where('paymentStatus', 'in', RESERVING_PAYMENT_STATUSES),
+            ),
+          ).catch(() => ({ forEach: () => {} })),
+        ]);
         if (cancelled) return;
         const keys = new Set();
-        snap.forEach((doc) => {
+        adSnap.forEach((doc) => {
+          const data = doc.data();
+          monthKeysCoveredBy(data.startDate, data.endDate).forEach((k) => keys.add(k));
+        });
+        inqSnap.forEach((doc) => {
           const data = doc.data();
           monthKeysCoveredBy(data.startDate, data.endDate).forEach((k) => keys.add(k));
         });
@@ -244,6 +273,12 @@ function InquirePageInner() {
 
     setSubmitting(true);
     try {
+      // Reservation holds the picked month for PAYMENT_RESERVATION_DAYS
+      // days from submit. After that a paymentReminderSweep CF flips
+      // the inquiry to `expired` and the month returns to the pool.
+      const reservedUntil = new Date();
+      reservedUntil.setDate(reservedUntil.getDate() + PAYMENT_RESERVATION_DAYS);
+
       const payload = {
         company: company.trim(),
         website: normalizeUrl(website),
@@ -256,8 +291,11 @@ function InquirePageInner() {
         brief: brief.trim(),
         status: 'new',
         createdAt: serverTimestamp(),
+        userId: user.uid,
+        paymentStatus: PAYMENT_STATUSES.AWAITING,
+        paymentReference: generatePaymentReference(),
+        monthReservedUntil: Timestamp.fromDate(reservedUntil),
       };
-      if (user?.uid) payload.userId = user.uid;
 
       // Sponsored slots — persist the three picks so the admin sees the
       // buyer's choices when converting the inquiry into an ad.
@@ -269,13 +307,15 @@ function InquirePageInner() {
           : Array.from(new Set([heroProductId, productsListProductId].filter(Boolean))).slice(0, 3);
       if (effectiveShowcase.length > 0) payload.showcaseProductIds = effectiveShowcase;
 
-      await addDoc(collection(db, 'adInquiries'), payload);
+      const docRef = await addDoc(collection(db, 'adInquiries'), payload);
       try {
         window.localStorage.setItem(RATE_LIMIT_KEY, String(Date.now()));
       } catch {
         // ignore quota / privacy-mode errors
       }
-      router.push('/pricing/inquire/thank-you');
+      // Route straight to the wire-transfer instructions. Buyer can
+      // finish payment now or come back later via /my-sponsorships.
+      router.push(`/pricing/inquire/pay/${docRef.id}`);
     } catch (err) {
       // eslint-disable-next-line no-console
       console.error('adInquiry create failed:', err);
@@ -283,6 +323,19 @@ function InquirePageInner() {
       setSubmitting(false);
     }
   };
+
+  // Auth-loading / anonymous — show a lightweight spinner while the
+  // redirect effect fires so the form doesn't paint for a split second.
+  if (authLoading || !user?.uid) {
+    return (
+      <main className="pt-[calc(var(--navbar-height)+24px)] pb-16 bg-radial-navy min-h-screen text-white">
+        <div className="flex flex-col items-center justify-center py-20 gap-4">
+          <div className="w-10 h-10 border-2 border-[#FFD700] border-t-transparent rounded-full animate-spin" />
+          <p className="text-[#A0A0A0] text-sm">Checking session…</p>
+        </div>
+      </main>
+    );
+  }
 
   const fieldClasses = (fieldError) =>
     `w-full bg-[rgba(255,255,255,0.05)] border rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-[#FFD700] transition-colors ${
