@@ -1,6 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
-import { Package, Truck, Shield, Ship, BadgeCheck, Search, MessageSquare, CalendarDays, Newspaper } from 'lucide-react';
+import { Package, Truck, Shield, Ship, BadgeCheck, Search, MessageSquare, CalendarDays } from 'lucide-react';
 
 export const metadata = {
     title: 'About Us | CoreTradeGlobal',
@@ -48,11 +48,6 @@ const OFFERINGS = [
         icon: CalendarDays,
         title: 'Trade Fairs',
         description: 'Stay up to date with upcoming international trade fairs and industry events relevant to your sector, all in one place.',
-    },
-    {
-        icon: Newspaper,
-        title: 'Trade News',
-        description: 'Read up-to-date B2B trade news daily.',
     },
 ];
 

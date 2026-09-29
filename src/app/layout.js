@@ -41,9 +41,14 @@ export const metadata = {
   creator: 'CoreTradeGlobal',
   publisher: 'CoreTradeGlobal',
   manifest: '/manifest.json',
-  alternates: {
-    canonical: '/',
-  },
+  // `alternates.canonical` intentionally NOT set at the root level.
+  // Next.js propagates the root canonical to every descendant page, so
+  // hard-coding '/' here made every /product/:id, /request/:id, and
+  // /profile/:id claim the homepage as its canonical URL — Google
+  // treated them as duplicates of "/" and dropped them from the
+  // index. Each dynamic page now supplies its own canonical via
+  // generateMetadata; static pages fall back to metadataBase + the
+  // route path, which is exactly what we want.
   verification: {
     google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || '',
   },
@@ -99,10 +104,15 @@ export const viewport = {
   // auto-zoom case without disabling user zoom.
 };
 
+// suppressHydrationWarning on <html> only silences root-element mismatches
+// caused by browser extensions (Dark Reader, Grammarly, etc.) that stamp
+// <html>/<body> attributes and a <style> child before React hydrates. It
+// does NOT propagate — component-level mismatches inside the tree still
+// throw normally, so real hydration bugs stay visible.
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className={inter.variable}>
-      <head>
+    <html lang="en" className={inter.variable} suppressHydrationWarning>
+      <head suppressHydrationWarning>
         {/* Warm up TLS to origins we always hit from the homepage — the
             first Firestore listen and the first company/product image
             are on the LCP critical path. crossOrigin is omitted on the
@@ -218,7 +228,7 @@ export default function RootLayout({ children }) {
           </Script>
         )}
       </head>
-      <body className={inter.className}>
+      <body className={inter.className} suppressHydrationWarning>
         <InstrumentationHead />
         <AuthProvider>
           <AnalyticsProvider>

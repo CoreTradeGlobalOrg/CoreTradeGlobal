@@ -50,10 +50,6 @@ const FairsManager = dynamic(
   () => import('@/presentation/components/features/admin/FairsManager/FairsManager').then(m => ({ default: m.FairsManager })),
   { loading: () => <AdminTabSkeleton />, ssr: false }
 );
-const NewsManager = dynamic(
-  () => import('@/presentation/components/features/admin/NewsManager/NewsManager').then(m => ({ default: m.NewsManager })),
-  { loading: () => <AdminTabSkeleton />, ssr: false }
-);
 const ConversationsManager = dynamic(
   () => import('@/presentation/components/features/admin/ConversationsManager/ConversationsManager').then(m => ({ default: m.ConversationsManager })),
   { loading: () => <AdminTabSkeleton />, ssr: false }
@@ -175,7 +171,7 @@ function AdminPageContent() {
   const searchParams = useSearchParams();
   const { user, loading: authLoading, profileLoading, isAuthenticated } = useAuth();
   const { users, loading, error, refetch } = useGetAllUsers();
-  const validTabs = ['users', 'trades', 'messages', 'categories', 'fairs', 'news', 'testimonials', 'announcements', 'ad-inquiries', 'ad-campaigns'];
+  const validTabs = ['users', 'trades', 'messages', 'categories', 'fairs', 'testimonials', 'announcements', 'ad-inquiries', 'ad-campaigns'];
   const tabFromUrl = searchParams.get('tab');
   const [activeTab, setActiveTab] = useState(
     validTabs.includes(tabFromUrl) ? tabFromUrl : 'users'
@@ -261,14 +257,13 @@ function AdminPageContent() {
       {/* Tabs - Scrollable on mobile */}
       <div className="mb-6 md:mb-8 border-b border-[rgba(255,255,255,0.1)] -mx-4 px-4 md:mx-0 md:px-0">
         <nav className="-mb-px flex space-x-4 md:space-x-8 overflow-x-auto scrollbar-hide pb-px">
-          {['users', 'trades', 'messages', 'categories', 'fairs', 'news', 'testimonials', 'announcements', 'ad-inquiries', 'ad-campaigns'].map((tab) => {
+          {['users', 'trades', 'messages', 'categories', 'fairs', 'testimonials', 'announcements', 'ad-inquiries', 'ad-campaigns'].map((tab) => {
             const tabLabels = {
               users: 'Users',
               trades: 'Trades',
               messages: 'Messages',
               categories: 'Categories',
               fairs: 'Fairs',
-              news: 'News',
               testimonials: 'Testimonials',
               announcements: 'Announcements',
               'ad-inquiries': 'Ad Inquiries',
@@ -364,13 +359,6 @@ function AdminPageContent() {
       {activeTab === 'fairs' && (
         <div className="text-white">
           <FairsManager />
-        </div>
-      )}
-
-      {/* News Tab */}
-      {activeTab === 'news' && (
-        <div className="text-white">
-          <NewsManager />
         </div>
       )}
 

@@ -21,7 +21,6 @@ export const COLLECTIONS = {
 
   // Homepage Content
   FAIRS: 'fairs',               // Trade fairs/exhibitions
-  NEWS: 'news',                 // Trade news/articles
 
   // Messaging
   CONVERSATIONS: 'conversations', // Message conversations

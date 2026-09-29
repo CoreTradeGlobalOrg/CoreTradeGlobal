@@ -44,24 +44,6 @@ async function getActiveRequests() {
   }
 }
 
-async function getPublishedNews() {
-  try {
-    const q = query(
-      collection(db, COLLECTIONS.NEWS),
-      where('status', '==', 'published'),
-      limit(500)
-    );
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map((doc) => ({
-      id: doc.id,
-      updatedAt: doc.data().updatedAt?.toDate?.() || doc.data().publishedAt?.toDate?.() || new Date(),
-    }));
-  } catch (error) {
-    console.error('Sitemap: Error fetching news:', error);
-    return [];
-  }
-}
-
 async function getActiveFairs() {
   try {
     const q = query(
@@ -105,7 +87,6 @@ export default async function sitemap() {
     { url: `${BASE_URL}/products`, lastModified: new Date(), changeFrequency: 'daily', priority: 0.9 },
     { url: `${BASE_URL}/requests`, lastModified: new Date(), changeFrequency: 'daily', priority: 0.9 },
     { url: `${BASE_URL}/fairs`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.8 },
-    { url: `${BASE_URL}/news`, lastModified: new Date(), changeFrequency: 'daily', priority: 0.8 },
     { url: `${BASE_URL}/categories`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.7 },
     { url: `${BASE_URL}/companies`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.7 },
     { url: `${BASE_URL}/join`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
@@ -121,10 +102,9 @@ export default async function sitemap() {
   ];
 
   // Fetch dynamic content in parallel
-  const [products, requests, news, fairs, companies] = await Promise.all([
+  const [products, requests, fairs, companies] = await Promise.all([
     getActiveProducts(),
     getActiveRequests(),
-    getPublishedNews(),
     getActiveFairs(),
     getVerifiedCompanies(),
   ]);
@@ -143,14 +123,6 @@ export default async function sitemap() {
     lastModified: request.updatedAt,
     changeFrequency: 'weekly',
     priority: 0.8,
-  }));
-
-  // News pages
-  const newsPages = news.map((article) => ({
-    url: `${BASE_URL}/news/${article.id}`,
-    lastModified: article.updatedAt,
-    changeFrequency: 'monthly',
-    priority: 0.6,
   }));
 
   // Fair pages
@@ -173,7 +145,6 @@ export default async function sitemap() {
     ...staticPages,
     ...productPages,
     ...requestPages,
-    ...newsPages,
     ...fairPages,
     ...companyPages,
   ];

@@ -18,6 +18,7 @@ import { CountryFlag } from '@/presentation/components/common/CountryFlag/Countr
 import { useCategories } from '@/presentation/hooks/category/useCategories';
 import { useFavoriteProduct } from '@/presentation/hooks/product/useFavoriteProduct';
 import { useOwnerRoles } from '@/presentation/hooks/user/useOwnerRoles';
+import { useProductsByIds } from '@/presentation/hooks/product/useProductsByIds';
 import { useTrackEvent } from '@/presentation/hooks/analytics';
 import { useActiveAd } from '@/presentation/hooks/ads/useActiveAd';
 import { useTrackAd } from '@/presentation/hooks/ads/useTrackAd';
@@ -162,11 +163,13 @@ export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter, cou
     const { categories } = useCategories();
     const { isFavorited, toggleFavorite } = useFavoriteProduct();
     const { track } = useTrackEvent();
-    // Featured advertising slot — takes the first grid tile on page 1
-    // when a campaign is live. See useActiveAd for the selection rules.
-    // Products directory sponsored slot — separate ad tier from the
-    // hero placements (FEATURED / HERO), priced independently.
-    const { ad: featuredAd } = useActiveAd(AD_TYPES.SPONSORED_PRODUCT);
+    // Unified sponsored slot — the sponsored package (SPONSORED)
+    // owns hero + showcase + this /products slot in a single buy.
+    // Legacy SPONSORED_PRODUCT ads still work as a fallback while old
+    // campaigns run out. See useActiveAd for the selection rules.
+    const { ad: sponsoredAd } = useActiveAd(AD_TYPES.SPONSORED);
+    const { ad: legacyProductAd } = useActiveAd(AD_TYPES.SPONSORED_PRODUCT);
+    const featuredAd = sponsoredAd || legacyProductAd;
 
     // Fetch Products
     useEffect(() => {
@@ -416,9 +419,11 @@ export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter, cou
         <>
             <div ref={gridTopRef} className="scroll-mt-28" />
             <div className={`grid ${gridColsClass} gap-6`}>
-                {featuredAd
-                    ? <SponsoredProductCard ad={featuredAd} />
-                    : <SponsoredProductPlaceholder />}
+                {sponsoredAd
+                    ? <SponsoredPackageCard ad={sponsoredAd} categories={categories} />
+                    : legacyProductAd
+                        ? <SponsoredProductCard ad={legacyProductAd} />
+                        : <SponsoredProductPlaceholder />}
                 {pageProducts.map((product) => (
                     <ProductCard
                         key={product.id}
@@ -572,6 +577,50 @@ function ProductCard({ product, categories, isFavorited, onToggleFavorite, owner
                 </div>
             </div>
         </Link>
+    );
+}
+
+/**
+ * SponsoredPackageCard — /products slot for the unified SPONSORED tier.
+ *
+ * The ad doc only stores a productId; we resolve the real product doc
+ * at render time so the card always reflects the seller's latest price,
+ * image, and stock state. Visually it reuses the local ProductCard with
+ * a gold-tinted overlay border + "Sponsored" badge so the slot reads
+ * as promoted content without breaking grid alignment.
+ */
+function SponsoredPackageCard({ ad, categories }) {
+    const { setRef, trackClick } = useTrackAd(ad.id);
+    const productId = ad.productsListProductId || ad.heroProductId
+        || (Array.isArray(ad.showcaseProductIds) ? ad.showcaseProductIds[0] : null);
+    const productMap = useProductsByIds(productId ? [productId] : []);
+    const product = productId ? productMap.get(productId) : null;
+
+    if (!product) return <SponsoredProductPlaceholder />;
+
+    return (
+        <div
+            ref={setRef}
+            onClick={trackClick}
+            className="relative"
+            style={{
+                borderRadius: 20,
+                boxShadow: '0 10px 30px rgba(255,215,0,0.18)',
+                outline: '2px solid rgba(255,215,0,0.55)',
+                outlineOffset: '-1px',
+            }}
+        >
+            <span
+                className="absolute top-2 left-2 z-20 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider pointer-events-none"
+                style={{ background: '#FFD700', color: '#0F1B2B' }}
+            >
+                Sponsored
+            </span>
+            <ProductCard
+                product={product}
+                categories={categories}
+            />
+        </div>
     );
 }
 

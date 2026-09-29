@@ -2,7 +2,7 @@
  * Homepage Navbar Component
  *
  * Fixed navigation bar with dropdown menus.
- * Nav items grouped into: Marketplace, Services, News & Events, My Account, About.
+ * Nav items grouped into: Marketplace, Services, Events, My Account, About.
  * My Account only visible to authenticated users.
  * Role-based items hidden for unauthorized roles.
  */
@@ -23,6 +23,7 @@ import {
   Settings as SettingsIcon,
   MessageSquare,
   ChevronDown,
+  Sparkles,
 } from 'lucide-react';
 import { ROLES } from '@/core/constants/roles';
 import { LEGAL_SUPPORT_ENABLED } from '@/core/constants/featureFlags';
@@ -76,13 +77,9 @@ const getNavGroups = (user) => [
         : []),
     ],
   },
-  {
-    label: 'News & Events',
-    items: [
-      { label: 'Trade News', href: '/news' },
-      { label: 'Fairs', href: '/fairs' },
-    ],
-  },
+  // News module retired — Fairs promoted to a top-level direct link so
+  // the events surface still has a home in the navbar.
+  { label: 'Fairs', direct: true, href: '/fairs' },
   // Pricing and Advertising each stand on their own — the combined
   // dropdown was doing two clicks' worth of work for pages that
   // aren't a category. Direct-link mode renders them as top-level
@@ -94,6 +91,7 @@ const getNavGroups = (user) => [
     authOnly: true,
     items: [
       { label: 'My Deals', href: '/deals', roles: [ROLES.MEMBER, ROLES.ADMIN] },
+      { label: 'My Sponsorships', href: '/my-sponsorships' },
       { label: 'Messages', href: '/messages' },
       ...(LEGAL_SUPPORT_ENABLED
         ? [{ label: 'Lawyer Dashboard', href: '/lawyer/dashboard', roles: [ROLES.LAWYER, ROLES.ADMIN] }]
@@ -523,16 +521,33 @@ export function Navbar() {
                     showUserMenu ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible -translate-y-2'
                   }`}
                 >
+                  {/* My Account section — profile + sponsorships +
+                      settings live together so the dropdown reads as
+                      "everything I own on CTG". Header label is subtle
+                      (tiny uppercase gold) — the group is what the
+                      user asked for; it's grouping the items, not a
+                      separate submenu that would need an extra click. */}
+                  <p className="px-4 pt-3 pb-1.5 text-[10px] uppercase tracking-wider text-[#FFD700] font-bold">
+                    My Account
+                  </p>
                   <Link
                     href={`/profile/${user.uid}`}
-                    className="block px-4 py-3 text-sm text-white hover:bg-[rgba(255,255,255,0.1)]"
+                    className="block px-4 py-2.5 text-sm text-white hover:bg-[rgba(255,255,255,0.1)]"
                     onClick={() => setShowUserMenu(false)}
                   >
                     My Profile
                   </Link>
                   <Link
+                    href="/my-sponsorships"
+                    className="block px-4 py-2.5 text-sm text-white hover:bg-[rgba(255,255,255,0.1)] flex items-center gap-2"
+                    onClick={() => setShowUserMenu(false)}
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    My Sponsorships
+                  </Link>
+                  <Link
                     href="/settings"
-                    className="block px-4 py-3 text-sm text-white hover:bg-[rgba(255,255,255,0.1)] flex items-center gap-2"
+                    className="block px-4 py-2.5 text-sm text-white hover:bg-[rgba(255,255,255,0.1)] flex items-center gap-2"
                     onClick={() => setShowUserMenu(false)}
                   >
                     <SettingsIcon className="w-4 h-4" />

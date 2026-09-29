@@ -7,13 +7,61 @@
 
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { Bell, MessageSquare, FileText, X, Check, Trash2, CheckCircle, XCircle, UserPlus, Handshake, Scale, Mail } from 'lucide-react';
+import { Bell, MessageSquare, FileText, X, Check, Trash2, CheckCircle, XCircle, UserPlus, Handshake, Scale, Mail, DollarSign } from 'lucide-react';
+import { collection, onSnapshot, query, where } from 'firebase/firestore';
+import { db } from '@/core/config/firebase.config';
+import { useAuth } from '@/presentation/contexts/AuthContext';
 import { useMessages } from '@/presentation/contexts/MessagesContext';
 import { useMarkAsRead } from '@/presentation/hooks/messaging/useMarkAsRead';
+import { PAYMENT_STATUSES } from '@/core/constants/wireTransfer';
 import './NotificationBell.css';
+
+// Virtual notifications for pending payments — synthesized client-side
+// from a live listener on the user's own adInquiries. They never hit
+// Firestore's notifications collection because they can't be "read":
+// they hang around until the payment status leaves awaiting_payment /
+// reported, at which point the listener returns fewer rows and the
+// entries drop from the bell automatically. `isVirtual: true` marks
+// them so the click handler skips markNotificationAsRead (which would
+// error on an id that doesn't correspond to a real doc).
+function usePaymentReminders() {
+  const { user, loading } = useAuth();
+  const [pending, setPending] = useState([]);
+
+  useEffect(() => {
+    if (loading || !user?.uid) {
+      setPending([]);
+      return;
+    }
+    const unsub = onSnapshot(
+      query(
+        collection(db, 'adInquiries'),
+        where('userId', '==', user.uid),
+        where('paymentStatus', 'in', [PAYMENT_STATUSES.AWAITING, PAYMENT_STATUSES.REPORTED]),
+      ),
+      (snap) => {
+        setPending(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+      },
+      (err) => {
+        // eslint-disable-next-line no-console
+        console.warn('[bell] payment reminders listen failed:', err);
+      },
+    );
+    return () => unsub();
+  }, [loading, user?.uid]);
+
+  return pending;
+}
+
+function formatMonthShort(startTs) {
+  if (!startTs) return '';
+  const d = startTs?.toDate ? startTs.toDate() : new Date(startTs);
+  if (Number.isNaN(d.getTime())) return '';
+  return d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+}
 
 export function NotificationBell() {
   const router = useRouter();
@@ -22,6 +70,28 @@ export function NotificationBell() {
   const { markNotificationAsRead, markAllNotificationsAsRead, deleteAllNotifications } = useMarkAsRead();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
+
+  // Persistent payment reminders — synthesized from live Firestore
+  // state so they stay pinned to the top of the bell for as long as the
+  // inquiry sits in awaiting_payment / reported. Once admin confirms
+  // the wire (paymentStatus → paid), the row leaves the query result
+  // and the reminder disappears automatically.
+  const pendingPayments = usePaymentReminders();
+  const virtualPaymentNotifications = useMemo(
+    () => pendingPayments.map((inq) => ({
+      id: `virt-payment-${inq.id}`,
+      isVirtual: true,
+      type: 'payment_required',
+      title: 'Complete your Sponsored Package payment',
+      body: inq.paymentStatus === PAYMENT_STATUSES.REPORTED
+        ? `${formatMonthShort(inq.startDate)} · payment reported — waiting for confirmation`
+        : `${formatMonthShort(inq.startDate)} · reference ${inq.paymentReference || 'CTG'}`,
+      createdAt: inq.createdAt,
+      isRead: false,
+      link: `/pricing/inquire/pay/${inq.id}`,
+    })),
+    [pendingPayments],
+  );
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -36,6 +106,15 @@ export function NotificationBell() {
   }, []);
 
   const handleNotificationClick = async (notification) => {
+    // Virtual (payment) notifications aren't backed by a real Firestore
+    // doc — they'd throw if we called markNotificationAsRead. Just
+    // navigate; the entry disappears on its own once the linked inquiry
+    // leaves the awaiting/reported states.
+    if (notification.isVirtual) {
+      if (notification.link) router.push(notification.link);
+      setIsOpen(false);
+      return;
+    }
     // Mark as read
     if (!notification.isRead) {
       await markNotificationAsRead(notification.id);
@@ -99,6 +178,8 @@ export function NotificationBell() {
         return <Scale className="w-4 h-4" />;
       case 'verify_email':
         return <Mail className="w-4 h-4" />;
+      case 'payment_required':
+        return <DollarSign className="w-4 h-4" />;
       default:
         return <MessageSquare className="w-4 h-4" />;
     }
@@ -126,8 +207,14 @@ export function NotificationBell() {
     }
   };
 
-  // Recent notifications
-  const recentNotifications = notifications.slice(0, 10);
+  // Recent notifications — pin every payment reminder to the top so
+  // it never slides off the fold once the inbox grows. Real Firestore
+  // notifications fill the remaining slots.
+  const recentNotifications = [
+    ...virtualPaymentNotifications,
+    ...notifications.slice(0, Math.max(0, 10 - virtualPaymentNotifications.length)),
+  ];
+  const totalUnreadCount = unreadNotificationCount + virtualPaymentNotifications.length;
 
   const formatTime = (date) => {
     if (!date) return '';
@@ -171,9 +258,9 @@ export function NotificationBell() {
         aria-label="Notifications"
       >
         <Bell className="w-5 h-5" />
-        {unreadNotificationCount > 0 && (
+        {totalUnreadCount > 0 && (
           <span className="notification-badge">
-            {unreadNotificationCount > 99 ? '99+' : unreadNotificationCount}
+            {totalUnreadCount > 99 ? '99+' : totalUnreadCount}
           </span>
         )}
       </button>

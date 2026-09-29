@@ -1,44 +1,45 @@
 /**
- * Ad Placement Inquiry Form
+ * Sponsored Package Inquiry Form
  *
- * URL: /pricing/inquire[?type=featured|hero|carousel]
+ * URL: /pricing/inquire[?type=sponsored]
  *
- * The `?type` query param preselects the corresponding ad package. On
- * submit we write directly to Firestore `adInquiries/{autoId}` — a
- * `notifyAdminsOnAdInquiry` Cloud Function then fans out in-app
- * notifications + a branded email to every admin.
+ * Post-consolidation the platform sells exactly one placement — the
+ * Sponsored Package — at $499/month. Buyers pick a calendar month
+ * (must be a future month, cannot collide with an already-booked one)
+ * and, if signed in, pick the products that fill each surface (hero
+ * left, showcase mini-cards, /products slot).
  *
- * Client-side spam guards:
- *   - 60-second cooldown per browser via localStorage (also prevents
- *     accidental double-submits).
- *   - Website URL is auto-prefixed with https:// if the user omits it —
- *     same behaviour as the profile edit form.
- * Server-side Firestore rules enforce shape, size limits, and the
- * `status: 'new'` + `createdAt == request.time` invariants.
+ * The month picker fetches sponsored ads from Firestore and excludes
+ * months whose start/end range intersects an active/scheduled/paused
+ * campaign. Personal info auto-fills from the signed-in user's profile
+ * but stays editable. Submit writes to `adInquiries/{autoId}`; the
+ * `notifyAdminsOnAdInquiry` Cloud Function fans out notifications.
  *
- * On success we route to /pricing/inquire/thank-you which surfaces a
- * confirmation + next-steps CTAs.
+ * On success we route to /pricing/inquire/thank-you.
  */
 
 'use client';
 
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { addDoc, collection, query, where, getDocs, serverTimestamp, Timestamp } from 'firebase/firestore';
-import { ArrowRight, ChevronLeft, Send, Loader2, Check } from 'lucide-react';
+import { ArrowRight, ChevronLeft, Send, Loader2, Check, Calendar } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { db } from '@/core/config/firebase.config';
 import {
   AD_PACKAGES as PACKAGES,
-  TYPE_TO_PACKAGE,
   AD_TYPES,
-  AD_DURATIONS,
-  daysForDuration,
-  computeMonthlyDiscount,
-  validateCampaignRange,
+  AD_STATUSES,
+  monthRange,
+  upcomingMonths,
 } from '@/core/constants/adTypes';
-import { DatePicker } from '@/presentation/components/common/DatePicker/DatePicker';
+import {
+  PAYMENT_STATUSES,
+  PAYMENT_RESERVATION_DAYS,
+  RESERVING_PAYMENT_STATUSES,
+  generatePaymentReference,
+} from '@/core/constants/wireTransfer';
 import { useAuth } from '@/presentation/contexts/AuthContext';
 
 const RATE_LIMIT_KEY = 'ad_inquiry_last_submit_at';
@@ -46,27 +47,7 @@ const RATE_LIMIT_WINDOW_MS = 60 * 1000;
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-// YYYY-MM-DD helpers — the DatePicker component speaks ISO date strings.
-function toIsoDate(date) {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const d = String(date.getDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
-}
-
-function addDays(dateStr, days) {
-  const d = new Date(`${dateStr}T00:00:00`);
-  d.setDate(d.getDate() + days);
-  return toIsoDate(d);
-}
-
-function fmtRange(startStr, endStr) {
-  if (!startStr || !endStr) return '';
-  const fmt = (s) => new Date(`${s}T00:00:00`).toLocaleDateString('en-GB', {
-    day: '2-digit', month: 'short', year: 'numeric',
-  });
-  return `${fmt(startStr)} → ${fmt(endStr)}`;
-}
+const SPONSORED_PACKAGE = PACKAGES.find((p) => p.type === AD_TYPES.SPONSORED) || PACKAGES[0];
 
 function normalizeUrl(raw) {
   const trimmed = (raw || '').trim();
@@ -74,109 +55,156 @@ function normalizeUrl(raw) {
   return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
 }
 
+// Anchor the month list at the FIRST DAY OF THE MONTH AFTER TODAY. Users
+// can never book the current month — the rule is "next month or later,
+// as long as it isn't already claimed."
+function nextMonthAnchor() {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth() + 1, 1);
+}
+
+function keyFor(year, monthIndex) {
+  return `${year}-${String(monthIndex + 1).padStart(2, '0')}`;
+}
+
+// Given an ad doc's startDate/endDate, return every month-key the range
+// spans so a September→October ad blocks both months.
+function monthKeysCoveredBy(startTs, endTs) {
+  const start = startTs?.toDate ? startTs.toDate() : new Date(startTs);
+  const end = endTs?.toDate ? endTs.toDate() : new Date(endTs);
+  if (Number.isNaN(start?.getTime?.()) || Number.isNaN(end?.getTime?.())) return [];
+  const out = new Set();
+  const cursor = new Date(start.getFullYear(), start.getMonth(), 1);
+  const stop = new Date(end.getFullYear(), end.getMonth(), 1);
+  while (cursor.getTime() <= stop.getTime()) {
+    out.add(keyFor(cursor.getFullYear(), cursor.getMonth()));
+    cursor.setMonth(cursor.getMonth() + 1);
+  }
+  return [...out];
+}
+
 function InquirePageInner() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const { user } = useAuth();
-  const initialPackage = TYPE_TO_PACKAGE[searchParams.get('type')] || PACKAGES[0].value;
-  const initialDuration = AD_DURATIONS.find((d) => d.id === searchParams.get('duration'))?.id || 'weekly';
-  // Sensible default: start tomorrow (giving admin lead time). End is
-  // derived from the picked duration so a monthly buyer immediately sees
-  // the full 28-day window without touching the calendar.
-  const defaultStart = useMemo(() => addDays(toIsoDate(new Date()), 1), []);
-  const defaultEnd = useMemo(
-    () => addDays(defaultStart, daysForDuration(initialDuration) - 1),
-    [defaultStart, initialDuration]
-  );
-  const todayIso = useMemo(() => toIsoDate(new Date()), []);
+  const { user, loading: authLoading } = useAuth();
+
+  // Login-required — the inquiry ties to a userId that admins reference
+  // when confirming payment, and /my-sponsorships needs an owner to
+  // list against. Wait for auth to resolve, then push anonymous users
+  // to /login with a returnTo so they land back here after signing in.
+  useEffect(() => {
+    if (authLoading) return;
+    if (!user?.uid) router.replace('/login?returnTo=/pricing/inquire?type=sponsored');
+  }, [authLoading, user, router]);
 
   const [company, setCompany] = useState('');
   const [website, setWebsite] = useState('');
   const [contactName, setContactName] = useState('');
   const [email, setEmail] = useState('');
-  const [pkg, setPkg] = useState(initialPackage);
-  const [duration, setDuration] = useState(initialDuration);
-  const [startDate, setStartDate] = useState(defaultStart);
-  const [endDate, setEndDate] = useState(defaultEnd);
   const [brief, setBrief] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
   const firstErrorRef = useRef(null);
-
-  // Product picker state — only used when the Featured tier is chosen and
-  // the visitor is signed in. Stores the raw product docs + which one the
-  // user selected. `productsLoading` prevents the "no products" empty
-  // state from flashing on first render.
-  const [myProducts, setMyProducts] = useState([]);
-  const [productsLoading, setProductsLoading] = useState(false);
-  const [selectedProductId, setSelectedProductId] = useState('');
-
-  const pkgMeta = useMemo(() => PACKAGES.find((p) => p.value === pkg), [pkg]);
-  const isFeatured = pkgMeta?.type === AD_TYPES.FEATURED;
-  // Monthly locks the end date to start + 27 days; weekly leaves it free
-  // (subject to the 7-day cap). Toggling duration always snaps end back
-  // to the duration's cap so the price banner stays truthful.
-  const durationDays = daysForDuration(duration);
-  const isMonthlyDuration = duration === 'monthly';
   const userTouchedFields = useRef({ company: false, website: false, contactName: false, email: false });
 
-  useEffect(() => {
-    if (!startDate) return;
-    const maxEnd = addDays(startDate, durationDays - 1);
-    if (isMonthlyDuration) {
-      // Monthly: end is fully derived — always start + 27 days.
-      setEndDate(maxEnd);
-    } else if (!endDate || endDate < startDate || endDate > maxEnd) {
-      // Weekly: only snap when the current end falls outside the new
-      // window (duration toggle down, or start pushed forward past end).
-      setEndDate(maxEnd);
-    }
-    // Deps intentionally exclude endDate so a manual weekly edit inside
-    // the 7-day range isn't reverted by this effect.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [duration, startDate]);
+  // Product picker — sponsored slots.
+  const [myProducts, setMyProducts] = useState([]);
+  const [productsLoading, setProductsLoading] = useState(false);
+  const [heroProductId, setHeroProductId] = useState('');
+  const [showcaseProductIds, setShowcaseProductIds] = useState([]);
+  const [productsListProductId, setProductsListProductId] = useState('');
 
-  // Autofill from the signed-in user's profile. We only overwrite fields
-  // the visitor hasn't manually edited yet, so hitting an old draft in
-  // this session doesn't stomp their input.
+  // Month picker — the campaign window is exactly one calendar month.
+  const [bookedKeys, setBookedKeys] = useState(new Set());
+  const [monthsLoading, setMonthsLoading] = useState(true);
+  const [selectedMonthKey, setSelectedMonthKey] = useState('');
+
+  const anchor = useMemo(nextMonthAnchor, []);
+  const candidateMonths = useMemo(() => upcomingMonths(anchor, 12), [anchor]);
+  const availableMonths = useMemo(
+    () => candidateMonths.filter((m) => !bookedKeys.has(m.key)),
+    [candidateMonths, bookedKeys],
+  );
+
+  // Fetch already-taken sponsored months. A month is unavailable when
+  // it's covered by an active/scheduled/paused ad OR by a pending
+  // inquiry that still holds a reservation (awaiting_payment / reported
+  // / paid). The two queries run in parallel; the union of their month
+  // keys is what disables the dropdown entries.
+  useEffect(() => {
+    let cancelled = false;
+    setMonthsLoading(true);
+    (async () => {
+      try {
+        const [adSnap, inqSnap] = await Promise.all([
+          getDocs(
+            query(
+              collection(db, 'ads'),
+              where('type', '==', AD_TYPES.SPONSORED),
+              where('status', 'in', [AD_STATUSES.SCHEDULED, AD_STATUSES.ACTIVE, AD_STATUSES.PAUSED]),
+            ),
+          ),
+          getDocs(
+            query(
+              collection(db, 'adInquiries'),
+              where('paymentStatus', 'in', RESERVING_PAYMENT_STATUSES),
+            ),
+          ).catch(() => ({ forEach: () => {} })),
+        ]);
+        if (cancelled) return;
+        const keys = new Set();
+        adSnap.forEach((doc) => {
+          const data = doc.data();
+          monthKeysCoveredBy(data.startDate, data.endDate).forEach((k) => keys.add(k));
+        });
+        inqSnap.forEach((doc) => {
+          const data = doc.data();
+          monthKeysCoveredBy(data.startDate, data.endDate).forEach((k) => keys.add(k));
+        });
+        setBookedKeys(keys);
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.warn('[inquire] booked-month lookup failed:', err);
+      } finally {
+        if (!cancelled) setMonthsLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Auto-select the earliest available month once the fetch resolves.
+  useEffect(() => {
+    if (monthsLoading) return;
+    if (selectedMonthKey && availableMonths.some((m) => m.key === selectedMonthKey)) return;
+    setSelectedMonthKey(availableMonths[0]?.key || '');
+  }, [monthsLoading, availableMonths, selectedMonthKey]);
+
+  // Autofill from the signed-in user's profile.
   useEffect(() => {
     if (!user) return;
-    if (!userTouchedFields.current.company && user.companyName) {
-      setCompany(user.companyName);
-    }
-    if (!userTouchedFields.current.contactName && user.displayName) {
-      setContactName(user.displayName);
-    }
-    if (!userTouchedFields.current.email && user.email) {
-      setEmail(user.email);
-    }
-    // Profile stores the URL as `companyWebsite`; fall back to plain
-    // `website` in case an older schema still surfaces it.
+    if (!userTouchedFields.current.company && user.companyName) setCompany(user.companyName);
+    if (!userTouchedFields.current.contactName && user.displayName) setContactName(user.displayName);
+    if (!userTouchedFields.current.email && user.email) setEmail(user.email);
     const site = user.companyWebsite || user.website;
-    if (!userTouchedFields.current.website && site) {
-      setWebsite(site);
-    }
+    if (!userTouchedFields.current.website && site) setWebsite(site);
   }, [user]);
 
-  // Load the signed-in user's own product catalog when Featured is picked.
-  // We do NOT preselect one — the user must actively click a tile so the
-  // choice is intentional. Empty catalog is fine; admin will pick manually.
+  // Load the signed-in user's own product catalog for the sponsored pickers.
   useEffect(() => {
-    if (!user?.uid || !isFeatured) {
+    if (!user?.uid) {
       setMyProducts([]);
-      setSelectedProductId('');
+      setHeroProductId('');
+      setShowcaseProductIds([]);
+      setProductsListProductId('');
       return;
     }
     let cancelled = false;
     setProductsLoading(true);
     (async () => {
       try {
-        // Single equality filter on `userId` — no composite index needed.
-        // We filter to active status client-side because most sellers
-        // have only a handful of products; keeps the query trivial and
-        // avoids depending on an admin-managed composite index.
         const snap = await getDocs(
-          query(collection(db, 'products'), where('userId', '==', user.uid))
+          query(collection(db, 'products'), where('userId', '==', user.uid)),
         );
         if (cancelled) return;
         const items = snap.docs
@@ -185,6 +213,7 @@ function InquirePageInner() {
         setMyProducts(items);
       } catch (err) {
         if (!cancelled) {
+          // eslint-disable-next-line no-console
           console.warn('inquire: product fetch failed:', err);
           setMyProducts([]);
         }
@@ -195,14 +224,13 @@ function InquirePageInner() {
     return () => {
       cancelled = true;
     };
-  }, [user?.uid, isFeatured]);
+  }, [user?.uid]);
 
-  // Keep the package field in sync when the user changes ?type= via nav.
-  useEffect(() => {
-    const q = searchParams.get('type');
-    if (q && TYPE_TO_PACKAGE[q]) setPkg(TYPE_TO_PACKAGE[q]);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams.get('type')]);
+  const selectedMonth = availableMonths.find((m) => m.key === selectedMonthKey);
+  const campaignRange = useMemo(
+    () => (selectedMonth ? monthRange(selectedMonth.year, selectedMonth.monthIndex) : null),
+    [selectedMonth],
+  );
 
   const validate = () => {
     const e = {};
@@ -210,9 +238,11 @@ function InquirePageInner() {
     if (!contactName.trim()) e.contactName = 'Contact name is required.';
     if (!email.trim() || !EMAIL_RE.test(email.trim())) e.email = 'A valid business email is required.';
     if (!website.trim()) e.website = 'Company website is required.';
-    if (!pkg) e.pkg = 'Select an ad placement.';
-    const range = validateCampaignRange(startDate, endDate, durationDays);
-    if (!range.ok) e.range = range.reason;
+    if (!selectedMonthKey || !campaignRange) e.month = 'Pick an available month.';
+    if (user?.uid && myProducts.length > 0) {
+      if (!heroProductId) e.heroProduct = 'Pick one product for the hero card.';
+      if (!productsListProductId) e.listProduct = 'Pick one product for the /products directory slot.';
+    }
     if (brief.length > 2000) e.brief = 'Brief must be under 2000 characters.';
     setErrors(e);
     return Object.keys(e).length === 0;
@@ -222,7 +252,6 @@ function InquirePageInner() {
     evt.preventDefault();
     if (submitting) return;
 
-    // Rate limit — hydration-safe check that also survives page reloads.
     try {
       const raw = window.localStorage.getItem(RATE_LIMIT_KEY);
       if (raw) {
@@ -233,11 +262,10 @@ function InquirePageInner() {
         }
       }
     } catch {
-      // localStorage disabled — soft-fail; server-side rules still enforce shape.
+      // localStorage disabled — server-side rules still enforce shape.
     }
 
     if (!validate()) {
-      // Scroll to first error for UX on long forms.
       firstErrorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       toast.error('Please fix the highlighted fields.');
       return;
@@ -245,60 +273,69 @@ function InquirePageInner() {
 
     setSubmitting(true);
     try {
-      const selectedProduct = isFeatured && selectedProductId
-        ? myProducts.find((p) => p.id === selectedProductId)
-        : null;
-      const productSnapshot = selectedProduct
-        ? {
-            name: String(selectedProduct.name || '').slice(0, 200),
-            image: String(selectedProduct.images?.[0] || '').slice(0, 1000),
-            price: Number.isFinite(Number(selectedProduct.price)) ? Number(selectedProduct.price) : 0,
-            currency: String(selectedProduct.currency || 'USD').slice(0, 10),
-            description: String(selectedProduct.description || '').slice(0, 500),
-          }
-        : null;
+      // Reservation holds the picked month for PAYMENT_RESERVATION_DAYS
+      // days from submit. After that a paymentReminderSweep CF flips
+      // the inquiry to `expired` and the month returns to the pool.
+      const reservedUntil = new Date();
+      reservedUntil.setDate(reservedUntil.getDate() + PAYMENT_RESERVATION_DAYS);
 
-      const range = validateCampaignRange(startDate, endDate, durationDays);
-      if (!range.ok) {
-        toast.error(range.reason);
-        setSubmitting(false);
-        return;
-      }
       const payload = {
         company: company.trim(),
         website: normalizeUrl(website),
         contactName: contactName.trim(),
         email: email.trim().toLowerCase(),
-        package: pkg,
-        duration, // 'weekly' | 'monthly'
-        startDate: Timestamp.fromDate(range.start),
-        endDate: Timestamp.fromDate(range.end),
+        package: SPONSORED_PACKAGE.value,
+        duration: 'monthly',
+        startDate: Timestamp.fromDate(campaignRange.start),
+        endDate: Timestamp.fromDate(campaignRange.end),
         brief: brief.trim(),
         status: 'new',
-        // MUST be serverTimestamp() — the Firestore rule enforces
-        // `createdAt == request.time` which only matches server-issued
-        // timestamps. Client-side `Timestamp.now()` never lines up with
-        // `request.time` (network latency) and the write is rejected.
         createdAt: serverTimestamp(),
+        userId: user.uid,
+        paymentStatus: PAYMENT_STATUSES.AWAITING,
+        paymentReference: generatePaymentReference(),
+        monthReservedUntil: Timestamp.fromDate(reservedUntil),
       };
-      if (user?.uid) payload.userId = user.uid;
-      if (selectedProduct) {
-        payload.productId = selectedProduct.id;
-        payload.productSnapshot = productSnapshot;
-      }
-      await addDoc(collection(db, 'adInquiries'), payload);
+
+      // Sponsored slots — persist the three picks so the admin sees the
+      // buyer's choices when converting the inquiry into an ad.
+      if (heroProductId) payload.heroProductId = heroProductId;
+      if (productsListProductId) payload.productsListProductId = productsListProductId;
+      const effectiveShowcase =
+        showcaseProductIds.length > 0
+          ? showcaseProductIds.filter(Boolean).slice(0, 3)
+          : Array.from(new Set([heroProductId, productsListProductId].filter(Boolean))).slice(0, 3);
+      if (effectiveShowcase.length > 0) payload.showcaseProductIds = effectiveShowcase;
+
+      const docRef = await addDoc(collection(db, 'adInquiries'), payload);
       try {
         window.localStorage.setItem(RATE_LIMIT_KEY, String(Date.now()));
       } catch {
         // ignore quota / privacy-mode errors
       }
-      router.push('/pricing/inquire/thank-you');
+      // Route straight to the wire-transfer instructions. Buyer can
+      // finish payment now or come back later via /my-sponsorships.
+      router.push(`/pricing/inquire/pay/${docRef.id}`);
     } catch (err) {
+      // eslint-disable-next-line no-console
       console.error('adInquiry create failed:', err);
       toast.error('Something went wrong sending the inquiry. Please try again.');
       setSubmitting(false);
     }
   };
+
+  // Auth-loading / anonymous — show a lightweight spinner while the
+  // redirect effect fires so the form doesn't paint for a split second.
+  if (authLoading || !user?.uid) {
+    return (
+      <main className="pt-[calc(var(--navbar-height)+24px)] pb-16 bg-radial-navy min-h-screen text-white">
+        <div className="flex flex-col items-center justify-center py-20 gap-4">
+          <div className="w-10 h-10 border-2 border-[#FFD700] border-t-transparent rounded-full animate-spin" />
+          <p className="text-[#A0A0A0] text-sm">Checking session…</p>
+        </div>
+      </main>
+    );
+  }
 
   const fieldClasses = (fieldError) =>
     `w-full bg-[rgba(255,255,255,0.05)] border rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-[#FFD700] transition-colors ${
@@ -318,21 +355,19 @@ function InquirePageInner() {
         </Link>
 
         <div className="mb-6 text-center">
-          <h1 className="text-3xl md:text-4xl font-extrabold mb-2 tracking-tight">Submit Placement Inquiry</h1>
+          <h1 className="text-3xl md:text-4xl font-extrabold mb-2 tracking-tight">Book the Sponsored Package</h1>
           <p className="text-[#c8d3e0] text-base max-w-xl mx-auto">
-            Tell us about your campaign and our team will get back to you within 1 business day.
+            One purchase, four surfaces — hero cards, showcase, and the products directory. Sold as a full calendar month.
           </p>
         </div>
 
-        {/* Price banner reflecting the currently-selected package */}
-        <PriceBanner pkg={pkg} duration={duration} onDurationChange={setDuration} />
-
+        <PriceBanner />
 
         <form
           onSubmit={handleSubmit}
           className="rounded-2xl border border-[rgba(255,255,255,0.08)] bg-gradient-to-br from-[rgba(26,40,59,0.85)] to-[rgba(15,27,43,0.95)] p-6 md:p-8 space-y-6"
         >
-          {/* Company + Website row */}
+          {/* Company + Website */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div ref={errors.company ? firstErrorRef : null}>
               <label className="block text-xs uppercase tracking-wider text-[#A0A0A0] font-semibold mb-1.5">
@@ -368,7 +403,7 @@ function InquirePageInner() {
             </div>
           </div>
 
-          {/* Contact + Email row */}
+          {/* Contact + Email */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div ref={!errors.company && !errors.website && errors.contactName ? firstErrorRef : null}>
               <label className="block text-xs uppercase tracking-wider text-[#A0A0A0] font-semibold mb-1.5">
@@ -403,154 +438,103 @@ function InquirePageInner() {
             </div>
           </div>
 
-          {/* Ad Placement */}
-          <div>
+          {/* Month picker */}
+          <div ref={!errors.email && !errors.contactName && !errors.website && !errors.company && errors.month ? firstErrorRef : null}>
             <label className="block text-xs uppercase tracking-wider text-[#A0A0A0] font-semibold mb-1.5">
-              Select Ad Placement <span className="text-red-400">*</span>
+              Campaign Month <span className="text-red-400">*</span>
             </label>
-            <select
-              value={pkg}
-              onChange={(e) => setPkg(e.target.value)}
-              className={fieldClasses(errors.pkg)}
-            >
-              {PACKAGES.map((p) => (
-                <option key={p.value} value={p.value} className="bg-[#0F1B2B]">
-                  {p.value}
-                </option>
-              ))}
-            </select>
-            {errors.pkg && <p className="text-xs text-red-400 mt-1">{errors.pkg}</p>}
+            {monthsLoading ? (
+              <div className="rounded-xl border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.03)] px-4 py-3 text-sm text-[#A0A0A0] flex items-center gap-2">
+                <Loader2 className="w-4 h-4 animate-spin" /> Loading available months…
+              </div>
+            ) : availableMonths.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-[rgba(255,215,0,0.35)] bg-[rgba(255,215,0,0.04)] px-4 py-3 text-sm text-[#c8d3e0]">
+                All upcoming months are booked. Contact us and we&apos;ll add you to the waitlist.
+              </div>
+            ) : (
+              <div className="relative">
+                <Calendar className="w-4 h-4 text-[#FFD700] absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <select
+                  value={selectedMonthKey}
+                  onChange={(e) => setSelectedMonthKey(e.target.value)}
+                  className={`${fieldClasses(errors.month)} pl-11 appearance-none cursor-pointer`}
+                >
+                  {availableMonths.map((m) => (
+                    <option key={m.key} value={m.key} className="bg-[#0F1B2B]">
+                      {m.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+            {campaignRange && (
+              <p className="text-xs text-[#FFD700] mt-2">
+                Campaign runs {campaignRange.start.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                {' → '}
+                {campaignRange.end.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}.
+              </p>
+            )}
+            {bookedKeys.size > 0 && !monthsLoading && (
+              <p className="text-xs text-[#A0A0A0] mt-1">
+                Some months are hidden because they&apos;re already booked by another advertiser.
+              </p>
+            )}
+            {errors.month && <p className="text-xs text-red-400 mt-1">{errors.month}</p>}
           </div>
 
-          {/* Product picker — Featured tier only. Signed-in visitors can
-              pin one of their own active products to the placement; that
-              product's image + name flow into the ad creative when an
-              admin converts the inquiry. Not signed in → prompt to sign
-              in. No active products → hint to add one first. */}
-          {isFeatured && (
-            <div>
-              <label className="block text-xs uppercase tracking-wider text-[#A0A0A0] font-semibold mb-1.5">
-                Pin One Of Your Products <span className="text-[#A0A0A0] normal-case font-normal">(optional)</span>
-              </label>
-              {!user ? (
-                <div className="rounded-xl border border-dashed border-[rgba(255,215,0,0.35)] bg-[rgba(255,215,0,0.04)] px-4 py-3 text-sm text-[#c8d3e0]">
-                  <Link href="/login" className="text-[#FFD700] underline">Sign in</Link>{' '}
-                  to pick a product from your catalog. Otherwise our team will help pick the creative after you submit.
-                </div>
-              ) : productsLoading ? (
-                <div className="rounded-xl border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.03)] px-4 py-3 text-sm text-[#A0A0A0] flex items-center gap-2">
-                  <Loader2 className="w-4 h-4 animate-spin" /> Loading your products…
-                </div>
-              ) : myProducts.length === 0 ? (
-                <div className="rounded-xl border border-dashed border-[rgba(255,255,255,0.15)] bg-[rgba(255,255,255,0.03)] px-4 py-3 text-sm text-[#c8d3e0]">
-                  You don&apos;t have any active products yet. You can still submit and our team will help you choose the creative later, or{' '}
-                  <Link href="/product/new" className="text-[#FFD700] underline">add a product</Link> first.
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 max-h-[340px] overflow-y-auto pr-1">
-                  {myProducts.map((p) => {
-                    const selected = selectedProductId === p.id;
-                    const img = p.images?.[0];
-                    return (
-                      <button
-                        key={p.id}
-                        type="button"
-                        onClick={() => setSelectedProductId(selected ? '' : p.id)}
-                        className={`relative rounded-xl overflow-hidden border text-left transition-all ${
-                          selected
-                            ? 'border-[#FFD700] shadow-[0_0_0_2px_rgba(255,215,0,0.35)]'
-                            : 'border-[rgba(255,255,255,0.1)] hover:border-[rgba(255,215,0,0.5)]'
-                        }`}
-                        style={{ background: 'rgba(255,255,255,0.04)' }}
-                      >
-                        <div className="aspect-square bg-[rgba(255,255,255,0.05)] flex items-center justify-center overflow-hidden">
-                          {img ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={img} alt={p.name || 'Product'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                          ) : (
-                            <span className="text-[#A0A0A0] text-xs">No image</span>
-                          )}
-                        </div>
-                        <div className="p-2">
-                          <p className="text-xs text-white font-semibold truncate">{p.name || 'Untitled'}</p>
-                          {Number.isFinite(Number(p.price)) && p.price > 0 && (
-                            <p className="text-[10px] text-[#FFD700] mt-0.5">
-                              {p.currency || 'USD'} {Number(p.price).toLocaleString()}
-                            </p>
-                          )}
-                        </div>
-                        {selected && (
-                          <span
-                            className="absolute top-2 right-2 flex items-center justify-center w-6 h-6 rounded-full"
-                            style={{ background: '#FFD700', color: '#0F1B2B' }}
-                          >
-                            <Check className="w-4 h-4" strokeWidth={3} />
-                          </span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-              {selectedProductId && (
-                <p className="text-xs text-[#FFD700] mt-2">
-                  Selected. This product&apos;s image and title will pre-fill the ad creative on admin approval.
-                </p>
-              )}
+          {/* Sponsored slot pickers */}
+          {user && !productsLoading && myProducts.length > 0 && (
+            <>
+              <SponsoredPickerBlock
+                title="Hero Product (required)"
+                helper="Shown as the top-left sponsored card in the hero."
+                mode="single"
+                products={myProducts}
+                selectedIds={heroProductId ? [heroProductId] : []}
+                onToggle={(id) => setHeroProductId((prev) => (prev === id ? '' : id))}
+                error={errors.heroProduct}
+              />
+              <SponsoredPickerBlock
+                title="Showcase Products (optional — up to 3)"
+                helper="Featured mini-cards inside the sponsored company section. Blank falls back to your hero + list picks."
+                mode="multi"
+                max={3}
+                products={myProducts}
+                selectedIds={showcaseProductIds}
+                onToggle={(id) => setShowcaseProductIds((prev) => {
+                  if (prev.includes(id)) return prev.filter((x) => x !== id);
+                  if (prev.length >= 3) return prev;
+                  return [...prev, id];
+                })}
+              />
+              <SponsoredPickerBlock
+                title="/products Directory Product (required)"
+                helper="Shown as the top sponsored tile on the /products page."
+                mode="single"
+                products={myProducts}
+                selectedIds={productsListProductId ? [productsListProductId] : []}
+                onToggle={(id) => setProductsListProductId((prev) => (prev === id ? '' : id))}
+                error={errors.listProduct}
+              />
+            </>
+          )}
+          {!user && (
+            <div className="rounded-xl border border-dashed border-[rgba(255,215,0,0.35)] bg-[rgba(255,215,0,0.04)] px-4 py-3 text-sm text-[#c8d3e0]">
+              <Link href="/login" className="text-[#FFD700] underline">Sign in</Link>{' '}
+              to pick products from your catalog. Otherwise our team will help pick the creatives after you submit.
             </div>
           )}
-
-          {/* Campaign date range — start + end calendar. Weekly lets the
-              buyer pick end inside a 7-day window; monthly auto-derives
-              end from start (+27 days) and shows it as read-only so the
-              buyer sees the full 4-week window before submitting. */}
-          <div>
-            <label className="block text-xs uppercase tracking-wider text-[#A0A0A0] font-semibold mb-1.5">
-              Campaign Dates <span className="text-red-400">*</span>
-              <span className="text-[#A0A0A0] normal-case font-normal ml-2">
-                ({isMonthlyDuration ? '4-week block' : `up to ${durationDays} days`})
-              </span>
-            </label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <p className="text-[11px] uppercase tracking-wider text-[#A0A0A0] font-semibold mb-1">Start</p>
-                <DatePicker
-                  value={startDate}
-                  onChange={(iso) => {
-                    setStartDate(iso);
-                    // Nudge the end date to stay within the duration window.
-                    if (iso && endDate) {
-                      const maxEnd = addDays(iso, durationDays - 1);
-                      if (isMonthlyDuration) setEndDate(maxEnd);
-                      else if (endDate < iso) setEndDate(iso);
-                      else if (endDate > maxEnd) setEndDate(maxEnd);
-                    }
-                  }}
-                  minDate={todayIso}
-                  accentColor="gold"
-                  placeholder="Start date"
-                />
-              </div>
-              <div>
-                <p className="text-[11px] uppercase tracking-wider text-[#A0A0A0] font-semibold mb-1">
-                  End {isMonthlyDuration && <span className="normal-case text-[#A0A0A0]">(auto, start + {durationDays - 1} days)</span>}
-                </p>
-                <DatePicker
-                  value={endDate}
-                  onChange={setEndDate}
-                  minDate={startDate || todayIso}
-                  maxDate={startDate ? addDays(startDate, durationDays - 1) : undefined}
-                  accentColor="gold"
-                  placeholder="End date"
-                  disabled={isMonthlyDuration}
-                />
-              </div>
+          {user && productsLoading && (
+            <div className="rounded-xl border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.03)] px-4 py-3 text-sm text-[#A0A0A0] flex items-center gap-2">
+              <Loader2 className="w-4 h-4 animate-spin" /> Loading your products…
             </div>
-            {startDate && endDate && !errors.range && (
-              <p className="text-xs text-[#FFD700] mt-2">Booking window: {fmtRange(startDate, endDate)}</p>
-            )}
-            {errors.range && <p className="text-xs text-red-400 mt-1">{errors.range}</p>}
-          </div>
+          )}
+          {user && !productsLoading && myProducts.length === 0 && (
+            <div className="rounded-xl border border-dashed border-[rgba(255,255,255,0.15)] bg-[rgba(255,255,255,0.03)] px-4 py-3 text-sm text-[#c8d3e0]">
+              You don&apos;t have any active products yet.{' '}
+              <Link href="/product/new" className="text-[#FFD700] underline">Add a product</Link> first — the sponsored package showcases your catalog.
+            </div>
+          )}
 
           {/* Brief */}
           <div>
@@ -575,7 +559,7 @@ function InquirePageInner() {
           <div className="pt-2">
             <button
               type="submit"
-              disabled={submitting}
+              disabled={submitting || availableMonths.length === 0}
               style={{ color: submitting ? undefined : '#0F1B2B', WebkitTextFillColor: submitting ? undefined : '#0F1B2B' }}
               className="w-full inline-flex items-center justify-center gap-2 px-8 py-4 rounded-full bg-gradient-to-r from-[#FFD700] to-[#FDB931] font-bold text-base hover:shadow-[0_10px_30px_rgba(255,215,0,0.35)] disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:shadow-none transition-all"
             >
@@ -602,75 +586,88 @@ function InquirePageInner() {
   );
 }
 
-function PriceBanner({ pkg, duration, onDurationChange }) {
-  const meta = PACKAGES.find((p) => p.value === pkg);
-  if (!meta) return null;
-  const isMonthly = duration === 'monthly';
-  const weekly = meta.weekly ?? 0;
-  const monthly = meta.monthly ?? 0;
-  const price = isMonthly ? monthly : weekly;
-  const unit = isMonthly ? '/month' : '/week';
-  const discount = computeMonthlyDiscount(weekly, monthly);
-  // Browser auto-translate (Chrome, Safari, Edge) replaces text nodes
-  // in-place, which breaks React reconciliation on subsequent updates —
-  // the reported symptom was the monthly price freezing on the weekly
-  // value after toggling. Two layers of defence:
-  //   1. `translate="no"` on the whole banner tells browsers to leave
-  //      the subtree alone (price, unit, discount badge, toggle labels).
-  //   2. `key={duration}` forces React to remount the container on any
-  //      duration flip, so even if a browser extension still muddies the
-  //      subtree the next render lands on a fresh DOM.
+function SponsoredPickerBlock({ title, helper, mode, max, products, selectedIds, onToggle, error }) {
+  return (
+    <div>
+      <label className="block text-xs uppercase tracking-wider text-[#A0A0A0] font-semibold mb-1.5">
+        {title}
+      </label>
+      {helper && <p className="text-xs text-[#A0A0A0] mb-2">{helper}</p>}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 max-h-[300px] overflow-y-auto pr-1">
+        {products.map((p) => {
+          const selected = selectedIds.includes(p.id);
+          const capped = mode === 'multi' && !selected && selectedIds.length >= max;
+          const img = p.images?.[0];
+          return (
+            <button
+              key={p.id}
+              type="button"
+              disabled={capped}
+              onClick={() => onToggle(p.id)}
+              className={`relative rounded-xl overflow-hidden border text-left transition-all ${
+                selected
+                  ? 'border-[#FFD700] shadow-[0_0_0_2px_rgba(255,215,0,0.35)]'
+                  : capped
+                    ? 'border-[rgba(255,255,255,0.06)] opacity-40 cursor-not-allowed'
+                    : 'border-[rgba(255,255,255,0.1)] hover:border-[rgba(255,215,0,0.5)]'
+              }`}
+              style={{ background: 'rgba(255,255,255,0.04)' }}
+            >
+              <div className="aspect-square bg-[rgba(255,255,255,0.05)] flex items-center justify-center overflow-hidden">
+                {img ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={img} alt={p.name || 'Product'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                  <span className="text-[#A0A0A0] text-xs">No image</span>
+                )}
+              </div>
+              <div className="p-2">
+                <p className="text-xs text-white font-semibold truncate">{p.name || 'Untitled'}</p>
+                {Number.isFinite(Number(p.price)) && p.price > 0 && (
+                  <p className="text-[10px] text-[#FFD700] mt-0.5">
+                    {p.currency || 'USD'} {Number(p.price).toLocaleString()}
+                  </p>
+                )}
+              </div>
+              {selected && (
+                <span
+                  className="absolute top-2 right-2 flex items-center justify-center w-6 h-6 rounded-full"
+                  style={{ background: '#FFD700', color: '#0F1B2B' }}
+                >
+                  <Check className="w-4 h-4" strokeWidth={3} />
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+      {error && <p className="text-xs text-red-400 mt-2">{error}</p>}
+    </div>
+  );
+}
+
+// Static banner — one package, one price, no toggles.
+function PriceBanner() {
   return (
     <div
-      key={duration}
       translate="no"
       className="mb-6 rounded-2xl border border-[rgba(255,215,0,0.3)] bg-gradient-to-br from-[rgba(255,215,0,0.08)] to-[rgba(253,185,49,0.03)] px-5 py-4"
     >
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <p className="text-xs uppercase tracking-wider text-[#FFD700] font-semibold mb-1">Selected placement</p>
-          <p className="text-white font-bold text-base">{meta.short}</p>
+          <p className="text-white font-bold text-base">{SPONSORED_PACKAGE.value}</p>
         </div>
         <div className="flex items-baseline gap-1">
           <span className="text-3xl md:text-4xl font-extrabold bg-gradient-to-br from-[#FFD700] to-[#FDB931] bg-clip-text text-transparent">
-            ${price}
+            ${SPONSORED_PACKAGE.monthly}
           </span>
-          <span className="text-[#A0A0A0] text-sm font-semibold">{unit}</span>
-          {isMonthly && discount > 0 && (
-            <span className="ml-2 inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-[#0F1B2B] bg-gradient-to-r from-[#FFD700] to-[#FDB931] px-2 py-1 rounded-full shadow-[0_4px_12px_rgba(255,215,0,0.35)]">
-              Save {discount}%
-            </span>
-          )}
+          <span className="text-[#A0A0A0] text-sm font-semibold">/month</span>
         </div>
       </div>
-
-      {/* Weekly / Monthly toggle */}
-      <div className="mt-4 flex items-center gap-2 flex-wrap">
-        <span className="text-xs uppercase tracking-wider text-[#A0A0A0] font-semibold">
-          Duration
-        </span>
-        <div className="inline-flex items-center gap-1 p-1 rounded-full bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)]">
-          {AD_DURATIONS.map((opt) => {
-            const active = duration === opt.id;
-            return (
-              <button
-                key={opt.id}
-                type="button"
-                onClick={() => onDurationChange(opt.id)}
-                className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
-                  active
-                    ? 'bg-gradient-to-r from-[#FFD700] to-[#FDB931]'
-                    : 'text-[#c8d3e0] hover:text-white'
-                }`}
-                style={active ? { color: '#0F1B2B', WebkitTextFillColor: '#0F1B2B' } : undefined}
-                aria-pressed={active}
-              >
-                {opt.label}
-              </button>
-            );
-          })}
-        </div>
-      </div>
+      <p className="text-xs text-[#c8d3e0] mt-3">
+        Full-site sponsored placement — hero + showcase + /products directory — sold as a full calendar month.
+      </p>
     </div>
   );
 }

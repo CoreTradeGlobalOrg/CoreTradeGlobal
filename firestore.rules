@@ -183,11 +183,6 @@ service cloud.firestore {
     // News collection (public read)
     // ─────────────────────────────────────────────────────────────────────────
 
-    match /news/{newsId} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-
     match /testimonials/{testimonialId} {
       allow read: if true;
       allow write: if isAdmin();
@@ -433,7 +428,9 @@ service cloud.firestore {
                        'company', 'website', 'contactName', 'email',
                        'package', 'duration', 'startDate', 'endDate', 'brief',
                        'status', 'createdAt',
-                       'userId', 'productId', 'productSnapshot'
+                       'userId', 'productId', 'productSnapshot',
+                       'heroProductId', 'showcaseProductIds', 'productsListProductId',
+                       'paymentStatus', 'paymentReference', 'monthReservedUntil'
                      ])
                    && request.resource.data.company is string
                    && request.resource.data.company.size() > 0
@@ -451,11 +448,12 @@ service cloud.firestore {
                    && request.resource.data.startDate is timestamp
                    && request.resource.data.endDate is timestamp
                    && request.resource.data.endDate.toMillis() >= request.resource.data.startDate.toMillis()
-                   // 28-day (4-week) absolute ceiling — matches the monthly
-                   // duration option. Weekly writes stay well under this
-                   // cap; client-side validation enforces the tighter 7-day
-                   // limit when duration='weekly'.
-                   && request.resource.data.endDate.toMillis() - request.resource.data.startDate.toMillis() <= 28 * 24 * 60 * 60 * 1000
+                   // 32-day absolute ceiling — enough for any calendar
+                   // month (max 31 days) plus one day of timezone slack.
+                   // The sponsored package is sold as a full-month
+                   // window; client validation nails start/end to the
+                   // first and last day of the picked month.
+                   && request.resource.data.endDate.toMillis() - request.resource.data.startDate.toMillis() <= 32 * 24 * 60 * 60 * 1000
                    && request.resource.data.brief is string
                    && request.resource.data.brief.size() <= 2000
                    && request.resource.data.status == 'new'
@@ -472,11 +470,42 @@ service cloud.firestore {
                        || (request.resource.data.productSnapshot is map
                            && request.resource.data.productSnapshot.keys().hasOnly(
                                 ['name', 'image', 'price', 'currency', 'description']
-                              )));
-      allow read, list: if isAdmin();
-      allow update: if isAdmin()
-                    && request.resource.data.diff(resource.data).affectedKeys()
-                       .hasOnly(['status', 'handledAt', 'handledBy', 'adminNote', 'linkedAdId']);
+                              )))
+                   && (!('heroProductId' in request.resource.data)
+                       || (request.resource.data.heroProductId is string
+                           && request.resource.data.heroProductId.size() <= 128))
+                   && (!('productsListProductId' in request.resource.data)
+                       || (request.resource.data.productsListProductId is string
+                           && request.resource.data.productsListProductId.size() <= 128))
+                   && (!('showcaseProductIds' in request.resource.data)
+                       || (request.resource.data.showcaseProductIds is list
+                           && request.resource.data.showcaseProductIds.size() <= 3))
+                   && (!('paymentStatus' in request.resource.data)
+                       || request.resource.data.paymentStatus == 'awaiting_payment')
+                   && (!('paymentReference' in request.resource.data)
+                       || (request.resource.data.paymentReference is string
+                           && request.resource.data.paymentReference.size() <= 32))
+                   && (!('monthReservedUntil' in request.resource.data)
+                       || request.resource.data.monthReservedUntil is timestamp);
+      // Read/list: admin sees everything; a signed-in user can read
+      // their own inquiries so /pricing/inquire/pay/[id] and the
+      // /my-sponsorships page can load without an admin round-trip.
+      allow read: if isAdmin() || (isAuthenticated()
+                                   && resource.data.userId == request.auth.uid);
+      allow list: if isAdmin();
+      // Admin updates the moderation + payment lifecycle. Users can
+      // flip their own inquiry from 'awaiting_payment' to 'reported'
+      // by clicking "I've sent the wire" — nothing else.
+      allow update: if (isAdmin()
+                       && request.resource.data.diff(resource.data).affectedKeys()
+                          .hasOnly(['status', 'handledAt', 'handledBy', 'adminNote', 'linkedAdId',
+                                    'paymentStatus', 'paymentConfirmedAt', 'paymentReminderCount']))
+                    || (isAuthenticated()
+                        && resource.data.userId == request.auth.uid
+                        && request.resource.data.diff(resource.data).affectedKeys()
+                           .hasOnly(['paymentStatus', 'paymentReportedAt'])
+                        && resource.data.paymentStatus == 'awaiting_payment'
+                        && request.resource.data.paymentStatus == 'reported');
       allow delete: if isAdmin();
     }
 

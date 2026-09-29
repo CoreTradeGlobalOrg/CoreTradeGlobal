@@ -1,441 +1,283 @@
 /**
- * ShowcaseSection Component (3D Carousel)
+ * ShowcaseSection — Sponsored Company V3
  *
- * Featured Companies 3D carousel section
- * Matches design exactly from script.js carousel logic
+ * A single premium sponsorship card. One paid slot fills the whole
+ * section: sponsor's brand identity + 3 featured products + CTA to the
+ * profile. When no sponsored ad is active, a "Book This Spot" placeholder
+ * routes to the ad inquiry form.
+ *
+ * Data flow:
+ *   useActiveAd(SPONSORED)  → { userId, showcaseProductIds, ... }
+ *   useUserProfile(userId)   → live company info (name/logo/country/…)
+ *   useProductsByIds(ids)    → up to 3 product docs (batch, cached)
+ *
+ * The section id `showcase-section` and outer class `sponsored-section`
+ * are both kept: the id is what `page.js` reserves height against, and
+ * the outer class is what homepage.css uses to space the neighbours.
  */
 
 'use client';
 
-import { useState, useEffect, useMemo, useRef, useCallback, memo } from 'react';
-import Image from 'next/image';
+import { useMemo } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { COUNTRIES } from '@/core/constants/countries';
 import { CountryFlag } from '@/presentation/components/common/CountryFlag/CountryFlag';
-import { useActiveAds } from '@/presentation/hooks/ads/useActiveAd';
+import { useActiveAd } from '@/presentation/hooks/ads/useActiveAd';
 import { useTrackAd } from '@/presentation/hooks/ads/useTrackAd';
+import { useUserProfile } from '@/presentation/hooks/user/useUserProfile';
+import { useProductsByIds } from '@/presentation/hooks/product/useProductsByIds';
+import { useCategories } from '@/presentation/hooks/category/useCategories';
 import { AD_TYPES } from '@/core/constants/adTypes';
+import './ShowcaseSection.css';
 
-// Helper to get country name from ISO code
-const getCountryName = (countryCode) => {
-  if (!countryCode) return 'Global';
-  const country = COUNTRIES.find(c => c.value === countryCode);
-  if (country) {
-    return country.label.replace(/^[\u{1F1E0}-\u{1F1FF}]{2}\s*/u, '').trim();
-  }
-  return countryCode;
+function getCountryName(code) {
+  if (!code) return '';
+  const found = COUNTRIES.find((c) => c.value === code);
+  if (!found) return code;
+  return found.label.replace(/^[\u{1F1E0}-\u{1F1FF}]{2}\s*/u, '').trim();
+}
+
+function initialsOf(name) {
+  if (!name) return 'AD';
+  const parts = name.trim().split(/\s+/).slice(0, 2);
+  return parts.map((p) => p[0]).join('').toUpperCase();
+}
+
+const CURRENCY_SYMBOLS = {
+  USD: '$', EUR: '€', GBP: '£', TRY: '₺', JPY: '¥', CNY: '¥',
+  AUD: 'A$', CAD: 'C$', CHF: 'CHF', KRW: '₩', INR: '₹',
 };
 
-// Baseline placeholder cards that fill the carousel when there aren't
-// enough active Carousel-tier ads. Each one links to the ad inquiry
-// form so a click on an empty slot becomes a sales lead. Kept
-// identical (per product owner's spec — A1) so all four read as
-// "reserved for you" spots rather than fake brands.
-const PLACEHOLDER_COUNT = 4;
-const PLACEHOLDER_CARDS = Array.from({ length: PLACEHOLDER_COUNT }, (_, i) => ({
-  id: `placeholder-${i}`,
-  isPlaceholder: true,
-  name: 'Your Brand Here',
-  logo: '+',
-  country: '',
-  category: 'Available',
-  description: 'Book this spot to feature your company in the carousel.',
-  // Empty carousel slot goes straight to the carousel-tier inquiry form
-  // instead of the /advertising tier overview, matching the hero ad
-  // placeholder behavior (click = start a booking, not read the pitch).
-  linkUrl: '/pricing/inquire?type=carousel',
-}));
+function formatPrice(product) {
+  const code = product.currency || 'USD';
+  const symbol = CURRENCY_SYMBOLS[code] || code;
+  if (!product.price) return 'Negotiable';
+  return `${symbol} ${product.price}`;
+}
 
-// Company logo image with loading state
-const CompanyLogoImage = memo(function CompanyLogoImage({ src, alt, fallback }) {
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-
-  if (error) {
-    return <span className="text-lg font-bold">{fallback}</span>;
-  }
-
+function ArrowRightIcon() {
   return (
-    <>
-      {loading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-[#1A283B]">
-          <div className="w-5 h-5 border-2 border-[#FFD700] border-t-transparent rounded-full animate-spin"></div>
-        </div>
-      )}
-      <Image
-        src={src}
-        alt={alt}
-        fill
-        // Showcase carousel cards are ~320 px on desktop and shrink to
-        // ~260 px on tablet / mobile. sizes hint keeps Next/image on
-        // the 256 or 384 variant instead of the ~640 default the
-        // fallback picks when sizes is missing.
-        sizes="(max-width: 768px) 260px, 320px"
-        // Bypass the Vercel image optimizer — the monthly quota was
-        // hit in July 2026 and sponsored ad logos started rendering
-        // as broken images. Same pattern as the site logo bypass
-        // in Navbar/Footer and the post-25-Jul product card cutoff.
-        unoptimized
-        className={`object-cover transition-opacity duration-200 ${loading ? 'opacity-0' : 'opacity-100'}`}
-        onLoad={() => setLoading(false)}
-        onError={() => { setLoading(false); setError(true); }}
-      />
-    </>
+    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+    </svg>
   );
-});
+}
 
-// Star icon SVG
-const StarIcon = () => (
-  <svg className="star-icon" fill="currentColor" viewBox="0 0 20 20">
-    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-  </svg>
-);
-
-function CompanyCard({ company, isActive, style }) {
-  // Check if logo is a URL
-  const isLogoUrl = company.logo && (company.logo.startsWith('http') || company.logo.startsWith('/'));
-
-  // Sponsored slots point at their configured linkUrl (external URL or
-  // internal path); organic cards keep the existing /profile behavior;
-  // placeholders route to the ad inquiry form.
-  const isSponsored = !!company.isSponsored;
-  const isPlaceholder = !!company.isPlaceholder;
-  const href = isPlaceholder
-    ? (company.linkUrl || '/pricing/inquire?type=carousel')
-    : isSponsored
-      ? (company.linkUrl || '#')
-      : (company.id ? `/profile/${company.id}` : '#');
-  const isExternal = isSponsored && /^https?:\/\//i.test(company.linkUrl || '');
-
-  const { setRef: setAdRef, trackClick } = useTrackAd(company.sponsoredAdId);
-
-  // Sponsored outline must land on `.card-inner` (which owns the 24px
-  // border-radius) — the outer `.company-card` wrapper has no radius,
-  // so a box-shadow there renders as a hard rectangle around the
-  // rounded card. Same for the drop shadow.
-  const sponsoredInnerStyle = isSponsored
-    ? {
-        border: '2px solid rgba(255,215,0,0.6)',
-        boxShadow:
-          '0 0 0 1px rgba(255,215,0,0.35), 0 25px 60px -12px rgba(0, 0, 0, 0.8), 0 0 30px rgba(255,215,0,0.18)',
-      }
-    : {};
-  // Placeholders get a dashed gold outline + subtle gold tint so they
-  // read as "book this slot" rather than an organic company card.
-  const placeholderInnerStyle = isPlaceholder
-    ? {
-        border: '2px dashed rgba(255,215,0,0.55)',
-        background: 'linear-gradient(180deg, rgba(255,215,0,0.05), rgba(15,27,43,0.85))',
-      }
-    : {};
-
+function CtaArrow() {
   return (
-    <Link
-      ref={isSponsored ? setAdRef : undefined}
-      onClick={isSponsored ? trackClick : undefined}
-      href={href}
-      target={isExternal ? '_blank' : undefined}
-      rel={isExternal ? 'noopener noreferrer' : undefined}
-      className={`company-card ${isActive ? 'active' : ''}`}
-      style={style}
+    <svg
+      className="btn-icon"
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
     >
-      <div className="card-inner" style={{ position: 'relative', ...sponsoredInnerStyle, ...placeholderInnerStyle }}>
-        {isSponsored && (
-          <span
-            style={{
-              position: 'absolute',
-              top: 8,
-              left: 8,
-              zIndex: 4,
-              padding: '2px 8px',
-              borderRadius: 999,
-              background: '#FFD700',
-              color: '#0F1B2B',
-              fontSize: '9px',
-              fontWeight: 800,
-              letterSpacing: '0.06em',
-              textTransform: 'uppercase',
-            }}
-          >
-            {company.badgeText || 'Sponsored'}
-          </span>
-        )}
-        {isPlaceholder && (
-          <span
-            style={{
-              position: 'absolute',
-              top: 8,
-              left: 8,
-              zIndex: 4,
-              padding: '2px 8px',
-              borderRadius: 999,
-              background: 'rgba(255,215,0,0.15)',
-              color: '#FFD700',
-              border: '1px dashed rgba(255,215,0,0.55)',
-              fontSize: '9px',
-              fontWeight: 800,
-              letterSpacing: '0.06em',
-              textTransform: 'uppercase',
-            }}
-          >
-            Available
-          </span>
-        )}
-        {/* Card Header */}
-        <div className="card-header">
-          <div
-            className="logo-box overflow-hidden flex items-center justify-center relative"
-            style={isPlaceholder ? { color: '#FFD700', fontSize: '48px', fontWeight: 800 } : undefined}
-          >
-            {isLogoUrl ? (
-              <CompanyLogoImage src={company.logo} alt={company.name} fallback={company.name?.substring(0, 2).toUpperCase() || 'CO'} />
-            ) : (
-              company.logo
-            )}
-          </div>
-          {!isSponsored && !isPlaceholder && (
-            <div className="country-flag" title={getCountryName(company.country)}>
-              <CountryFlag countryCode={company.country} size={24} />
-            </div>
-          )}
-        </div>
+      <line x1="5" y1="12" x2="19" y2="12" />
+      <polyline points="12 5 19 12 12 19" />
+    </svg>
+  );
+}
 
-        {/* Company Info */}
-        <div className="company-info">
-          <div className="name-row">
-            <h3 className="company-name">{company.name}</h3>
-          </div>
-          {company.category && company.category !== 'Global Trade' && (
-            <div className="company-category">{company.category}</div>
-          )}
-          {company.description && (
-            <p className="company-description">
-              {company.description}
-            </p>
-          )}
+function PlaceholderIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true" className="placeholder-svg">
+      <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+    </svg>
+  );
+}
 
-          {/* CTA — Book This Spot on placeholders, Visit on sponsored,
-              View Profile on organic (though organic no longer renders). */}
-          <button className="card-profile-btn">
-            {isPlaceholder ? 'Book This Spot' : isSponsored ? 'Visit' : 'View Profile'}
-          </button>
+function SectionHeader() {
+  return (
+    <div className="section-header">
+      <h2 className="section-title">Sponsored Company</h2>
+      <Link href="/pricing" className="ad-link">
+        <span>Want to see your company here? View Advertising Options</span>
+        <ArrowRightIcon />
+      </Link>
+    </div>
+  );
+}
+
+function MiniProductCard({ product }) {
+  return (
+    <Link href={`/product/${product.id}`} className="mini-product-card">
+      <div className="mini-product-thumb">
+        {product.images?.[0] ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={product.images[0]} alt={product.name} />
+        ) : (
+          <PlaceholderIcon />
+        )}
+      </div>
+      <div className="mini-product-info">
+        <h4 className="mini-product-title">{product.name}</h4>
+        <div className="mini-product-price">
+          {formatPrice(product)}
+          {product.unit && (
+            <span className="mini-product-unit">/ {product.unit}</span>
+          )}
         </div>
       </div>
     </Link>
   );
 }
 
-export function ShowcaseSection() {
-  const containerRef = useRef(null);
-  const animationRef = useRef(null);
+function BookThisSpotCard() {
+  return (
+    <div className="sponsored-card-v3 is-placeholder">
+      <div className="sponsored-placeholder-icon">+</div>
+      <h3 className="sponsored-placeholder-title">Your company, front and center.</h3>
+      <p className="sponsored-placeholder-subtitle">
+        Book the sponsored placement to feature your brand on the homepage,
+        the products directory, and every hero card visitors land on.
+      </p>
+      <Link href="/pricing/inquire?type=sponsored" className="sponsored-placeholder-cta">
+        Book This Spot
+        <CtaArrow />
+      </Link>
+    </div>
+  );
+}
 
-  // Up to 8 Carousel-tier ads share the same week (matches the admin
-  // form's OVERLAP_CAP_BY_TYPE cap). The carousel is admin-curated
-  // only — no organic company fallback. When fewer than 4 real ads
-  // are active, the deck is topped up with "Your Brand Here"
-  // placeholders so the carousel never looks empty.
-  const { ads: carouselAds } = useActiveAds(AD_TYPES.CAROUSEL, { limit: 8 });
+function SponsoredCard({ ad, categories }) {
+  const { setRef, trackClick } = useTrackAd(ad.id);
+  const { profile } = useUserProfile(ad.userId);
 
-  // Carousel state
-  const [currentRotation, setCurrentRotation] = useState(0);
-  const targetRotationRef = useRef(0);
-  const currentRotationRef = useRef(0);
-  const currentSpeedRef = useRef(0.002);
-  const velocityRef = useRef(0);
+  const productIds = useMemo(() => {
+    const showcase = Array.isArray(ad.showcaseProductIds) ? ad.showcaseProductIds : [];
+    // If the buyer left showcase blank we auto-fill with the hero + list
+    // picks so the mini-grid still renders (see prompt: "eger showcase'e
+    // bir sey koymazsa hero ve products'a koydugumuzu showcase'e koyacagiz").
+    if (showcase.length > 0) return showcase.slice(0, 3);
+    const fallback = [ad.heroProductId, ad.productsListProductId].filter(Boolean);
+    return Array.from(new Set(fallback)).slice(0, 3);
+  }, [ad.showcaseProductIds, ad.heroProductId, ad.productsListProductId]);
 
-  // Drag state
-  const [isDragging, setIsDragging] = useState(false);
-  const dragStartRef = useRef({ x: 0, rotation: 0, lastX: 0, lastTime: 0 });
+  const productMap = useProductsByIds(productIds);
+  const products = productIds
+    .map((id) => productMap.get(id))
+    .filter((p) => p && p.status !== 'draft');
 
-  const radius = 550;
-  const displayCompanies = useMemo(() => {
-    // Real Carousel-tier ads mapped to the card contract used by the
-    // 3D render loop / transform helpers.
-    const sponsored = (carouselAds || []).map((ad) => ({
-      id: `ad:${ad.id}`,
-      sponsoredAdId: ad.id,
-      isSponsored: true,
-      badgeText: ad.badgeText || 'Sponsored',
-      linkUrl: ad.linkUrl || null,
-      name: ad.companyName || 'Sponsored',
-      logo: ad.companyLogo || (ad.companyName || 'AD').substring(0, 2).toUpperCase(),
-      country: '',
-      category: 'Sponsored',
-      description: ad.description || '',
-    }));
-    // Top up with identical placeholders so the deck always has at
-    // least PLACEHOLDER_COUNT (4) cards. Once real ads reach or
-    // exceed that count, placeholders drop out entirely.
-    const placeholderFill = Math.max(0, PLACEHOLDER_COUNT - sponsored.length);
-    const placeholders = PLACEHOLDER_CARDS.slice(0, placeholderFill);
-    return [...sponsored, ...placeholders];
-  }, [carouselAds]);
-  const totalCards = displayCompanies.length; // Use dynamic length
-  const angleStep = (2 * Math.PI) / (totalCards || 1); // Avoid division by zero
-  const defaultSpeed = 0.002;
-  const slowSpeed = 0.001;
+  const companyName = profile?.companyName || ad.companyName || 'Sponsored Company';
+  const companyLogo = profile?.companyLogo || profile?.photoURL || ad.companyLogo || null;
+  const country = profile?.country || ad.country || '';
+  const description =
+    profile?.companyDescription
+    || profile?.bio
+    || ad.description
+    || 'Featured supplier — explore their catalog and start a conversation.';
 
-  // Calculate card style based on rotation
-  const getCardStyle = useCallback((index) => {
-    const angle = angleStep * index + currentRotationRef.current;
-    const x = Math.sin(angle) * radius;
-    const z = Math.cos(angle) * radius;
-    const normalizedZ = Math.cos(angle);
-    const opacity = (normalizedZ + 1.5) / 2.5;
+  const categoryEntry = categories?.find((c) => c.value === profile?.companyCategory);
+  const categoryName = categoryEntry?.label?.replace(/^[^\s]+\s/, '') || profile?.companyCategory || '';
+  const categoryIcon = categoryEntry?.icon || '📦';
 
-    return {
-      transform: `translate3d(${x}px, 0, ${z}px) rotateY(${-angle}rad)`,
-      opacity: normalizedZ > 0.95 ? 1 : opacity,
-      zIndex: Math.round(z + radius),
-    };
-  }, [angleStep, radius]);
+  const linkUrl = ad.linkUrl || (ad.userId ? `/profile/${ad.userId}` : '/companies');
+  const isExternal = /^https?:\/\//i.test(linkUrl);
 
-  // Check if card is active (front-facing)
-  const isCardActive = useCallback((index) => {
-    const angle = angleStep * index + currentRotationRef.current;
-    const normalizedZ = Math.cos(angle);
-    return normalizedZ > 0.95;
-  }, [angleStep]);
-
-  // Animation loop
-  useEffect(() => {
-    const animate = () => {
-      if (!isDragging) {
-        targetRotationRef.current += currentSpeedRef.current;
-
-        if (Math.abs(velocityRef.current) > 0.0001) {
-          targetRotationRef.current += velocityRef.current * 0.5;
-          velocityRef.current *= 0.95;
-        } else {
-          velocityRef.current = 0;
-        }
-
-        currentRotationRef.current += (targetRotationRef.current - currentRotationRef.current) * 0.05;
-      }
-
-      setCurrentRotation(currentRotationRef.current);
-      animationRef.current = requestAnimationFrame(animate);
-    };
-
-    animationRef.current = requestAnimationFrame(animate);
-    return () => {
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
-    };
-  }, [isDragging]);
-
-  // Mouse/Touch handlers
-  const handleStart = useCallback((clientX) => {
-    setIsDragging(true);
-    dragStartRef.current = {
-      x: clientX,
-      rotation: currentRotationRef.current,
-      lastX: clientX,
-      lastTime: Date.now(),
-    };
-    targetRotationRef.current = currentRotationRef.current;
-    velocityRef.current = 0;
-  }, []);
-
-  const handleMove = useCallback((clientX) => {
-    if (!isDragging || !containerRef.current) return;
-
-    const deltaX = clientX - dragStartRef.current.x;
-    currentRotationRef.current = dragStartRef.current.rotation + (deltaX / containerRef.current.offsetWidth) * Math.PI * 2;
-    targetRotationRef.current = currentRotationRef.current;
-
-    const currentTime = Date.now();
-    const timeDelta = currentTime - dragStartRef.current.lastTime;
-    if (timeDelta > 0) {
-      velocityRef.current = (clientX - dragStartRef.current.lastX) / timeDelta;
-    }
-    dragStartRef.current.lastX = clientX;
-    dragStartRef.current.lastTime = currentTime;
-  }, [isDragging]);
-
-  const handleEnd = useCallback(() => {
-    if (!isDragging) return;
-    setIsDragging(false);
-    velocityRef.current *= 0.5;
-  }, [isDragging]);
-
-  // Mouse events
-  const handleMouseDown = (e) => handleStart(e.clientX);
-  const handleMouseMove = (e) => {
-    if (isDragging) {
-      e.preventDefault();
-      handleMove(e.clientX);
+  // The outer card is a plain <div>, not a <Link>, because it contains
+  // its own set of anchors (mini product cards + View Company button).
+  // Nested <a> tags are invalid HTML and cause hydration errors. The
+  // ad-impression ref goes on the wrapper so tracking still fires on
+  // scroll-into-view; a click on the wrapper (outside a nested link)
+  // routes to the sponsored profile via handleCardClick.
+  const handleCardClick = (e) => {
+    // Let clicks on nested anchors / buttons through untouched.
+    if (e.target.closest('a, button')) return;
+    trackClick();
+    if (isExternal) {
+      window.open(linkUrl, '_blank', 'noopener,noreferrer');
+    } else {
+      window.location.assign(linkUrl);
     }
   };
-  const handleMouseUp = () => handleEnd();
-  const handleMouseLeave = () => {
-    handleEnd();
-    currentSpeedRef.current = defaultSpeed;
-  };
-
-  // Touch events
-  const handleTouchStart = (e) => handleStart(e.touches[0].clientX);
-  const handleTouchMove = (e) => {
-    if (isDragging) {
-      handleMove(e.touches[0].clientX);
-    }
-  };
-  const handleTouchEnd = () => handleEnd();
-
-  // Speed control on hover
-  const handleMouseEnter = () => {
-    currentSpeedRef.current = slowSpeed;
-  };
-
-  // Section is never empty — placeholders fill in when there aren't
-  // enough Carousel ads (guaranteed >= PLACEHOLDER_COUNT cards).
 
   return (
-    <section className="showcase-section" id="showcase-section">
-      {/* Section Header */}
-      <div className="section-header">
-        <h2 className="section-title">Featured Companies</h2>
-        <Link
-          href="/pricing/inquire?type=carousel"
-          className="link-hero-blue"
-          style={{ justifyContent: 'center', marginTop: '10px', color: '#0066FF' }}
-        >
-          Want to see your company here? View Advertising Options <span className="arrow-icon">›</span>
-        </Link>
-      </div>
-
-      {/* Carousel Container */}
-      <div
-        ref={containerRef}
-        className="carousel-container"
-        id="carouselContainer"
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseLeave}
-        onMouseEnter={handleMouseEnter}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-        style={{ cursor: isDragging ? 'grabbing' : 'grab', marginTop: '30px' }}
-      >
-        {/* Decorative Elements */}
-        <div className="spotlight" />
-        <div className="platform" />
-
-        {/* Carousel Scene */}
-        <div className="carousel-scene" id="carouselScene">
-          {displayCompanies.map((company, index) => (
-            <CompanyCard
-              key={`${company.id || company.name}-${index}`}
-              company={company}
-              isActive={isCardActive(index)}
-              style={getCardStyle(index)}
+    <div
+      ref={setRef}
+      onClick={handleCardClick}
+      className="sponsored-card-v3"
+      role="group"
+      aria-label={`Sponsored company: ${companyName}`}
+    >
+      <div className="brand-identity-row">
+        <div className="company-logo">
+          {companyLogo ? (
+            <Image
+              src={companyLogo}
+              alt={companyName}
+              width={76}
+              height={76}
+              unoptimized
             />
-          ))}
+          ) : (
+            initialsOf(companyName)
+          )}
+        </div>
+        <div className="brand-meta">
+          <h3 className="company-name">{companyName}</h3>
+          {country && (
+            <div className="company-country">
+              <span className="country-flag">
+                <CountryFlag countryCode={country} size={14} />
+              </span>
+              <span className="country-name">{getCountryName(country)}</span>
+            </div>
+          )}
+          {categoryName && (
+            <div className="category-badge">
+              <span>{categoryIcon}</span>
+              <span>{categoryName}</span>
+            </div>
+          )}
         </div>
       </div>
+
+      <div className="description-box">
+        <p className="company-description">{description}</p>
+      </div>
+
+      {products.length > 0 && (
+        <div className="products-showcase-section">
+          <div className="products-header-label">Featured Products from this Supplier</div>
+          <div className="mini-products-grid">
+            {products.map((product) => (
+              <MiniProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="card-footer">
+        <Link
+          href={linkUrl}
+          target={isExternal ? '_blank' : undefined}
+          rel={isExternal ? 'noopener noreferrer' : undefined}
+          onClick={trackClick}
+          className="btn-view-company"
+        >
+          <span>View Company</span>
+          <CtaArrow />
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+export function ShowcaseSection() {
+  const { ad } = useActiveAd(AD_TYPES.SPONSORED);
+  const { categories } = useCategories();
+
+  return (
+    <section className="sponsored-section showcase-section" id="showcase-section">
+      <div className="ambient-glow" aria-hidden="true" />
+      <SectionHeader />
+      {ad ? <SponsoredCard ad={ad} categories={categories} /> : <BookThisSpotCard />}
     </section>
   );
 }

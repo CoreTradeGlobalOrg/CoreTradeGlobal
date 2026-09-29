@@ -62,6 +62,7 @@ const OVERLAP_CAP_BY_TYPE = {
   [AD_TYPES.HERO]: 1,
   [AD_TYPES.SPONSORED_PRODUCT]: 1,
   [AD_TYPES.CAROUSEL]: 8,
+  [AD_TYPES.SPONSORED]: 1,
 };
 
 function normalizeUrl(raw) {
@@ -134,6 +135,30 @@ export function AdCampaignForm({
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
 
+  // SPONSORED-tier fields — the unified sponsorship record. Pre-filled
+  // from either the ad being edited or the inquiry prefill (buyer's
+  // picks in /pricing/inquire). Free-form so the admin can override or
+  // add showcase products the buyer left blank.
+  const [sponsoredUserId, setSponsoredUserId] = useState(
+    editing?.userId || prefill?.userId || ''
+  );
+  const [sponsoredHeroProductId, setSponsoredHeroProductId] = useState(
+    editing?.heroProductId || prefill?.heroProductId || ''
+  );
+  const [sponsoredListProductId, setSponsoredListProductId] = useState(
+    editing?.productsListProductId || prefill?.productsListProductId || ''
+  );
+  // Showcase kept as a comma-separated string in the input; parsed to
+  // an array on save so the admin can paste ids directly.
+  const [sponsoredShowcaseRaw, setSponsoredShowcaseRaw] = useState(
+    Array.isArray(editing?.showcaseProductIds)
+      ? editing.showcaseProductIds.join(', ')
+      : Array.isArray(prefill?.showcaseProductIds)
+        ? prefill.showcaseProductIds.join(', ')
+        : ''
+  );
+  const isSponsored = type === AD_TYPES.SPONSORED;
+
   useEffect(() => {
     if (!logoFile) return;
     const url = URL.createObjectURL(logoFile);
@@ -144,13 +169,18 @@ export function AdCampaignForm({
   const validate = () => {
     const e = {};
     if (!companyName.trim()) e.companyName = 'Company name is required.';
-    if (!description.trim()) e.description = 'Short description is required.';
-    if (description.length > 240) e.description = 'Description must be under 240 characters.';
+    // Description + logo are resolved live from the sponsor's user profile
+    // for the SPONSORED tier, so we don't require the admin to type them.
+    // Legacy tiers still need both fields.
+    if (!isSponsored) {
+      if (!description.trim()) e.description = 'Short description is required.';
+      if (description.length > 300) e.description = 'Description must be under 300 characters.';
+      if (!isEdit && !logoFile && !logoPreview) e.logo = 'Upload a logo/creative.';
+    }
     if (!linkUrl.trim()) e.linkUrl = 'Link URL is required.';
     if (!type) e.type = 'Type is required.';
     const range = validateCampaignRange(startDate, endDate);
     if (!range.ok) e.range = range.reason;
-    if (!isEdit && !logoFile && !logoPreview) e.logo = 'Upload a logo/creative.';
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -231,6 +261,21 @@ export function AdCampaignForm({
         productId: editing?.productId ?? prefill?.productId ?? null,
         updatedAt: serverTimestamp(),
       };
+
+      // SPONSORED-only extras — persist the userId + slot productIds so
+      // the render pipeline (Hero / Showcase / /products) can resolve
+      // live company info and product docs at read time.
+      if (isSponsored) {
+        const showcaseIds = sponsoredShowcaseRaw
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean)
+          .slice(0, 3);
+        baseFields.userId = sponsoredUserId.trim() || null;
+        baseFields.heroProductId = sponsoredHeroProductId.trim() || null;
+        baseFields.productsListProductId = sponsoredListProductId.trim() || null;
+        baseFields.showcaseProductIds = showcaseIds;
+      }
 
       // When the admin didn't upload a new file, seed the initial doc
       // with any prefill logo URL (e.g. the pinned product image) so the
@@ -325,6 +370,74 @@ export function AdCampaignForm({
             </div>
           </div>
 
+          {/* SPONSORED-only: unified sponsorship links to a user + product ids.
+              Company name/logo/description below still render for the ad
+              record but are used as fallbacks; the live user + product docs
+              are the source of truth at render. */}
+          {isSponsored && (
+            <div className="rounded-xl border border-[rgba(255,215,0,0.25)] bg-[rgba(255,215,0,0.04)] p-4 space-y-3">
+              <p className="text-xs uppercase tracking-wider text-[#FFD700] font-semibold">
+                Sponsored Package — slot references
+              </p>
+              <p className="text-[11px] text-[#A0A0A0]">
+                Buyer picks flow in here from the inquiry. Company info comes live from the userId's profile at render.
+              </p>
+              <div>
+                <label className="block text-[11px] uppercase tracking-wider text-[#A0A0A0] font-semibold mb-1">
+                  Sponsor User ID
+                </label>
+                <input
+                  type="text"
+                  value={sponsoredUserId}
+                  onChange={(e) => setSponsoredUserId(e.target.value)}
+                  placeholder="Firebase Auth uid"
+                  className={inputClass(false)}
+                />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] uppercase tracking-wider text-[#A0A0A0] font-semibold mb-1">
+                    Hero Product ID
+                  </label>
+                  <input
+                    type="text"
+                    value={sponsoredHeroProductId}
+                    onChange={(e) => setSponsoredHeroProductId(e.target.value)}
+                    placeholder="products/{id}"
+                    className={inputClass(false)}
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] uppercase tracking-wider text-[#A0A0A0] font-semibold mb-1">
+                    /products Slot Product ID
+                  </label>
+                  <input
+                    type="text"
+                    value={sponsoredListProductId}
+                    onChange={(e) => setSponsoredListProductId(e.target.value)}
+                    placeholder="products/{id}"
+                    className={inputClass(false)}
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-[11px] uppercase tracking-wider text-[#A0A0A0] font-semibold mb-1">
+                  Showcase Product IDs (up to 3, comma-separated)
+                </label>
+                <input
+                  type="text"
+                  value={sponsoredShowcaseRaw}
+                  onChange={(e) => setSponsoredShowcaseRaw(e.target.value)}
+                  placeholder="idA, idB, idC"
+                  className={inputClass(false)}
+                />
+                <p className="text-[11px] text-[#A0A0A0] mt-1">
+                  Blank = auto-fills from Hero + /products slot picks so the mini-card grid still renders.
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Company Name + Link URL */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -360,26 +473,40 @@ export function AdCampaignForm({
             </div>
           </div>
 
-          {/* Description */}
-          <div>
-            <label className="block text-xs uppercase tracking-wider text-[#A0A0A0] font-semibold mb-1.5">
-              Description <span className="text-red-400">*</span>
-            </label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={3}
-              maxLength={240}
-              placeholder="Short tagline shown next to the logo in the ad slot."
-              className={inputClass(errors.description) + ' resize-y'}
-            />
-            <div className="flex items-center justify-between mt-1">
-              {errors.description && <p className="text-xs text-red-400">{errors.description}</p>}
-              <p className="text-xs text-[#A0A0A0] ml-auto">{description.length}/240</p>
+          {/* SPONSORED-only notice — description + logo are pulled live
+              from the sponsor's user profile at render time so admin
+              doesn't need to type them. Editing them here would only
+              be a fallback and would go stale the moment the user
+              updates their profile. */}
+          {isSponsored && (
+            <div className="rounded-xl border border-[rgba(56,189,248,0.25)] bg-[rgba(56,189,248,0.05)] px-4 py-3 text-xs text-[#c8d3e0]">
+              Description and company logo are auto-fetched from the sponsor&apos;s CTG profile when the ad renders — no upload or copy needed here.
             </div>
-          </div>
+          )}
 
-          {/* Logo upload */}
+          {/* Description — hidden for SPONSORED (auto-resolved). */}
+          {!isSponsored && (
+            <div>
+              <label className="block text-xs uppercase tracking-wider text-[#A0A0A0] font-semibold mb-1.5">
+                Description <span className="text-red-400">*</span>
+              </label>
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={3}
+                maxLength={300}
+                placeholder="Short tagline shown next to the logo in the ad slot."
+                className={inputClass(errors.description) + ' resize-y'}
+              />
+              <div className="flex items-center justify-between mt-1">
+                {errors.description && <p className="text-xs text-red-400">{errors.description}</p>}
+                <p className="text-xs text-[#A0A0A0] ml-auto">{description.length}/300</p>
+              </div>
+            </div>
+          )}
+
+          {/* Logo upload — hidden for SPONSORED (auto-resolved). */}
+          {!isSponsored && (
           <div>
             <label className="block text-xs uppercase tracking-wider text-[#A0A0A0] font-semibold mb-1.5">
               Company Logo / Creative {!isEdit && <span className="text-red-400">*</span>}
@@ -413,6 +540,7 @@ export function AdCampaignForm({
             </div>
             {errors.logo && <p className="text-xs text-red-400 mt-1">{errors.logo}</p>}
           </div>
+          )}
 
           {/* Campaign dates — start + end calendar, max MAX_CAMPAIGN_DAYS
               span. The end picker's maxDate keeps clicks physically
