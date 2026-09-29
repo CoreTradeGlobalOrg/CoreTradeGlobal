@@ -21,7 +21,6 @@ import { ProductRepository } from '@/data/repositories/ProductRepository';
 import { RequestRepository } from '@/data/repositories/RequestRepository';
 import { CategoryRepository } from '@/data/repositories/CategoryRepository';
 import { FairsRepository } from '@/data/repositories/FairsRepository';
-import { NewsRepository } from '@/data/repositories/NewsRepository';
 import { ConversationRepository } from '@/data/repositories/ConversationRepository';
 import { MessageRepository } from '@/data/repositories/MessageRepository';
 import { NotificationRepository } from '@/data/repositories/NotificationRepository';
@@ -47,7 +46,6 @@ let productRepository = null;
 let requestRepository = null;
 let categoryRepository = null;
 let fairsRepository = null;
-let newsRepository = null;
 let conversationRepository = null;
 let messageRepository = null;
 let notificationRepository = null;
@@ -177,17 +175,6 @@ export const container = {
       fairsRepository = new FairsRepository(this.getFirestoreDataSource());
     }
     return fairsRepository;
-  },
-
-  /**
-   * Get News Repository instance
-   * @returns {NewsRepository}
-   */
-  getNewsRepository() {
-    if (!newsRepository) {
-      newsRepository = new NewsRepository(this.getFirestoreDataSource());
-    }
-    return newsRepository;
   },
 
   /**
@@ -329,7 +316,6 @@ export const container = {
     requestRepository = null;
     categoryRepository = null;
     fairsRepository = null;
-    newsRepository = null;
     conversationRepository = null;
     messageRepository = null;
     notificationRepository = null;

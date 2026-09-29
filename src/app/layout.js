@@ -41,9 +41,14 @@ export const metadata = {
   creator: 'CoreTradeGlobal',
   publisher: 'CoreTradeGlobal',
   manifest: '/manifest.json',
-  alternates: {
-    canonical: '/',
-  },
+  // `alternates.canonical` intentionally NOT set at the root level.
+  // Next.js propagates the root canonical to every descendant page, so
+  // hard-coding '/' here made every /product/:id, /request/:id, and
+  // /profile/:id claim the homepage as its canonical URL — Google
+  // treated them as duplicates of "/" and dropped them from the
+  // index. Each dynamic page now supplies its own canonical via
+  // generateMetadata; static pages fall back to metadataBase + the
+  // route path, which is exactly what we want.
   verification: {
     google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || '',
   },

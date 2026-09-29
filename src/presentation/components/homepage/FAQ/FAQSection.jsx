@@ -111,13 +111,6 @@ const getFaqSections = (onAddProduct) => [
         ),
       },
       {
-        id: 11,
-        question: 'Can I check global trade news?',
-        answer: (
-          <>Yes. CoreTradeGlobal users can monitor all critical global trade updates — ranging from changes in customs regulations and international logistics/supply chain trends to sectoral analyses and macroeconomic developments — in real-time through the <Link href="/news" className={faqLinkClass}>corporate newsfeed module</Link> within the platform.</>
-        ),
-      },
-      {
         id: 12,
         question: 'Can I track global currencies?',
         answer: (

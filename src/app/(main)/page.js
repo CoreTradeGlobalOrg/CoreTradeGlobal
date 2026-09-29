@@ -21,6 +21,14 @@
 
 import dynamic from 'next/dynamic';
 import { HeroSection } from '@/presentation/components/homepage/Hero/HeroSection';
+
+// Explicit canonical for the homepage — the root layout no longer sets
+// a global canonical (it was propagating '/' onto every dynamic route
+// and telling Google every page was a duplicate of the homepage).
+// Each surface now emits its own.
+export const metadata = {
+  alternates: { canonical: '/' },
+};
 import { FeaturedProducts } from '@/presentation/components/homepage/Products/FeaturedProducts';
 import { FeaturedRFQs } from '@/presentation/components/homepage/RFQs/FeaturedRFQs';
 import { CategoriesSection } from '@/presentation/components/homepage/Categories/CategoriesSection';
@@ -46,10 +54,6 @@ const ShowcaseSection = dynamic(
 const FairsSection = dynamic(
   () => import('@/presentation/components/homepage/Fairs/FairsSection').then((m) => m.FairsSection),
   { loading: () => <div className="fairs-wrapper" style={{ minHeight: 585 }} /> }
-);
-const NewsSection = dynamic(
-  () => import('@/presentation/components/homepage/News/NewsSection').then((m) => m.NewsSection),
-  { loading: () => <section className="news-section" style={{ minHeight: 620 }} /> }
 );
 
 export default function Home() {
@@ -80,8 +84,6 @@ export default function Home() {
       {/* Upcoming Fairs */}
       <FairsSection />
 
-      {/* News Section */}
-      <NewsSection />
     </div>
   );
 }

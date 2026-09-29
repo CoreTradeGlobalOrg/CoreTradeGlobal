@@ -469,14 +469,6 @@
       ]
     },
     {
-      "collectionGroup": "news",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "status", "order": "ASCENDING" },
-        { "fieldPath": "publishedAt", "order": "DESCENDING" }
-      ]
-    },
-    {
       "collectionGroup": "testimonials",
       "queryScope": "COLLECTION",
       "fields": [

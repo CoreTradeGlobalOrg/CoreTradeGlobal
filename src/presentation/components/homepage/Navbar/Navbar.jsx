@@ -2,7 +2,7 @@
  * Homepage Navbar Component
  *
  * Fixed navigation bar with dropdown menus.
- * Nav items grouped into: Marketplace, Services, News & Events, My Account, About.
+ * Nav items grouped into: Marketplace, Services, Events, My Account, About.
  * My Account only visible to authenticated users.
  * Role-based items hidden for unauthorized roles.
  */
@@ -77,13 +77,9 @@ const getNavGroups = (user) => [
         : []),
     ],
   },
-  {
-    label: 'News & Events',
-    items: [
-      { label: 'Trade News', href: '/news' },
-      { label: 'Fairs', href: '/fairs' },
-    ],
-  },
+  // News module retired — Fairs promoted to a top-level direct link so
+  // the events surface still has a home in the navbar.
+  { label: 'Fairs', direct: true, href: '/fairs' },
   // Pricing and Advertising each stand on their own — the combined
   // dropdown was doing two clicks' worth of work for pages that
   // aren't a category. Direct-link mode renders them as top-level
