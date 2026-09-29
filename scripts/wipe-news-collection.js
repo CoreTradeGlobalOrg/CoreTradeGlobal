@@ -19,16 +19,26 @@ const admin = require('firebase-admin');
 function initAdmin() {
   const keyRaw = process.env.FIREBASE_SERVICE_ACCOUNT_KEY || process.env.FIREBASE_ACCOUNT_SERVICE_KEY;
   if (keyRaw) {
-    // Env-var payloads sometimes ship with literal `\n` inside the
-    // private_key. JSON.parse handles those; the block below rewires
-    // real newlines if the parse choked.
-    let parsed;
+    // Same key-cleanup pattern as src/lib/firebase-admin.js: env-var
+    // payloads often flatten the PEM private_key onto one line, which
+    // breaks the OpenSSL decoder. Reconstruct newlines every 64 chars.
+    let cleaned = keyRaw;
     try {
-      parsed = JSON.parse(keyRaw);
+      JSON.parse(cleaned);
     } catch {
-      parsed = JSON.parse(keyRaw.replace(/\\n/g, '\n'));
+      cleaned = cleaned.replace(/\\n/g, '');
     }
-    admin.initializeApp({ credential: admin.credential.cert(parsed) });
+    const serviceAccount = JSON.parse(cleaned);
+    if (serviceAccount.private_key && !serviceAccount.private_key.includes('\n')) {
+      const pk = serviceAccount.private_key
+        .replace('-----BEGIN PRIVATE KEY-----', '')
+        .replace('-----END PRIVATE KEY-----', '');
+      serviceAccount.private_key =
+        '-----BEGIN PRIVATE KEY-----\n' +
+        pk.match(/.{1,64}/g).join('\n') +
+        '\n-----END PRIVATE KEY-----\n';
+    }
+    admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
     return;
   }
   // Falls back to GOOGLE_APPLICATION_CREDENTIALS or gcloud ADC.
