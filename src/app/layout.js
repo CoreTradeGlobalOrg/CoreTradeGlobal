@@ -179,8 +179,9 @@ export default function RootLayout({ children }) {
              painted at ~y=396 on first paint and only settled once the
              client tree hydrated (~0.4 CLS on mobile). Value = hero 780
              + products 740 + rfqs 540 + showcase 580 + companies 460 +
-             categories 240 + fairs 585 + news 620 = 4545, rounded to
-             4600 with a thin buffer.
+             categories 240 + fairs 585 = 3925, rounded to 3980 with a
+             thin buffer. News was retired Sept 2026 — the old 4600
+             reservation left ~620 px of blank space under Fairs.
 
              (main)/page is now a server component, so the initial HTML
              contains the real section tree and no reservation is
@@ -189,8 +190,8 @@ export default function RootLayout({ children }) {
              set to 0 because the real content is taller than any fixed
              clamp we'd pick, and any over-reserve produces a visible
              blank strip at the bottom of the page. */
-          .main-content-reservation{min-height:4600px}
-          @media (max-width:1024px){.main-content-reservation{min-height:4000px}}
+          .main-content-reservation{min-height:3980px}
+          @media (max-width:1024px){.main-content-reservation{min-height:3400px}}
           @media (max-width:600px){.main-content-reservation{min-height:0}}
         ` }} />
         {/* Analytics stack moved to strategy="lazyOnload" — the browser
