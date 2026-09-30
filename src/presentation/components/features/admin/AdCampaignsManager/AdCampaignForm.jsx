@@ -370,70 +370,43 @@ export function AdCampaignForm({
             </div>
           </div>
 
-          {/* SPONSORED-only: unified sponsorship links to a user + product ids.
-              Company name/logo/description below still render for the ad
-              record but are used as fallbacks; the live user + product docs
-              are the source of truth at render. */}
+          {/* SPONSORED-only summary panel — the sponsor userId + slot
+              productIds are carried across from the inquiry (the buyer
+              picked them in /pricing/inquire); admin never needs to
+              type them. Values still live in state and get written on
+              submit; the panel is read-only info so admin can confirm
+              what got booked before hitting Save. */}
           {isSponsored && (
-            <div className="rounded-xl border border-[rgba(255,215,0,0.25)] bg-[rgba(255,215,0,0.04)] p-4 space-y-3">
+            <div className="rounded-xl border border-[rgba(255,215,0,0.25)] bg-[rgba(255,215,0,0.04)] p-4 space-y-2">
               <p className="text-xs uppercase tracking-wider text-[#FFD700] font-semibold">
-                Sponsored Package — slot references
+                Sponsored Package — auto-linked from inquiry
               </p>
               <p className="text-[11px] text-[#A0A0A0]">
-                Buyer picks flow in here from the inquiry. Company info comes live from the userId's profile at render.
+                Sponsor and product picks flow in from the buyer&apos;s inquiry. Company logo + description come live from their CTG profile at render.
               </p>
-              <div>
-                <label className="block text-[11px] uppercase tracking-wider text-[#A0A0A0] font-semibold mb-1">
-                  Sponsor User ID
-                </label>
-                <input
-                  type="text"
-                  value={sponsoredUserId}
-                  onChange={(e) => setSponsoredUserId(e.target.value)}
-                  placeholder="Firebase Auth uid"
-                  className={inputClass(false)}
-                />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[11px] uppercase tracking-wider text-[#A0A0A0] font-semibold mb-1">
-                    Hero Product ID
-                  </label>
-                  <input
-                    type="text"
-                    value={sponsoredHeroProductId}
-                    onChange={(e) => setSponsoredHeroProductId(e.target.value)}
-                    placeholder="products/{id}"
-                    className={inputClass(false)}
-                  />
-                </div>
-                <div>
-                  <label className="block text-[11px] uppercase tracking-wider text-[#A0A0A0] font-semibold mb-1">
-                    /products Slot Product ID
-                  </label>
-                  <input
-                    type="text"
-                    value={sponsoredListProductId}
-                    onChange={(e) => setSponsoredListProductId(e.target.value)}
-                    placeholder="products/{id}"
-                    className={inputClass(false)}
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-[11px] uppercase tracking-wider text-[#A0A0A0] font-semibold mb-1">
-                  Showcase Product IDs (up to 3, comma-separated)
-                </label>
-                <input
-                  type="text"
-                  value={sponsoredShowcaseRaw}
-                  onChange={(e) => setSponsoredShowcaseRaw(e.target.value)}
-                  placeholder="idA, idB, idC"
-                  className={inputClass(false)}
-                />
-                <p className="text-[11px] text-[#A0A0A0] mt-1">
-                  Blank = auto-fills from Hero + /products slot picks so the mini-card grid still renders.
+              {sponsoredUserId ? (
+                <p className="text-[11px] text-[#c8d3e0]">
+                  <span className="text-[#A0A0A0]">Sponsor uid:</span>{' '}
+                  <span className="font-mono text-white">{sponsoredUserId}</span>
                 </p>
+              ) : (
+                <p className="text-[11px] text-red-300">
+                  ⚠ No sponsor uid on this inquiry — the sponsored card will render blank company info. Convert from an inquiry submitted after 2026-09 to fix.
+                </p>
+              )}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] text-[#c8d3e0]">
+                <div>
+                  <span className="text-[#A0A0A0]">Hero product:</span>{' '}
+                  <span className="font-mono text-white">{sponsoredHeroProductId || '—'}</span>
+                </div>
+                <div>
+                  <span className="text-[#A0A0A0]">/products slot:</span>{' '}
+                  <span className="font-mono text-white">{sponsoredListProductId || '—'}</span>
+                </div>
+                <div className="sm:col-span-2">
+                  <span className="text-[#A0A0A0]">Showcase:</span>{' '}
+                  <span className="font-mono text-white">{sponsoredShowcaseRaw || 'auto-fill from hero + list'}</span>
+                </div>
               </div>
             </div>
           )}
