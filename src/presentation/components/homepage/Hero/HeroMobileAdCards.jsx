@@ -100,8 +100,16 @@ export function HeroMobileAdCards() {
   // on the ad doc — user profile is the source of truth).
   const sponsoredAd = useSponsoredHeroAd();
 
-  const sponsoredProductMap = useProductsByIds(sponsoredAd?.heroProductId ? [sponsoredAd.heroProductId] : []);
-  const sponsoredHeroProduct = sponsoredAd?.heroProductId ? sponsoredProductMap.get(sponsoredAd.heroProductId) : null;
+  // Old ad docs sometimes hold full product URLs — strip the prefix so
+  // Firestore can find the doc.
+  const sponsoredHeroId = (() => {
+    const v = String(sponsoredAd?.heroProductId || '').trim();
+    if (!v) return null;
+    const m = v.match(/\/product\/([^/?#]+)/);
+    return m ? m[1] : v;
+  })();
+  const sponsoredProductMap = useProductsByIds(sponsoredHeroId ? [sponsoredHeroId] : []);
+  const sponsoredHeroProduct = sponsoredHeroId ? sponsoredProductMap.get(sponsoredHeroId) : null;
   const { profile: sponsoredCompany } = useUserProfile(sponsoredAd?.userId);
 
   const featuredProductAd = useMemo(() => {
@@ -128,7 +136,12 @@ export function HeroMobileAdCards() {
   }, [sponsoredAd, sponsoredCompany]);
 
   return (
-    <div className="hero-mobile-promo-cards">
+    // Inline `md:hidden` guard belt-and-braces the CSS `display: none`
+    // rule in globals.css. If Vercel serves a stale CSS bundle after a
+    // class rename (or an ad-blocker rule strips the .promo class the
+    // way it used to strip .ad), Tailwind's utility guarantees the
+    // strip never leaks onto desktop as unstyled text.
+    <div className="hero-mobile-promo-cards md:hidden">
       <AdSlot
         ad={featuredProductAd}
         ariaLabel="Feature your product here"

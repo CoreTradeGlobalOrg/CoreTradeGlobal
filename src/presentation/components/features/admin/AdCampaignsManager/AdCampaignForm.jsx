@@ -58,6 +58,17 @@ const OVERLAP_CAP_BY_TYPE = {
   [AD_TYPES.SPONSORED]: 1,
 };
 
+// Accept both bare doc IDs and legacy full product URLs. Old ads were
+// created with the sponsored fields as text inputs and admins pasted
+// canonical URLs (`https://www.coretradeglobal.com/product/{id}`); the
+// render pipeline expects Firestore doc IDs, so strip the URL prefix.
+export function normalizeProductRef(raw) {
+  const s = (raw || '').trim();
+  if (!s) return '';
+  const m = s.match(/\/product\/([^/?#]+)/);
+  return m ? m[1] : s;
+}
+
 function normalizeUrl(raw) {
   const trimmed = (raw || '').trim();
   if (!trimmed) return '';
@@ -263,12 +274,12 @@ export function AdCampaignForm({
       if (isSponsored) {
         const showcaseIds = sponsoredShowcaseRaw
           .split(',')
-          .map((s) => s.trim())
+          .map((s) => normalizeProductRef(s.trim()))
           .filter(Boolean)
           .slice(0, 3);
         baseFields.userId = sponsoredUserId.trim() || null;
-        baseFields.heroProductId = sponsoredHeroProductId.trim() || null;
-        baseFields.productsListProductId = sponsoredListProductId.trim() || null;
+        baseFields.heroProductId = normalizeProductRef(sponsoredHeroProductId.trim()) || null;
+        baseFields.productsListProductId = normalizeProductRef(sponsoredListProductId.trim()) || null;
         baseFields.showcaseProductIds = showcaseIds;
       }
 
@@ -358,36 +369,67 @@ export function AdCampaignForm({
               submit; the panel is read-only info so admin can confirm
               what got booked before hitting Save. */}
           {isSponsored && (
-            <div className="rounded-xl border border-[rgba(255,215,0,0.25)] bg-[rgba(255,215,0,0.04)] p-4 space-y-2">
+            <div className="rounded-xl border border-[rgba(255,215,0,0.25)] bg-[rgba(255,215,0,0.04)] p-4 space-y-3">
               <p className="text-xs uppercase tracking-wider text-[#FFD700] font-semibold">
-                Sponsored Package — auto-linked from inquiry
+                Sponsored Package — sponsor + slot references
               </p>
               <p className="text-[11px] text-[#A0A0A0]">
-                Sponsor and product picks flow in from the buyer&apos;s inquiry. Company logo + description come live from their CTG profile at render.
+                These fields come from the buyer&apos;s inquiry. Editable so you can fix a paste error or a legacy URL-shaped value; paste bare doc IDs (no <span className="font-mono">https://…/product/</span> prefix).
               </p>
-              {sponsoredUserId ? (
-                <p className="text-[11px] text-[#c8d3e0]">
-                  <span className="text-[#A0A0A0]">Sponsor uid:</span>{' '}
-                  <span className="font-mono text-white break-all">{sponsoredUserId}</span>
-                </p>
-              ) : (
-                <p className="text-[11px] text-red-300">
-                  ⚠ No sponsor uid on this inquiry — the sponsored card will render blank company info. Convert from an inquiry submitted after 2026-09 to fix.
-                </p>
-              )}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] text-[#c8d3e0]">
-                <div>
-                  <span className="text-[#A0A0A0]">Hero product:</span>{' '}
-                  <span className="font-mono text-white break-all">{sponsoredHeroProductId || '—'}</span>
+              <div>
+                <label className="block text-[11px] uppercase tracking-wider text-[#A0A0A0] font-semibold mb-1">
+                  Sponsor User ID
+                </label>
+                <input
+                  type="text"
+                  value={sponsoredUserId}
+                  onChange={(e) => setSponsoredUserId(e.target.value)}
+                  placeholder="Firebase Auth uid"
+                  className={inputClass(false) + ' font-mono text-[12px]'}
+                />
+                {!sponsoredUserId && (
+                  <p className="text-[10px] text-red-300 mt-1">
+                    ⚠ Without a sponsor uid the hero + showcase render with blank company info.
+                  </p>
+                )}
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="min-w-0">
+                  <label className="block text-[11px] uppercase tracking-wider text-[#A0A0A0] font-semibold mb-1">
+                    Hero Product ID
+                  </label>
+                  <input
+                    type="text"
+                    value={sponsoredHeroProductId}
+                    onChange={(e) => setSponsoredHeroProductId(e.target.value)}
+                    placeholder="doc id (not a URL)"
+                    className={inputClass(false) + ' font-mono text-[12px]'}
+                  />
                 </div>
-                <div>
-                  <span className="text-[#A0A0A0]">/products slot:</span>{' '}
-                  <span className="font-mono text-white break-all">{sponsoredListProductId || '—'}</span>
+                <div className="min-w-0">
+                  <label className="block text-[11px] uppercase tracking-wider text-[#A0A0A0] font-semibold mb-1">
+                    /products Slot Product ID
+                  </label>
+                  <input
+                    type="text"
+                    value={sponsoredListProductId}
+                    onChange={(e) => setSponsoredListProductId(e.target.value)}
+                    placeholder="doc id"
+                    className={inputClass(false) + ' font-mono text-[12px]'}
+                  />
                 </div>
-                <div className="sm:col-span-2">
-                  <span className="text-[#A0A0A0]">Showcase:</span>{' '}
-                  <span className="font-mono text-white break-all">{sponsoredShowcaseRaw || 'auto-fill from hero + list'}</span>
-                </div>
+              </div>
+              <div>
+                <label className="block text-[11px] uppercase tracking-wider text-[#A0A0A0] font-semibold mb-1">
+                  Showcase Product IDs (comma-separated, up to 3)
+                </label>
+                <input
+                  type="text"
+                  value={sponsoredShowcaseRaw}
+                  onChange={(e) => setSponsoredShowcaseRaw(e.target.value)}
+                  placeholder="id1, id2, id3 (blank = auto-fill from Hero + /products)"
+                  className={inputClass(false) + ' font-mono text-[12px]'}
+                />
               </div>
             </div>
           )}

@@ -113,10 +113,19 @@ export function HeroDataCards({ fetchData, dataLoading, latestProduct, latestReq
   // the moment admin marks it paid.
   const sponsoredAd = useSponsoredHeroAd();
 
+  // Old ad docs sometimes hold full product URLs in heroProductId (the
+  // sponsored fields used to be free-text inputs). Extract the doc id
+  // so useProductsByIds actually resolves the product.
+  const sponsoredHeroId = (() => {
+    const v = String(sponsoredAd?.heroProductId || '').trim();
+    if (!v) return null;
+    const m = v.match(/\/product\/([^/?#]+)/);
+    return m ? m[1] : v;
+  })();
   // Batch-resolve the hero product + sponsor profile so the card
   // reflects live edits (price/logo/name changes).
-  const sponsoredProductMap = useProductsByIds(sponsoredAd?.heroProductId ? [sponsoredAd.heroProductId] : []);
-  const sponsoredHeroProduct = sponsoredAd?.heroProductId ? sponsoredProductMap.get(sponsoredAd.heroProductId) : null;
+  const sponsoredProductMap = useProductsByIds(sponsoredHeroId ? [sponsoredHeroId] : []);
+  const sponsoredHeroProduct = sponsoredHeroId ? sponsoredProductMap.get(sponsoredHeroId) : null;
   const { profile: sponsoredCompany } = useUserProfile(sponsoredAd?.userId);
 
   const { setRef: setProductAdRef, trackClick: trackProductAdClick } = useTrackAd(sponsoredAd?.id);
