@@ -13,6 +13,7 @@ import Image from 'next/image';
 import { CountryFlag } from '@/presentation/components/common/CountryFlag/CountryFlag';
 import { COUNTRIES } from '@/core/constants/countries';
 import { useActiveAd } from '@/presentation/hooks/ads/useActiveAd';
+import { useSponsoredHeroAd } from '@/presentation/hooks/ads/useSponsoredHeroAd';
 import { useTrackAd } from '@/presentation/hooks/ads/useTrackAd';
 import { useProductsByIds } from '@/presentation/hooks/product/useProductsByIds';
 import { useUserProfile } from '@/presentation/hooks/user/useUserProfile';
@@ -113,7 +114,11 @@ export function HeroDataCards({ fetchData, dataLoading, latestProduct, latestReq
   // single record (heroProductId → left, userId → right), so a buyer
   // gets full-hero coverage in one purchase. Legacy FEATURED/HERO ads
   // still work as fallbacks while pre-existing campaigns run out.
-  const { ad: sponsoredAd } = useActiveAd(AD_TYPES.SPONSORED);
+  // useSponsoredHeroAd relaxes useActiveAd's strict "in-date-range"
+  // filter — a sponsored campaign for next month shows up here right
+  // after admin marks it paid instead of waiting for the month to
+  // start (avoids a paid slot rendering as "Book This Spot").
+  const sponsoredAd = useSponsoredHeroAd();
   const { ad: legacyHeroAd } = useActiveAd(AD_TYPES.HERO);
   const { ad: legacyProductAd } = useActiveAd(AD_TYPES.FEATURED);
 
