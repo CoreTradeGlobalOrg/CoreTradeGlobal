@@ -5799,10 +5799,17 @@ exports.onNewMemberRegistered = onDocumentWritten(
       // Only notify for member self-registrations
       if (after.role !== ROLES.MEMBER) return;
 
-      // Idempotency: only notify when role FIRST becomes 'member', and only once.
+      // Only notify on the initial document creation. If `before` exists this
+      // is an update — e.g. admin using "Change Role" to switch someone from
+      // logistics_provider → member — and we should NOT fire the "New Member
+      // Registered" cascade for that. Self-registration writes the user doc
+      // in a single set() with role already populated, so `before` is
+      // guaranteed to be undefined at that moment.
+      if (before) return;
+
+      // Idempotency belt-and-braces: if somehow this fires twice on the same
+      // doc-create (retries, replay), don't re-notify.
       if (after._adminNotifiedAt) return;
-      const beforeWasMember = before?.role === ROLES.MEMBER;
-      if (beforeWasMember) return;
 
       const newUser = after;
       const newUserId = event.params.userId;

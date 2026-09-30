@@ -2,13 +2,12 @@
  * CompaniesSection Component
  *
  * Homepage section displaying trusted companies
- * Desktop: Horizontal scroll with arrows
- * Mobile: Tinder-style swipeable card stack
+ * Horizontal scroll with arrows on both mobile and desktop
  */
 
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { container } from '@/core/di/container';
@@ -17,27 +16,6 @@ import { COUNTRIES } from '@/core/constants/countries';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useCategories } from '@/presentation/hooks/category/useCategories';
 import { useResponsiveLimit, useScrollLoadMore } from '@/presentation/hooks/useResponsiveLimit';
-import dynamic from 'next/dynamic';
-
-// Dynamically import mobile card stack to reduce initial bundle.
-// A loading skeleton keeps the section from silently vanishing while the
-// chunk streams in on slow mobile connections.
-const MobileCompanyCardStack = dynamic(
-  () => import('./MobileCompanyCardStack'),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="mobile-card-stack-container">
-        <div className="section-header" style={{ marginTop: 0, marginBottom: '1.5rem' }}>
-          <h2 className="section-title">Featured Companies</h2>
-        </div>
-        <div className="relative w-full h-[450px] mb-6 flex items-center justify-center">
-          <div className="w-[90%] h-[420px] bg-[rgba(255,255,255,0.03)] rounded-2xl border border-[rgba(255,215,0,0.2)] animate-pulse" />
-        </div>
-      </div>
-    ),
-  }
-);
 
 
 // Get abbreviation from company name
@@ -153,52 +131,16 @@ function CompanyCard({ company, categories }) {
 
 export function CompaniesSection() {
   const [companies, setCompanies] = useState([]);
-  const [allCompanies, setAllCompanies] = useState([]); // Store all fetched companies (for Latest Companies)
-  const [featuredCompanies, setFeaturedCompanies] = useState([]); // Featured companies for card stack
-  // Companies whose products appear in the Featured Products section. This is
-  // what powers the mobile Tinder-style card stack — users landing on mobile
-  // should see the same brands whose products are being showcased just above,
-  // not a random slice of the latest sign-ups.
-  const [productOwnerCompanies, setProductOwnerCompanies] = useState([]);
-  // Carousel-tier ads were retired end-of-Sept-2026 along with the rest
-  // of the legacy ad taxonomy; the sponsored surface on the homepage
-  // now lives entirely in ShowcaseSection (Sponsored Package). Mobile
-  // card stack is organic-only.
-  const carouselAds = [];
+  const [allCompanies, setAllCompanies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(true);
-  const [isMobile, setIsMobile] = useState(null); // null = not determined yet
-  const [isVisible, setIsVisible] = useState(false); // Viewport visibility for performance
   const scrollRef = useRef(null);
   const sectionRef = useRef(null);
   const { categories } = useCategories();
 
-  // Detect narrow viewports (mobile + small tablets). The breakpoint is 1024
-  // so devices like iPad portrait, folded phones, and zoomed-out browsers
-  // still receive the swipeable card stack instead of a hidden section.
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth <= 1024);
-    };
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
-  // Pause rendering when section is off-screen (performance optimization)
-  useEffect(() => {
-    if (!sectionRef.current) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => setIsVisible(entry.isIntersecting),
-      { rootMargin: '200px', threshold: 0 } // Start loading slightly before visible
-    );
-    observer.observe(sectionRef.current);
-    return () => observer.disconnect();
-  }, []);
-
   // Responsive limits with lazy loading: mobile 4, tablet 8, desktop 12, max 30
-  const { limit, displayCount, isReady, loadMore, hasMore } = useResponsiveLimit({
+  const { displayCount, isReady, loadMore, hasMore } = useResponsiveLimit({
     mobile: 4,
     tablet: 8,
     desktop: 12,
@@ -258,10 +200,6 @@ export function CompaniesSection() {
 
           setAllCompanies(sorted);
           setCompanies(sorted.slice(0, displayCount));
-
-          // Filter featured companies for card stack
-          const featured = sorted.filter(u => u.featured === true);
-          setFeaturedCompanies(featured);
         }
       } catch (error) {
         console.error('Error fetching companies:', error);
@@ -272,57 +210,6 @@ export function CompaniesSection() {
 
     fetchCompanies();
   }, [isReady]);
-
-  // Populate the mobile card stack from the SAME product pool that
-  // Featured Products above renders. We pull the newest active products,
-  // extract their distinct owners, and fetch those user docs in parallel.
-  // Suspended users / deleted accounts are filtered out so a stale userId
-  // on a product never renders a broken card.
-  useEffect(() => {
-    if (!isReady || !isMobile) return; // Only mobile actually renders the stack
-
-    let cancelled = false;
-
-    (async () => {
-      try {
-        const firestoreDS = container.getFirestoreDataSource();
-        const fetchedProducts = await firestoreDS.query('products', {
-          orderBy: [['createdAt', 'desc']],
-          limit: 35,
-        });
-
-        if (!fetchedProducts?.length) return;
-
-        const activeProducts = fetchedProducts.filter(p => p.status === 'active');
-        // De-duplicate userIds while preserving insertion order so the
-        // freshest product's owner appears first in the stack.
-        const seen = new Set();
-        const ownerIds = [];
-        for (const p of activeProducts) {
-          if (p.userId && !seen.has(p.userId)) {
-            seen.add(p.userId);
-            ownerIds.push(p.userId);
-            if (ownerIds.length >= 15) break; // Card stack shows max 15
-          }
-        }
-        if (!ownerIds.length) return;
-
-        const owners = await Promise.all(
-          ownerIds.map(id => firestoreDS.getById('users', id).catch(() => null))
-        );
-        if (cancelled) return;
-
-        const valid = owners.filter(
-          u => u && u.companyName && !u.isSuspended
-        );
-        setProductOwnerCompanies(valid);
-      } catch (error) {
-        console.error('Error fetching product-owner companies for card stack:', error);
-      }
-    })();
-
-    return () => { cancelled = true; };
-  }, [isReady, isMobile]);
 
   const handleScroll = () => {
     if (scrollRef.current) {
@@ -342,136 +229,21 @@ export function CompaniesSection() {
     }
   };
 
-  // Wait for mobile detection.
-  // Inline min-height reserves the space the final card-stack (mobile,
-  // ~626 px) or the desktop grid (~740 px via the CSS class) will need
-  // once isMobile resolves post-hydration. Without this, SSR shipped
-  // just the heading (~40 px) and the client re-render pushed the
-  // footer down ~500 px — Lighthouse attributed that as ~0.40 CLS to
-  // the <footer> element. Value split so the pixel-perfect reservation
-  // is applied on each viewport class separately: mobile clamp matches
-  // MobileCompanyCardStack's ~640 px working height; desktop already
-  // gets 740 px from the base .featured-products-section rule.
-  if (isMobile === null) {
-    return (
-      <section className="featured-products-section featured-products-section--pending">
-        <div className="featured-products-container">
-          <div className="featured-products-header">
-            <div>
-              <h2>Featured Companies</h2>
-              <p>Connect with verified suppliers worldwide.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-    );
-  }
-
-  // Mobile: Show card stack (Featured Companies with swipe).
-  // Source priority:
-  //   1. Companies whose products appear in the Featured Products section
-  //      (productOwnerCompanies) — keeps the stack in sync with what the
-  //      user just scrolled past above.
-  //   2. Explicitly flagged featuredCompanies — legacy admin toggle.
-  //   3. Latest sign-ups — last-resort so the section is never empty.
-  const renderMobileCardStack = () => {
-    if (!isMobile) return null;
-
-    let cardStackCompanies;
-    if (productOwnerCompanies.length > 0) {
-      cardStackCompanies = productOwnerCompanies.slice(0, 15);
-    } else if (featuredCompanies.length > 0) {
-      cardStackCompanies = featuredCompanies.slice(0, 15);
-    } else {
-      cardStackCompanies = allCompanies.slice(0, 15);
-    }
-
-    // Prepend every active carousel-tier sponsored ad. Shape them to
-    // the User doc contract MobileCompanyCardStack expects. The
-    // `isSponsored` flag tells the stack to pin them at the top of the
-    // deck (skip shuffle) and render the Sponsored badge + honor
-    // linkUrl on the CTA.
-    if (carouselAds && carouselAds.length > 0) {
-      const sponsoredCards = carouselAds.map((ad) => ({
-        id: `ad:${ad.id}`,
-        isSponsored: true,
-        sponsoredAdId: ad.id,
-        badgeText: ad.badgeText || 'Sponsored',
-        linkUrl: ad.linkUrl || null,
-        companyName: ad.companyName || 'Sponsored',
-        companyLogo: ad.companyLogo || '',
-        photoURL: '',
-        country: '',
-        companyCategory: 'Sponsored',
-        about: ad.description || '',
-        emailVerified: false,
-        adminApproved: false,
-      }));
-      cardStackCompanies = [...sponsoredCards, ...cardStackCompanies];
-    }
-
-    if (cardStackCompanies.length === 0) {
-      // Both loading and empty-final states keep the section mounted
-      // with the --pending clamp so the reserved 640 px doesn't
-      // collapse and shove the footer up when the async company
-      // fetch resolves. Empty-final (no loading, no data) renders
-      // just the header; the CSS clamp handles the vertical space.
-      // Skipping the return-null branch removed the ~0.045 CLS shift
-      // that Lighthouse attributed to featured-products-section when
-      // the section vanished mid-hydration on throttled mobile.
-      return (
-        <section className="featured-products-section featured-products-section--pending">
-          <div className="mobile-card-stack-container">
-            <div className="section-header" style={{ marginTop: 0, marginBottom: '1.5rem' }}>
-              <h2 className="section-title">Featured Companies</h2>
-              <Link
-                href="/pricing/inquire?type=carousel"
-                className="link-hero-blue"
-                style={{ justifyContent: 'center', marginTop: '10px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-              >
-                Want to see your company here? View Advertising Options <span className="arrow-icon">›</span>
-              </Link>
-            </div>
-            {loading && (
-              <div className="relative w-full h-[420px] flex items-center justify-center">
-                <div className="w-[90%] h-[380px] bg-[rgba(255,255,255,0.03)] rounded-2xl border border-[rgba(255,215,0,0.2)] animate-pulse flex items-center justify-center">
-                  <div className="text-[#64748b]">Loading...</div>
-                </div>
-              </div>
-            )}
-          </div>
-        </section>
-      );
-    }
-
-    return (
-      <section className="featured-products-section">
-        <MobileCompanyCardStack
-          companies={cardStackCompanies}
-          categories={categories}
-        />
-      </section>
-    );
-  };
-
-  // Latest Companies horizontal scroll (both mobile and desktop)
   return (
-    <>
-      {/* Latest Companies - horizontal scroll (shows first) */}
-      <section ref={sectionRef} className="featured-products-section">
-        <div className="featured-products-container">
-          {/* Header */}
-          <div className="featured-products-header">
-            <div>
-              <h2 style={{ paddingTop: '20px' }}>Latest Companies</h2>
-              <p>Connect with verified suppliers worldwide.</p>
-            </div>
-            {/* TODO: View All Companies butonu daha sonra açılacaktır
-            <Link href="/companies" className="btn-section-action">
-              View All Companies →
-            </Link>
-            */}
+    <section ref={sectionRef} className="featured-products-section">
+      <div className="featured-products-container">
+        {/* Header */}
+        <div className="featured-products-header">
+          <div>
+            <h2 style={{ paddingTop: '20px' }}>Latest Companies</h2>
+            <p>Connect with verified suppliers worldwide.</p>
           </div>
+          {/* TODO: View All Companies butonu daha sonra açılacaktır
+          <Link href="/companies" className="btn-section-action">
+            View All Companies →
+          </Link>
+          */}
+        </div>
 
         {/* Companies Grid with Scroll */}
         <div className="featured-products-grid">
@@ -533,10 +305,6 @@ export function CompaniesSection() {
         </div>
       </div>
     </section>
-
-      {/* Mobile: Featured Companies Card Stack (shows after Latest Companies) */}
-      {renderMobileCardStack()}
-    </>
   );
 }
 
