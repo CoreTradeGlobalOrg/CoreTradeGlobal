@@ -31,7 +31,7 @@ import {
   where,
 } from 'firebase/firestore';
 import toast from 'react-hot-toast';
-import { Loader2, Upload, X } from 'lucide-react';
+import { Loader2, Upload, X, Search, Check } from 'lucide-react';
 import { db } from '@/core/config/firebase.config';
 import { container } from '@/core/di/container';
 import { compressImage, extForCompressed } from '@/lib/image-utils';
@@ -164,6 +164,82 @@ export function AdCampaignForm({
         : ''
   );
   const isSponsored = type === AD_TYPES.SPONSORED;
+
+  // Sponsor search — admin creating a fresh SPONSORED ad without going
+  // through an inquiry needs a way to pick the sponsor user. Types 2+
+  // chars → fetches matching users (company name or email) → click a
+  // row to fill the Sponsor User ID field.
+  const [sponsorSearch, setSponsorSearch] = useState('');
+  const [sponsorMatches, setSponsorMatches] = useState([]);
+  const [sponsorSearching, setSponsorSearching] = useState(false);
+
+  useEffect(() => {
+    if (!isSponsored) return;
+    const q = sponsorSearch.trim().toLowerCase();
+    if (q.length < 2) {
+      setSponsorMatches([]);
+      return;
+    }
+    let cancelled = false;
+    setSponsorSearching(true);
+    const t = setTimeout(async () => {
+      try {
+        // Small catalog — grab up to 200 users, filter client-side by
+        // company name / display name / email substring. Keeps us off
+        // a composite index while the admin-user count stays modest.
+        const snap = await getDocs(query(collection(db, 'users'), where('emailVerified', '==', true)));
+        if (cancelled) return;
+        const rows = snap.docs
+          .map((d) => ({ id: d.id, ...d.data() }))
+          .filter((u) => {
+            const hay = [u.companyName, u.displayName, u.email].filter(Boolean).join(' ').toLowerCase();
+            return hay.includes(q);
+          })
+          .slice(0, 8);
+        setSponsorMatches(rows);
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.warn('sponsor search failed:', err);
+      } finally {
+        if (!cancelled) setSponsorSearching(false);
+      }
+    }, 250);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+  }, [sponsorSearch, isSponsored]);
+
+  // Sponsor's own products — as soon as a sponsor uid is set, fetch
+  // that user's active products so the admin can pick from a dropdown
+  // instead of pasting doc IDs.
+  const [sponsorProducts, setSponsorProducts] = useState([]);
+  useEffect(() => {
+    if (!isSponsored || !sponsoredUserId.trim()) {
+      setSponsorProducts([]);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const snap = await getDocs(
+          query(collection(db, 'products'), where('userId', '==', sponsoredUserId.trim())),
+        );
+        if (cancelled) return;
+        const items = snap.docs
+          .map((d) => ({ id: d.id, ...d.data() }))
+          .filter((p) => (p.status || 'active') === 'active');
+        setSponsorProducts(items);
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.warn('sponsor products fetch failed:', err);
+        setSponsorProducts([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [isSponsored, sponsoredUserId]);
 
   useEffect(() => {
     if (!logoFile) return;
@@ -376,6 +452,52 @@ export function AdCampaignForm({
               <p className="text-[11px] text-[#A0A0A0]">
                 These fields come from the buyer&apos;s inquiry. Editable so you can fix a paste error or a legacy URL-shaped value; paste bare doc IDs (no <span className="font-mono">https://…/product/</span> prefix).
               </p>
+              {/* Sponsor picker — search users by company / display /
+                  email; click a row to fill the uid. Manual uid paste
+                  still works. */}
+              <div>
+                <label className="block text-[11px] uppercase tracking-wider text-[#A0A0A0] font-semibold mb-1">
+                  Sponsor (search by company or email)
+                </label>
+                <div className="relative">
+                  <Search className="w-3.5 h-3.5 text-[#A0A0A0] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <input
+                    type="text"
+                    value={sponsorSearch}
+                    onChange={(e) => setSponsorSearch(e.target.value)}
+                    placeholder="Type 2+ characters…"
+                    className={inputClass(false) + ' pl-8 text-[12px]'}
+                  />
+                </div>
+                {sponsorSearch.trim().length >= 2 && (
+                  <div className="mt-1 rounded-lg border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.03)] max-h-52 overflow-y-auto">
+                    {sponsorSearching ? (
+                      <div className="p-2 text-[11px] text-[#A0A0A0] flex items-center gap-2">
+                        <Loader2 className="w-3 h-3 animate-spin" /> Searching…
+                      </div>
+                    ) : sponsorMatches.length === 0 ? (
+                      <div className="p-2 text-[11px] text-[#A0A0A0]">No matching users.</div>
+                    ) : (
+                      sponsorMatches.map((u) => (
+                        <button
+                          key={u.id}
+                          type="button"
+                          onClick={() => {
+                            setSponsoredUserId(u.id);
+                            setSponsorSearch('');
+                            setSponsorMatches([]);
+                          }}
+                          className="w-full text-left px-3 py-2 text-[11px] text-white hover:bg-[rgba(255,215,0,0.08)] border-b border-[rgba(255,255,255,0.06)] last:border-0"
+                        >
+                          <span className="font-semibold">{u.companyName || u.displayName || u.email}</span>
+                          {u.email && <span className="text-[#A0A0A0] ml-2">{u.email}</span>}
+                          {sponsoredUserId === u.id && <Check className="w-3 h-3 text-emerald-300 inline ml-2" />}
+                        </button>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
               <div>
                 <label className="block text-[11px] uppercase tracking-wider text-[#A0A0A0] font-semibold mb-1">
                   Sponsor User ID
@@ -384,40 +506,35 @@ export function AdCampaignForm({
                   type="text"
                   value={sponsoredUserId}
                   onChange={(e) => setSponsoredUserId(e.target.value)}
-                  placeholder="Firebase Auth uid"
+                  placeholder="Firebase Auth uid (auto-fills from search above)"
                   className={inputClass(false) + ' font-mono text-[12px]'}
                 />
                 {!sponsoredUserId && (
-                  <p className="text-[10px] text-red-300 mt-1">
-                    ⚠ Without a sponsor uid the hero + showcase render with blank company info.
+                  <p className="text-[10px] text-amber-300 mt-1">
+                    Pick a sponsor above so the hero + showcase can render company info live.
                   </p>
                 )}
               </div>
+
+              {/* Product pickers — as soon as sponsor uid is set we load
+                  that user's products and expose them as native selects.
+                  Manual paste of a doc ID still works via the text
+                  input to the right of each select. */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div className="min-w-0">
-                  <label className="block text-[11px] uppercase tracking-wider text-[#A0A0A0] font-semibold mb-1">
-                    Hero Product ID
-                  </label>
-                  <input
-                    type="text"
-                    value={sponsoredHeroProductId}
-                    onChange={(e) => setSponsoredHeroProductId(e.target.value)}
-                    placeholder="doc id (not a URL)"
-                    className={inputClass(false) + ' font-mono text-[12px]'}
-                  />
-                </div>
-                <div className="min-w-0">
-                  <label className="block text-[11px] uppercase tracking-wider text-[#A0A0A0] font-semibold mb-1">
-                    /products Slot Product ID
-                  </label>
-                  <input
-                    type="text"
-                    value={sponsoredListProductId}
-                    onChange={(e) => setSponsoredListProductId(e.target.value)}
-                    placeholder="doc id"
-                    className={inputClass(false) + ' font-mono text-[12px]'}
-                  />
-                </div>
+                <ProductSlotPicker
+                  label="Hero Product"
+                  value={sponsoredHeroProductId}
+                  onChange={setSponsoredHeroProductId}
+                  options={sponsorProducts}
+                  inputClass={inputClass}
+                />
+                <ProductSlotPicker
+                  label="/products Slot Product"
+                  value={sponsoredListProductId}
+                  onChange={setSponsoredListProductId}
+                  options={sponsorProducts}
+                  inputClass={inputClass}
+                />
               </div>
               <div>
                 <label className="block text-[11px] uppercase tracking-wider text-[#A0A0A0] font-semibold mb-1">
@@ -430,6 +547,25 @@ export function AdCampaignForm({
                   placeholder="id1, id2, id3 (blank = auto-fill from Hero + /products)"
                   className={inputClass(false) + ' font-mono text-[12px]'}
                 />
+                {sponsorProducts.length > 0 && (
+                  <p className="text-[10px] text-[#A0A0A0] mt-1">
+                    Available: {sponsorProducts.slice(0, 6).map((p) => (
+                      <button
+                        key={p.id}
+                        type="button"
+                        className="inline-block mr-1.5 mb-0.5 px-1.5 py-0.5 rounded bg-[rgba(255,215,0,0.08)] border border-[rgba(255,215,0,0.25)] text-[#FFD700] hover:bg-[rgba(255,215,0,0.15)]"
+                        onClick={() => {
+                          const cur = sponsoredShowcaseRaw.split(',').map((s) => s.trim()).filter(Boolean);
+                          if (cur.includes(p.id)) return;
+                          if (cur.length >= 3) return;
+                          setSponsoredShowcaseRaw([...cur, p.id].join(', '));
+                        }}
+                      >
+                        + {p.name?.slice(0, 24) || p.id.slice(0, 8)}
+                      </button>
+                    ))}
+                  </p>
+                )}
               </div>
             </div>
           )}
@@ -679,6 +815,44 @@ function ScheduleHint({ start, end }) {
     <div className={`mt-2 inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-semibold ${meta.bg} ${meta.border} ${meta.text}`}>
       <span className="uppercase tracking-wider">{status}</span>
       <span className="text-white/80 font-normal">· {meta.label} · {fmt(range.start)} → {fmt(range.end)}</span>
+    </div>
+  );
+}
+
+/**
+ * ProductSlotPicker — dropdown of the sponsor's own products with a
+ * parallel text input so admin can either pick from the list or paste a
+ * doc ID directly (useful when the target product is inactive/draft
+ * and won't show in the dropdown). Both control the same state string.
+ */
+function ProductSlotPicker({ label, value, onChange, options, inputClass }) {
+  return (
+    <div className="min-w-0">
+      <label className="block text-[11px] uppercase tracking-wider text-[#A0A0A0] font-semibold mb-1">
+        {label}
+      </label>
+      {options.length > 0 ? (
+        <select
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className={inputClass(false) + ' text-[12px]'}
+        >
+          <option value="">— select a product —</option>
+          {options.map((p) => (
+            <option key={p.id} value={p.id} className="bg-[#0F1B2B]">
+              {p.name || p.id}
+            </option>
+          ))}
+        </select>
+      ) : (
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="doc id (set sponsor first to load products)"
+          className={inputClass(false) + ' font-mono text-[12px]'}
+        />
+      )}
     </div>
   );
 }
