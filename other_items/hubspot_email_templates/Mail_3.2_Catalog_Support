@@ -1,0 +1,23 @@
+MAIL 3.2 — Bulk Upload & Catalog Support (48 Hours Later)
+Workflow: WF3 - Member Onboarding & Activation
+=============================================
+
+Sender Name: CoreTradeGlobal Support Team
+Subject Line: Need help uploading your listings? We will do it for you
+Preheader Text: Download our CSV template or send us your catalog to upload your listings.
+
+Email Body Text:
+
+Hi {{ contact.firstname }},
+
+We know that adding products or services one by one can take time.
+
+You can download our ready to use CSV template below, fill in your listings and upload them in bulk.
+
+Download link: [ Download CSV Template ]
+
+Alternatively, if you have an existing Excel list, PDF catalog or website, you can send your files to info@coretradeglobal.com
+
+Our support team will set up your listings so you can focus on growing your trade connections.
+
+CTA Button: Send Catalog to info@coretradeglobal.com

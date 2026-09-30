@@ -162,7 +162,7 @@ export default function RootLayout({ children }) {
             The body block also duplicates the sticky-footer scaffold
             from globals.css so the footer is pinned to viewport-bottom
             from the first paint even before that stylesheet loads. */}
-        <style dangerouslySetInnerHTML={{ __html: `
+        <style suppressHydrationWarning dangerouslySetInnerHTML={{ __html: `
           body{display:flex;flex-direction:column;min-height:100vh}
           body>*{flex-shrink:0}
           .footer-section{margin-top:auto}

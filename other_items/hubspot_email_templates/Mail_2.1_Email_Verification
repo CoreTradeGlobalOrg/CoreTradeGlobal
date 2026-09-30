@@ -1,0 +1,17 @@
+MAIL 2.1 — Email Verification (Immediate)
+Workflow: WF2 - Email Verification
+=============================================
+
+From Name: CoreTradeGlobal
+Subject Line: Verify your CoreTradeGlobal account
+Pre-header: Please verify your email address to access the platform.
+
+Body:
+
+Hi {{ contact.firstname }},
+
+Welcome to CoreTradeGlobal!
+
+To secure your account and enable communication with other members on our B2B marketplace, please verify your email address by clicking the button below.
+
+CTA Button: [ Verify My Email Address ]

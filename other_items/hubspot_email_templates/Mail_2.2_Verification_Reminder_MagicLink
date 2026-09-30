@@ -1,0 +1,19 @@
+MAIL 2.2 — Verification Reminder & Magic Link (24 Hours Later)
+Workflow: WF2 - Email Verification
+=============================================
+
+From Name: CoreTradeGlobal
+Subject Line: Verify your CoreTradeGlobal account with one click
+Pre-header: Complete your email verification and access the global B2B network.
+
+Body:
+
+Hi {{ contact.firstname }},
+
+You created your CoreTradeGlobal account but have not verified your email address yet.
+
+Click the button below to verify your email and sign in directly. No password is required.
+
+If you cannot find our earlier verification email, please check your spam or junk folder.
+
+CTA Button: [ Verify & Sign In ]

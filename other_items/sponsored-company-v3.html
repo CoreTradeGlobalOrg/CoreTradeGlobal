@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CoreTradeGlobal — Sponsored Company with Products (v3)</title>
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg-deep-navy: #070d18;
+      --bg-section: #0a1220;
+      --bg-card-start: rgba(24, 38, 58, 0.72);
+      --bg-card-end: rgba(13, 23, 38, 0.95);
+      --accent-gold: #ffd700;
+      --accent-gold-dark: #fdb931;
+      --accent-gold-glow: rgba(255, 215, 0, 0.28);
+      --text-white: #ffffff;
+      --text-light: #e2e8f0;
+      --text-muted: #94a3b8;
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-highlight: rgba(255, 255, 255, 0.16);
+    }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg-deep-navy);
+      background-image: 
+        radial-gradient(circle at 50% 15%, rgba(22, 48, 82, 0.5) 0%, transparent 65%),
+        linear-gradient(180deg, #091220 0%, #060a12 100%);
+      color: var(--text-light);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 1.5rem;
+      overflow-x: hidden;
+    }
+
+    /* ─── 1450x650 SECTION CONTAINER (Bölgeler Arası Padding Uyumu) ─── */
+    .sponsored-section {
+      width: 100%;
+      max-width: 1450px;
+      min-height: 650px;
+      margin: 0 auto;
+      padding: 60px 40px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      box-sizing: border-box;
+    }
+
+    /* Ambient Lighting (Geniş Sahne Işıltısı) */
+    .ambient-glow {
+      position: absolute;
+      top: 55%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 1050px;
+      height: 550px;
+      background: radial-gradient(ellipse at center, rgba(255, 215, 0, 0.08) 0%, rgba(20, 42, 74, 0.28) 50%, transparent 75%);
+      filter: blur(95px);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ─── SECTION HEADER (Ortalanmış, Büyütülmüş Başlık ve Altında Reklam Linki) ─── */
+    .section-header {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 44px;
+      position: relative;
+      z-index: 1;
+      width: 100%;
+    }
+
+    .section-title {
+      font-size: clamp(3rem, 5.5vw, 4.6rem);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      background: linear-gradient(180deg, #ffffff 20%, #909090 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin: 0;
+    }
+
+    .ad-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: #38bdf8;
+      font-size: 16px;
+      font-weight: 500;
+      text-decoration: none;
+      transition: color 0.2s ease, transform 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .ad-link:hover {
+      color: var(--accent-gold);
+      transform: translateX(3px);
+    }
+
+    .ad-link svg {
+      width: 16px;
+      height: 16px;
+      stroke-width: 2.5;
+    }
+
+    /* ─── GENİŞLETİLMİŞ VE ÜRÜNLER İLE ZENGİNLEŞTİRİLMİŞ KART (v3) ─── */
+    .sponsored-card-v3 {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 980px; /* Büyütülmüş, ferah vitrin genişliği */
+      margin: 0 auto;
+      background: linear-gradient(145deg, var(--bg-card-start) 0%, var(--bg-card-end) 100%);
+      backdrop-filter: blur(28px);
+      -webkit-backdrop-filter: blur(28px);
+      border: 1px solid var(--border-subtle);
+      border-top: 1px solid var(--border-highlight);
+      border-radius: 28px;
+      padding: 40px 48px;
+      display: flex;
+      flex-direction: column;
+      gap: 26px;
+      box-shadow: 
+        0 26px 70px -15px rgba(0, 0, 0, 0.7),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      transition: all 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+
+    .sponsored-card-v3:hover {
+      border-color: rgba(255, 215, 0, 0.4);
+      box-shadow: 
+        0 32px 85px -18px rgba(0, 0, 0, 0.85),
+        0 0 50px rgba(255, 215, 0, 0.12),
+        inset 0 1px 0 rgba(255, 255, 255, 0.15);
+      transform: translateY(-4px);
+    }
+
+    .company-country {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13.5px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .country-flag {
+      font-size: 16px;
+      line-height: 1;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+    }
+
+    /* ─── COMPANY BRAND AREA ─── */
+    .brand-identity-row {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .company-logo {
+      width: 76px;
+      height: 76px;
+      min-width: 76px;
+      border-radius: 18px;
+      background: #ffffff;
+      color: #0f1b2b;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+      font-weight: 800;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+      flex-shrink: 0;
+    }
+
+    .brand-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .company-name {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text-white);
+      letter-spacing: -0.015em;
+      line-height: 1.2;
+    }
+
+    .category-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      width: fit-content;
+      font-size: 12.5px;
+      font-weight: 700;
+      color: #ffd700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* ─── DESCRIPTION BOX ─── */
+    .description-box {
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 18px 0;
+    }
+
+    .company-description {
+      font-size: 15.5px;
+      color: #cbd5e1;
+      line-height: 1.7;
+      font-weight: 400;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* ─── FEATURED PRODUCTS SECTION (KÜÇÜK ÜRÜN KARTLARI) ─── */
+    .products-showcase-section {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .products-header-label {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.75px;
+      color: #94a3b8;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .products-header-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .mini-products-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+    }
+
+    /* Küçük Ürün Kartı Stili */
+    .mini-product-card {
+      background: rgba(255, 255, 255, 0.035);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      transition: all 0.25s ease;
+      cursor: pointer;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .mini-product-card:hover {
+      background: rgba(255, 255, 255, 0.06);
+      border-color: rgba(255, 215, 0, 0.35);
+      transform: translateY(-3px);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+    }
+
+    .mini-product-thumb {
+      width: 100%;
+      height: 110px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #162438 0%, #0d1726 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .mini-product-thumb svg {
+      width: 36px;
+      height: 36px;
+      stroke: rgba(255, 215, 0, 0.55);
+      stroke-width: 1.6;
+      transition: transform 0.3s ease, stroke 0.3s ease;
+    }
+
+    .mini-product-card:hover .mini-product-thumb svg {
+      transform: scale(1.1);
+      stroke: var(--accent-gold);
+    }
+
+    .mini-product-tag {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      background: rgba(15, 27, 43, 0.85);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #93c5fd;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 3px 7px;
+      border-radius: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    .mini-product-info {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .mini-product-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #ffffff;
+      line-height: 1.35;
+      display: -webkit-box;
+      -webkit-line-clamp: 1;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .mini-product-price {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--accent-gold);
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+    }
+
+    .mini-product-unit {
+      font-size: 11px;
+      color: #94a3b8;
+      font-weight: 500;
+    }
+
+    /* ─── ACTION FOOTER ─── */
+    .card-footer {
+      display: flex;
+      width: 100%;
+      margin-top: 6px;
+    }
+
+    .btn-view-company {
+      width: 100%;
+      padding: 17px 24px;
+      background: linear-gradient(135deg, var(--accent-gold) 0%, var(--accent-gold-dark) 100%);
+      color: #0f1b2b;
+      font-size: 16px;
+      font-weight: 700;
+      border-radius: 15px;
+      text-decoration: none;
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      box-shadow: 0 4px 20px rgba(255, 215, 0, 0.28);
+      transition: all 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+
+    .btn-view-company:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(255, 215, 0, 0.45);
+      filter: brightness(1.05);
+      color: #0f1b2b;
+    }
+
+    .btn-view-company:active {
+      transform: scale(0.98);
+    }
+
+    .btn-icon {
+      transition: transform 0.25s ease;
+    }
+
+    .btn-view-company:hover .btn-icon {
+      transform: translateX(5px);
+    }
+
+    /* ─── RESPONSIVE GEÇİŞLER (Mobil & Tablet) ─── */
+    @media (max-width: 900px) {
+      .sponsored-section {
+        padding: 40px 20px;
+        min-height: auto;
+      }
+      .sponsored-card-v3 {
+        padding: 28px 24px;
+        gap: 20px;
+        border-radius: 22px;
+      }
+      .mini-products-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+      .mini-product-card {
+        flex-direction: row;
+        align-items: center;
+        gap: 14px;
+        padding: 10px 12px;
+      }
+      .mini-product-thumb {
+        width: 72px;
+        height: 72px;
+        min-width: 72px;
+      }
+      .mini-product-tag {
+        display: none;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .section-header {
+        margin-bottom: 22px;
+      }
+      .company-logo {
+        width: 60px;
+        height: 60px;
+        min-width: 60px;
+        font-size: 22px;
+      }
+      .company-name {
+        font-size: 20px;
+      }
+      .company-description {
+        font-size: 14px;
+      }
+      .btn-view-company {
+        padding: 14px 20px;
+        font-size: 15px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 1450x650 Bölgesi İçin Ürün Vitrinli Genişletilmiş Alan (v3) -->
+  <section class="sponsored-section">
+    <!-- Ambient Lighting (Genişletilmiş Sahne Işıltısı) -->
+    <div class="ambient-glow"></div>
+
+    <!-- Section Header (Ortalanmış ve Büyütülmüş) -->
+    <div class="section-header">
+      <h2 class="section-title">Sponsored Company</h2>
+      <a href="https://www.coretradeglobal.com/pricing" class="ad-link" target="_blank" rel="noopener">
+        <span>Want to see your company here? View Advertising Options</span>
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+        </svg>
+      </a>
+    </div>
+
+    <!-- Büyütülmüş ve Ürün Vitrinli Kart (v3) -->
+    <div class="sponsored-card-v3">
+      
+      <!-- 1. Katman: Şirket Bilgileri (Logo, İsim, Ülke, Kategori) -->
+      <div class="brand-identity-row">
+        <div class="company-logo">AG</div>
+        <div class="brand-meta">
+          <h3 class="company-name">AgroTerra Global GmbH</h3>
+          <div class="company-country">
+            <span class="country-flag">🇩🇪</span>
+            <span class="country-name">Germany</span>
+          </div>
+          <div class="category-badge">📦 Agriculture &amp; Food Raw Materials</div>
+        </div>
+      </div>
+
+      <!-- 3. Katman: Açıklama (Description) -->
+      <div class="description-box">
+        <p class="company-description">
+          Leading international producer and bulk exporter of certified sustainable agricultural commodities. Supplying premium organic grains, refined plant oils, and raw coffee beans to wholesale food processors and distributors across 40+ countries.
+        </p>
+      </div>
+
+      <!-- 4. Katman: Şirketin Öne Çıkan Ürünleri (3 Adet Küçük Ürün Kartı) -->
+      <div class="products-showcase-section">
+        <div class="products-header-label">Featured Products from this Supplier</div>
+        
+        <div class="mini-products-grid">
+          
+          <!-- Ürün 1 -->
+          <div class="mini-product-card">
+            <div class="mini-product-thumb">
+              <span class="mini-product-tag">Organic</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+              </svg>
+            </div>
+            <div class="mini-product-info">
+              <h4 class="mini-product-title">Raw Arabica Coffee Beans</h4>
+              <div class="mini-product-price">$ 4,200 <span class="mini-product-unit">/ MT</span></div>
+            </div>
+          </div>
+
+          <!-- Ürün 2 -->
+          <div class="mini-product-card">
+            <div class="mini-product-thumb">
+              <span class="mini-product-tag">Bulk Grain</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+              </svg>
+            </div>
+            <div class="mini-product-info">
+              <h4 class="mini-product-title">Non-GMO Durum Wheat</h4>
+              <div class="mini-product-price">$ 340 <span class="mini-product-unit">/ Ton</span></div>
+            </div>
+          </div>
+
+          <!-- Ürün 3 -->
+          <div class="mini-product-card">
+            <div class="mini-product-thumb">
+              <span class="mini-product-tag">Refined</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
+              </svg>
+            </div>
+            <div class="mini-product-info">
+              <h4 class="mini-product-title">Pure Sunflower Seed Oil</h4>
+              <div class="mini-product-price">$ 1,150 <span class="mini-product-unit">/ MT</span></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- 5. Katman: Tek Aksiyon Butonu (View Company) -->
+      <div class="card-footer">
+        <a href="https://www.coretradeglobal.com" class="btn-view-company" target="_blank" rel="noopener">
+          <span>View Company</span>
+          <svg class="btn-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+            <polyline points="12 5 19 12 12 19"></polyline>
+          </svg>
+        </a>
+      </div>
+
+    </div>
+  </section>
+
+</body>
+</html>

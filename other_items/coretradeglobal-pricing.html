@@ -1,0 +1,1668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pricing — CoreTradeGlobal</title>
+<!-- Google Fonts - Inter -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg-deep-navy: #0f1b2b;
+    --bg-accent-navy: #1a283b;
+    --gold: #ffd700;
+    --gold-dark: #fdb931;
+    --border: rgba(255, 255, 255, 0.08);
+    --text-white: #ffffff;
+    --text-grey: #c8d3e0;
+  }
+
+  body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background: radial-gradient(circle at 50% 50%, #1c304a 0%, var(--bg-deep-navy) 100%);
+    background-attachment: fixed;
+    color: var(--text-white);
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  /* NAV */
+  nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem 4rem;
+    max-width: 1400px;
+    margin: 0 auto;
+    width: 100%;
+    position: relative;
+    z-index: 10;
+  }
+  .logo-img {
+    height: 48px;
+    width: auto;
+    display: block;
+  }
+  .nav-links {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+  }
+  .nav-link {
+    color: var(--text-grey);
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.95rem;
+    transition: color 0.15s ease;
+  }
+  .nav-link:hover {
+    color: var(--text-white);
+  }
+  .btn-nav {
+    background: transparent;
+    border: 1px solid var(--gold);
+    color: var(--gold);
+    font-weight: 600;
+    font-size: 0.95rem;
+    padding: 0.6rem 1.5rem;
+    border-radius: 99px;
+    text-decoration: none;
+    transition: all 0.2s ease;
+  }
+  .btn-nav:hover {
+    background: var(--gold);
+    color: #0f1b2b;
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.35);
+  }
+
+  /* HERO */
+  .hero {
+    text-align: center;
+    padding: 2.5rem 2rem 4rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    position: relative;
+  }
+  .hero h1 {
+    font-size: 5rem;
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -3px;
+    margin-bottom: 1.5rem;
+    background: linear-gradient(180deg, #ffffff 20%, #8c9cb0 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .hero h1 span {
+    background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .hero p {
+    color: var(--text-grey);
+    font-size: 1.25rem;
+    max-width: 780px;
+    margin: 0 auto 3rem;
+    line-height: 1.6;
+  }
+  .hero-ctas {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+  }
+  .btn-primary {
+    display: inline-block;
+    background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%);
+    color: #0f1b2b;
+    font-weight: 700;
+    font-size: 1.05rem;
+    padding: 1.1rem 3rem;
+    border-radius: 99px;
+    text-decoration: none;
+    box-shadow: 0 8px 25px rgba(255, 215, 0, 0.25);
+    transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 35px rgba(255, 215, 0, 0.4);
+    filter: brightness(1.05);
+  }
+  .btn-secondary {
+    display: inline-block;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--border);
+    color: var(--text-white);
+    font-weight: 600;
+    font-size: 1.05rem;
+    padding: 1.1rem 3rem;
+    border-radius: 99px;
+    text-decoration: none;
+    transition: all 0.2s ease;
+  }
+  .btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+
+  /* COMPARISON SECTION */
+  .comparison-section {
+    max-width: 1100px;
+    margin: 4rem auto 6rem;
+    padding: 0 2rem;
+  }
+  .section-title {
+    text-align: center;
+    font-size: 2.2rem;
+    font-weight: 800;
+    margin-bottom: 3.5rem;
+    letter-spacing: -1px;
+  }
+  .comparison-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: rgba(26, 40, 59, 0.45);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+  .comparison-table th, .comparison-table td {
+    padding: 1.5rem 2rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  .comparison-table th {
+    background: rgba(15, 27, 43, 0.8);
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    letter-spacing: 0.08em;
+    color: var(--text-grey);
+  }
+  .comparison-table tr:last-child td {
+    border-bottom: none;
+  }
+  .col-feature {
+    width: 40%;
+    font-weight: 600;
+    color: var(--text-white);
+  }
+  .col-ctg {
+    width: 30%;
+    font-weight: 700;
+    color: var(--gold);
+    background: rgba(255, 215, 0, 0.03);
+  }
+  .comparison-table th.col-ctg {
+    color: var(--gold) !important;
+    font-weight: 800;
+    text-transform: uppercase;
+    font-size: 0.9rem;
+    letter-spacing: 0.05em;
+  }
+
+  .col-traditional {
+    width: 30%;
+    color: var(--text-grey);
+  }
+  .feature-sub {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 400;
+    color: var(--text-grey);
+    margin-top: 0.25rem;
+  }
+  .badge-yes {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--gold);
+    font-weight: 700;
+  }
+  .badge-no {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: #ef4444;
+    font-weight: 500;
+  }
+
+  /* BUSINESS MODEL INFO */
+  .biz-model-section {
+    max-width: 1200px;
+    margin: 0 auto 6rem;
+    padding: 0 2rem;
+  }
+  .biz-card {
+    background: linear-gradient(145deg, rgba(26, 40, 59, 0.85) 0%, rgba(15, 27, 43, 0.95) 100%);
+    border: 1px solid rgba(255, 215, 0, 0.15);
+    border-radius: 24px;
+    padding: 4rem;
+    display: grid;
+    grid-template-columns: 1fr 1.2fr;
+    gap: 4rem;
+    align-items: center;
+    box-shadow: 0 25px 50px rgba(0,0,0,0.3);
+  }
+  .biz-info h2 {
+    font-size: 2.2rem;
+    font-weight: 800;
+    line-height: 1.2;
+    margin-bottom: 1.5rem;
+    letter-spacing: -1px;
+  }
+  .biz-info p {
+    color: var(--text-grey);
+    font-size: 1.05rem;
+    margin-bottom: 1.5rem;
+  }
+  .biz-info strong {
+    color: var(--text-white);
+  }
+  .services-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+  }
+  .service-box {
+    background: rgba(15, 27, 43, 0.5);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.75rem;
+    transition: all 0.25s ease;
+  }
+  .service-box:hover {
+    border-color: rgba(255, 215, 0, 0.2);
+    transform: translateY(-2px);
+  }
+  .service-box h4 {
+    font-size: 1.15rem;
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+    color: var(--gold);
+    letter-spacing: -0.2px;
+  }
+  .service-box p {
+    font-size: 0.85rem;
+    color: var(--text-grey);
+    line-height: 1.6;
+  }
+
+  /* FAQS */
+  .faq-section {
+    max-width: 850px;
+    margin: 0 auto 8rem;
+    padding: 0 2rem;
+  }
+  .faq-accordion {
+    margin-top: 3rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .faq-item {
+    background: rgba(26, 40, 59, 0.4);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+  }
+  .faq-item:hover {
+    border-color: rgba(255, 255, 255, 0.15);
+  }
+  .faq-header-btn {
+    width: 100%;
+    background: none;
+    border: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem 2rem;
+    text-align: left;
+    cursor: pointer;
+    outline: none;
+  }
+  .faq-header-btn span {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-white);
+    transition: color 0.2s ease;
+  }
+  .faq-header-btn:hover span {
+    color: var(--gold);
+  }
+  .faq-icon-svg {
+    width: 1.25rem;
+    height: 1.25rem;
+    fill: none;
+    stroke: var(--text-grey);
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), stroke 0.2s;
+  }
+  .faq-header-btn:hover .faq-icon-svg {
+    stroke: var(--gold);
+  }
+  .faq-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .faq-content-inner {
+    padding: 0 2rem 1.75rem;
+    font-size: 0.95rem;
+    color: var(--text-grey);
+    line-height: 1.6;
+  }
+  .faq-item.active {
+    border-color: rgba(255, 215, 0, 0.2);
+    background: rgba(26, 40, 59, 0.65);
+  }
+  .faq-item.active .faq-icon-svg {
+    transform: rotate(180deg);
+    stroke: var(--gold);
+  }
+  .faq-item.active .faq-header-btn span {
+    color: var(--gold);
+  }
+
+  /* FOOTER */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 3rem 2rem;
+    background: rgba(15, 27, 43, 0.85);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    position: relative;
+    z-index: 5;
+  }
+  .footer-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 2rem;
+  }
+  .footer-logo {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .footer-logo img {
+    height: 38px;
+    width: auto;
+  }
+  .footer-logo p {
+    font-size: 0.75rem;
+    color: var(--text-grey);
+  }
+  .footer-links {
+    display: flex;
+    gap: 2rem;
+  }
+  .footer-links a {
+    font-size: 0.85rem;
+    color: var(--text-grey);
+    text-decoration: none;
+    transition: color 0.15s ease;
+  }
+  .footer-links a:hover {
+    color: var(--gold);
+  }
+
+  /* ADVERTISING SECTION */
+  .advertising-section {
+    max-width: 1200px;
+    margin: 0 auto 6rem;
+    padding: 0 2rem;
+  }
+  .ads-row {
+    display: grid;
+    grid-template-columns: 1fr 1.4fr;
+    gap: 4rem;
+    align-items: center;
+    margin-bottom: 8rem;
+    text-align: left;
+  }
+  .ads-row.reverse {
+    grid-template-columns: 1.4fr 1fr;
+  }
+  .ads-info {
+    display: flex;
+    flex-direction: column;
+  }
+  .ad-tag {
+    display: inline-block;
+    background: rgba(255, 215, 0, 0.08);
+    border: 1px solid rgba(255, 215, 0, 0.2);
+    color: var(--gold);
+    padding: 0.35rem 0.85rem;
+    border-radius: 99px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    align-self: flex-start;
+    margin-bottom: 1.5rem;
+  }
+  .ads-info h3 {
+    font-size: 2.2rem;
+    font-weight: 800;
+    line-height: 1.2;
+    margin-bottom: 1.25rem;
+    letter-spacing: -1px;
+    color: var(--text-white);
+  }
+  .ads-info p {
+    color: var(--text-grey);
+    font-size: 1.05rem;
+    margin-bottom: 1.5rem;
+    line-height: 1.6;
+  }
+  .ads-list {
+    list-style: none;
+    margin-bottom: 2.5rem;
+  }
+  .ads-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.85rem;
+    color: var(--text-grey);
+    font-size: 1.15rem; /* Increased size as requested */
+    margin-bottom: 0.9rem;
+    line-height: 1.5;
+  }
+  .ads-list li svg {
+    flex-shrink: 0;
+    margin-top: 0.35rem; /* Adjusted for larger text */
+    color: var(--gold);
+  }
+  .btn-ad-inquire {
+    display: inline-block;
+    background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%);
+    color: #0f1b2b;
+    font-weight: 700;
+    font-size: 0.95rem;
+    padding: 0.9rem 2.2rem;
+    border-radius: 99px;
+    text-decoration: none;
+    box-shadow: 0 8px 25px rgba(255, 215, 0, 0.2);
+    transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    width: fit-content;
+  }
+  .btn-ad-inquire:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 35px rgba(255, 215, 0, 0.35);
+    filter: brightness(1.05);
+  }
+
+  /* MOCKUP COMMON */
+  .mockup-frame {
+    background: #0b1320;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 1.5rem;
+    box-shadow: 0 30px 60px rgba(0,0,0,0.4);
+    position: relative;
+    overflow: hidden;
+  }
+   /* MOCKUP 1: CTG HERO HIGH-FIDELITY SECTION */
+  .mock-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.6rem 0.9rem;
+    background: #08111c;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    font-size: 0.55rem;
+  }
+  .mock-nav-left {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-weight: 800;
+    color: var(--text-white);
+  }
+  .mock-nav-left span {
+    color: var(--gold);
+  }
+  .mock-nav-links {
+    display: flex;
+    gap: 0.5rem;
+    color: var(--text-grey);
+    font-weight: 500;
+  }
+  .mock-nav-right {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    color: var(--text-white);
+    font-weight: 600;
+  }
+  .mock-nav-avatar {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--gold);
+    color: #0f1b2b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.45rem;
+    font-weight: 800;
+  }
+  
+  .mock-ticker {
+    background: #050a11;
+    padding: 0.25rem 0.8rem;
+    font-size: 0.45rem;
+    font-family: monospace;
+    color: var(--text-grey);
+    white-space: nowrap;
+    overflow: hidden;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    text-align: center;
+  }
+  .mock-ticker span {
+    color: var(--gold);
+    font-weight: 700;
+  }
+
+  .mock-hero-main {
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+  .mock-hero-title {
+    font-size: 0.8rem;
+    font-weight: 800;
+    color: var(--text-white);
+    text-align: center;
+    line-height: 1.3;
+    letter-spacing: -0.2px;
+  }
+  
+  .mock-hero-search-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .mock-search-btns {
+    display: flex;
+    background: rgba(15, 27, 43, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 99px;
+    padding: 0.1rem;
+  }
+  .mock-search-tab {
+    font-size: 0.5rem;
+    font-weight: 600;
+    padding: 0.15rem 0.5rem;
+    border-radius: 99px;
+    color: var(--text-grey);
+  }
+  .mock-search-tab.active {
+    background: var(--gold);
+    color: #0f1b2b;
+    font-weight: 700;
+  }
+  .mock-search-input-container {
+    display: flex;
+    align-items: center;
+    width: 80%;
+    background: rgba(15, 27, 43, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 99px;
+    padding: 0.15rem 0.25rem 0.15rem 0.6rem;
+    justify-content: space-between;
+  }
+  .mock-search-input-container span {
+    font-size: 0.55rem;
+    color: var(--text-grey);
+  }
+  .mock-search-go-btn {
+    width: 16px;
+    height: 16px;
+    background: var(--gold);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #0f1b2b;
+    font-size: 0.5rem;
+  }
+  .mock-search-tags {
+    display: flex;
+    gap: 0.3rem;
+    font-size: 0.45rem;
+  }
+  .mock-search-tag-pill {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    color: var(--text-grey);
+    padding: 0.08rem 0.35rem;
+    border-radius: 99px;
+  }
+
+  .mock-grid-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    align-items: center;
+    margin-top: 0.25rem;
+  }
+  .mock-grid-col {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+  .mock-card {
+    background: rgba(26, 40, 59, 0.45);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 0.8rem 1rem;
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+    position: relative;
+    min-height: 84px;
+    box-sizing: border-box;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .mock-card.sponsored {
+    border-color: var(--gold);
+    background: rgba(255, 215, 0, 0.03);
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.08);
+  }
+  .mock-card-img {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.05);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    overflow: hidden;
+    margin-top: 1px;
+  }
+  .mock-card-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .mock-card-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    min-width: 0;
+  }
+  .mock-card-tag {
+    font-size: 0.5rem;
+    font-weight: 700;
+    color: var(--text-grey);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  .mock-card.sponsored .mock-card-tag {
+    color: var(--gold);
+  }
+  .mock-card-title {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--text-white);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .mock-card-desc {
+    font-size: 0.6rem;
+    color: var(--text-grey);
+    display: flex;
+    align-items: center;
+    gap: 0.2rem;
+  }
+  .mock-card-action {
+    font-size: 0.55rem;
+    font-weight: 700;
+    color: var(--gold);
+    margin-top: 0.1rem;
+  }
+  
+  .mock-globe-area {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  .mock-globe-svg {
+    width: 85px;
+    height: 85px;
+  }
+
+  .mock-bottom-ctas {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+  }
+  .mock-btn-cta {
+    font-size: 0.55rem;
+    font-weight: 700;
+    padding: 0.25rem 0.75rem;
+    border-radius: 99px;
+    text-decoration: none;
+    text-align: center;
+  }
+  .mock-btn-cta.yellow {
+    background: var(--gold);
+    color: #0f1b2b;
+  }
+  .mock-btn-cta.blue {
+    background: #0070f3;
+    color: #ffffff;
+  }
+  
+  /* 3D CAROUSEL CSS MOCKUP */
+  .mock-carousel-container {
+    background: #060b13;
+    border-radius: 12px;
+    padding: 1.5rem;
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+    min-height: 290px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border: 1px solid rgba(255, 255, 255, 0.04);
+  }
+  .mock-carousel-title {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--text-white);
+    margin-bottom: 0.15rem;
+    letter-spacing: -0.5px;
+  }
+  .mock-carousel-sub {
+    font-size: 0.58rem;
+    color: var(--blue);
+    margin-bottom: 1.5rem;
+    text-decoration: none;
+  }
+  .mock-carousel-track {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    width: 100%;
+    height: 180px;
+    perspective: 600px;
+    z-index: 10;
+  }
+  .mock-carousel-card {
+    background: rgba(13, 23, 42, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 0.75rem;
+    position: absolute;
+    width: 130px;
+    height: 165px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    transition: all 0.3s ease;
+  }
+  .mock-carousel-card.left-card {
+    transform: translateX(-105px) translateZ(-60px) rotateY(25deg);
+    opacity: 0.35;
+    z-index: 1;
+  }
+  .mock-carousel-card.right-card {
+    transform: translateX(105px) translateZ(-60px) rotateY(-25deg);
+    opacity: 0.35;
+    z-index: 1;
+  }
+  .mock-carousel-card.center-card {
+    transform: translateX(0) translateZ(30px) scale(1.15);
+    z-index: 5;
+    border-color: rgba(255, 215, 0, 0.25);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    width: 135px;
+    height: 170px;
+    background: #0e1929;
+  }
+  .mock-card-logo {
+    width: 28px;
+    height: 28px;
+    background: #ffffff;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #0f1b2b;
+    font-size: 0.5rem;
+    font-weight: 800;
+    margin-bottom: 0.4rem;
+    flex-shrink: 0;
+  }
+  .mock-card-logo.centered-logo {
+    background: #ffffff;
+    padding: 2px;
+  }
+  .mock-card-logo.centered-logo .logo-txt {
+    font-size: 0.22rem;
+    font-weight: 800;
+    color: #111;
+  }
+  .mock-card-name {
+    font-size: 0.58rem;
+    font-weight: 800;
+    color: var(--text-white);
+    margin-bottom: 0.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.15rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
+  }
+  .verify-tick-icon {
+    width: 8px;
+    height: 8px;
+    color: var(--gold);
+    flex-shrink: 0;
+  }
+  .mock-card-text {
+    font-size: 0.45rem;
+    color: var(--text-grey);
+    line-height: 1.4;
+    margin-bottom: auto;
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-align: left;
+  }
+  .mock-card-btn {
+    width: 100%;
+    padding: 0.3rem 0;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: var(--text-grey);
+    border-radius: 4px;
+    font-size: 0.48rem;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 0.4rem;
+  }
+  .mock-card-btn.primary {
+    background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%);
+    color: #050a12;
+    border: none;
+  }
+  .mock-carousel-orbital {
+    position: absolute;
+    bottom: 25px;
+    width: 250px;
+    height: 60px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 50%;
+    transform: rotateX(75deg);
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  /* MOCKUP 2: PRODUCT GRID */
+  .mock-products {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .mock-products-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .mock-products-top h4 {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-white);
+  }
+  .mock-products-top span {
+    font-size: 0.7rem;
+    color: var(--gold);
+    font-weight: 600;
+  }
+  .mock-products-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 0.75rem;
+  }
+  .mock-product-card {
+    background: #0f1c2d;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 0.6rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: all 0.25s ease;
+    position: relative;
+  }
+  .mock-product-card.sponsored {
+    border-color: var(--gold);
+    background: rgba(255, 215, 0, 0.02);
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.1);
+  }
+  .product-img-box {
+    height: 75px;
+    border-radius: 8px;
+    background: #142338;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .product-img-box img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .product-img-box svg {
+    color: var(--gold);
+    opacity: 0.8;
+    width: 28px !important;
+    height: 28px !important;
+    overflow: visible;
+  }
+  .product-title {
+    font-weight: 700;
+    font-size: 0.75rem;
+    color: var(--text-white);
+    margin-bottom: 0.15rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .mock-product-card.sponsored .product-title {
+    color: var(--gold);
+  }
+  .product-category {
+    font-size: 0.6rem;
+    color: var(--text-grey);
+    margin-bottom: 0.5rem;
+  }
+  .product-card-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    padding-top: 0.5rem;
+    margin-top: 0.25rem;
+  }
+  .product-price {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--gold);
+  }
+  .btn-product-details {
+    background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%);
+    color: #0f1b2b;
+    border: none;
+    border-radius: 4px;
+    font-size: 0.6rem;
+    font-weight: 700;
+    padding: 0.25rem 0.5rem;
+    cursor: pointer;
+  }
+  .mock-product-card.sponsored .btn-product-details {
+    background: var(--text-white);
+    color: #0f1b2b;
+  }
+  .sponsored-ribbon {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    background: var(--gold);
+    color: #0f1b2b;
+    font-size: 0.5rem;
+    font-weight: 800;
+    padding: 0.1rem 0.35rem;
+    border-radius: 4px;
+    text-transform: uppercase;
+    z-index: 2;
+  }
+
+  /* RESPONSIVE */
+  @media (max-width: 992px) {
+    .biz-card {
+      grid-template-columns: 1fr;
+      gap: 3rem;
+      padding: 2.5rem;
+    }
+    .hero h1 {
+      font-size: 4rem;
+    }
+  }
+
+  @media (max-width: 768px) {
+    nav {
+      padding: 1rem 1.5rem;
+    }
+    .nav-links {
+      display: none;
+    }
+    .hero {
+      padding: 4rem 1rem 3rem;
+    }
+    .hero h1 {
+      font-size: 3rem;
+      letter-spacing: -2px;
+    }
+    .hero p {
+      font-size: 1.1rem;
+      margin-bottom: 2rem;
+    }
+    .hero-ctas {
+      flex-direction: column;
+      gap: 1rem;
+      padding: 0 1rem;
+    }
+    .btn-primary, .btn-secondary {
+      width: 100%;
+      text-align: center;
+      padding: 1rem 2rem;
+    }
+    .comparison-section {
+      padding: 0 1rem;
+    }
+    .comparison-table th, .comparison-table td {
+      padding: 1rem;
+      font-size: 0.85rem;
+    }
+    .col-feature {
+      width: 50%;
+    }
+    .col-ctg, .col-traditional {
+      width: 25%;
+    }
+    .services-grid {
+      grid-template-columns: 1fr;
+    }
+    .ads-row, .ads-row.reverse {
+      grid-template-columns: 1fr;
+      gap: 2.5rem;
+    }
+    .mock-members-panel {
+      margin-left: 0;
+      margin-top: -1rem;
+    }
+    .faq-section {
+      padding: 0 1rem;
+    }
+    .faq-header-btn {
+      padding: 1.25rem 1.5rem;
+    }
+    .faq-content-inner {
+      padding: 0 1.5rem 1.25rem;
+    }
+    .footer-container {
+      flex-direction: column;
+      text-align: center;
+    }
+    .footer-links {
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAVIGATION -->
+<nav>
+  <a href="https://coretradeglobal.com">
+    <img src="https://www.coretradeglobal.com/icons/ctg-logo.png" alt="CoreTradeGlobal" class="logo-img">
+  </a>
+  <div class="nav-links">
+    <a href="/products" class="nav-link">Marketplace</a>
+    <a href="/fairs" class="nav-link">News & Events</a>
+    <a href="/freight-estimator" class="nav-link">Tools</a>
+    <a href="/about-us" class="nav-link">About Us</a>
+    <a href="/login" class="nav-link">Log In</a>
+    <a href="/register" class="btn-nav">Register Free</a>
+  </div>
+</nav>
+
+<!-- HERO SECTION -->
+<section class="hero">
+  <h1><span>Completely Free</span><br>No Commissions. No Limits.</h1>
+  <p>Say goodbye to thousands of dollars in membership fees, locked B2B directories, and transaction commissions. CoreTradeGlobal lets exporters, importers, and global brands connect, message, list products, and trade directly — completely free.</p>
+  <div class="hero-ctas">
+    <a href="/register" class="btn-primary">Create Free Account →</a>
+    <a href="#comparison" class="btn-secondary">Compare Platforms</a>
+  </div>
+</section>
+
+<!-- COMPARISON SECTION -->
+<section class="comparison-section" id="comparison">
+  <h2 class="section-title">Why pay to showcase your business?</h2>
+  <table class="comparison-table">
+    <thead>
+      <tr>
+        <th class="col-feature">Feature / Service</th>
+        <th class="col-ctg">
+          <span>CORETRADEGLOBAL</span>
+        </th>
+        <th class="col-traditional">Traditional B2B Sites</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="col-feature">
+          Annual Membership Fee
+          <span class="feature-sub">Most platforms require subscription to publish products</span>
+        </td>
+        <td class="col-ctg">
+          <span class="badge-yes">
+            <svg class="badge-yes-svg" style="width: 1.1rem; height: 1.1rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            $0 (Free Forever)
+          </span>
+        </td>
+        <td class="col-traditional">$3,000+ / Year</td>
+      </tr>
+      <tr>
+        <td class="col-feature">
+          Transaction Commission
+          <span class="feature-sub">We don't take a cut from your trade transactions</span>
+        </td>
+        <td class="col-ctg">
+          <span class="badge-yes">
+            <svg style="width: 1.1rem; height: 1.1rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            0% (None)
+          </span>
+        </td>
+        <td class="col-traditional">3% – 8% Commission</td>
+      </tr>
+      <tr>
+        <td class="col-feature">
+          Product Listing Limits
+          <span class="feature-sub">List your entire product catalog for maximum global visibility</span>
+        </td>
+        <td class="col-ctg">
+          <span class="badge-yes">
+            <svg style="width: 1.1rem; height: 1.1rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            Unlimited
+          </span>
+        </td>
+        <td class="col-traditional">Limited (5 – 50 Items)</td>
+      </tr>
+      <tr>
+        <td class="col-feature">
+          Direct Messaging & Contact
+          <span class="feature-sub">Connect and chat directly with buyers and sellers</span>
+        </td>
+        <td class="col-ctg">
+          <span class="badge-yes">
+            <svg style="width: 1.1rem; height: 1.1rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            Unlocked
+          </span>
+        </td>
+        <td class="col-traditional">
+          <span class="badge-no">
+            <svg style="width: 1.1rem; height: 1.1rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            Locked (Pay to chat)
+          </span>
+        </td>
+      </tr>
+      <tr>
+        <td class="col-feature">
+          RFQ Posting & Bidding
+          <span class="feature-sub">Post RFQs and bid on buyers' trade requests</span>
+        </td>
+        <td class="col-ctg">
+          <span class="badge-yes">
+            <svg style="width: 1.1rem; height: 1.1rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            Free & Unlimited
+          </span>
+        </td>
+        <td class="col-traditional">Paid credits required</td>
+      </tr>
+      <tr>
+        <td class="col-feature">
+          Manual Trust Verification
+          <span class="feature-sub">Every registered business is vetted by our validation team</span>
+        </td>
+        <td class="col-ctg">
+          <span class="badge-yes">
+            <svg style="width: 1.1rem; height: 1.1rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            Included
+          </span>
+        </td>
+        <td class="col-traditional">Varies / Paid Only</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- HOW IS IT FREE / BUSINESS MODEL -->
+<section class="biz-model-section">
+  <div class="biz-card">
+    <div class="biz-info">
+      <h2>How is it free?<br>What's the catch?</h2>
+      <p>There is no catch. CoreTradeGlobal operates as an end-to-end B2B trading ecosystem. We believe B2B discovery, product listings, and direct messaging should be completely free and accessible to every business globally.</p>
+      <p>Instead of charging high membership fees, we sustain our platform through optional, value-added trade solutions integrated directly into active deal cycles, keeping our core marketplace 100% free.</p>
+    </div>
+    <div class="services-grid">
+      <div class="service-box">
+        <h4>Logistics Support</h4>
+        <p>Active transactions notify freight partners on the platform to send shipping quotes. Optional and broker-free.</p>
+      </div>
+      <div class="service-box">
+        <h4>Cargo Insurance</h4>
+        <p>Direct integrated options for secure cargo insurance are provided automatically during live deals.</p>
+      </div>
+      <div class="service-box">
+        <h4>2FA Security</h4>
+        <p>Protect your B2B account and operations with two-factor authentication, ensuring secure trade communications.</p>
+      </div>
+      <div class="service-box">
+        <h4>Verification Vetting</h4>
+        <p>Manual business check by our team to maintain high security, trust, and zero-spam listings across the global marketplace.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ADVERTISING OPTIONS SECTION -->
+<section class="advertising-section">
+  <h2 class="section-title">Grow Your Brand Globally</h2>
+  <p style="color: var(--text-grey); font-size: 1.15rem; max-width: 800px; margin: -2.25rem auto 5rem; text-align: center; line-height: 1.6;">
+    Promote your business directly to active B2B buyers and sellers. Since 100% of our traffic consists of verified importers and exporters, your ads reach the exact decision-makers you need.</p>
+  <div class="ads-row">
+    <div class="ads-info">
+      <h3>Featured Products Ads</h3>
+      <p>Feature your company inside our "Featured Products" cards. Since our platform is visited exclusively by B2B importers and exporters, you gain instant global visibility, build digital trust, and connect with certified buyers seeking partners in your sector.</p>
+      <ul class="ads-list">
+        <li>
+          <svg style="width: 1.2rem; height: 1.2rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          Featured placement at the top of the B2B product directory
+        </li>
+        <li>
+          <svg style="width: 1.2rem; height: 1.2rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          Seen by 1,500 - 2,500 active B2B buyers searching for direct trade listings every week
+        </li>
+        <li>
+          <svg style="width: 1.2rem; height: 1.2rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          Showcased to verified trading members across 25+ global shipping routes and markets
+        </li>
+      </ul>
+      <a href="coretradeglobal-ad-inquire.html?type=featured" class="btn-ad-inquire">Inquire About Featured Ads →</a>
+    </div>
+    
+    <div class="mockup-frame">
+      <div class="mock-products">
+        <div class="mock-products-top">
+          <h4>Latest Products</h4>
+          <span>View All Products →</span>
+        </div>
+        <div class="mock-products-grid">
+          <div class="mock-product-card sponsored">
+            <span class="sponsored-ribbon">Advertise Here</span>
+            <div class="product-img-box">
+              <svg style="width: 2rem; height: 2rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"></polygon><line x1="12" y1="22" x2="12" y2="12"></line><line x1="2" y1="8.5" x2="12" y2="12"></line><line x1="22" y1="8.5" x2="12" y2="12"></line><polyline points="12 2 22 8.5 12 15 2 8.5"></polyline></svg>
+            </div>
+            <div>
+              <h5 class="product-title" style="color: var(--gold); font-size: 0.75rem;">Your Product Here</h5>
+              <div class="product-category">Featured Spot</div>
+            </div>
+            <div class="product-card-bottom">
+              <span class="product-price">$ -- / UNIT</span>
+              <button class="btn-product-details" onclick="window.location.href='coretradeglobal-ad-inquire.html?type=featured'" style="background: var(--text-white); color: #0f1b2b; cursor: pointer;">Book Spot</button>
+            </div>
+          </div>
+          <div class="mock-product-card">
+            <div class="product-img-box">
+              <svg style="width: 2rem; height: 2rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path d="M12 3a9 9 0 0 0-9 9c0 3 2 5 3 6l2-2c-.5-.5-1-1.5-1-3a7 7 0 0 1 7-7 7 7 0 0 1 7 7c0 1.5-.5 2.5-1 3l2 2c1-1 3-3 3-6a9 9 0 0 0-9-9z"></path></svg>
+            </div>
+            <div>
+              <h5 class="product-title">Fresh Banana</h5>
+              <div class="product-category">Agriculture & Food</div>
+            </div>
+            <div class="product-card-bottom">
+              <span class="product-price">$ 5.35 / SET</span>
+              <button class="btn-product-details">View Details</button>
+            </div>
+          </div>
+          <div class="mock-product-card">
+            <div class="product-img-box">
+              <svg style="width: 2rem; height: 2rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path><path d="M12 6a2 2 0 0 1 2-2c.5 0 1-.2 1.4-.5"></path></svg>
+            </div>
+            <div>
+              <h5 class="product-title">Red Apples</h5>
+              <div class="product-category">Agriculture & Food</div>
+            </div>
+            <div class="product-card-bottom">
+              <span class="product-price">$ 1.24 / PCE</span>
+              <button class="btn-product-details">View Details</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Row 2: Hero Section Spotlights -->
+  <div class="ads-row reverse">
+    <div class="mockup-frame">
+      <!-- High Fidelity Navbar inside mockup -->
+      <div class="mock-nav">
+        <div class="mock-nav-left">
+          <span>✦</span> CoreTrade<span>Global</span>
+        </div>
+        <div class="mock-nav-links">
+          <span>Marketplace</span>
+          <span>Services</span>
+          <span>News</span>
+          <span>Tools</span>
+        </div>
+        <div class="mock-nav-right">
+          <div class="mock-nav-avatar">U</div>
+          <span>Account</span>
+        </div>
+      </div>
+
+      <!-- Currency Ticker inside mockup -->
+      <div class="mock-ticker">
+        EUR/USD <span>1.1441</span> · USD/EUR <span>0.8740</span> · GBP/USD <span>1.3401</span> · USD/GBP <span>0.7462</span> · EUR/TRY <span>53.62</span>
+      </div>
+
+      <!-- Mock Hero Main Area -->
+      <div class="mock-hero-main">
+        <h4 class="mock-hero-title">The Operating System for Trade:<br>A Future-Ready, Data-Driven B2B Experience.</h4>
+        
+        <div class="mock-hero-search-wrapper">
+          <div class="mock-search-btns">
+            <span class="mock-search-tab active">Products</span>
+            <span class="mock-search-tab">RFQs</span>
+          </div>
+          <div class="mock-search-input-container">
+            <span>Search for products, companies...</span>
+            <div class="mock-search-go-btn">
+              <svg style="width: 0.65rem; height: 0.65rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            </div>
+          </div>
+          <div class="mock-search-tags">
+            <span class="mock-search-tag-pill">Marble</span>
+            <span class="mock-search-tag-pill">Steel</span>
+            <span class="mock-search-tag-pill">Textile</span>
+            <span class="mock-search-tag-pill">Machinery</span>
+          </div>
+        </div>
+
+        <div class="mock-grid-content">
+          <!-- Left Column (Products & RFQs) -->
+          <div class="mock-grid-col">
+            <div class="mock-card">
+              <div class="mock-card-img">
+                <svg style="width: 0.9rem; height: 0.9rem; color: var(--gold);" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="9" x2="15" y2="9"></line><line x1="9" y1="13" x2="15" y2="13"></line><line x1="9" y1="17" x2="13" y2="17"></line></svg>
+              </div>
+              <div class="mock-card-details">
+                <span class="mock-card-tag">LATEST PRODUCT</span>
+                <span class="mock-card-title">Black pepper</span>
+                <span class="mock-card-desc">$ 6 / KGM</span>
+                <span class="mock-card-action">See Details ▼</span>
+              </div>
+            </div>
+            <div class="mock-card">
+              <div class="mock-card-img">
+                <svg style="width: 0.9rem; height: 0.9rem; color: #a0a0a0;" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+              </div>
+              <div class="mock-card-details">
+                <span class="mock-card-tag">LATEST RFQ</span>
+                <span class="mock-card-title">500 MT Deformed Steel</span>
+                <span class="mock-card-desc">Qty: 500 TNE 🇮🇩</span>
+                <span class="mock-card-action">Check Details ▼</span>
+              </div>
+            </div>
+          </div>
+
+
+          <!-- Right Column (Fairs & Sponsored Suppliers) -->
+          <div class="mock-grid-col">
+            <div class="mock-card">
+              <div class="mock-card-img">
+                <svg style="width: 0.9rem; height: 0.9rem; color: #a0a0a0;" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><line x1="4" y1="22" x2="4" y2="15"></line></svg>
+              </div>
+              <div class="mock-card-details">
+                <span class="mock-card-tag">LATEST FAIR</span>
+                <span class="mock-card-title">Glasstech Mexico</span>
+                <span class="mock-card-desc">Jul 15 • Guadalajara 🇲🇽</span>
+                <span class="mock-card-action">Check Fair ▼</span>
+              </div>
+            </div>
+            
+            <!-- SPONSORED SPOT (YOUR BRAND HERE) -->
+            <div class="mock-card sponsored">
+              <div class="mock-card-img">
+                <svg style="width: 0.9rem; height: 0.9rem; color: var(--gold);" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+              </div>
+              <div class="mock-card-details">
+                <span class="mock-card-tag">★ FEATURED BRAND</span>
+                <span class="mock-card-title" style="color: var(--gold);">Your Brand Here</span>
+                <span class="mock-card-desc">Spotlight Ad</span>
+                <span class="mock-card-action" onclick="window.location.href='coretradeglobal-ad-inquire.html?type=hero'" style="cursor: pointer;">Book Spot Now ▼</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Add Product / Add Request Bottom CTAs -->
+        <div class="mock-bottom-ctas">
+          <span class="mock-btn-cta yellow">Add Product</span>
+          <span class="mock-btn-cta blue">Add Request</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="ads-info">
+      <h3>Hero Section Spotlights</h3>
+      <p>Advertise your products directly in our high-traffic Hero sections. Put your catalog front and center for thousands of daily B2B buyers and sellers, generating dozens of inquiries, building brand presence, and driving direct RFQ quotes instantly.</p>
+      <ul class="ads-list">
+        <li>
+          <svg style="width: 1.2rem; height: 1.2rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          Capture prime attention from 3,000+ daily B2B decision-makers and trade executives
+        </li>
+        <li>
+          <svg style="width: 1.2rem; height: 1.2rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          Broadcast directly to active sourcing agents from over 35 countries worldwide
+        </li>
+        <li>
+          <svg style="width: 1.2rem; height: 1.2rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          Highest conversion spotlights on home and category search query pages
+        </li>
+      </ul>
+      <a href="coretradeglobal-ad-inquire.html?type=hero" class="btn-ad-inquire">Inquire About Hero Ads →</a>
+    </div>
+  </div>
+
+  <!-- Row 3: Carousel Brand Spotlights -->
+  <div class="ads-row">
+    <div class="ads-info">
+      <h3>Carousel Brand Spotlights</h3>
+      <p>Showcase your company profile in our main 3D rotating carousel. Gain premium brand authority by placing your verification badge and value proposition front and center for all active B2B members.</p>
+      <ul class="ads-list">
+        <li>
+          <svg style="width: 1.2rem; height: 1.2rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          Visible to 2,000 - 3,000 direct B2B importers & exporters weekly
+        </li>
+        <li>
+          <svg style="width: 1.2rem; height: 1.2rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          Displayed to active trading members from over 30+ countries worldwide
+        </li>
+        <li>
+          <svg style="width: 1.2rem; height: 1.2rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          Interactive horizontal carousel showcase on the landing pages
+        </li>
+      </ul>
+      <a href="coretradeglobal-ad-inquire.html?type=carousel" class="btn-ad-inquire">Inquire About Carousel Ads →</a>
+    </div>
+
+    <div class="mockup-frame">
+      <!-- 3D CAROUSEL MOCKUP -->
+      <div class="mock-carousel-container">
+        <h4 class="mock-carousel-title">Featured Companies</h4>
+        <span class="mock-carousel-sub">Want to see your company here? View Advertising Options ›</span>
+        
+        <div class="mock-carousel-track">
+          <!-- Left Card (Rotated 3D) -->
+          <div class="mock-carousel-card left-card">
+            <div class="mock-card-logo" style="background: rgba(255,255,255,0.85); color: #000; font-size: 0.35rem; font-weight:800; display: flex; align-items: center; justify-content: center;">CTG</div>
+            <h5 class="mock-card-name">CoreTradeGlobal</h5>
+            <p class="mock-card-text">Connecting verified global B2B exporters and importers on our fast marketplace...</p>
+            <button class="mock-card-btn">View Profile</button>
+          </div>
+          
+          <!-- Center Card (Focused & Scaled) -->
+          <div class="mock-carousel-card center-card">
+            <div class="mock-card-logo centered-logo"></div>
+            <h5 class="mock-card-name">
+              <svg class="verify-tick-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" style="width: 8px; height: 8px; color: var(--gold); display: inline-block; vertical-align: middle;"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              CoreTradeGlobal
+            </h5>
+            <p class="mock-card-text">CoreTradeGlobal is an end-to-end B2B trade ecosystem bringing exporters, importers, and international businesses together on a single digital platform.</p>
+            <button class="mock-card-btn primary">View Profile</button>
+          </div>
+
+          <!-- Right Card (Rotated 3D) -->
+          <div class="mock-carousel-card right-card">
+            <div class="mock-card-logo" style="background: rgba(255,255,255,0.85); color: #000; font-size: 0.35rem; font-weight:800; display: flex; align-items: center; justify-content: center;">CTG</div>
+            <h5 class="mock-card-name">CoreTradeGlobal</h5>
+            <p class="mock-card-text">Access cargo logistics, secure insurance, and direct messaging facilities...</p>
+            <button class="mock-card-btn">View Profile</button>
+          </div>
+        </div>
+        <div class="mock-carousel-orbital"></div>
+      </div>
+    </div>
+  </div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ SECTION -->
+<section class="faq-section">
+  <h2 class="section-title">Frequently Asked Questions</h2>
+  
+  <div class="faq-accordion">
+    <div class="faq-item">
+      <button class="faq-header-btn" onclick="toggleFaq(this)">
+        <span>Why is CoreTradeGlobal free?</span>
+        <svg class="faq-icon-svg" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+      </button>
+      <div class="faq-content">
+        <div class="faq-content-inner">
+          We believe B2B matching and messaging must be 100% free to support global trade. We sustain our operations through optional integrated trade services (logistics, insurance, legal) and <strong>advertising options</strong> (Featured Product listings and Hero Section spotlights) that target our 100% qualified B2B importer/exporter audience.
+        </div>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <button class="faq-header-btn" onclick="toggleFaq(this)">
+        <span>Are there any hidden transaction fees or commissions?</span>
+        <svg class="faq-icon-svg" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+      </button>
+      <div class="faq-content">
+        <div class="faq-content-inner">
+          No. There are no commissions, transaction cuts, or processing percentages taken by CoreTradeGlobal. Negotiations, payments, and contracts happen directly between the buyer and supplier under their own terms and agreements.
+        </div>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <button class="faq-header-btn" onclick="toggleFaq(this)">
+        <span>Is there a limit on product listings or RFQ posts?</span>
+        <svg class="faq-icon-svg" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+      </button>
+      <div class="faq-content">
+        <div class="faq-content-inner">
+          No. Free accounts get unlimited product listings and can publish or respond to unlimited RFQs. We want you to list your entire catalog to maximize matches without worrying about credits.
+        </div>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <button class="faq-header-btn" onclick="toggleFaq(this)">
+        <span>Is manual trust verification mandatory?</span>
+        <svg class="faq-icon-svg" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+      </button>
+      <div class="faq-content">
+        <div class="faq-content-inner">
+          Yes. To ensure our B2B network remains clear of anonymous listings or potential fraud vectors, every registered company undergoes manual vetting by our team. Vetting is completed quickly and once approved, a "Verified Badge" is appended to your profile.
+        </div>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <button class="faq-header-btn" onclick="toggleFaq(this)">
+        <span>Am I forced to use the logistics or insurance tools?</span>
+        <svg class="faq-icon-svg" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+      </button>
+      <div class="faq-content">
+        <div class="faq-content-inner">
+          Not at all. The logistics quotes, cargo insurances, and legal supports are completely optional conveniences. You are fully welcome to deploy your own external shipping brokers and export consultants for any deals made on our platform.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-container">
+    <div class="footer-logo">
+      <img src="https://www.coretradeglobal.com/icons/ctg-logo.png" alt="CoreTradeGlobal">
+      <p>The Core of the B2B World.</p>
+    </div>
+    <div class="footer-links">
+      <a href="https://coretradeglobal.com/privacy-policy" target="_blank">Privacy Policy</a>
+      <a href="https://coretradeglobal.com/terms" target="_blank">Terms of Service</a>
+      <a href="mailto:info@coretradeglobal.com">info@coretradeglobal.com</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  function toggleFaq(btn) {
+    const item = btn.parentElement;
+    const content = btn.nextElementSibling;
+    const isActive = item.classList.contains('active');
+    
+    // Close other open faq items
+    document.querySelectorAll('.faq-item').forEach(el => {
+      el.classList.remove('active');
+      el.querySelector('.faq-content').style.maxHeight = null;
+    });
+
+    if (!isActive) {
+      item.classList.add('active');
+      content.style.maxHeight = content.scrollHeight + "px";
+    }
+  }
+</script>
+
+</body>
+</html>
