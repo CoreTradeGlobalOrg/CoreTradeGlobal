@@ -59,7 +59,7 @@ const STATUS_STYLE = {
   [AD_STATUSES.EXPIRED]: 'bg-gray-500/15 border-gray-500/40 text-gray-300',
 };
 
-const TYPE_FILTERS = ['all', AD_TYPES.FEATURED, AD_TYPES.HERO, AD_TYPES.CAROUSEL];
+const TYPE_FILTERS = ['all', AD_TYPES.SPONSORED];
 const STATUS_FILTERS = [
   'all',
   AD_STATUSES.ACTIVE,

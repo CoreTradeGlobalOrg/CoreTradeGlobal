@@ -17,8 +17,6 @@ import { COUNTRIES } from '@/core/constants/countries';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useCategories } from '@/presentation/hooks/category/useCategories';
 import { useResponsiveLimit, useScrollLoadMore } from '@/presentation/hooks/useResponsiveLimit';
-import { useActiveAds } from '@/presentation/hooks/ads/useActiveAd';
-import { AD_TYPES } from '@/core/constants/adTypes';
 import dynamic from 'next/dynamic';
 
 // Dynamically import mobile card stack to reduce initial bundle.
@@ -162,10 +160,11 @@ export function CompaniesSection() {
   // should see the same brands whose products are being showcased just above,
   // not a random slice of the latest sign-ups.
   const [productOwnerCompanies, setProductOwnerCompanies] = useState([]);
-  // Same carousel sponsored ad the desktop 3D ShowcaseSection prepends —
-  // mobile card stack should show it too, always pinned to the top of the deck.
-  // Up to 8 carousel-tier ads share the same week (matches admin cap).
-  const { ads: carouselAds } = useActiveAds(AD_TYPES.CAROUSEL, { limit: 8 });
+  // Carousel-tier ads were retired end-of-Sept-2026 along with the rest
+  // of the legacy ad taxonomy; the sponsored surface on the homepage
+  // now lives entirely in ShowcaseSection (Sponsored Package). Mobile
+  // card stack is organic-only.
+  const carouselAds = [];
   const [loading, setLoading] = useState(true);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(true);

@@ -12,12 +12,10 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { CountryFlag } from '@/presentation/components/common/CountryFlag/CountryFlag';
 import { COUNTRIES } from '@/core/constants/countries';
-import { useActiveAd } from '@/presentation/hooks/ads/useActiveAd';
 import { useSponsoredHeroAd } from '@/presentation/hooks/ads/useSponsoredHeroAd';
 import { useTrackAd } from '@/presentation/hooks/ads/useTrackAd';
 import { useProductsByIds } from '@/presentation/hooks/product/useProductsByIds';
 import { useUserProfile } from '@/presentation/hooks/user/useUserProfile';
-import { AD_TYPES } from '@/core/constants/adTypes';
 import { getUnitByCode, getUnitName, getUnitNamePluralized } from '@/core/constants/units';
 
 function truncate(text, max = 90) {
@@ -109,76 +107,59 @@ function Shimmer({ width = '100%', height = '14px', className = '' }) {
 export function HeroDataCards({ fetchData, dataLoading, latestProduct, latestRequest, latestFair, latestSupplier }) {
   // Show skeleton when fetchData is enabled but data hasn't arrived yet
   const showSkeleton = fetchData && dataLoading;
-  // Unified sponsored package wins over legacy per-slot ads. When a
-  // SPONSORED campaign is active it drives BOTH hero cards from a
-  // single record (heroProductId → left, userId → right), so a buyer
-  // gets full-hero coverage in one purchase. Legacy FEATURED/HERO ads
-  // still work as fallbacks while pre-existing campaigns run out.
+  // The Sponsored Package fills both hero cards from one record.
   // useSponsoredHeroAd relaxes useActiveAd's strict "in-date-range"
-  // filter — a sponsored campaign for next month shows up here right
-  // after admin marks it paid instead of waiting for the month to
-  // start (avoids a paid slot rendering as "Book This Spot").
+  // filter so a paid, scheduled-for-next-month campaign shows up here
+  // the moment admin marks it paid.
   const sponsoredAd = useSponsoredHeroAd();
-  const { ad: legacyHeroAd } = useActiveAd(AD_TYPES.HERO);
-  const { ad: legacyProductAd } = useActiveAd(AD_TYPES.FEATURED);
 
-  // Batch-resolve the sponsored hero product; user profile is a
-  // one-off getDoc. Both are inert (no reads) when there's no
-  // sponsored ad active.
+  // Batch-resolve the hero product + sponsor profile so the card
+  // reflects live edits (price/logo/name changes).
   const sponsoredProductMap = useProductsByIds(sponsoredAd?.heroProductId ? [sponsoredAd.heroProductId] : []);
   const sponsoredHeroProduct = sponsoredAd?.heroProductId ? sponsoredProductMap.get(sponsoredAd.heroProductId) : null;
   const { profile: sponsoredCompany } = useUserProfile(sponsoredAd?.userId);
 
-  // Precedence: sponsored package first, legacy slot ads next, then
-  // placeholder. Track refs plumbed against whichever ad ends up used.
-  const activeProductAd = sponsoredAd || legacyProductAd;
-  const activeHeroAd = sponsoredAd || legacyHeroAd;
-  const { setRef: setProductAdRef, trackClick: trackProductAdClick } = useTrackAd(activeProductAd?.id);
-  const { setRef: setHeroAdRef, trackClick: trackHeroAdClick } = useTrackAd(activeHeroAd?.id);
+  const { setRef: setProductAdRef, trackClick: trackProductAdClick } = useTrackAd(sponsoredAd?.id);
+  const { setRef: setHeroAdRef, trackClick: trackHeroAdClick } = useTrackAd(sponsoredAd?.id);
 
-  // Render-shape helpers turn whichever ad won into the fields the
-  // legacy JSX expects — companyLogo/name/description/linkUrl. For
-  // SPONSORED, everything is resolved from the live product + user
-  // docs so a name/logo/price change flows without an ad edit.
-  const productSlot = sponsoredAd
-    ? sponsoredHeroProduct
-      ? {
-          badgeText: sponsoredAd.badgeText || 'Featured Product',
-          companyLogo: sponsoredHeroProduct.images?.[0] || sponsoredCompany?.companyLogo || null,
-          companyName: sponsoredHeroProduct.name,
-          description: truncate(sponsoredHeroProduct.description),
-          linkUrl: `/product/${sponsoredHeroProduct.id}`,
-        }
-      : null
-    : legacyProductAd
-      ? {
-          badgeText: legacyProductAd.badgeText || 'Featured Product',
-          companyLogo: legacyProductAd.companyLogo,
-          companyName: legacyProductAd.companyName,
-          description: legacyProductAd.description,
-          linkUrl: legacyProductAd.linkUrl || '#',
-        }
-      : null;
+  // Both slots activate the moment we have EITHER a resolved product
+  // or a resolved company profile — waiting for both makes the hero
+  // fall back to the "Book Your Spot" placeholder while the product
+  // fetch is in flight, which reads as an empty paid slot.
+  const productSlot = sponsoredAd && (sponsoredHeroProduct || sponsoredCompany)
+    ? {
+        badgeText: sponsoredAd.badgeText || 'Featured Product',
+        companyLogo: sponsoredHeroProduct?.images?.[0] || sponsoredCompany?.companyLogo || sponsoredCompany?.photoURL || null,
+        companyName: sponsoredHeroProduct?.name || sponsoredCompany?.companyName || sponsoredCompany?.displayName || 'Sponsored',
+        description: truncate(sponsoredHeroProduct?.description || sponsoredCompany?.companyDescription || sponsoredCompany?.bio || 'Featured supplier'),
+        linkUrl: sponsoredHeroProduct
+          ? `/product/${sponsoredHeroProduct.id}`
+          : (sponsoredCompany ? `/profile/${sponsoredCompany.id}` : '#'),
+      }
+    : null;
 
-  const companySlot = sponsoredAd
-    ? sponsoredCompany
-      ? {
-          badgeText: sponsoredAd.badgeText || 'Sponsored',
-          companyLogo: sponsoredCompany.companyLogo || sponsoredCompany.photoURL || null,
-          companyName: sponsoredCompany.companyName || sponsoredCompany.displayName || 'Sponsored Company',
-          description: truncate(sponsoredCompany.companyDescription || sponsoredCompany.bio || 'Featured supplier — explore their catalog.'),
-          linkUrl: `/profile/${sponsoredCompany.id}`,
-        }
-      : null
-    : legacyHeroAd
-      ? {
-          badgeText: legacyHeroAd.badgeText || 'Sponsored',
-          companyLogo: legacyHeroAd.companyLogo,
-          companyName: legacyHeroAd.companyName,
-          description: legacyHeroAd.description,
-          linkUrl: legacyHeroAd.linkUrl || '#',
-        }
-      : null;
+  const companySlot = sponsoredAd && sponsoredCompany
+    ? {
+        badgeText: sponsoredAd.badgeText || 'Sponsored',
+        companyLogo: sponsoredCompany.companyLogo || sponsoredCompany.photoURL || null,
+        companyName: sponsoredCompany.companyName || sponsoredCompany.displayName || 'Sponsored Company',
+        description: truncate(sponsoredCompany.companyDescription || sponsoredCompany.bio || 'Featured supplier — explore their catalog.'),
+        linkUrl: `/profile/${sponsoredCompany.id}`,
+      }
+    : null;
+
+  // Debug — temporary while diagnosing empty hero on prod. Remove once
+  // sponsored ads render reliably in the wild.
+  if (typeof window !== 'undefined') {
+    // eslint-disable-next-line no-console
+    console.log('[HeroSponsored]', {
+      sponsoredAd: sponsoredAd ? { id: sponsoredAd.id, userId: sponsoredAd.userId, heroProductId: sponsoredAd.heroProductId, status: sponsoredAd.status } : null,
+      sponsoredHeroProduct: sponsoredHeroProduct ? { id: sponsoredHeroProduct.id, name: sponsoredHeroProduct.name } : null,
+      sponsoredCompany: sponsoredCompany ? { id: sponsoredCompany.id, name: sponsoredCompany.companyName || sponsoredCompany.displayName } : null,
+      productSlotResolved: !!productSlot,
+      companySlotResolved: !!companySlot,
+    });
+  }
 
   // The legacy JSX below reads productAd / heroAd — bind them to the
   // resolved slot shapes so all downstream markup keeps working.

@@ -21,12 +21,10 @@
 
 import Link from 'next/link';
 import { useMemo } from 'react';
-import { useActiveAd } from '@/presentation/hooks/ads/useActiveAd';
 import { useSponsoredHeroAd } from '@/presentation/hooks/ads/useSponsoredHeroAd';
 import { useTrackAd } from '@/presentation/hooks/ads/useTrackAd';
 import { useProductsByIds } from '@/presentation/hooks/product/useProductsByIds';
 import { useUserProfile } from '@/presentation/hooks/user/useUserProfile';
-import { AD_TYPES } from '@/core/constants/adTypes';
 
 function AdSlot({ ad, placeholder, ariaLabel }) {
   const { setRef, trackClick } = useTrackAd(ad?.id);
@@ -96,51 +94,38 @@ export function HeroMobileAdCards() {
   // by 157 px, accounting for ~0.2 CLS on top of the 0.05 baseline
   // this page otherwise measures. Rendering the container in SSR
   // reserves the slot from first paint.
-  // Unified SPONSORED wins over per-slot legacy ads. Same resolution
-  // as the desktop hero: use useSponsoredHeroAd (which also surfaces
-  // scheduled campaigns starting in the next 45 days), then resolve
-  // the product image + company logo from live docs so the mobile card
-  // doesn't render the ✨ fallback when the ad doc itself lacks a
-  // companyLogo (SPONSORED ads store nothing there — user profile is
-  // the source of truth).
+  // Sponsored Package fills both mobile hero cards. Resolves the hero
+  // product image + company logo from live docs so the mobile card
+  // never renders the ✨ fallback (SPONSORED ads store no companyLogo
+  // on the ad doc — user profile is the source of truth).
   const sponsoredAd = useSponsoredHeroAd();
-  const { ad: legacyFeatured } = useActiveAd(AD_TYPES.FEATURED);
-  const { ad: legacyHero } = useActiveAd(AD_TYPES.HERO);
 
   const sponsoredProductMap = useProductsByIds(sponsoredAd?.heroProductId ? [sponsoredAd.heroProductId] : []);
   const sponsoredHeroProduct = sponsoredAd?.heroProductId ? sponsoredProductMap.get(sponsoredAd.heroProductId) : null;
   const { profile: sponsoredCompany } = useUserProfile(sponsoredAd?.userId);
 
-  const productSlotAd = useMemo(() => {
-    if (sponsoredAd) {
-      if (!sponsoredHeroProduct && !sponsoredCompany) return null;
-      return {
-        id: sponsoredAd.id,
-        linkUrl: sponsoredHeroProduct ? `/product/${sponsoredHeroProduct.id}` : (sponsoredCompany ? `/profile/${sponsoredCompany.id}` : '#'),
-        companyName: sponsoredHeroProduct?.name || sponsoredCompany?.companyName || sponsoredCompany?.displayName,
-        companyLogo: sponsoredHeroProduct?.images?.[0] || sponsoredCompany?.companyLogo || sponsoredCompany?.photoURL || null,
-        badgeText: sponsoredAd.badgeText || 'Featured Product',
-      };
-    }
-    return legacyFeatured;
-  }, [sponsoredAd, sponsoredHeroProduct, sponsoredCompany, legacyFeatured]);
+  const featuredProductAd = useMemo(() => {
+    if (!sponsoredAd) return null;
+    if (!sponsoredHeroProduct && !sponsoredCompany) return null;
+    return {
+      id: sponsoredAd.id,
+      linkUrl: sponsoredHeroProduct ? `/product/${sponsoredHeroProduct.id}` : (sponsoredCompany ? `/profile/${sponsoredCompany.id}` : '#'),
+      companyName: sponsoredHeroProduct?.name || sponsoredCompany?.companyName || sponsoredCompany?.displayName,
+      companyLogo: sponsoredHeroProduct?.images?.[0] || sponsoredCompany?.companyLogo || sponsoredCompany?.photoURL || null,
+      badgeText: sponsoredAd.badgeText || 'Featured Product',
+    };
+  }, [sponsoredAd, sponsoredHeroProduct, sponsoredCompany]);
 
-  const heroSlotAd = useMemo(() => {
-    if (sponsoredAd) {
-      if (!sponsoredCompany) return null;
-      return {
-        id: sponsoredAd.id,
-        linkUrl: `/profile/${sponsoredCompany.id}`,
-        companyName: sponsoredCompany.companyName || sponsoredCompany.displayName || 'Sponsored',
-        companyLogo: sponsoredCompany.companyLogo || sponsoredCompany.photoURL || null,
-        badgeText: sponsoredAd.badgeText || 'Sponsored',
-      };
-    }
-    return legacyHero;
-  }, [sponsoredAd, sponsoredCompany, legacyHero]);
-
-  const featuredProductAd = productSlotAd;
-  const heroAd = heroSlotAd;
+  const heroAd = useMemo(() => {
+    if (!sponsoredAd || !sponsoredCompany) return null;
+    return {
+      id: sponsoredAd.id,
+      linkUrl: `/profile/${sponsoredCompany.id}`,
+      companyName: sponsoredCompany.companyName || sponsoredCompany.displayName || 'Sponsored',
+      companyLogo: sponsoredCompany.companyLogo || sponsoredCompany.photoURL || null,
+      badgeText: sponsoredAd.badgeText || 'Sponsored',
+    };
+  }, [sponsoredAd, sponsoredCompany]);
 
   return (
     <div className="hero-mobile-ad-cards">
