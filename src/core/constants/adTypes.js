@@ -12,30 +12,19 @@
  */
 
 export const AD_TYPES = {
-  // Hero left card — sponsored PRODUCT placement in the homepage hero.
-  FEATURED: 'featured',
-  // Hero right card — sponsored COMPANY placement in the homepage hero.
-  HERO: 'hero',
-  // Products directory (/products) — top-of-grid sponsored product slot.
-  SPONSORED_PRODUCT: 'sponsored_product',
-  // 3D Featured Companies carousel + mobile card stack — rotating slots.
-  CAROUSEL: 'carousel',
-  // Unified sponsorship — a single purchase fills every ad slot at once:
+  // The one and only ad tier post-consolidation. Fills every slot at once:
   //   hero left  → sponsored.heroProductId
   //   hero right → sponsored.userId (company card)
   //   showcase   → sponsored.showcaseProductIds (up to 3 mini cards)
   //   /products  → sponsored.productsListProductId
-  // New tier that replaces the four legacy types above going forward.
-  // Legacy ads are still honored for backwards compatibility until an
-  // admin expires them; the sponsored record takes priority when active.
+  //
+  // The legacy FEATURED / HERO / SPONSORED_PRODUCT / CAROUSEL types
+  // were retired end-of-Sept-2026; any lingering docs of those types
+  // are ignored by the render pipeline.
   SPONSORED: 'sponsored',
 };
 
 export const AD_TYPE_LABELS = {
-  [AD_TYPES.FEATURED]: 'Hero Product Ad',
-  [AD_TYPES.HERO]: 'Hero Company Ad',
-  [AD_TYPES.SPONSORED_PRODUCT]: 'Sponsored Product Ad',
-  [AD_TYPES.CAROUSEL]: 'Carousel Company Ad',
   [AD_TYPES.SPONSORED]: 'Sponsored Package',
 };
 
@@ -114,10 +103,6 @@ export const AD_DURATIONS = [
 // a package on the inquiry form.
 export const TYPE_TO_PACKAGE = {
   [AD_TYPES.SPONSORED]: 'Sponsored Package',
-  [AD_TYPES.FEATURED]: 'Hero Product Ad',
-  [AD_TYPES.HERO]: 'Hero Company Ad',
-  [AD_TYPES.SPONSORED_PRODUCT]: 'Sponsored Product Ad',
-  [AD_TYPES.CAROUSEL]: 'Carousel Company Ad',
   combined: 'Combined Multi-Placement Package',
 };
 

@@ -23,12 +23,11 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { COUNTRIES } from '@/core/constants/countries';
 import { CountryFlag } from '@/presentation/components/common/CountryFlag/CountryFlag';
-import { useActiveAd } from '@/presentation/hooks/ads/useActiveAd';
+import { useSponsoredHeroAd } from '@/presentation/hooks/ads/useSponsoredHeroAd';
 import { useTrackAd } from '@/presentation/hooks/ads/useTrackAd';
 import { useUserProfile } from '@/presentation/hooks/user/useUserProfile';
 import { useProductsByIds } from '@/presentation/hooks/product/useProductsByIds';
 import { useCategories } from '@/presentation/hooks/category/useCategories';
-import { AD_TYPES } from '@/core/constants/adTypes';
 import './ShowcaseSection.css';
 
 function getCountryName(code) {
@@ -164,6 +163,17 @@ function SponsoredCard({ ad, categories }) {
     .map((id) => productMap.get(id))
     .filter((p) => p && p.status !== 'draft');
 
+  if (typeof window !== 'undefined') {
+    // eslint-disable-next-line no-console
+    console.log('[ShowcaseSponsored]', {
+      adId: ad?.id,
+      userId: ad?.userId,
+      productIds,
+      productsResolved: products.length,
+      mapEntries: Array.from(productMap.entries()).map(([k, v]) => ({ id: k, exists: !!v, name: v?.name, status: v?.status })),
+    });
+  }
+
   const companyName = profile?.companyName || ad.companyName || 'Sponsored Company';
   const companyLogo = profile?.companyLogo || profile?.photoURL || ad.companyLogo || null;
   const country = profile?.country || ad.country || '';
@@ -270,7 +280,10 @@ function SponsoredCard({ ad, categories }) {
 }
 
 export function ShowcaseSection() {
-  const { ad } = useActiveAd(AD_TYPES.SPONSORED);
+  // Same relaxed lookup as the hero: shows active + scheduled-soon
+  // sponsored packages so a paid Oct campaign appears late-September
+  // instead of leaving the showcase in "Book This Spot" limbo.
+  const ad = useSponsoredHeroAd();
   const { categories } = useCategories();
 
   return (

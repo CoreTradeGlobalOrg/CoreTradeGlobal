@@ -53,15 +53,8 @@ const DEFAULT_STATUS_BY_DATE = (startMs, endMs) => {
   return AD_STATUSES.ACTIVE;
 };
 
-// How many ads can share the same window per ad type. Each of the three
-// single-slot placements (hero product, hero company, products directory)
-// is capped at 1. The 3D Featured Companies carousel rotates through
-// many cards, so up to 8 sponsored slots may overlap there.
+// One Sponsored Package per date window — the only bookable tier now.
 const OVERLAP_CAP_BY_TYPE = {
-  [AD_TYPES.FEATURED]: 1,
-  [AD_TYPES.HERO]: 1,
-  [AD_TYPES.SPONSORED_PRODUCT]: 1,
-  [AD_TYPES.CAROUSEL]: 8,
   [AD_TYPES.SPONSORED]: 1,
 };
 
@@ -118,7 +111,9 @@ export function AdCampaignForm({
     [editing?.endDate, prefill?.endDate, initialStart]
   );
 
-  const [type, setType] = useState(editing?.type || prefill?.type || AD_TYPES.FEATURED);
+  // Only the Sponsored Package tier remains; editing an old legacy doc
+  // preserves its stored type so admin can still expire/delete it.
+  const [type] = useState(editing?.type || prefill?.type || AD_TYPES.SPONSORED);
   const [companyName, setCompanyName] = useState(editing?.companyName || prefill?.companyName || '');
   const [description, setDescription] = useState(editing?.description || prefill?.description || '');
   const [linkUrl, setLinkUrl] = useState(editing?.linkUrl || prefill?.linkUrl || '');
@@ -344,30 +339,16 @@ export function AdCampaignForm({
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
-          {/* Type */}
-          <div>
-            <label className="block text-xs uppercase tracking-wider text-[#A0A0A0] font-semibold mb-1.5">
-              Ad Type <span className="text-red-400">*</span>
-            </label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              {Object.values(AD_TYPES).map((t) => {
-                const selected = type === t;
-                return (
-                  <button
-                    key={t}
-                    type="button"
-                    onClick={() => setType(t)}
-                    className={`px-3 py-2.5 rounded-lg border text-xs sm:text-sm font-semibold transition-all ${
-                      selected
-                        ? 'bg-[rgba(255,215,0,0.15)] border-[#FFD700] text-[#FFD700]'
-                        : 'bg-[rgba(255,255,255,0.04)] border-[rgba(255,255,255,0.12)] text-white hover:border-[rgba(255,215,0,0.5)]'
-                    }`}
-                  >
-                    {AD_TYPE_LABELS[t]}
-                  </button>
-                );
-              })}
-            </div>
+          {/* Type is locked to Sponsored Package — legacy tiers were
+              retired. If editing a lingering old-type doc we show its
+              original label so admin knows what they're touching. */}
+          <div className="rounded-lg border border-[rgba(255,215,0,0.25)] bg-[rgba(255,215,0,0.06)] px-3 py-2">
+            <p className="text-[11px] uppercase tracking-wider text-[#FFD700] font-semibold">
+              Ad Type
+            </p>
+            <p className="text-sm text-white font-semibold">
+              {AD_TYPE_LABELS[type] || type}
+            </p>
           </div>
 
           {/* SPONSORED-only summary panel — the sponsor userId + slot
