@@ -149,12 +149,19 @@ function SponsoredCard({ ad, categories }) {
   const { profile } = useUserProfile(ad.userId);
 
   const productIds = useMemo(() => {
-    const showcase = Array.isArray(ad.showcaseProductIds) ? ad.showcaseProductIds : [];
-    // If the buyer left showcase blank we auto-fill with the hero + list
-    // picks so the mini-grid still renders (see prompt: "eger showcase'e
-    // bir sey koymazsa hero ve products'a koydugumuzu showcase'e koyacagiz").
+    // Old ad docs sometimes hold full product URLs instead of bare
+    // doc IDs (the sponsored fields used to be free-text inputs). Strip
+    // any `/product/{id}` prefix so useProductsByIds gets a real id.
+    const extractId = (v) => {
+      const s = String(v || '').trim();
+      if (!s) return '';
+      const m = s.match(/\/product\/([^/?#]+)/);
+      return m ? m[1] : s;
+    };
+    const showcase = (Array.isArray(ad.showcaseProductIds) ? ad.showcaseProductIds : [])
+      .map(extractId).filter(Boolean);
     if (showcase.length > 0) return showcase.slice(0, 3);
-    const fallback = [ad.heroProductId, ad.productsListProductId].filter(Boolean);
+    const fallback = [extractId(ad.heroProductId), extractId(ad.productsListProductId)].filter(Boolean);
     return Array.from(new Set(fallback)).slice(0, 3);
   }, [ad.showcaseProductIds, ad.heroProductId, ad.productsListProductId]);
 
