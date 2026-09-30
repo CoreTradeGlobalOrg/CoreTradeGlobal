@@ -1,0 +1,21 @@
+MAIL 5.1 — 14-Day Inactivity Reminder
+Workflow: WF5 - Re-Engagement & Win-Back
+=============================================
+
+From Name: CoreTradeGlobal
+Subject Line: We've Missed You, Discover Products Added Since Your Last Visit
+Pre-header: New buyers, products and trade opportunities are waiting on the platform.
+
+Body:
+
+Hi {{ contact.firstname }},
+
+We noticed you haven't logged into CoreTradeGlobal recently. 
+While {{ contact.company }} has been away, new trade opportunities have been added to the platform.
+
+Here's what you've been missing:
+- Newly importers, exporters and logistics companies have joined the network.
+- Fresh sourcing products have been posted in new categories.
+
+Sign in today to explore new listings and connect with active trading partners.
+CTA Button: [ Log In to My Account ]

@@ -1,0 +1,24 @@
+MAIL 4.1 — Profile Completion & Trust Badges (WF3 Exit + 3 Days)
+Workflow: WF4 - Feature Discovery & Profile Optimization
+=============================================
+
+From Name: CoreTradeGlobal Team
+Subject Line: Complete your company profile and gain visibility
+Pre-header: Add your logo, certificates and credentials to boost your profile.
+
+Body:
+
+Hi {{ contact.firstname }},
+
+{{ contact.company | default:"Your company" }} is now active on CoreTradeGlobal and your listings are visible to buyers worldwide.
+
+Companies with a fully completed profile rank higher in search results and build stronger trust with potential buyers.
+
+Strengthen your profile:
+- Upload your company logo for a professional first impression.
+- Add ISO certificates, trade licenses or other credentials to earn trust badges.
+- Write a detailed company description so buyers know exactly what you offer.
+
+Fully completed profiles receive on average 3x more views from buyers.
+
+CTA Button: [ Complete My Profile ]

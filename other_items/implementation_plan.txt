@@ -1,0 +1,1992 @@
+# CoreTradeGlobal — Admin Dashboard & HubSpot Analytics Panel
+
+## Amaç
+
+Platformun tüm büyüme metriklerini, üye yaşam döngüsünü, site davranışlarını ve HubSpot CRM verilerini tek ekrandan yönetebileceğimiz, gerçek zamanlı veri akışı olan kapsamlı bir **Admin Analytics Dashboard** oluşturmak.
+
+> Mevcut veri kaynakları: Google Analytics 4, Microsoft Clarity, HubSpot CRM, Platform DB (üye veritabanı), LinkedIn outreach logları, E-posta kampanya logları, **Çalışan günlük mesaj giriş sistemi (manuel log)**.
+
+---
+
+## Open Questions
+
+> [!IMPORTANT]
+> **Teknoloji Kararı**: Panel bağımsız bir HTML/JS uygulaması mı olsun (hızlı, sıfır bağımlılık), yoksa mevcut Next.js platformuna entegre `/admin/analytics` sayfası olarak mı eklenmeli?
+>
+> **Öneri**: Önce bağımsız HTML/JS paneli → sonra platforma entegrasyon.
+
+> [!IMPORTANT]
+> **Veri Bağlantısı**: İlk versiyon **mock/demo verilerle** mi çalışsın (hızlı), yoksa gerçek API bağlantıları (HubSpot API Key, GA4 Data API, Clarity API) hemen entegre edilsin mi?
+>
+> **Öneri**: Demo data ile başla, API bağlantı hookları hazır bırak.
+
+> [!WARNING]
+> **HubSpot API Erişimi**: HubSpot'tan API key/token gerekecek. Mevcut HubSpot hesabınızın tier'ı nedir? (Free / Starter / Professional?) API erişim seviyesi farklılık yaratır.
+
+---
+
+## Proposed Changes
+
+### Bölüm 1 — Ana Dashboard Yapısı
+
+Panel 5 ana bölümden oluşacak, sidebar navigasyonla geçiş yapılacak:
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  SIDEBAR             │  MAIN CONTENT AREA               │
+│  ──────────────────  │  ──────────────────────────────  │
+│  📊 Overview         │  [Seçilen bölüm içeriği]         │
+│  👥 Members          │                                  │
+│  🚀 Growth           │                                  │
+│  📧 HubSpot CRM      │                                  │
+│  🌐 Site Analytics   │                                  │
+│  📣 Outreach         │                                  │
+│  ✍️  Team Daily Log  │  ← YENİ                          │
+└─────────────────────────────────────────────────────────┘
+```
+
+> [!NOTE]
+> **Team Daily Log**, çalışanların her gün hangi kanaldan kaç mesaj gönderdiğini **manuel olarak girdiği** özel bir ekrandır. Bu sayede otomatik log dosyalarından bağımsız, insan kontrolünde ve tutarlı bir outreach verisi elde edilir.
+
+---
+
+### Bölüm 2 — 📊 Overview (Ana Ekran)
+
+**"Command Center" — Her şeyin özetini 30 saniyede görürsün**
+
+#### KPI Kartları (Üst Sıra)
+| Metrik | Açıklama | Kaynak |
+|---|---|---|
+| Toplam Üye | Kümülatif kayıt sayısı | Platform DB |
+| Bu Hafta Yeni Üye | Son 7 gün kayıtlar | Platform DB |
+| Aktif Üye (30 gün) | Son 30 gün giriş yapan | Platform DB |
+| Büyüme Hızı (%) | Haftalık % artış | Hesaplanır |
+| Site Ziyaretçi (Bu Hafta) | GA4 benzersiz kullanıcı | GA4 |
+| Kayıt Dönüşüm Oranı | Ziyaretçi → Üye % | Hesaplanır |
+| HubSpot Open Contacts | Aktif CRM kontakları | HubSpot |
+| Email Açılma Oranı | Son kampanya avg | HubSpot |
+
+#### Grafikler
+- **Üye büyüme eğrisi** (mevcut Üye_Büyüme_Trendi.png benzeri ama interaktif)
+- **Günlük yeni kayıt bar chart** (son 30 gün)
+- **Trafik kaynağı doughnut** (Direct / LinkedIn / Google / Email / Facebook)
+- **Conversion funnel** (Ziyaretçi → Kayıt sayfası → Tamamlanan kayıt)
+
+---
+
+### Bölüm 3 — 👥 Members Panel
+
+**"Gelen üye, içerideki üye, kaybedilen üye"**
+
+#### Alt Sekmeler
+
+**3.1 — Yeni Üyeler (Son 30 Gün)**
+- Tablo: İsim | Şirket | Ülke | Sektör | Kayıt tarihi | Kaynak kanal | Durum
+- Filtreleme: Ülke, Sektör, Kayıt kanalı, Tarih aralığı
+- Export: CSV / Excel
+
+**3.2 — Üye Profil Analizi**
+- Ülke dağılımı (dünya haritası + top 10 liste)
+- Sektör dağılımı (pie chart)
+- Şirket büyüklüğü dağılımı
+- Buyer vs Seller oranı
+- Verified badge oranı
+
+**3.3 — Üye Aktivitesi**
+- Son 7/30/90 gün login yapan üyeler
+- Ürün ekleyen üyeler
+- RFQ gönderen üyeler
+- Mesajlaşan üyeler
+- Aktif üye skoru (engagement index)
+
+**3.4 — Churn Risk (Kaybedilen/Tehlikeli Üyeler)**
+- 30+ gün login yapmayan üyeler (uyarı)
+- 60+ gün inactive → re-engagement kampanya listesi
+- Silinen hesaplar (churn tracking)
+
+**3.5 — 🔍 Üye Davranış İzleme (Clarity Entegrasyonu)** *← YENİ*
+
+> [!IMPORTANT]
+> Bu sekme, platforma **kayıtlı üyelerin** site içindeki davranışlarını bireysel bazda izler.
+> Clarity’nin `identify()` API’si ile her oturum açan üye otomatik etiketlenir;
+> hangi üyenin nerede takıldığı, ne zaman churn etmeye başladığı net görünür.
+
+**Üye Bazında Görüntülenecek Metrikler:**
+
+| Metrik | Açıklama |
+|---|---|
+| Toplam oturum sayısı | Kayıttan bu yana kaç kez girdi? |
+| Son oturum tarihi | En son ne zaman girdi? |
+| Ortalama oturum süresi | Her girdiğinde ortalama ne kadar kaldı? |
+| En çok ziyaret ettiği sayfalar | /products mi, /rfq mı, /dashboard mı? |
+| Scroll derinliği | Sayfaları gerçekten okuyor mu? |
+| Dead / Rage click | Takıldığı yer var mı? |
+| Oturum kaydı linki | Clarity’de o üye için doğrudan kayda link |
+| Engagement Skoru | Hesaplanmış puan (0–100) |
+
+**Dashboard Görünümü:**
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  🔍 Üye Davranış Takibi — Tüm Üyeler                  │
+│  [Ara: İsim / email / üye ID...]   [Filtrele ▼]     │
+│  ─────────────────────────────────────────────────────  │
+│  Üye         Skor  Oturum  Son Giriş  Ençok Sayfa     │
+│  Ali Yilmaz  92▲  14     2sa önce   /products       │
+│  Mei Zhang   67▶  6      3g önce    /rfq            │
+│  John Smith  23▼  2      12g önce   /dashboard      │
+│  (churn risk ⚠️)                                      │
+│                                                     │
+│  [Ali Yilmaz satırına tıkla]  →  Üye Detay Kartı    │
+└─────────────────────────────────────────────────────────┘
+```
+
+**Üye Detay Kartı (üye satırına tıklayınca açılır):**
+
+```
+┌─────────────────────────────────────────────────────┐
+│  👤 Ali Yilmaz • Akkoç Loj Ltd • Türkiye         │
+│  Kayıt: 15 Mayıs 2026 • Kaynak: LinkedIn         │
+│  Engagement Skoru: 92/100 (🟢 Çok Aktif)          │
+│  ───────────────────────────────────────────────  │
+│  📅 Oturum Geçmişi                              │
+│  [spark line: son 30 gün oturum süresi]        │
+│                                                 │
+│  📍 En Çok Ziyaret Ettiği Sayfalar              │
+│  1. /products (23 kez, ort. 4dk 20sn)          │
+│  2. /rfq (11 kez, ort. 2dk 10sn)               │
+│  3. /companies (8 kez, ort. 1dk 45sn)          │
+│                                                 │
+│  🚨 Uyarılar                                    │
+│  • 3 kez “Add Product” sayfasında takılmış     │
+│  • Rage click: /rfq sayfası gönder butonu      │
+│                                                 │
+│  [🎬 Clarity Session Kayıtlarını Gör]           │
+│  (Doğrudan Clarity filtreli linke yönlendir)   │
+└─────────────────────────────────────────────────────┘
+```
+
+**Engagement Skoru Hesaplama (0–100):**
+
+| Kriter | Ağırlık | Hesaplama |
+|---|---|---|
+| Son 7 gün içinde giriş | 30 puan | Giriş var mı? |
+| Toplam oturum sayısı | 20 puan | 10+ oturum = tam puan |
+| Ort. oturum süresi | 20 puan | 3dk+ = tam puan |
+| Ürün / RFQ eklemiş mi? | 20 puan | Var mı? |
+| Mesajlaşmış mı? | 10 puan | Var mı? |
+
+```
+Skor  ≤ 30  → 🔴 Churn Riski — re-engagement email listesine ekle
+Skor 31–60  → 🟡 Pasif Üye — takıp et
+Skor 61–80  → 🔵 Normal
+Skor 81–100 → 🟢 Çok Aktif — VIP / Verified önerisi
+```
+
+
+---
+
+### Bölüm 4 — 🚀 Growth Analytics
+
+**"Platformun büyüme kontrol merkezi"**
+
+#### Büyüme Metrikleri
+- **MoM (Month-over-Month) büyüme oranı** — her ay için
+- **Büyüme ivmesi** — hızlanıyor mu yavaşlıyor mu?
+- **Hedef takibi** — örn. "Ağustos hedefi: 200 üye" progress bar
+- **Tahmin eğrisi** — mevcut ivmeyle 3-6 ay projeksiyon
+
+#### Outreach Etkinliği
+- LinkedIn outreach → Kayıt korelasyonu (günlük)
+- Email kampanya → Kayıt korelasyonu
+- Hangi kanaldan gelen üye daha aktif kalıyor? (LTV by channel)
+
+#### Coğrafi Büyüme
+- Ülke bazlı büyüme haritası
+- Yeni pazara açılma zamanlaması
+
+#### İçerik Performansı
+- En çok görüntülenen ürün kategorileri
+- En aktif RFQ kategorileri
+- Hangi sektörde en fazla üye var?
+
+---
+
+### Bölüm 5 — 📧 HubSpot CRM Panel
+
+**"Satış hunisi ve ilişki yönetimi merkezi"**
+
+#### Contact Overview
+- Toplam HubSpot kontakt sayısı
+- Lifecycle stage dağılımı (Subscriber → Lead → MQL → SQL → Customer)
+- Bu hafta eklenen yeni kontaktlar
+- Kontakt kaynağı breakdown
+
+#### Pipeline & Deals
+- Aktif deal'lar ve değerleri
+- Deal aşaması dağılımı (Funnel görünümü)
+- Ortalama satış döngüsü süresi
+
+#### Email Kampanyalar
+| Metrik | Değer |
+|---|---|
+| Gönderilen email | X |
+| Açılma oranı (OR) | % |
+| Tıklama oranı (CTR) | % |
+| Unsubscribe oranı | % |
+| Bounce oranı | % |
+
+- Son 5 kampanyanın performans karşılaştırması
+- A/B test sonuçları (varsa)
+- Subject line performans analizi
+
+#### Contact Timeline
+- Son 30 günde kimin ne zaman eklendiği
+- HubSpot → Platform kayıt dönüşümü
+
+#### Tasks & Follow-ups
+- Bekleyen HubSpot görevleri
+- Follow-up gereken kontaktlar
+- Son aktivite zamanı geçen kontaktlar
+
+---
+
+### Bölüm 6 — 🌐 Site Analytics
+
+**"Google Analytics + Microsoft Clarity birleşik görünümü"**
+
+#### Trafik Genel Bakış
+- Günlük/haftalık/aylık ziyaretçi trendi
+- Benzersiz kullanıcı vs toplam oturum
+- Oturum başına sayfa sayısı
+- Ortalama oturum süresi
+- Hemen çıkma oranı (bounce rate)
+
+#### Sayfa Bazlı Analiz
+| Sayfa | Görüntülenme | Aktif Kullanıcı | Bounce Rate |
+|---|---|---|---|
+| Ana Sayfa | — | — | — |
+| Register | — | — | — |
+| Login | — | — | — |
+| Products | — | — | — |
+| ... | — | — | — |
+
+#### Kaynak Analizi
+- Direct / Organic / LinkedIn / Email / Facebook / Referral
+- Her kaynaktan dönüşüm oranı
+
+#### Davranış Analizi (Clarity verisi) — Anonim Ziyaretçiler
+- Dead clicks (hatalı tıklama)
+- Rage clicks (sinirli tıklama)
+- Scroll derinliği
+- Session recording sayısı
+- JavaScript hata oranı
+- Performans skoru (LCP / INP / CLS)
+
+#### 🔑 Üye Kimliği Takibi (Clarity identify API) *← YENİ*
+
+> [!IMPORTANT]
+> Bu entegrasyon için Next.js platformuna **tek seferlik** bir kod eklenmesi gerekiyor.
+> Üye giriş yaptığı anda Clarity oturumu o üyenin ID’siyle etiketleniyor.
+> Bu sonrasında tüm session recording’ler ve heatmap’ler per-user filtrelenebilir hale geliyor.
+
+**Platform'a Eklenecek Kod (Next.js — tek seferlik):**
+
+```javascript
+// /app/layout.js veya login sonrası tetiklenen hook'ta
+// Üye giriş yaptığında çağrılır:
+
+function identifyUserInClarity(user) {
+  if (typeof window !== 'undefined' && window.clarity) {
+    window.clarity('identify',
+      user.id,           // Benzersiz üye ID (platform DB'den)
+      undefined,         // session ID (auto)
+      undefined,         // page ID (auto)
+      user.email         // okunabilir etiket (Clarity'de görünür)
+    );
+
+    // Ek etiketler — Clarity'de filtreleme için
+    window.clarity('set', 'membership', 'registered');
+    window.clarity('set', 'country',    user.country);
+    window.clarity('set', 'sector',     user.sector);
+    window.clarity('set', 'plan',       user.plan || 'free');
+    window.clarity('set', 'joinDate',   user.createdAt);
+  }
+}
+
+// Çağrımı:
+// useEffect(() => { if (session?.user) identifyUserInClarity(session.user); }, [session]);
+```
+
+**Bu Kodun Aktifleşmesiyle Dashboard'da Görülecekler:**
+
+| Clarity’den Gelen Veri | Dashboard’da Kullanım |
+|---|---|
+| `userId` → platform DB ile eşle | Üye profil kartında Clarity linki |
+| Sayfa ziyaret geçmişi | En çok hangi sayfa, kaç dakika |
+| Rage/dead click sayısı | UX sorunları hangi üyede daha fazla |
+| Oturum sayısı ve süresi | Engagement skoru hesaplama |
+| Session recording URL | Tek tıkla Clarity'de o üyenin kaydo |
+| Scroll derinliği | Üye gerçekten okuyor mu? |
+
+**Clarity Filtreleme Linki Formatı:**
+```
+https://clarity.microsoft.com/projects/view/[projectId]/
+  recordings?filters=CustomUserId%3D[userId]
+```
+
+> [!NOTE]
+> Clarity’nin ücretli planlarında (Pro+) Export API’si var;
+> ücretsiz planda ise dashboard linki yönlendirmesi kullanılır.
+> Demo aşamasında link yönlendirme yeterli; export entegrasyonu ilerleyen aşamada yapılır.
+
+#### Cihaz & Tarayıcı
+- Desktop / Mobile / Tablet oranı
+- Chrome / Safari / Firefox breakdown
+- İşletim sistemi
+
+---
+
+### Bölüm 7 — 📣 Outreach & Kampanya
+
+**"Dışarıdan içeriye — tüm outreach kanallarını buradan izle"**
+
+#### LinkedIn Outreach
+- Günlük gönderilen mesaj sayısı (Team Daily Log'dan otomatik topla)
+- Cevap oranı
+- Bağlantı kabul oranı
+- Mesaj → Kayıt korelasyonu (günlük grafik — Team Log verisiyle)
+
+#### Email Outreach
+- Günlük gönderim hacmi (Team Daily Log'dan)
+- Delivery rate, Open rate, CTR, Reply rate
+- GünlükMail.log parsing → dashboard'a entegrasyon
+
+#### Social Media
+- LinkedIn post görüntlenme
+- Facebook/Instagram erişim
+- Post bazında kayıt etkisi
+
+---
+
+### Bölüm 8 — ✍️ Team Daily Log *(YENİ)*
+
+**"Çalışanlar kaç mesaj attı? Hangi kanaldan? Bunu kesin olarak bileceğiz."**
+
+> [!NOTE]
+> Bu panelde **hiyerarşi yoktur.** Tüm ekip üyeleri:
+> - Kendi günlük log girişini yapar
+> - Ekibin tüm verisini (diğer kişilerin rakamları dahil) aynı ekranda görür
+> - Tüm grafiklere ve analizlere erişebilir
+>
+> Ayrı admin / çalışan görünümü yoktur — tek, birleşik panel.
+
+#### 8.1 — Birleşik Panel Düzeni (Split View)
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  SOL: BUGÜNKÜ LOG GIRIM     │  SAĞ: EKİP GENEL TABLOSU    │
+│  ─────────────────────  │  ─────────────────────    │
+│  Kim giriyorsun? [Ad ▼]   │  Önce  ▼  Bugün  ▼  Bu Ay  │
+│  Tarih: [bugün ▼]         │  Ali    72  •••••••    │
+│                           │  Mehmet 71  ••••••     │
+│  👤 LinkedIn               │  Ayşe  68  •••••      │
+│  Bağlantı:  [  25  ]      │  ─────────────────────    │
+│  InMail:    [  12  ]      │  TOPLAM: 211 mesaj       │
+│  Yorum:     [   5  ]      │                          │
+│                           │  [📅 Geçmiş Log Tablosu]  │
+│  📧 Email                  │  [Grafikleri Gör]        │
+│  Toplu:     [  30  ]      │  [CSV İndir]             │
+│  Kişisel:   [   8  ]      │                          │
+│                           │                          │
+│  📱 Diğer                  │                          │
+│  WhatsApp:  [   0  ]      │                          │
+│  Diğer:     [      ]      │                          │
+│                           │                          │
+│  💬 Not: [            ]   │                          │
+│                           │                          │
+│  [ ✅ Kaydet ]             │                          │
+└─────────────────────────────────────────────────────────┘
+```
+
+
+**Form özellikleri:**
+- Kim giriyorsun? dropdown’dan herkes kendi adını seçer (sabit isim listesi, panelden yönetilir)
+- Tarih otomatik bugün dolarak gelir, değiştirilebilir (geçmiş gün girişi mümkün)
+- Aynı güne ikinci giriş → uyarı: “Bu gün zaten giriş var, üzerine yazayım mı?”
+- Kayıt sonrası anında “Bugünkü ekip toplamı: **211 mesaj**” konfirmasyonu
+- Mobil uyumlu (telefonden de doldurulabilir)
+- Giriş yapan kişi aynı ekranda sağ panelde ekibin tüm verisini görür
+
+#### 8.2 — Ekip Genel Bakış Tablosu
+
+**Ekip Genel Bakış Tablosu (bugün / bu hafta / bu ay)**
+
+| Çalışan | LinkedIn Bağl. | LinkedIn DM | Email | Diğer | TOPLAM | Son Giriş |
+|---|---|---|---|---|---|---|
+| Ali | 25 | 12 | 30 | 5 | **72** | Bugün 09:45 |
+| Mehmet | 18 | 8 | 45 | 0 | **71** | Bugün 10:12 |
+| Ayşe | 30 | 15 | 20 | 3 | **68** | Dün |
+| **TAKIM TOPLAMI** | **73** | **35** | **95** | **8** | **211** | |
+
+**Eksik Giriş Uyarıları**
+> ⚠️ **Ayşe** — dünkü giriş eksik! (2 günlük boşluk)
+> ⚠️ **Zeynep** — 3 gündür giriş yok!
+
+**Trend Grafikleri**
+- Günlük toplam ekip mesajı — line chart (son 30 gün)
+- Kişi bazında karşılaştırma — stacked bar chart
+- Kanal dağılımı — doughnut (LinkedIn vs Email vs Diğer)
+- Haftalık outreach → kayıt korelasyonu (dual-axis grafik)
+
+#### 8.3 — Outreach → Kayıt Korelasyon Görünümü
+
+```
+Günlük Mesaj (sol eksen)    vs    Yeni Kayıt (sağ eksen)
+
+200 │█████                    │ 5
+160 │████████            ►►►►│ 4   <- 2 günlük gecikme etkisi
+120 │███████████       ►►► │ 3
+ 80 │████████████   ►►►  │ 2
+    └───────────────────
+    Pzt  Sal  Çar  Per  Cum
+```
+
+- Otomatik korelasyon katsayısı hesaplar (Pearson r)
+- Ortalama "gecikme süresi": outreach'ten kaç gün sonra kayıt oluyor?
+- En verimli çalışan + en verimli kanal sıralaması
+
+#### 8.4 — Haftalık Özet Raporu
+
+> Her Pazartesi otomatik üretilen hafta özeti:
+
+```
+📅 HAFTALIK OUTREACH RAPORU — Hafta 30 (21-27 Temmuz 2026)
+──────────────────────────────────────────────
+📨 Toplam Gönderilen Mesaj: 847
+👤 En Aktif Çalışan: Ali (312 mesaj)
+📌 En Çok Kullanılan Kanal: LinkedIn InMail (%42)
+🚀 Yeni Kayıt: 21
+📈 Tahmini Korelasyon: ~12 mesaj / 1 kayıt
+📊 Önceki Haftaya Göre: +%14 mesaj, +%5 kayıt
+```
+
+#### 8.5 — Veri Saklama
+
+```javascript
+// localStorage (demo) → Backend API (produksiyon)
+const logEntry = {
+  id: 'log-2026-07-28-ali',
+  employee: 'Ali Yılmaz',
+  date: '2026-07-28',
+  channels: {
+    linkedinConnect: 25,
+    linkedinDM: 12,
+    linkedinComment: 5,
+    emailBulk: 30,
+    emailPersonal: 8,
+    whatsapp: 0,
+    other: { label: 'Forum', count: 3 }
+  },
+  note: 'Fashion sektörüne yoğunlaştım',
+  createdAt: '2026-07-28T09:45:00Z'
+};
+```
+
+---
+
+## Tasarım Sistemi
+
+### Renk Paleti (CoreTradeGlobal Marka Uyumu)
+```css
+--bg-primary:    #0A0D1A;   /* Koyu lacivert - platform teması */
+--bg-secondary:  #111827;   /* Kart arka planı */
+--bg-card:       #1A2035;   /* Widget kartları */
+--accent-gold:   #FFD700;   /* Altın sarısı - marka rengi */
+--accent-blue:   #3B82F6;   /* Vurgu mavi */
+--accent-green:  #10B981;   /* Pozitif metrikler */
+--accent-red:    #EF4444;   /* Negatif metrikler / uyarılar */
+--accent-orange: #F59E0B;   /* Orta uyarılar */
+--text-primary:  #F9FAFB;
+--text-muted:    #9CA3AF;
+--border:        #1F2937;
+```
+
+### Bileşenler
+- Glassmorphism kart tasarımı (backdrop-filter: blur)
+- Animasyonlu KPI sayaçları (count-up efekti)
+- Recharts / Chart.js tabanlı grafikler
+- Hover animasyonları
+- Dark mode (platform temasına uygun)
+- Türkçe + İngilizce dil desteği toggle
+
+---
+
+## Teknik Mimari
+
+### Dosya Yapısı
+```
+admin-dashboard/
+├── index.html              ← Ana panel (tek dosya yaklaşımı)
+├── css/
+│   ├── dashboard.css       ← Ana stil
+│   └── charts.css          ← Grafik stilleri
+├── js/
+│   ├── app.js              ← Navigasyon + sayfa yöneticisi
+│   ├── data.js             ← Mock data + API bağlantı hookları
+│   ├── charts.js           ← Grafik render fonksiyonları
+│   ├── members.js          ← Üye tablosu + filtreleme
+│   ├── hubspot.js          ← HubSpot widget'ları
+│   ├── site-analytics.js  ← GA4 + Clarity widget'ları
+│   └── team-log.js         ← YENİ: Günlük mesaj giriş sistemi
+└── assets/
+    └── logo.png
+```
+
+### API Entegrasyon Yapısı (İleride)
+```javascript
+// Her modül için API hook hazır
+const CONFIG = {
+  hubspot: {
+    apiKey: process.env.HUBSPOT_API_KEY,
+    portalId: 'YOUR_PORTAL_ID'
+  },
+  ga4: {
+    propertyId: 'YOUR_GA4_PROPERTY',
+    credentials: process.env.GA4_SERVICE_ACCOUNT
+  },
+  platformDb: {
+    endpoint: 'https://api.coretradeglobal.com/admin/stats'
+  }
+};
+```
+
+---
+
+## Verification Plan
+
+### Automated Tests
+- HTML validator kontrolü
+- Responsive tasarım testi (375px / 768px / 1440px)
+- Grafik render testi (tüm widget'lar)
+
+### Manual Verification
+- Tüm sidebar navigasyonları çalışıyor mu?
+- Filtreleme ve tarih seçici çalışıyor mu?
+- Grafikler doğru veri gösteriyor mu?
+- Mobil görünüm responsive mı?
+- Export (CSV) fonksiyonu çalışıyor mu?
+- HubSpot widget placeholder API hookları yerinde mi?
+
+---
+
+## Geliştirme Aşamaları
+
+| Aşama | Kapsam | Süre Tahmini |
+|---|---|---|
+| **Phase 1** | HTML iskelet + CSS tasarım sistemi | Bugün |
+| **Phase 2** | Overview + Members paneli (mock data) | Bugün |
+| **Phase 3** | HubSpot + Site Analytics paneli | Bugün |
+| **Phase 4** | Growth + Outreach paneli | Bugün |
+| **Phase 5** | Team Daily Log — giriş formu + admin analiz | Bugün |
+| **Phase 6** | API entegrasyonları (gerçek data) | Sonraki adım |
+| **Phase 7** | Next.js platforma entegrasyon | Sonraki adım |
+
+---
+
+## Bölüm 9 — 📢 Üye Reklamları
+
+**"Platform içi reklam alanlarının yönetimi ve istatistiği"**
+
+Platform üyelerine site içinde farklı konumlarda reklam alanı satılıyor. Bu bölüm hem satış operasyonunu (envanter, onay akışı, doluluk) hem de performansı (gösterim, tıklama, CTR, dönüşüm) tek yerden yönetiyor.
+
+**Reklam Envanteri (konumlar):**
+- Anasayfa Banner
+- Kategori Sayfası Üstü
+- Arama Sonucu — Öne Çıkan Kart
+- RFQ Sayfası — Sponsorlu Kart
+- Öne Çıkan Firma Widget
+
+**Reklam Tanımı:**
+- Reklam veren üye/firma
+- Konum
+- Başlangıç / bitiş tarihi
+- Hedefleme (ülke, sektör — varsa)
+- Durum: Aktif / Onay Bekliyor / Süresi Doldu / Reddedildi / Pasif
+
+**Onay Akışı:**
+- Üye reklam talebi oluşturur
+- Admin görüntüler → onaylar / düzenler / reddeder (red gerekçesiyle)
+- Onaylanan reklam yayına girer
+
+**Slot Yönetimi:**
+- Her konumun kapasitesi ve doluluk oranı
+- Bekleyen talepler → boş slot eşleşmesi
+
+**Performans:**
+- Impression (gösterim) sayısı
+- Click sayısı, CTR
+- Konum bazlı karşılaştırma
+- Zaman bazlı trend
+- Üye bazlı sıralama
+- Impression → firma profil ziyareti dönüşüm oranı
+
+**Veri Kaynağı:** Platform DB (kendi `ads`, `ad_impressions`, `ad_clicks`, `ad_slots` tabloları)
+
+---
+
+## Bölüm 10 — 📝 Profil Doluluk Analizi
+
+**"Kim profilini eksiksiz doldurdu, kim yarım bıraktı"**
+
+Üyenin profilini ne kadar doldurduğu hem verified sürecinin ön koşulu hem de arama sonuçlarında sıralamayı etkileyen bir sinyaldir. Bu ekran her üyenin doluluk yüzdesini gösterir ve eksikleri hedeflemeyi kolaylaştırır.
+
+**Takip Edilen Alanlar:**
+
+| Alan | Ağırlık | Zorunlu mu |
+|---|---|---|
+| Firma adı | 5p | ✓ |
+| Logo | 5p | — |
+| Firma açıklaması | 10p | — |
+| Adres | 5p | — |
+| Telefon | 5p | ✓ |
+| Web sitesi | 5p | — |
+| Sektör | 5p | ✓ |
+| Çalışan sayısı | 3p | — |
+| Kuruluş yılı | 2p | — |
+| İhracat yaptığı ülkeler | 8p | — |
+| Sertifikalar | 10p | — |
+| KYC belgeleri | 15p | — |
+| Banka bilgisi | 5p | — |
+| Ürün / hizmet listesi | 12p | ✓ |
+| İlan görselleri | 5p | — |
+
+**Ekran Özellikleri:**
+- Üye tablosu: İsim, doluluk %, kritik eksik alanlar, son güncelleme
+- Sıralama: en dolu / en boş / kritik eksik olanlar önce
+- Filtre: <%40 zayıf, %40-80 orta, >%80 tam
+- Renk kodlaması: yeşil / sarı / kırmızı
+- Segment ortalaması (sektör bazında)
+- Aksiyon: eksik alan hatırlatma e-postası, verified öneri butonu
+
+**Veri Kaynağı:** Platform DB (`users`, `company_profile`, `verification_documents`, `products` tabloları)
+
+---
+
+## Bölüm 11 — 🔔 Uyarı & Alert Merkezi
+
+**"Şu an panelde ilgilenmen gereken her şey — tek yerde"**
+
+Farklı sayfalarda dağınık duran uyarıları (churn riski, gecikmiş görev, süresi dolan reklam, eksik team log, düşük NPS trendi, HubSpot senkron açığı, düşük onboarding) tek bir kural motoruyla toplayan merkez. Panelin "yönetim" iddiasını somutlaştıran en önemli bölüm.
+
+**Uyarı Seviyeleri:**
+
+| Seviye | Örnek | Aksiyon |
+|---|---|---|
+| 🔴 Kritik | Gecikmiş HubSpot görevi 48s+, kritik churn (60g+), güvenlik uyarısı | Hemen ilgilen |
+| 🟠 Yüksek | Süresi dolan reklam, eksik team log 3g+, HubSpot senkron açığı >100 | 24 saat içinde |
+| 🟡 Orta | Yeni destek talebi, düşen NPS trendi, düşük onboarding tamamlama | Bu hafta |
+| 🔵 Düşük | Bilgilendirme, hedef ilerleme, haftalık özet | İnceleme yeter |
+
+**Kural Motoru:**
+Her metrik için tanımlanmış eşikler. Örnek:
+- `churn_days >= 60` → Kritik uyarı
+- `ad.end_date - now() <= 3d` → Yüksek uyarı
+- `team_log.missing_days >= 3` → Yüksek uyarı
+- `nps.7day_avg < previous_period * 0.9` → Orta uyarı
+- `hubspot.orphan_contacts > 100` → Yüksek uyarı
+
+**Uyarı Kartı Özellikleri:**
+- Başlık + kategori + seviye
+- Detay (hangi üye, hangi konu, hangi metrik)
+- "İlgili sayfaya git" linki
+- Durum: Aktif / Okundu / Kapatıldı / Ertelendi (snooze — 1s/1g/1h)
+- Kim atadı (opsiyonel)
+
+**Ekran Bölümleri:**
+- Üst şerit: seviye bazında sayaçlar (kritik/yüksek/orta/düşük)
+- Ana liste: filtrelenebilir, sıralanabilir uyarı listesi
+- Sağ panel: seçili uyarının detayı ve aksiyon butonları
+- Alt: geçmiş uyarılar (kapatılan/çözülen)
+
+**Veri Kaynağı:** Rules engine (kendi backend) → tetikleyiciler tüm bağlı kaynaklardan gelir (Platform DB + HubSpot + Clarity + GA4 + destek modülü). Uyarılar `alerts` tablosunda saklanır.
+
+---
+
+## Bölüm 12 — 🎯 Onboarding Funnel
+
+**"Yeni üyenin ilk 7 günü — nerede kayıp veriyoruz"**
+
+Genel conversion funnel'dan farklı olarak, kayıt sonrası ilk 7 günde üyenin platformda yaptığı adımları izler. Onboarding'i tamamlayan üyelerin retention'ı çok daha yüksek olduğu için, hangi adımın en çok terk edildiğini bilmek büyümenin çarpanı.
+
+**Adımlar:**
+
+| Adım | Beklenen Zaman | Tamamlama Kriteri |
+|---|---|---|
+| 1. Email onayı | Kayıt sonrası ilk 24s | Doğrulama linkine tıkladı |
+| 2. Profil %50 dolu | İlk 3g | Zorunlu alanlar dolduruldu |
+| 3. İlk ürün/RFQ ekleme | İlk 5g | En az 1 içerik ekledi |
+| 4. İlk mesajlaşma | İlk 7g | Bir üyeye mesaj gönderdi / aldı |
+| 5. 2. giriş | İlk 7g | Kayıt gününden sonra tekrar giriş |
+
+**Panel İçeriği:**
+- Funnel görünümü: her adımın tamamlanma yüzdesi
+- Kohort bazlı karşılaştırma: bu ay kaydolan vs geçen ay
+- Adım bazlı ortalama tamamlama süresi
+- Terk edilen adımdaki üyelerin listesi (aksiyon: hatırlatma e-postası)
+- Onboarding tamamlayan üyelerin 30g retention oranı (kanıt)
+
+**Veri Kaynağı:** Platform DB (`users`, `user_events` tabloları — kayıt/giriş/ilan/mesaj event log'u)
+
+---
+
+## Bölüm 13 — 🔄 HubSpot ↔ Platform Senkron
+
+**"İki dünyanın arasındaki açık"**
+
+HubSpot'ta 1.240 kontakt var ama platformda 166 üye. Aradaki fark, en değerli outreach hedefi olabilir. Bu ekran iki tarafı karşılaştırır ve senkron sağlığını gösterir.
+
+**Segment Görünümü:**
+
+| Segment | Anlamı | Aksiyon |
+|---|---|---|
+| Sadece HubSpot'ta | Kontakt var ama platform kaydı yok — potansiyel | Kayıt davet kampanyası |
+| Sadece Platform'da | Üye var ama HubSpot'a girmemiş — CRM açığı | Sync tetikle |
+| İki tarafta eşleşen | Sağlıklı — email ile eşleşen | — |
+| Çakışan / şüpheli | Aynı email farklı isimle, farklı email aynı firma | Manuel inceleme |
+
+**KPI'lar:**
+- Toplam HubSpot kontakt / Toplam platform üye
+- Eşleşme oranı
+- Sadece-HubSpot havuzu → platform kayda dönüşüm oranı (haftalık trend)
+- Son sync zamanı, son sync'te oluşan diff
+
+**Aksiyonlar:**
+- Sadece-HubSpot listesini "Kayıt davet" outreach kampanyasına ekle
+- Sadece-Platform listesini HubSpot'a toplu sync et
+- Çakışanları çöz (birleştir / işaretle)
+
+**Veri Kaynağı:** HubSpot API v3 (contacts endpoint) + Platform DB (users). Günlük cron job ile diff hesaplanır, `hubspot_sync_state` tablosunda saklanır.
+
+---
+
+## Bölüm 14 — 🎯 Segmentasyon / Persona
+
+**"Otomatik oluşan kullanıcı grupları — hedefli aksiyon için"**
+
+Engagement skoru, profil doluluk, HubSpot lifecycle, aktiflik gibi sinyaller birleşerek otomatik segmentler üretir. Her segment aksiyona bağlanır (kampanya, badge önerisi, re-engagement listesi).
+
+**Ön Tanımlı Segmentler:**
+
+| Segment | Kural | Aksiyon Önerisi |
+|---|---|---|
+| 🌟 VIP Aday | Skor ≥85 + Verified + Çoklu ürün + 30g+ aktif | VIP badge önerisi |
+| 💎 Yüksek Değerli Buyer | Buyer + Skor ≥70 + 3+ RFQ gönderdi | Öncelikli destek |
+| 😴 Pasif Seller | Seller + Skor 31-60 + son 14g giriş yok | Re-engagement e-postası |
+| 📢 Reklam Potansiyeli | Skor ≥70 + Verified + hiç reklam vermemiş | Reklam davetiye kampanyası |
+| 🚨 Kritik Churn | Skor ≤30 + 45g+ giriş yok + verified değil | Son şans kampanyası |
+| 🌱 Yeni Başlayan | Kayıt <14g + onboarding tamamlanmadı | Onboarding rehberliği |
+| ✅ Onboarding Tamamlayan | İlk 7g'de 4+ adım tamamladı | Nurture kampanyası |
+
+**Panel Özellikleri:**
+- Segment kartları: her segmentin üye sayısı ve haftalık büyümesi
+- Segment içi üye listesi
+- Segmente üye ekle/çıkar (manuel override)
+- Segmente özel toplu aksiyon (HubSpot listesine gönder, kampanya tetikle)
+- Segment tanımlarını düzenle (kural motoru arayüzü)
+
+**Veri Kaynağı:** Platform DB (users, sessions, products, verification) + Engagement skoru (Bölüm 18) + HubSpot lifecycle stage. Segment üyeliği materialized view olarak günlük yeniden hesaplanır.
+
+---
+
+## Bölüm 15 — 📬 Bildirim & İletişim Hijyeni
+
+**"Üyeye çok mu az mı yazıyoruz — kimseyi yormuyor muyuz"**
+
+Panel şu anda hangi kampanyanın gönderildiğini gösteriyor ama üye başına toplam iletişim yükünü göstermiyor. Bu bölüm "iletişim yorgunluğu"nu (fatigue) yönetir.
+
+**Metrikler:**
+- Toplam gönderilen bildirim (email + in-app + WhatsApp)
+- Üye başına ortalama haftalık bildirim
+- İletişim yorgunluğu skoru (yüksek olan üye = çok yazıldı)
+- Opt-out / unsubscribe trendi (kanal bazında)
+- Bounce & delivery rate
+- Kanal karışımı (email vs in-app vs WhatsApp)
+
+**Fatigue Kuralları:**
+- Bir üyeye haftada 5+ bildirim gitti → sarı işaret
+- 10+ gitti → kırmızı işaret (bir sonraki kampanyadan otomatik dışla)
+- Son 30g'de hiç bildirim almadı → "sessiz üye" (re-engagement önceliği)
+
+**Panel Bölümleri:**
+- Genel KPI'lar (toplam hacim, unsubscribe oranı, ort. yorgunluk)
+- Kanal bazlı dağılım
+- En çok bildirim alan üyeler tablosu (yorgunluk risk listesi)
+- Zaman trendi grafiği
+- Sessiz üyeler listesi
+
+**Veri Kaynağı:** HubSpot Marketing Email API (email hacmi + open/click) + Platform DB (`notification_log` tablosu — in-app bildirimler) + WhatsApp Business API (varsa)
+
+---
+
+## Bölüm 16 — ✅ Verified / Güven Altyapısı
+
+**"Doğrulama başvuruları, onay akışı, güven sinyalinin sağlığı"**
+
+> ⏸️ **Not:** Bu bölümün detaylı yeniden tasarımı (yeni akış, KYB belge seti, "yanan buton" mantığı vb.) ayrı bir dosyaya çıkarıldı: `verification-plan.txt`. Sonraki sprintte ele alınacak. Aşağıdaki içerik mevcut planın orijinal özet halidir.
+
+Platformun güven altyapısı; hem KYC hem firma belgesi hem ticaret sicili gibi farklı doğrulama tipleri var. Şu an panelde sadece "verified badge oranı" KPI olarak geçiyor, süreç yönetimi yok.
+
+**Doğrulama Tipleri:**
+- Kimlik (KYC) — bireysel
+- Firma Belgesi — vergi levhası, ticaret odası
+- Ticaret Sicili — resmi kayıt
+- Banka Doğrulama — hesap sahipliği
+- Adres — fatura / kira sözleşmesi
+
+**Süreç Aşamaları:**
+Başvuru → Belge Yüklendi → İnceleme → Onay / Red / Ek Belge İsteme → Verified
+
+**Panel Bölümleri:**
+- KPI'lar: bekleyen başvuru, ort. inceleme süresi, red oranı, verified oranı trendi
+- Bekleyen başvurular kuyruğu (SLA takibi — 48s içinde işlem yapılmalı)
+- Reddedilen başvurular (gerekçe bazında)
+- Doğrulama tipi bazında istatistik
+- Verified badge oranı — ülke/sektör kırılımı
+- Verified üyelerin engagement skoruna etkisi (kanıt grafiği)
+
+**Veri Kaynağı:** Platform DB (`verification_requests`, `verification_documents` tabloları) + KYC provider API (Onfido / Sumsub / Persona — opsiyonel, yoksa manuel inceleme)
+
+---
+
+## Bölüm 17 — 🔎 SEO & Organik Büyüme
+
+**"Uzun vadeli büyümenin motoru — Google'dan gelen trafiğin sağlığı"**
+
+Panel şu anda Google Organic'i sadece kaynak KPI'sı olarak gösteriyor, nedenini takip etmiyor. Bu bölüm, organik büyümeyi tetikleyen ve sızdıran metrikleri ayrı bir ekranda yönetir.
+
+**Metrikler:**
+
+| Metrik | Açıklama | Kaynak |
+|---|---|---|
+| Organik trafik trendi | Google/Bing'den gelen ziyaretçi | Google Search Console + GA4 |
+| Anahtar kelime sıralaması | Hedef kelimelerin ort. pozisyonu | Google Search Console |
+| İndekslenmiş sayfa | Google'da görünen toplam sayfa | Google Search Console (Coverage) |
+| Backlink sayısı | Site'ye link veren domainler | Ahrefs / SEMrush (opsiyonel) |
+| CTR (arama sonuçlarında) | Arama gösteriminde tıklanma oranı | Google Search Console |
+| En yüksek trafik çeken sayfalar | Top 20 landing page | Google Search Console + GA4 |
+| Yükselen kelimeler | Son 30g'de sıralaması yükselen | Google Search Console |
+| Düşen kelimeler | Sıralaması düşen — uyarı | Google Search Console |
+| Rakip domain karşılaştırma | (opsiyonel) | Ahrefs / SEMrush |
+| Core Web Vitals — SEO gözüyle | Google'ın sıralama sinyali | Google PageSpeed Insights API |
+
+**Panel Bölümleri:**
+- Organik trafik trendi (line chart)
+- KPI'lar: sıralama ortalaması, tıklama, indeks sağlığı
+- Anahtar kelime tablosu (kelime, pozisyon, değişim, tıklama, gösterim, CTR)
+- Yükselen/düşen kelimeler alt tabloları
+- Sayfa bazlı organik performans
+- Fırsat listesi: 11-20 arası pozisyonda olan kelimeler (kısa süreli iyileştirme ile top 10'a taşınabilir)
+
+**Veri Kaynağı:**
+- **Google Search Console API** — sıralama, tıklama, gösterim, CTR, indeks durumu (ücretsiz)
+- **GA4 Data API** — organik oturum, kaynak/medium bazlı trafik
+- **Google PageSpeed Insights API** — Core Web Vitals (ücretsiz)
+- **Ahrefs API veya SEMrush API** — backlink ve rakip verisi (opsiyonel, ücretli)
+
+---
+
+## Bölüm 18 — 🧮 Engagement Skoru Derinleştirme (Plan İçi, Arayüzde Yok)
+
+**"Mevcut 5 faktörlü skor yetersiz — çok katmanlı gerçek engagement modeli"**
+
+Şu anki skor (Bölüm 3.5) sadece 5 basit kritere dayanıyor. Panelin geri kalanı (segmentasyon, uyarı merkezi, VIP tespiti, reklam potansiyeli) bu skora dayandığı için modeli derinleştirmek şart. Arayüzde ayrı bir sayfa gerekmez — mevcut Clarity/Behavior sekmesindeki puan hesaplamasının arka planı olacak.
+
+**Yeni Katmanlı Model (Toplam 100 puan):**
+
+**1. Aktiflik Katmanı — 35 puan**
+| Alt kriter | Puan | Hesaplama |
+|---|---|---|
+| Son 7g giriş | 10p | Var/yok |
+| Son 30g giriş sıklığı | 10p | 10+ oturum = tam |
+| Ort. oturum süresi | 8p | 3dk+ = tam |
+| Sayfa derinliği (sayfa/oturum) | 7p | 4+ sayfa = tam |
+
+**2. Değer Üretim Katmanı — 25 puan**
+| Alt kriter | Puan | Hesaplama |
+|---|---|---|
+| Ürün / ilan sayısı | 8p | 5+ ilan = tam |
+| RFQ gönderim & yanıt | 7p | Aktif RFQ akışı var mı |
+| Mesajlaşma kalitesi | 5p | Yanıt oranı >%50 = tam |
+| İlan güncelleme sıklığı | 5p | Son 30g'de güncelleme = tam |
+
+**3. Profil Tamamlık Katmanı — 15 puan**
+| Alt kriter | Puan | Hesaplama |
+|---|---|---|
+| Profil doluluk %'i doğrudan katkı | 10p | Doluluk × 0.10 |
+| Verified badge bonusu | 5p | Var/yok |
+
+**4. Ticari Etkileşim Katmanı — 15 puan**
+| Alt kriter | Puan | Hesaplama |
+|---|---|---|
+| Aldığı mesaj sayısı (talep gördüğü sinyali) | 5p | 10+ = tam |
+| Reklam veriyor mu (yatırım sinyali) | 5p | Aktif reklamı var = tam |
+| Farklı üyelerle konuşma çeşitliliği | 5p | 5+ farklı üye = tam |
+
+**5. Sosyal / Katkı Katmanı — 10 puan**
+| Alt kriter | Puan | Hesaplama |
+|---|---|---|
+| Yorum / etkileşim | 4p | Aktif katkı |
+| Referans yolladı mı | 3p | Getirdiği üye sayısı |
+| Topluluk katkısı | 3p | (forum/blog varsa) |
+
+**Ek Özellikler (skorun kendisinin de analizi):**
+- **Skor Trendi** — son 30g yükseliyor/düşüyor
+- **Skor Düşüş Tetikleyicileri** — hangi olay skoru düşürdü (uzun süre giriş yok, mesaj yanıtı azaldı vb.)
+- **Ülke/Sektör Bazlı Benchmark** — bu üye kendi sektörünün üstünde mi altında mı
+- **Skor Tahmini** — mevcut trendle 30g sonra skor tahmini (basit regresyon)
+- **Segment Tetikleme** — skor eşiklerine göre otomatik segment üyeliği güncellenir
+- **Skor Değişim Log'u** — her hesaplama sonrası skor snapshot'ı saklanır, geriye dönük analiz için
+
+**Skor Hesaplama Frekansı:** Günlük cron job (gece).
+
+**Veri Kaynağı:** Platform DB (users, sessions, products, rfqs, messages, ads, referrals, notifications) + Microsoft Clarity (oturum süresi, sayfa derinliği) + HubSpot (lifecycle stage — bonus faktör olarak)
+
+---
+
+## Bölüm 19 — 🌍 Ticaret Akış Haritası
+
+**"RFQ → Teklif → Sipariş → Kargo → Teslim zinciri + coğrafi ve sektörel rota görünümü"**
+
+Platformun asıl işini gösteren tek ekran. Şu anki panel üye ve outreach izliyor; bu bölüm platformdaki gerçek ticaretin nasıl aktığını görselleştirir. Alibaba admin panelinin en büyük tek katmanının muadili.
+
+### 6 Aşamalı İşlem Zinciri
+
+```
+1. RFQ Oluşturuldu
+   ↓
+2. Yanıt Alan RFQ (en az bir seller yanıtladı)
+   ↓
+3. Teklif Verildi (fiyat/koşul netleşti)
+   ↓
+4. Sipariş Onayı (alıcı kabul etti)
+   ↓
+5. Kargo Yola Çıktı (satıcı gönderdi)
+   ↓
+6. Teslim Edildi (alıcı teyit etti)
+```
+
+Her aşama için: adet, önceki aşamadan dönüşüm oranı, ortalama geçiş süresi.
+
+### Ana Metrikler
+
+- **Aktif RFQ / Bekleyen Teklif / Aktif Sipariş / Kargoda / Bu Ay Teslim** (üst şerit KPI)
+- **RFQ → Sipariş dönüşüm oranı** (marketplace likiditesinin ana göstergesi)
+- **Sipariş → Teslim başarı oranı** (operasyonel sağlık)
+- **Ortalama süre metrikleri:** RFQ → İlk teklif, teklif → sipariş, sipariş → kargo, kargo → teslim
+- **En hızlı / en yavaş işlem süreleri**
+- **Takılan işlemler:** RFQ 7g+ yanıtsız, teklif 5g+ karar yok, sipariş 3g+ kargo yok, kargo 30g+ teslim yok (bunlar otomatik Uyarı Merkezi'ne düşer)
+
+### Coğrafi Görünüm
+
+**Ülke → Ülke Ticaret Rotası tablosu (Sankey diyagramına dönüştürülebilir):**
+
+Sütunlar: Satıcı ülkesi | → | Alıcı ülkesi | İşlem sayısı | Ort. süre | Trend (haftalık %)
+
+Kullanım: Hangi rotalar patlıyor, hangi rotalar sönüyor, yeni açılan rotalar (fırsat sinyali).
+
+### Sektörel Akış
+
+Hangi sektör en çok işlem üretiyor, hangi sektörden hangi sektöre çapraz satış var. Kanal (kim satıyor) + hedef (kim alıyor) matrisi.
+
+### Lojistik / Kargo Kanal Dağılımı
+
+- Deniz yolu (konteyner)
+- Kara yolu (TIR)
+- Hava yolu (kargo)
+- Express (DHL, FedEx, UPS)
+
+Kargo kanalı bilgisi, bir sonraki adımda lojistik partner sağlığı bölümüne veri sağlar.
+
+### Aktif İşlem Listesi
+
+Her aktif işlem için: İşlem ID, satıcı+ülke, alıcı+ülke, ürün, mevcut aşama, işlem yaşı, sonraki adım tahmini. Kırmızı satır = takılan işlem.
+
+### Günlük Akış Trendi
+
+Son 14/30 günlük toplam işlem hacmi bar chart. Hafta içi/hafta sonu paterni, mevsimsel değişim gözlemi.
+
+### Veri Kaynağı
+
+- Platform DB (`rfqs`, `quotes`, `orders`, `shipments`, `deliveries` tabloları)
+- Platform DB (users → satıcı/alıcı ülke bilgisi)
+- Kargo şirketi API'ları (DHL, FedEx, UPS, yerli kargo — teslim zamanı doğrulama)
+- Gümrük entegrasyonu (opsiyonel — teslim gecikme sebebi tanısı için)
+
+---
+
+## Bölüm 20 — 📦 Ürün Kataloğu Sağlığı (Plan Only — Arayüz Yok)
+
+**"Platformdaki içeriğin sistem seviyesinde sağlığı"**
+
+Ürün Performansı sayfası tek tek ürünlerin performansına bakar; bu bölüm ise katalogun tamamının sağlığını ölçer. Katalog bir marketplace'in "arz tarafı" — sağlıksızsa büyüme durur.
+
+### İzlenecek Metrikler
+
+**A) Kalite Skorlaması**
+Her ürün ilanı için otomatik hesaplanan 100 puanlık skor:
+- Başlık uzunluğu ve anahtar kelime uyumu (15p)
+- Açıklama uzunluğu ve zenginlik (20p)
+- Görsel sayısı ve çözünürlük (20p)
+- Teknik özellikler / attribute doluluğu (15p)
+- MOQ, fiyat, teslim süresi belirtilmiş mi (15p)
+- Sertifika/belge bağlantısı (10p)
+- Video var mı (5p bonus)
+
+Dağılım tablosu: %80+ (yüksek kalite), %40-80 (orta), <%40 (zayıf — arama sonuçlarında düşer).
+
+**B) Duplicate / Kopyalama Tespiti**
+- Aynı görsel farklı ilanlarda kullanılıyor mu (perceptual hash)
+- Aynı başlık/açıklama yakınlığı (metin benzerliği eşiği)
+- Aynı satıcı içi tekrarlar (kendi ilanlarını kopyalayan)
+- Duplicate şüphesi listesi (admin incelemesi için)
+
+**C) Görsel Kalite Analizi**
+- Bulanık / düşük çözünürlük görseller
+- Watermark tespit
+- Aynı görselin farklı satıcılarda kullanılması (stok görseli mi, gerçek ürün mü)
+- Uygunsuz içerik ML tespit (opsiyonel)
+
+**D) Katalog Yapısı Sağlığı**
+- Boş kategoriler (hiç ürün yok — talep varsa buraya satıcı çağırılmalı)
+- Aşırı dolu kategoriler (rekabet yüksek — kalite yükseltme lazım)
+- Kategori ağacı derinlik dengesizliği
+- Yanlış kategorize edilmiş ürünler (kategori-ürün metin uyumsuzluğu)
+
+**E) Arama Uyumluluğu (Search Relevance)**
+- İlan başlığı ve içerik arama sorgularıyla eşleşiyor mu
+- Sık kullanılan arama terimleri için sonuç kalitesi
+- 0 sonuç dönen aramalar → hangi ürün eksik ipucu
+
+**F) Zamansal Sağlık**
+- 30g+ güncellenmemiş ilanlar (bayat içerik)
+- 30g+ hiç görüntülenmemiş ilanlar (ölü ilan)
+- Yeni eklenen ilanların ilk 7 gün performansı
+- Fiyat güncelleme sıklığı
+
+**G) Uyum & Yasal**
+- Kısıtlı ürün listesi kontrolü (silah, yasa dışı madde vb. — otomatik flag)
+- Ülkeye göre yasak ürünler
+- Marka hakkı ihlali şüphesi (marka isimlerinin kopyalanması)
+
+### Aksiyon Bağlantıları
+
+- Zayıf kalite ilanları → satıcıya "ilanınızı güçlendirin" hatırlatması
+- Duplicate şüpheleri → admin incelemesi kuyruğu
+- Boş kategoriler → Segmentler bölümüyle bağlanıp "bu kategoriye tedarikçi çağırılmalı" segmenti üret
+- Ölü ilanlar → satıcıya "güncelle veya arşivle" bildirimi
+
+### Veri Kaynağı
+
+- Platform DB (`products`, `product_images`, `categories`, `product_views`, `search_impressions` tabloları)
+- Arama motoru (Elasticsearch / Meilisearch / Algolia — arama-ilan eşleşme skoru)
+- Görsel işleme servisi: AWS Rekognition, Google Cloud Vision, veya kendi ML modeli (bulanıklık, watermark, uygunsuz içerik)
+- Perceptual hash kütüphanesi (pHash / dHash — duplicate görsel tespiti)
+- Kısıtlı ürün / marka veritabanı (WCO, WIPO açık verileri)
+
+---
+
+## Bölüm 21 — 💬 Site İçi Mesajlaşma Analitiği (Plan Only — Arayüz Yok)
+
+**"Üyeler arası iletişimin sağlığı, hızı ve güvenilirliği"**
+
+Outreach bölümü platformun DIŞA gönderdiği mesajları izliyor. Bu bölüm platformun İÇİNDE üyelerin birbiriyle mesajlaşmasını ölçer. Uluslararası B2B'de mesajlaşma kalitesi, deal'in gerçekleşip gerçekleşmeyeceğinin en güçlü sinyalidir.
+
+### İzlenecek Metrikler
+
+**A) Hacim & Aktivite**
+- Toplam mesaj sayısı (günlük/haftalık/aylık)
+- Aktif konuşma sayısı
+- Yeni başlayan konuşma sayısı
+- Mesajlaşan tekil üye sayısı
+- Mesaj/kullanıcı oranı (marketplace canlılığı)
+
+**B) Yanıt Kalitesi**
+- Ortalama ilk yanıt süresi (RFQ öncesi kritik metrik)
+- Cevaplanmayan ilk mesaj oranı (hayali seller yakalama)
+- Satıcı bazında ortalama yanıt süresi (Alibaba'nın "supplier response time rating"i)
+- Konuşma başına ortalama mesaj sayısı (deal derinliği göstergesi)
+- Konuşma → RFQ → Sipariş dönüşüm oranı
+
+**C) Dil & Çeviri**
+- Otomatik çeviri kullanım oranı (kaç mesaj çevrildi)
+- En çok kullanılan dil çiftleri (TR→EN, EN→ZH, ES→AR vb.)
+- Çeviri kalite geri bildirimi (kullanıcı düzeltmesi)
+- Ana dili konuşmayan üyelerin dönüşüm oranı vs ana dili konuşanların
+
+**D) Güvenlik & Fraud**
+- Şüpheli mesaj tespiti:
+  - İletişimi platform dışına çekme (WhatsApp/email/telefon paylaşma)
+  - Ödeme dışına yönlendirme (banka hesabı direkt paylaşma)
+  - Phishing pattern'leri
+  - Şüpheli link (kısaltılmış URL, tanınmayan domain)
+- Aynı IP'den çoklu hesap mesajlaşması
+- Kısa sürede çok mesaj (spam pattern)
+- Şikayet edilen konuşma sayısı
+
+**E) İçerik Kalitesi**
+- Boş / anlamsız mesaj oranı (test mesajları, tek harf)
+- Ekli dosya paylaşımı hacmi (fiyat listesi, resim, katalog)
+- Video/sesli mesaj kullanımı
+
+**F) Bloklanan / Filtreli Mesajlar**
+- Sistem tarafından bloklanan mesaj sayısı ve nedenleri
+- Kullanıcı tarafından bloklanan kişi sayısı
+- Rapor edilen mesajlar
+
+### Aksiyon Bağlantıları
+
+- Yavaş yanıt veren satıcılar → engagement skorunda ceza (Bölüm 18)
+- Şüpheli mesaj gönderen üyeler → Fraud/Risk Merkezi'ne eklenir (Ek Tavsiyeler'de)
+- Çok yavaş yanıt trendi → NPS düşüşü öncüsü olarak Uyarı Merkezi'ne
+- Dil çifti fırsatı: çok sık kullanılan ama çeviri kalitesi düşük dil çiftleri → çevirmen desteği
+
+### Veri Kaynağı
+
+- Platform DB (`messages`, `conversations`, `message_reports`, `blocked_users` tabloları)
+- Google Cloud Translate API veya DeepL API (otomatik çeviri hacmi ve dil çifti)
+- Fraud detection modeli (kendi eğitilmiş model veya ThirdParty: SEON, Sift)
+- Perspective API (Google — toksik içerik tespiti, opsiyonel)
+- Regex + ML pattern matching (telefon/email/URL tespiti — off-platform yönlendirme yakalama)
+
+---
+
+## Bölüm 22 — 🗺 Ek Tavsiyeler / Gelecek Yol Haritası
+
+Bu bölüm, panelin dünya devi seviyesine (Alibaba, Made-in-China, Global Sources) evrilmesi için sonraki fazlarda düşünülmesi gereken katmanları özet olarak listeler. Her biri kendi başına bir bölüm/sayfa olacak potansiyele sahip.
+
+### 22.1 — 🛡 Fraud & Risk Merkezi
+
+Verified sadece kapıda kimlik doğrular; Fraud & Risk sürekli davranış izler.
+
+**İzlenecek:**
+- Şüpheli işlem paternleri (aniden hacim patlaması, atypik saat aktivitesi)
+- Bot / sahte hesap tespiti (mouse hareketi, tıklama paterni analizi)
+- Hesap ele geçirme (ATO) — beklenmedik ülkeden giriş, cihaz değişimi
+- Aynı IP'den çoklu hesap
+- Puan/yorum manipülasyonu
+- Payment fraud sinyalleri (revenue izlemesek de teşebbüs sinyalleri)
+
+**Veri Kaynağı:** Fraud detection servisi (SEON, Sift, Signifyd) + kendi behavior tracking + IP intelligence (MaxMind).
+
+### 22.2 — ⚖️ Anlaşmazlık & Ticari İhtilaf Merkezi (Trade Dispute)
+
+Destek talebiyle karıştırılmamalı — bu, buyer-seller arasındaki ticari ihtilaflar için.
+
+**İzlenecek:**
+- Açık dispute sayısı, kategori dağılımı (ürün hasarlı, gelmedi, farklı, ödeme sorunu)
+- Ortalama çözüm süresi
+- Taraflardan kimin kazandığı istatistiği
+- Tekrarlayan şikayetçi satıcı/alıcı tespiti
+- Escalation kuyruğu (basit destekten dispute panele geçen ihtilaflar)
+
+**Veri Kaynağı:** Platform DB (`disputes`, `dispute_evidence`, `dispute_decisions` tabloları) + destek modülüyle entegre.
+
+### 22.3 — 🔍 Arama & Keşif Analitiği
+
+**İzlenecek:**
+- En çok aranan terimler (top 100)
+- 0-sonuç dönen aramalar (katalogda eksik olan → tedarikçi çağırma sinyali)
+- Arama → tıklama oranı (SERP quality)
+- Arama → RFQ oluşturma dönüşümü
+- Öneri motorunun (recommendation) tıklama oranı
+- Filtre kullanım oranı (üyeler nasıl daraltıyor)
+
+**Veri Kaynağı:** Arama motoru (Elasticsearch / Algolia) event log'u + GA4 site search event'i + Platform DB.
+
+### 22.4 — 📱 Mobil Uygulama Analitiği
+
+**İzlenecek:**
+- Web vs mobil kullanım dağılımı
+- iOS vs Android
+- Uygulama versiyon dağılımı (eski sürüm % — güvenlik/UX riski)
+- Push notification: gönderim, açılma, dönüşüm
+- Crash rate + en sık hata
+- App Store / Play Store puanı ve trend
+
+**Veri Kaynağı:** Firebase Analytics veya Amplitude + Sentry (crash) + Store API'ları (rating).
+
+### 22.5 — ⚡ Marketplace Likiditesi Metrikleri
+
+Bir pazaryerinin "canlı" olup olmadığını söyleyen özel metrikler.
+
+**İzlenecek:**
+- Time-to-first-response (yeni RFQ'ya ilk cevap süresi)
+- Time-to-first-quote (ilk teklif gelme süresi)
+- Time-to-first-transaction (yeni üyenin ilk deal'i)
+- Ölü ilan oranı (30g+ hiç görüntülenmemiş)
+- Aktif buyer / aktif seller oranı (arz-talep sağlığı — kompozit metrik)
+- Weekly Active Businesses (WAB — kilit health metric)
+
+**Veri Kaynağı:** Ticaret Akış Haritası (Bölüm 19) verileri + Platform DB.
+
+### 22.6 — 📊 Executive / BI Katmanı
+
+**İzlenecek:**
+- CEO-seviyesi tek sayfa (mevcut Overview'ın 1 seviye üstü — top 5 KPI + 3 kritik uyarı)
+- Zamanlanmış otomatik raporlar (haftalık PDF email)
+- Custom query / rapor builder (ekibin kendi sorularını sorması için)
+- AI destekli anomaly detection ("geçen Salı bu KPI %30 düştü, sebebi X olabilir")
+- Board / yatırımcı raporu şablonu (aylık deck otomatik doldurma)
+
+**Veri Kaynağı:** Metabase veya Superset (BI aracı) + LLM (özet ve anomali açıklaması) + tüm bölümlerin verileri.
+
+### 22.7 — ⭐ Yorum & Review Sistemi
+
+**İzlenecek:**
+- Ürün ve satıcı puanları
+- Yorum hacmi trendi
+- Cevaplanan yorum oranı (satıcının yorum ile ilişki kurma davranışı)
+- Şüpheli yorum tespiti (sahte, spam, manipülasyon)
+- Ortalama puan dağılımı (5-4-3-2-1 yıldız)
+- Verified alıcıdan gelen yorum oranı
+
+**Veri Kaynağı:** Platform DB (`reviews` tablosu) + Fraud detection modeli (yorum spam'i).
+
+### 22.8 — 🔌 Ekosistem / Partner Sağlığı
+
+**İzlenecek:**
+- Kargo partnerleri (DHL, FedEx, yerli kargo) — teslim başarı oranı, ortalama süre
+- Ödeme sağlayıcı sağlığı (transaction success rate, gecikme)
+- Çeviri servisi (Google Translate / DeepL) — uptime, kalite
+- KYC provider (Onfido/Sumsub) — cevap süresi, hata oranı
+- HubSpot / GA4 / Clarity API uptime
+- Her partner için SLA raporu
+
+**Veri Kaynağı:** Her partnerin webhook'u + status page monitoring (StatusPage.io API'ları) + kendi API health check cron'u.
+
+### 22.9 — 🌐 Çok Dilli / Yerelleştirme Analitiği
+
+**İzlenecek:**
+- Hangi dil ne kadar kullanılıyor (üye seçimi + tarayıcı dili)
+- Hangi ülkede hangi dil eksik (gap analiz)
+- Dil bazlı conversion oranı
+- Çeviri kalite skoru (üye geri bildirimi)
+- Otomatik çeviri kullanım oranı (site içi, ürün açıklaması, mesajlaşma)
+- Yerel para birimi görüntüleme kullanımı
+
+**Veri Kaynağı:** i18n framework log'u + browser language header + kullanıcı dil tercihi + Translate API kullanım verisi.
+
+### 22.10 — 🌱 Onboarding Path Karşılaştırma
+
+Şu anki Onboarding Funnel tek yol varsayıyor. Dünya devi seviyede kim daha zor onboard oluyor bilinmeli.
+
+**İzlenecek:**
+- Buyer onboarding funnel vs Seller onboarding funnel
+- Logistics provider / servis sağlayıcı onboarding'i (varsa)
+- Kayıt kanalı bazlı onboarding başarı oranı (LinkedIn → daha iyi mi, Email → daha kötü mü)
+- Ülke bazlı onboarding paterni (dil/kültürel farklar)
+- Onboarding'de en çok terk edilen adım — path bazlı
+
+**Veri Kaynağı:** Platform DB (`user_events`) + üye tipi + kayıt kaynağı bilgisi.
+
+---
+
+### Öncelik Tavsiyesi
+
+Bu 10 katmanın hepsi bir anda inşa edilemez. Öncelik sırası:
+
+**Kısa vade (3-6 ay):** Fraud & Risk Merkezi (güvenlik kritik) + Trade Dispute (marketplace olgunluğu) + Arama & Keşif Analitiği (büyüme motoru).
+
+**Orta vade (6-12 ay):** Mobil Analitik + Marketplace Likiditesi + Yorum & Review Sistemi.
+
+**Uzun vade (12+ ay, Alibaba büyüklüğüne yaklaşıldıkça):** Executive/BI Katmanı + Ekosistem Partner Sağlığı + Çok Dilli Analitik + Onboarding Path Karşılaştırma.
+
+---
+
+## Bölüm 23 — ⚡ Teknik Performans & Ölçeklenme Mimarisi
+
+**"Panel platformu asla yavaşlatmayacak — mimari kurallar ve uygulama deseni"**
+
+> Bu bölüm, yukarıdaki tüm bölümlerin **nasıl** inşa edileceğini tanımlar. Panelin kendisi değil, paneli beslemek için platforma eklenecek izleme/kayıt altyapısı performans riski taşır. Aşağıdaki kurallar bu riski sıfıra yakın tutar.
+
+---
+
+### 23.0 — Temel İlke: OLTP / OLAP Ayrımı
+
+Platformun iki farklı iş yükü var ve bunlar **asla aynı yerde çalışmamalı**:
+
+| | OLTP (Platform) | OLAP (Panel) |
+|---|---|---|
+| Kim kullanır | Üyeler (binlerce) | Adminler (birkaç kişi) |
+| Sorgu tipi | Tekil kayıt okuma/yazma | Toplu agregasyon (COUNT, SUM, GROUP BY) |
+| Beklenen süre | <100ms | 1-3sn kabul edilebilir |
+| Veri kaynağı | Primary DB | Read replica + rollup tabloları |
+
+**Altın kural:** Admin panelinin hiçbir sorgusu primary (write) veritabanına gitmez. Panel ya read replica'dan ya da önceden hesaplanmış özet tablolarından okur.
+
+```
+┌──────────────┐   yazma    ┌───────────────┐
+│  Platform    │ ─────────► │  Primary DB   │
+│  (Next.js)   │            └───────┬───────┘
+└──────────────┘                    │ streaming replication
+                                    ▼
+┌──────────────┐   okuma    ┌───────────────┐
+│ Admin Panel  │ ◄───────── │ Read Replica  │
+└──────────────┘            └───────┬───────┘
+       ▲                            │ gece cron
+       │      okuma          ┌──────▼────────┐
+       └──────────────────── │ Rollup Tables │
+                             └───────────────┘
+```
+
+---
+
+### 23.1 — Katman 1: İstemci Tarafı (Public Site)
+
+Platformun görünen hızını en çok etkileyen katman. Kurallar:
+
+**A) Script yükleme stratejisi**
+
+Hiçbir analitik/izleme script'i render'ı bloklamaz.
+
+```javascript
+// ❌ YANLIŞ — render bloklar
+<script src="https://www.clarity.ms/tag/xxx"></script>
+
+// ✅ DOĞRU — Next.js Script component, afterInteractive
+import Script from 'next/script';
+
+<Script
+  id="clarity"
+  strategy="afterInteractive"   // hydration sonrası yükle
+  dangerouslySetInnerHTML={{ __html: `...clarity snippet...` }}
+/>
+
+// Kritik olmayan analitik için daha da geç:
+<Script src="..." strategy="lazyOnload" />
+```
+
+**Script yükleme öncelik sırası:**
+
+| Script | Strateji | Gerekçe |
+|---|---|---|
+| GA4 | `afterInteractive` | Sayfa görüntüleme kaybı olmamalı |
+| Clarity | `afterInteractive` | Oturum kaydı için erken lazım |
+| Reklam ölçümü (kendi) | `afterInteractive` | Impression doğruluğu |
+| Arama analitiği (kendi) | `lazyOnload` | Kritik değil |
+| Diğer tüm 3. parti | `lazyOnload` | Hiçbiri kritik yol değil |
+
+**B) Client-side event batching**
+
+Her kullanıcı aksiyonunda ayrı HTTP isteği atmak yasak. Event'ler tarayıcıda biriktirilir, toplu gönderilir.
+
+```javascript
+// lib/analytics/eventBuffer.js
+const buffer = [];
+let flushTimer = null;
+
+const FLUSH_INTERVAL = 5000;   // 5sn
+const MAX_BUFFER     = 20;     // veya 20 event dolunca
+
+export function trackEvent(name, payload) {
+  buffer.push({ name, payload, ts: Date.now() });
+
+  if (buffer.length >= MAX_BUFFER) return flush();
+  if (!flushTimer) flushTimer = setTimeout(flush, FLUSH_INTERVAL);
+}
+
+function flush() {
+  if (!buffer.length) return;
+  const batch = buffer.splice(0, buffer.length);
+  clearTimeout(flushTimer);
+  flushTimer = null;
+
+  // sendBeacon: sayfa kapansa bile gider, main thread'i bloklamaz
+  const blob = new Blob([JSON.stringify({ events: batch })],
+                        { type: 'application/json' });
+  navigator.sendBeacon('/api/events', blob);
+}
+
+// Sayfa kapanırken kalanları gönder
+window.addEventListener('pagehide', flush);
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') flush();
+});
+```
+
+**Neden `sendBeacon`?** `fetch`/`XHR` sayfa kapanışında iptal edilir ve main thread'i meşgul eder. `sendBeacon` tarayıcının arka planına devreder, kullanıcı hiç fark etmez.
+
+**C) Reklam impression ölçümü — IntersectionObserver**
+
+Reklam "gösterildi" sayılması için gerçekten görünür olmalı; her render'da değil.
+
+```javascript
+// Reklam gerçekten viewport'a girince ve 1sn kalınca say
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting && entry.intersectionRatio >= 0.5) {
+      setTimeout(() => {
+        if (entry.isIntersecting) {
+          trackEvent('ad_impression', { adId: entry.target.dataset.adId });
+          observer.unobserve(entry.target);  // bir kez say
+        }
+      }, 1000);
+    }
+  });
+}, { threshold: [0.5] });
+```
+
+Bu hem doğru ölçüm verir hem gereksiz event üretmez.
+
+**D) Performans bütçesi (hard limit)**
+
+Yeni hiçbir özellik bu sınırları aşamaz. CI'da otomatik kontrol edilir (Lighthouse CI).
+
+| Metrik | Hedef | Kırmızı çizgi |
+|---|---|---|
+| LCP | < 2.5s | 4.0s |
+| INP | < 200ms | 500ms |
+| CLS | < 0.1 | 0.25 |
+| Toplam JS (gzip) | < 300KB | 500KB |
+| 3. parti script sayısı | ≤ 4 | 6 |
+| Analitik kaynaklı main-thread bloklama | < 50ms | 150ms |
+
+> ⚠️ **Önemli:** Mevcut Core Web Vitals değerleri (Site Analytics bölümüne bakınız) hedeflerin gerisindeyse, yeni izleme kodu eklemeden **önce** mevcut sorunlar giderilmelidir. Aksi halde her ekleme durumu kötüleştirir.
+
+---
+
+### 23.2 — Katman 2: Yazma Yolu (Write Path)
+
+**Altın kural:** Kullanıcının isteği, analitik yazma işlemini **beklemez**.
+
+**A) Fire-and-forget deseni**
+
+```javascript
+// ❌ YANLIŞ — kullanıcı analitik yazımını bekler
+export async function POST(req) {
+  const order = await createOrder(data);
+  await logEvent('order_created', order.id);   // ← gecikme ekler
+  await updateEngagementScore(userId);         // ← daha da kötü
+  return Response.json(order);
+}
+
+// ✅ DOĞRU — analitik kuyruğa atılır, kullanıcı beklemez
+export async function POST(req) {
+  const order = await createOrder(data);
+
+  // await YOK — kuyruğa bırak, dön
+  eventQueue.add('order_created', { orderId: order.id, userId })
+    .catch(err => logger.error('queue push failed', err));
+
+  return Response.json(order);
+}
+```
+
+**B) Kuyruk altyapısı**
+
+```javascript
+// lib/queue.js — BullMQ + Redis
+import { Queue, Worker } from 'bullmq';
+
+export const eventQueue = new Queue('events', {
+  connection: redisConfig,
+  defaultJobOptions: {
+    removeOnComplete: 1000,   // son 1000 başarılıyı tut, gerisini sil
+    removeOnFail: 5000,
+    attempts: 3,
+    backoff: { type: 'exponential', delay: 2000 }
+  }
+});
+
+// Ayrı process'te çalışan worker — web sunucusunu meşgul etmez
+new Worker('events', async (job) => {
+  await db.insert(userEvents).values(job.data);
+}, {
+  connection: redisConfig,
+  concurrency: 10
+});
+```
+
+**C) Yüksek hacimli sayaçlar — Redis buffer + periyodik flush**
+
+Reklam gösterimi, sayfa görüntülenmesi gibi çok yüksek hacimli olaylarda **her olay için 1 satır yazmak yasak**. Redis'te sayaç tutulur, periyodik olarak toplu yazılır.
+
+```javascript
+// Her impression'da: sadece Redis INCR (mikrosaniye)
+await redis.hincrby(`ad_impr:${dateHour}`, adId, 1);
+
+// Dakikada bir çalışan flush job — toplu INSERT
+async function flushImpressions() {
+  const key = `ad_impr:${previousDateHour}`;
+  const counts = await redis.hgetall(key);
+  if (!Object.keys(counts).length) return;
+
+  await db.insert(adImpressionsHourly)
+    .values(Object.entries(counts).map(([adId, count]) => ({
+      adId: Number(adId),
+      hourBucket: previousDateHour,
+      impressions: Number(count)
+    })))
+    .onConflictDoUpdate({
+      target: [adImpressionsHourly.adId, adImpressionsHourly.hourBucket],
+      set: { impressions: sql`excluded.impressions` }
+    });
+
+  await redis.del(key);
+}
+```
+
+**Kazanç:** Ham satır sayısı, olay sayısından bağımsız hale gelir. Milyon gösterim de olsa, saatte reklam başına 1 satır yazılır.
+
+**D) Hangi veri ham, hangisi agrege saklanır**
+
+| Veri tipi | Saklama şekli | Gerekçe |
+|---|---|---|
+| Reklam gösterimi | Saatlik agrege | Tekil gösterim analitik değeri düşük |
+| Reklam tıklaması | Ham satır | Hacim düşük, kim tıkladı önemli |
+| Sayfa görüntüleme | Günlük agrege (sayfa bazlı) | GA4 zaten detayı tutuyor |
+| Üye event'i (login, ilan ekleme, RFQ) | Ham satır | Onboarding funnel + skor için gerekli |
+| Mesaj metadata | Ham satır | Yanıt süresi hesabı için gerekli |
+| Bildirim gönderimi | Ham satır | Fatigue hesabı için gerekli |
+| Admin aksiyonu | Ham satır | Denetim zorunluluğu |
+
+---
+
+### 23.3 — Katman 3: Veri Saklama & Hacim Yönetimi
+
+**A) Tarih bazlı partitioning (yüksek hacimli tablolar)**
+
+```sql
+-- user_events: aylık partition
+CREATE TABLE user_events (
+  id          BIGSERIAL,
+  user_id     BIGINT NOT NULL,
+  event_name  TEXT   NOT NULL,
+  payload     JSONB,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+) PARTITION BY RANGE (created_at);
+
+CREATE TABLE user_events_2026_08 PARTITION OF user_events
+  FOR VALUES FROM ('2026-08-01') TO ('2026-09-01');
+
+-- pg_partman ile otomatik partition oluşturma önerilir
+```
+
+**Faydası:** Eski veriyi silmek `DROP TABLE partition` ile anlıktır (`DELETE` ile saatler sürer ve tabloyu kilitler). Sorgular sadece ilgili partition'ı tarar.
+
+**Partition uygulanacak tablolar:** `user_events`, `ad_impressions_hourly`, `notification_log`, `audit_log`, `search_queries`, `message_metadata`.
+
+**B) İndeks stratejisi**
+
+```sql
+-- Panel sorgularının filtrelediği kolonlara indeks
+CREATE INDEX CONCURRENTLY idx_user_events_user_time
+  ON user_events (user_id, created_at DESC);
+
+CREATE INDEX CONCURRENTLY idx_user_events_name_time
+  ON user_events (event_name, created_at DESC);
+
+-- Kısmi indeks: sadece aktif kayıtlar
+CREATE INDEX CONCURRENTLY idx_orders_active
+  ON orders (created_at DESC)
+  WHERE status IN ('pending', 'shipped');
+```
+
+**Kurallar:**
+- `CONCURRENTLY` kullan — tabloyu kilitlemez
+- Her indeks yazma hızını düşürür; gereksiz indeks açma
+- JSONB payload'a GIN indeksi sadece gerçekten sorgulanıyorsa
+
+**C) Saklama (retention) politikası**
+
+| Tablo | Ham veri saklama | Sonrası |
+|---|---|---|
+| `user_events` | 90 gün | Günlük agregeye indirgenip partition drop |
+| `ad_impressions_hourly` | 13 ay | Aylık agregeye indirgenir |
+| `notification_log` | 12 ay | Silinir |
+| `search_queries` | 6 ay | Terim bazlı agregeye indirgenir |
+| `audit_log` | 3 yıl | Yasal — cold storage'a (S3) taşınır |
+| `verification_documents` | 3 yıl | Şifreli arşiv |
+| `messages` | Süresiz | Ürünün parçası, silinmez |
+
+---
+
+### 23.4 — Katman 4: Okuma Yolu (Panel Sorguları)
+
+**A) Rollup (özet) tabloları — panelin asıl veri kaynağı**
+
+Panel ham tabloları **taramaz**. Gece hesaplanan özet tablolarını okur.
+
+```sql
+-- Örnek: günlük platform özeti
+CREATE TABLE daily_metrics (
+  metric_date        DATE PRIMARY KEY,
+  new_members        INT,
+  active_members_30d INT,
+  total_members      INT,
+  site_visitors      INT,
+  rfq_created        INT,
+  quotes_sent        INT,
+  orders_confirmed   INT,
+  orders_delivered   INT,
+  messages_sent      INT,
+  ad_impressions     BIGINT,
+  ad_clicks          INT,
+  computed_at        TIMESTAMPTZ DEFAULT now()
+);
+```
+
+**Panel sorgusu artık şu kadar basit:**
+
+```sql
+-- ✅ Tek tablo, indeksli, milisaniyeler içinde döner
+SELECT * FROM daily_metrics
+WHERE metric_date BETWEEN $1 AND $2
+ORDER BY metric_date;
+```
+
+**Yerine bunu yapmaz:**
+
+```sql
+-- ❌ Her panel açılışında 5 tabloyu tarayan sorgu
+SELECT COUNT(*) FROM users WHERE created_at > ...
+UNION ALL SELECT COUNT(*) FROM orders WHERE ...
+-- (primary DB'yi meşgul eder, site yavaşlar)
+```
+
+**B) Materialized view (orta hacimli agregasyonlar için)**
+
+```sql
+CREATE MATERIALIZED VIEW mv_member_segments AS
+SELECT
+  u.id, u.name, u.country, u.sector,
+  es.score,
+  pf.completeness_pct,
+  CASE
+    WHEN es.score >= 85 AND u.is_verified THEN 'vip_candidate'
+    WHEN es.score <= 30 AND u.last_login < now() - interval '45 days' THEN 'critical_churn'
+    WHEN es.score BETWEEN 31 AND 60 THEN 'passive'
+    ELSE 'normal'
+  END AS segment
+FROM users u
+LEFT JOIN engagement_scores es ON es.user_id = u.id
+LEFT JOIN profile_fill pf      ON pf.user_id = u.id;
+
+CREATE UNIQUE INDEX ON mv_member_segments (id);
+
+-- Gece yenile — CONCURRENTLY sayesinde okuma engellenmez
+REFRESH MATERIALIZED VIEW CONCURRENTLY mv_member_segments;
+```
+
+**C) API cache katmanı**
+
+```javascript
+// Panel endpoint'leri cache'lenir — aynı sorgu 5dk içinde tekrar çalışmaz
+export async function GET(req) {
+  const cacheKey = `panel:overview:${range}`;
+
+  const cached = await redis.get(cacheKey);
+  if (cached) return Response.json(JSON.parse(cached));
+
+  const data = await db.select().from(dailyMetrics)...;
+
+  await redis.setex(cacheKey, 300, JSON.stringify(data));  // 5dk TTL
+  return Response.json(data);
+}
+```
+
+**Cache TTL önerileri:**
+
+| Panel bölümü | TTL | Gerekçe |
+|---|---|---|
+| Overview, Growth, SEO, Kohort | 15 dk | Yavaş değişen |
+| Members, Segmentler, Profil Doluluk | 10 dk | Günlük hesaplanıyor |
+| Ticaret Akış, Reklamlar | 5 dk | Operasyonel takip |
+| Uyarı Merkezi | 1 dk | Aksiyon gerektirir |
+| Team Daily Log | Cache yok | Anlık giriş yapılıyor |
+
+**D) Sorgu zaman aşımı (statement timeout)**
+
+```sql
+-- Panel DB kullanıcısı için: hiçbir sorgu 5 saniyeden uzun süremez
+ALTER ROLE panel_readonly SET statement_timeout = '5s';
+```
+
+Kaçak bir sorgu DB'yi kilitleyemez. Panel hata gösterir, platform etkilenmez.
+
+---
+
+### 23.5 — Katman 5: Cron & Batch İşler
+
+**A) Zamanlama — çakışma yok, düşük trafik saatinde**
+
+| İş | Zaman | Süre hedefi |
+|---|---|---|
+| Günlük metrik rollup | 02:00 | < 5 dk |
+| Engagement skoru hesabı | 02:30 | < 15 dk |
+| Segment materialized view refresh | 03:00 | < 5 dk |
+| HubSpot senkron diff | 03:30 | < 20 dk |
+| Profil doluluk hesabı | 04:00 | < 5 dk |
+| Uyarı kural motoru | Her 15 dk | < 30 sn |
+| Reklam impression flush | Her 1 dk | < 5 sn |
+| SEO / Search Console çekimi | 05:00 | < 10 dk |
+| Katalog sağlık taraması | Haftalık, Pazar 03:00 | < 60 dk |
+
+**B) Incremental hesaplama — full recompute yasak**
+
+```javascript
+// ❌ YANLIŞ — her gece tüm üyeleri baştan hesapla
+const allUsers = await db.select().from(users);
+for (const user of allUsers) { await computeScore(user.id); }
+
+// ✅ DOĞRU — sadece değişenleri hesapla
+const changed = await db.select({ userId: userEvents.userId })
+  .from(userEvents)
+  .where(gt(userEvents.createdAt, lastRunAt))
+  .groupBy(userEvents.userId);
+
+// Ek olarak: 7 gündür hesaplanmamışları da dahil et (bayatlamayı önle)
+const stale = await db.select({ userId: engagementScores.userId })
+  .from(engagementScores)
+  .where(lt(engagementScores.computedAt, sql`now() - interval '7 days'`));
+
+const targets = [...new Set([...changed, ...stale].map(r => r.userId))];
+await processInChunks(targets, 500, computeScore);
+```
+
+**C) Chunk'lama ve nefes alma**
+
+```javascript
+async function processInChunks(items, size, fn) {
+  for (let i = 0; i < items.length; i += size) {
+    await Promise.all(items.slice(i, i + size).map(fn));
+    await sleep(100);   // DB'ye nefes aldır — connection pool'u boğma
+  }
+}
+```
+
+**D) Job lock — üst üste binmeyi önle**
+
+```javascript
+// Bir önceki çalışma bitmemişse yenisini başlatma
+const lock = await redis.set('job:engagement', '1', 'NX', 'EX', 3600);
+if (!lock) {
+  logger.warn('engagement job already running, skipping');
+  return;
+}
+try { await runJob(); } finally { await redis.del('job:engagement'); }
+```
+
+---
+
+### 23.6 — Katman 6: Dış API Entegrasyonları
+
+**Altın kural:** Dış API (HubSpot, GA4, Clarity, Search Console) **asla** kullanıcı isteğinin veya panel sayfa yüklemesinin içinde çağrılmaz. Cron ile çekilir, lokale yazılır, panel lokalden okur.
+
+```javascript
+// ❌ YANLIŞ — panel açılışı HubSpot'u bekler (saniyeler + rate limit riski)
+export async function GET() {
+  const contacts = await hubspot.crm.contacts.getAll();
+  return Response.json(contacts);
+}
+
+// ✅ DOĞRU — cron gece çeker, lokale yazar
+// cron/syncHubspot.js
+async function syncHubspot() {
+  let after = null;
+  do {
+    const page = await hubspot.crm.contacts.basicApi.getPage(100, after);
+    await db.insert(hubspotContacts).values(page.results)
+      .onConflictDoUpdate({ target: hubspotContacts.hubspotId, set: {...} });
+    after = page.paging?.next?.after;
+    await sleep(200);   // rate limit'e saygı
+  } while (after);
+}
+
+// Panel sadece lokal tablodan okur — milisaniye
+```
+
+**Rate limit ve hata yönetimi:**
+
+```javascript
+async function callWithBackoff(fn, maxRetries = 5) {
+  for (let i = 0; i < maxRetries; i++) {
+    try { return await fn(); }
+    catch (err) {
+      if (err.status === 429 || err.status >= 500) {
+        await sleep(Math.min(2 ** i * 1000, 30000));  // exponential, max 30sn
+        continue;
+      }
+      throw err;
+    }
+  }
+  throw new Error('max retries exceeded');
+}
+```
+
+**Dış API sağlık takibi:** Her sync sonrası başarı/hata durumu `integration_health` tablosuna yazılır. Panel "Son sync: X dk önce" bilgisini buradan gösterir; sync başarısızsa Uyarı Merkezi'ne düşer.
+
+---
+
+### 23.7 — Katman 7: Ağır Hesaplama İzolasyonu
+
+Bazı işlemler CPU-yoğun ve web sunucusunda **asla** çalışmamalı:
+
+| İşlem | Nerede çalışır | Ne zaman |
+|---|---|---|
+| Görsel pHash (duplicate tespiti) | Ayrı worker | Yükleme anında, 1 kez |
+| Görsel bulanıklık/kalite analizi | Ayrı worker | Yükleme anında, 1 kez |
+| OCR (verification belgeleri) | Ayrı worker / dış servis | Yükleme anında, 1 kez |
+| Ürün kalite skoru | Ayrı worker | İlan create/update anında |
+| Mesaj fraud pattern taraması | Ayrı worker | Mesaj gönderimi sonrası async |
+| Kohort/retention hesabı | Cron | Gece |
+
+**Kural:** Bir işlem >200ms CPU harcıyorsa, kuyruğa alınır ve worker process'inde çalışır. Web sunucusu (Next.js) sadece I/O bekler, CPU yakmaz.
+
+```javascript
+// Görsel yüklemede: hemen dön, işlemeyi kuyruğa at
+export async function POST(req) {
+  const url = await uploadToS3(file);
+  await db.insert(productImages).values({ url, status: 'processing' });
+
+  imageQueue.add('analyze', { url });   // worker halleder
+  return Response.json({ url, status: 'processing' });
+}
+```
+
+---
+
+### 23.8 — İzlemeyi İzlemek (Meta-Monitoring)
+
+İzleme altyapısının kendisi performans sorunu çıkarırsa haberdar olmalıyız.
+
+**Takip edilecekler:**
+- Yavaş sorgu log'u (`log_min_duration_statement = 1000` — 1sn üzeri sorgular)
+- Kuyruk derinliği (BullMQ waiting job sayısı — birikiyor mu?)
+- Cron job süreleri (hedefi aşan var mı?)
+- API endpoint p95/p99 latency (analitik ekledikten sonra arttı mı?)
+- Client-side: Real User Monitoring (RUM) ile gerçek LCP/INP/CLS dağılımı
+
+**Uyarı eşikleri (Uyarı Merkezi'ne bağlanır):**
+
+| Durum | Seviye |
+|---|---|
+| Kuyruk derinliği > 10.000 job | 🔴 Kritik |
+| Cron job hedef süresini 2x aştı | 🟠 Yüksek |
+| Panel sorgusu 5sn timeout'a takıldı | 🟠 Yüksek |
+| p95 API latency %50 arttı | 🟠 Yüksek |
+| Dış API sync 2 kez üst üste başarısız | 🟠 Yüksek |
+| RUM LCP p75 > 4s | 🟡 Orta |
+
+---
+
+### 23.9 — Claude Code İçin Uygulama Kuralları
+
+> Bu plan Claude Code ile hayata geçirilecek. Aşağıdaki kurallar kod yazılırken **istisnasız** uygulanmalı.
+
+**ASLA yapma:**
+1. Kullanıcı isteğinin içinde `await` ile analitik yazma
+2. Admin panel sorgusunu primary DB'ye yönlendirme
+3. Panel sayfa yüklemesinde dış API (HubSpot/GA4/Clarity) çağırma
+4. Her olay için ayrı satır INSERT (yüksek hacimli olaylarda)
+5. Render-blocking `<script>` etiketi ekleme
+6. Cron'da tüm tabloyu baştan hesaplama (full recompute)
+7. `SELECT *` ile geniş tablo tarama (panel sorgularında)
+8. Web sunucusunda görsel/OCR/ML işleme
+9. `CREATE INDEX` (CONCURRENTLY olmadan) production'da
+10. Yüksek hacimli tabloyu partition'sız oluşturma
+
+**DAİMA yap:**
+1. Analitik yazımını kuyruğa at (fire-and-forget)
+2. Panel verisini rollup tablosundan / read replica'dan oku
+3. Dış API verisini cron ile çekip lokale yaz
+4. Yüksek hacimli olayları Redis'te sayıp periyodik flush et
+5. Client script'lerini `afterInteractive` / `lazyOnload` ile yükle
+6. Client event'lerini batch'leyip `sendBeacon` ile gönder
+7. Cron'da incremental hesapla (sadece değişenler + bayatlayanlar)
+8. Ağır işlemi ayrı worker process'ine ver
+9. Panel endpoint'lerine Redis cache + TTL koy
+10. Yeni tabloya tarih partition + retention politikası tanımla
+11. Panel DB rolüne `statement_timeout` uygula
+12. Her cron job'a Redis lock koy
+13. Her yeni özellik sonrası Lighthouse CI ile bütçe kontrolü
+
+---
+
+### 23.10 — Aşamalı Uygulama Sırası
+
+Altyapı, panel bölümlerinden **önce** kurulmalı. Aksi halde her bölüm kendi (uyumsuz) çözümünü üretir.
+
+| Faz | İçerik | Neden önce |
+|---|---|---|
+| **Faz 0 — Altyapı** | Redis + BullMQ kuyruğu, worker process, read replica, `daily_metrics` rollup tablosu, cron scheduler, statement_timeout | Tüm bölümlerin ortak temeli |
+| **Faz 1 — Event altyapısı** | `user_events` (partition'lı), client event buffer + `sendBeacon`, `/api/events` endpoint, event worker | Onboarding, skor, uyarı motoru buna bağlı |
+| **Faz 2 — Rollup & cache** | Gece rollup job'ları, materialized view'lar, panel API cache katmanı | Panel sorgularının hepsi buradan beslenecek |
+| **Faz 3 — Panel bölümleri** | Overview, Members, Growth, Ticaret Akışı vb. sırayla | Artık hepsi hazır altyapıya bağlanır |
+| **Faz 4 — Dış entegrasyonlar** | HubSpot sync, GA4, Clarity, Search Console cron'ları | Lokal tablolara yazar, panel oradan okur |
+| **Faz 5 — Ağır işleme** | Görsel worker (pHash, kalite), OCR worker, fraud tarayıcı | İzole worker'lar, sona bırakılabilir |
+
+**Kritik not:** Faz 0 ve Faz 1 atlanıp doğrudan panel bölümlerine geçilirse, sonradan geri dönüp mimariyi düzeltmek çok daha pahalı olur. Altyapı önce kurulmalı.
+
+---
+
+## 📚 Ek — Tüm Bölümler İçin Veri Kaynakları Referansı
+
+Panelin her bölümünün hangi kaynaktan beslendiğini gösteren toplu tablo. Entegrasyon sırasında bu tablo hangi API'lerin/altyapının hazırlanacağının yol haritasıdır.
+
+| Bölüm | Birincil Kaynak | İkincil / Destek | Notlar |
+|---|---|---|---|
+| Overview KPI'ları | Platform DB | GA4 Data API + HubSpot API | Ana KPI'lar burada birleşir |
+| Members — Yeni/Aktivite/Churn | Platform DB (users, sessions) | — | Kendi backend |
+| Members — Davranış (Clarity) | Microsoft Clarity Data Export API | Clarity `identify()` (platforma eklenecek) | Ücretsiz planda link redirect yeterli |
+| Members — Retention & Kohort | Platform DB (users, sessions) | — | Kayıt ayına göre kohort tablosu |
+| Members — Ürün Kullanım Derinliği | Platform DB (products, rfqs, messages) | — | — |
+| Growth Analytics | Platform DB | GA4 Data API | MoM & projeksiyon |
+| HubSpot CRM | HubSpot API v3 | — | contacts, deals, campaigns, tasks endpoint'leri |
+| Site Analytics | GA4 Data API | Microsoft Clarity Export | Birleşik görünüm |
+| Outreach — LinkedIn | Team Daily Log (manuel giriş) | LinkedIn Sales Navigator export (opsiyonel) | LinkedIn resmi API kısıtlı |
+| Outreach — Email | HubSpot Marketing Email API | SendGrid / Mailchimp (alternatif) | — |
+| Team Daily Log | Platform DB (`team_log` tablosu) | — | Kendi backend |
+| Reklamlar | Platform DB (`ads`, `ad_impressions`, `ad_clicks`) | — | Kendi ad server |
+| Destek & Memnuniyet | Zendesk / Intercom / Freshdesk API | Kendi ticket modülü (alternatif) | NPS için SurveyMonkey veya in-app anket |
+| Aktivite Log | Platform DB (`audit_log` tablosu) | — | Tüm admin aksiyonları buraya yazılır |
+| Profil Doluluk | Platform DB (users, company_profile, verification_documents) | — | — |
+| Uyarı Merkezi | Rules engine (kendi backend) | Tüm bağlı kaynaklar tetikleyici | `alerts` tablosunda saklanır |
+| Onboarding Funnel | Platform DB (`user_events` tablosu) | — | Kayıt sonrası event log şart |
+| HubSpot ↔ Platform Senkron | HubSpot API + Platform DB diff | — | Günlük cron job |
+| Segmentasyon / Persona | Platform DB + Engagement skoru + HubSpot lifecycle | — | Materialized view olarak günlük hesap |
+| Bildirim & İletişim Hijyeni | HubSpot Marketing + Platform DB `notification_log` | WhatsApp Business API (varsa) | — |
+| Verified / Güven | Platform DB (verification_requests, verification_documents) | Onfido / Sumsub / Persona (opsiyonel KYC) | Manuel inceleme akışı da desteklenmeli |
+| SEO & Organik Büyüme | Google Search Console API + GA4 | Ahrefs / SEMrush (opsiyonel), Google PageSpeed Insights | Search Console ücretsiz |
+| Engagement Skoru | Platform DB'nin tamamı | Clarity + HubSpot lifecycle | Günlük cron ile hesap ve snapshot |
+| Ticaret Akış Haritası | Platform DB (rfqs, quotes, orders, shipments, deliveries) | Kargo şirketi API + gümrük entegrasyonu (opsiyonel) | Marketplace'in kalp atışı |
+| Ürün Kataloğu Sağlığı | Platform DB (products, images, categories) | Elasticsearch/Algolia + AWS Rekognition/Google Vision | pHash ile duplicate tespit |
+| Site İçi Mesajlaşma Analitiği | Platform DB (messages, conversations) | Google/DeepL Translate API + Fraud detection (SEON/Sift) | Off-platform yönlendirme tespiti kritik |
+| Fraud & Risk Merkezi (gelecek) | Fraud servisi (SEON/Sift/Signifyd) + Behavior tracking | MaxMind IP intelligence | Sürekli davranış izleme |
+| Trade Dispute Merkezi (gelecek) | Platform DB (disputes tabloları) | Destek modülü entegrasyonu | Buyer-seller ihtilafları |
+| Arama & Keşif (gelecek) | Elasticsearch/Algolia event log | GA4 site_search event | 0-sonuç arama = tedarikçi fırsatı |
+| Mobil Analitik (gelecek) | Firebase Analytics / Amplitude | Sentry (crash) + Store API'ları | — |
+| Marketplace Likiditesi (gelecek) | Ticaret Akış Haritası verisi | Platform DB | Kompozit health metric |
+| Executive/BI Katmanı (gelecek) | Metabase / Superset + LLM | Tüm bölümlerin verileri | AI destekli anomaly detection |
+| Yorum & Review (gelecek) | Platform DB (reviews) | Fraud detection modeli | Sahte yorum tespiti |
+| Ekosistem Partner Sağlığı (gelecek) | Partner webhook'ları + StatusPage.io | Health check cron | Kargo/ödeme/çeviri/KYC uptime |
+| Çok Dilli Analitik (gelecek) | i18n framework log + Translate API | Browser language + üye tercihi | Dil bazlı conversion |
+| Onboarding Path Karşılaştırma (gelecek) | Platform DB (user_events) | Kayıt kaynağı + üye tipi | Path bazlı funnel |
+
+**Kaynak Kısaltmaları:**
+- **Platform DB** = CoreTradeGlobal'in kendi Next.js/Postgres backend'i
+- **HubSpot API v3** = https://developers.hubspot.com/docs/api/overview
+- **GA4 Data API** = https://developers.google.com/analytics/devguides/reporting/data/v1
+- **Clarity Data Export** = https://learn.microsoft.com/en-us/clarity/setup-and-installation/clarity-data-export
+- **Google Search Console API** = https://developers.google.com/webmaster-tools
+- **KYC Provider** = Onfido / Sumsub / Persona (üçünden biri, tier'a göre seçilir)
+
+**Kritik Bağımlılıklar (öncelikli inşa edilecek):**
+1. **`user_events` tablosu** — Onboarding funnel + Engagement skoru + Uyarı motoru için şart
+2. **`audit_log` tablosu** — Aktivite Log için şart
+3. **`alerts` tablosu + kural motoru** — Uyarı merkezi için şart
+4. **HubSpot API key + Search Console API access** — Dış veri için ilk gün gerekli
+5. **Clarity `identify()` çağrısı** — Layout'a tek satır kod (Bölüm 6'da tanımlı)
+
+---

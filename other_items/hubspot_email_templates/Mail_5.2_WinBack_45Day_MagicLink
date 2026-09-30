@@ -1,0 +1,24 @@
+MAIL 5.2 — 45-Day Inactivity Final Win-Back with Magic Link
+Workflow: WF5 - Re-Engagement & Win-Back
+=============================================
+
+Sender Name: CoreTradeGlobal
+Subject Line: Your account is still active, sign in with one click
+Preheader Text: Discover new products listed on CoreTradeGlobal and connect with new members.
+Email Body Text:
+
+Hi {{ contact.firstname }},
+
+Your CoreTradeGlobal account for {{ contact.company | default:"your company" }} is still active.
+
+While you were away, new products were listed on the platform and new companies joined our global B2B network.
+
+Here is what you can do today:
+
+- Explore the latest products and services listed across your industry.
+- Connect directly with newly registered buyers, suppliers and logistics providers.
+- Message trading partners without middlemen to collect new quotes.
+
+No need to remember your password. Click the button below to sign in directly.
+
+CTA Button: Sign In Without Password
