@@ -39,10 +39,10 @@ function AdSlot({ ad, placeholder, ariaLabel }) {
         ref={setRef}
         onClick={trackClick}
         href={ad.linkUrl || '#'}
-        className="hero-mobile-ad-card group"
+        className="hero-mobile-promo-card group"
         aria-label={`Sponsored: ${ad.companyName || placeholder.title}`}
       >
-        <div className="hero-mobile-ad-card-media">
+        <div className="hero-mobile-promo-card-media">
           {ad.companyLogo ? (
             <img
               src={ad.companyLogo}
@@ -54,12 +54,12 @@ function AdSlot({ ad, placeholder, ariaLabel }) {
             <span className="text-3xl">✨</span>
           )}
         </div>
-        <div className="hero-mobile-ad-card-body">
-          <span className="hero-mobile-ad-card-tag">
+        <div className="hero-mobile-promo-card-body">
+          <span className="hero-mobile-promo-card-tag">
             {ad.badgeText || placeholder.tag}
           </span>
-          <p className="hero-mobile-ad-card-title">{ad.companyName || placeholder.title}</p>
-          <span className="hero-mobile-ad-card-cta">Visit →</span>
+          <p className="hero-mobile-promo-card-title">{ad.companyName || placeholder.title}</p>
+          <span className="hero-mobile-promo-card-cta">Visit →</span>
         </div>
       </Link>
     );
@@ -68,23 +68,23 @@ function AdSlot({ ad, placeholder, ariaLabel }) {
   return (
     <Link
       href={placeholder.href}
-      className="hero-mobile-ad-card hero-mobile-ad-card-empty"
+      className="hero-mobile-promo-card hero-mobile-promo-card-empty"
       aria-label={ariaLabel}
     >
-      <div className="hero-mobile-ad-card-plus">+</div>
-      <div className="hero-mobile-ad-card-body">
-        <span className="hero-mobile-ad-card-tag hero-mobile-ad-card-tag-empty">
+      <div className="hero-mobile-promo-card-plus">+</div>
+      <div className="hero-mobile-promo-card-body">
+        <span className="hero-mobile-promo-card-tag hero-mobile-promo-card-tag-empty">
           {placeholder.tag}
         </span>
-        <p className="hero-mobile-ad-card-title">{placeholder.title}</p>
-        <span className="hero-mobile-ad-card-cta">Book Spot →</span>
+        <p className="hero-mobile-promo-card-title">{placeholder.title}</p>
+        <span className="hero-mobile-promo-card-cta">Book Spot →</span>
       </div>
     </Link>
   );
 }
 
 export function HeroMobileAdCards() {
-  // Desktop hiding is done purely via CSS (`.hero-mobile-ad-cards`
+  // Desktop hiding is done purely via CSS (`.hero-mobile-promo-cards`
   // is `display: none` by default and only flips to `display: grid`
   // inside `@media (max-width: 768px)` in globals.css). The previous
   // `if (!isMobile) return null` JS gate meant SSR emitted nothing
@@ -128,7 +128,7 @@ export function HeroMobileAdCards() {
   }, [sponsoredAd, sponsoredCompany]);
 
   return (
-    <div className="hero-mobile-ad-cards">
+    <div className="hero-mobile-promo-cards">
       <AdSlot
         ad={featuredProductAd}
         ariaLabel="Feature your product here"

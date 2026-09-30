@@ -368,7 +368,7 @@ export function AdCampaignForm({
               {sponsoredUserId ? (
                 <p className="text-[11px] text-[#c8d3e0]">
                   <span className="text-[#A0A0A0]">Sponsor uid:</span>{' '}
-                  <span className="font-mono text-white">{sponsoredUserId}</span>
+                  <span className="font-mono text-white break-all">{sponsoredUserId}</span>
                 </p>
               ) : (
                 <p className="text-[11px] text-red-300">
@@ -378,15 +378,15 @@ export function AdCampaignForm({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] text-[#c8d3e0]">
                 <div>
                   <span className="text-[#A0A0A0]">Hero product:</span>{' '}
-                  <span className="font-mono text-white">{sponsoredHeroProductId || '—'}</span>
+                  <span className="font-mono text-white break-all">{sponsoredHeroProductId || '—'}</span>
                 </div>
                 <div>
                   <span className="text-[#A0A0A0]">/products slot:</span>{' '}
-                  <span className="font-mono text-white">{sponsoredListProductId || '—'}</span>
+                  <span className="font-mono text-white break-all">{sponsoredListProductId || '—'}</span>
                 </div>
                 <div className="sm:col-span-2">
                   <span className="text-[#A0A0A0]">Showcase:</span>{' '}
-                  <span className="font-mono text-white">{sponsoredShowcaseRaw || 'auto-fill from hero + list'}</span>
+                  <span className="font-mono text-white break-all">{sponsoredShowcaseRaw || 'auto-fill from hero + list'}</span>
                 </div>
               </div>
             </div>
