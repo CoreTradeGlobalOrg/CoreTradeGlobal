@@ -1,7 +1,7 @@
 /* ==========================================================================
    SPONSORED COMPANY V3 — replaces the old 3D carousel showcase.
    Class names scoped under `.sponsored-section` so generic tokens
-   (.section-title, .section-header, .ad-link) don't collide with other
+   (.section-title, .section-header, .showcase-cta-link) don't collide with other
    sections that use those names.
    ========================================================================== */
 
@@ -57,7 +57,7 @@
   margin: 0;
 }
 
-.sponsored-section .ad-link {
+.sponsored-section .showcase-cta-link {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -68,11 +68,11 @@
   transition: color 0.2s ease, transform 0.2s ease;
   white-space: nowrap;
 }
-.sponsored-section .ad-link:hover {
+.sponsored-section .showcase-cta-link:hover {
   color: #ffd700;
   transform: translateX(3px);
 }
-.sponsored-section .ad-link svg {
+.sponsored-section .showcase-cta-link svg {
   width: 16px;
   height: 16px;
   stroke-width: 2.5;

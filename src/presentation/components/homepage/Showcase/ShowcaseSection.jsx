@@ -95,7 +95,7 @@ function SectionHeader() {
   return (
     <div className="section-header">
       <h2 className="section-title">Sponsored Company</h2>
-      <Link href="/pricing" className="ad-link">
+      <Link href="/pricing" className="showcase-cta-link">
         <span>Want to see your company here? View Advertising Options</span>
         <ArrowRightIcon />
       </Link>

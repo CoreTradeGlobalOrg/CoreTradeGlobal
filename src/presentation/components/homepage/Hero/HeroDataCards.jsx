@@ -177,7 +177,7 @@ export function HeroDataCards({ fetchData, dataLoading, latestProduct, latestReq
             ref={setProductAdRef}
             onClick={trackProductAdClick}
             href={productAd.linkUrl || '#'}
-            className="hero-info-card hero-product-card hero-ad-slot-card"
+            className="hero-info-card hero-product-card hero-promo-slot-card"
             aria-label={`Sponsored: ${productAd.companyName}`}
           >
             <div className="card-icon" style={{ position: 'relative', overflow: 'hidden' }}>
@@ -206,7 +206,7 @@ export function HeroDataCards({ fetchData, dataLoading, latestProduct, latestReq
         ) : (
           <Link
             href="/pricing/inquire?type=sponsored"
-            className="hero-info-card hero-product-card hero-ad-slot-card"
+            className="hero-info-card hero-product-card hero-promo-slot-card"
             aria-label="Feature your product here — inquire about the Featured Product placement"
           >
             <div className="card-icon" style={{
@@ -328,7 +328,7 @@ export function HeroDataCards({ fetchData, dataLoading, latestProduct, latestReq
             ref={setHeroAdRef}
             onClick={trackHeroAdClick}
             href={heroAd.linkUrl || '#'}
-            className="hero-info-card hero-supplier-card hero-ad-slot-card"
+            className="hero-info-card hero-supplier-card hero-promo-slot-card"
             aria-label={`Sponsored: ${heroAd.companyName}`}
           >
             <div className="card-icon" style={{ position: 'relative', overflow: 'hidden' }}>
@@ -359,7 +359,7 @@ export function HeroDataCards({ fetchData, dataLoading, latestProduct, latestReq
         ) : (
           <Link
             href="/pricing/inquire?type=sponsored"
-            className="hero-info-card hero-supplier-card hero-ad-slot-card"
+            className="hero-info-card hero-supplier-card hero-promo-slot-card"
             aria-label="Your company here — inquire about featured advertising"
           >
             <div className="card-icon" style={{
