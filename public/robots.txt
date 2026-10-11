@@ -5,7 +5,9 @@ Allow: /
 # Sitemap
 Sitemap: https://www.coretradeglobal.com/sitemap.xml
 
-# Disallow admin and auth pages
+# Disallow admin, auth, and user-panel pages. These surfaces either
+# require a session, are conversion funnels (no SEO value), or expose
+# per-user state that must never leak into the public index.
 Disallow: /admin
 Disallow: /api/
 Disallow: /auth/
@@ -14,6 +16,24 @@ Disallow: /forgot-password
 Disallow: /reset-password
 Disallow: /verify-email
 Disallow: /suspended
+Disallow: /forbidden
+Disallow: /onboarding
+Disallow: /complete-profile
+Disallow: /social-callback
+Disallow: /dashboard
+Disallow: /settings
+Disallow: /messages
+Disallow: /favorites
+Disallow: /notifications
+Disallow: /my-reports
+Disallow: /my-sponsorships
+Disallow: /deals
+Disallow: /bulk-upload
+Disallow: /product/new
+Disallow: /product/*/edit
+Disallow: /request/new
+Disallow: /request/*/edit
+Disallow: /unsubscribe
 
 # Block Clawdbot
 User-agent: Clawdbot

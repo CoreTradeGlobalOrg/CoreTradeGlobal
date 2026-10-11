@@ -30,8 +30,23 @@ const nextConfig = {
     imageSizes: [16, 32, 48, 64, 80, 96, 128, 200, 256, 384, 512],
     formats: ['image/avif', 'image/webp'],
   },
-  // Security headers
+  // Security + cache headers.
   async headers() {
+    // Shared cache policy for public SSR detail pages.
+    // Pairs with `export const revalidate = 3600` on each page so the
+    // data-cache window and the CDN edge TTL match. stale-while-
+    // revalidate=86400 lets the edge keep serving slightly-stale HTML
+    // for a day while a background rebuild runs — Googlebot never hits
+    // a cold Firestore read, which was previously throttling crawl
+    // budget. Dynamic-route responses from Next.js default to
+    // `cache-control: private, no-store`; this header rule overrides
+    // that at the Vercel edge for the detail-page families only.
+    const DETAIL_CACHE = [
+      {
+        key: 'Cache-Control',
+        value: 'public, s-maxage=3600, stale-while-revalidate=86400',
+      },
+    ];
     return [
       {
         // Apply to all routes
@@ -67,6 +82,9 @@ const nextConfig = {
           },
         ],
       },
+      { source: '/product/:productId([^/]+)', headers: DETAIL_CACHE },
+      { source: '/request/:requestId([^/]+)', headers: DETAIL_CACHE },
+      { source: '/fair/:fairId([^/]+)', headers: DETAIL_CACHE },
     ];
   },
 };

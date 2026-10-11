@@ -82,16 +82,27 @@ export function middleware(request) {
   return NextResponse.next();
 }
 
-// Configure which routes middleware runs on
+// Configure which routes middleware runs on.
+//
+// Previously this ran middleware on EVERY page (except api/_next/favicon).
+// Side effect: every rendered route came back with
+//     cache-control: private, no-cache, no-store, max-age=0, must-revalidate
+// because Next.js treats any middleware-touched response as per-request
+// dynamic. That killed CDN caching for /product/[id], /request/[id] and
+// the rest of the public surface, so Googlebot was hitting cold Firestore
+// reads on every crawl and crawl budget stayed tiny.
+//
+// Narrowing the matcher to the handful of routes that actually need an
+// auth decision (protectedRoutes + guestOnlyRoutes above) lets the public
+// routes keep their `revalidate = 3600` cache. Everything else runs
+// through middleware exactly as before.
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     */
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+    '/dashboard/:path*',
+    '/messages/:path*',
+    '/settings/:path*',
+    '/admin/:path*',
+    '/login',
+    '/register',
   ],
 };
