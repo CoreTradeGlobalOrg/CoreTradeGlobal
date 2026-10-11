@@ -76,7 +76,14 @@ export function ProductDetailClient({ initialProduct = null, initialSeller = nul
 
   const getCategory = () => {
     const cat = categories.find((c) => c.value === product?.categoryId);
-    return { icon: cat?.icon || '', name: cat?.name || 'Unknown Category' };
+    // Prefer the client-resolved category (richer: has icon) once
+    // useCategories lands. Before that, fall back to the server-
+    // injected `categoryName` so SSR and first paint both show the
+    // real name instead of flashing "Unknown Category".
+    return {
+      icon: cat?.icon || '',
+      name: cat?.name || product?.categoryName || 'Unknown Category',
+    };
   };
 
   const handleSendMessage = async () => {
