@@ -46,75 +46,15 @@ const getRelativeTime = (date) => {
     return `${months} month${months > 1 ? 's' : ''} ago`;
 };
 
-// Default RFQs - country is ISO code
-const DEFAULT_RFQS = [
-    {
-        id: '1',
-        title: 'Steel Beams H-Profile for Construction Project',
-        quantity: '500 Tons',
-        deadline: '2 hrs ago',
-        country: 'DE',
-        budget: 'Open',
-        badge: 'Urgent',
-        description: 'Seeking high-quality H-Profile steel beams for a large scale commercial project in Berlin. Standard DIN 1025.'
-    },
-    {
-        id: '2',
-        title: 'Organic Cotton Fabric Rolls',
-        quantity: '20,000 Meters',
-        deadline: '4 hrs ago',
-        country: 'US',
-        budget: '$150k - $200k',
-        badge: 'New',
-        description: 'Looking for GOTS certified organic cotton fabric manufacturers. Sample required before bulk order.'
-    },
-    {
-        id: '3',
-        title: 'Automotive Brake Pads (Ceramic)',
-        quantity: '5,000 Sets',
-        deadline: '6 hrs ago',
-        country: 'JP',
-        budget: 'Market Price',
-        badge: 'New',
-        description: 'Distributor seeking OEM standard ceramic brake pads for Japanese car models (Toyota, Honda).'
-    },
-    {
-        id: '4',
-        title: 'Bulk Wheat Grain (Hard Red Winter)',
-        quantity: '1,000 Tons',
-        deadline: '1 day ago',
-        country: 'EG',
-        budget: '$280/Ton',
-        badge: 'Urgent',
-        description: 'Immediate requirement for milling grade wheat. CIF Alexandria port. Payment via LC.'
-    },
-    {
-        id: '5',
-        title: 'Polypropylene (PP) Granules',
-        quantity: '200 Tons',
-        deadline: '1 day ago',
-        country: 'PL',
-        budget: 'Negotiable',
-        badge: 'New',
-        description: 'Injection molding grade PP required for plastic container manufacturing. Monthly recurring order.'
-    },
-    {
-        id: '6',
-        title: 'Solar Inverters 5kW Hybrid',
-        quantity: '100 Units',
-        deadline: '2 days ago',
-        country: 'ZA',
-        budget: '$50k Total',
-        badge: 'New',
-        description: 'Looking for reliable suppliers of hybrid solar inverters compatible with lithium batteries.'
-    }
-];
+// DEFAULT_RFQS mock removed 2026-10-11 — same crawl-trap pattern as
+// FeaturedProducts/ProductGrid. The /requests server shell now seeds
+// via firebase-admin and passes `initialRequests` down.
 
-export function RequestGrid({ searchQuery, categoryFilter }) {
-    const [requests, setRequests] = useState(DEFAULT_RFQS);
-    const [filteredRequests, setFilteredRequests] = useState(DEFAULT_RFQS);
+export function RequestGrid({ searchQuery, categoryFilter, initialRequests = [] }) {
+    const [requests, setRequests] = useState(initialRequests);
+    const [filteredRequests, setFilteredRequests] = useState(initialRequests);
     const ownerRoles = useOwnerRoles(filteredRequests.map((r) => r.userId));
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(initialRequests.length === 0);
     const { categories } = useCategories();
 
     // Fetch RFQs

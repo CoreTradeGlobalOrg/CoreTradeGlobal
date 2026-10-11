@@ -17,97 +17,14 @@ import { useOwnerRoles } from '@/presentation/hooks/user/useOwnerRoles';
 import { useResponsiveLimit, useScrollLoadMore } from '@/presentation/hooks/useResponsiveLimit';
 import { getUnitByCode, getUnitName } from '@/core/constants/units';
 
-// Default products for initial display - country is ISO code
-const DEFAULT_PRODUCTS = [
-  {
-    id: '1',
-    name: 'Luxury Marble Block (Afyon White)',
-    description: 'Premium quality white marble blocks suitable for high-end flooring and architectural projects.',
-    country: 'TR',
-    imageUrl: '',
-    price: '450',
-    currency: '$',
-    unit: '/ Ton',
-    category: 'Construction'
-  },
-  {
-    id: '2',
-    name: '5-Axis CNC Milling Machine',
-    description: 'High precision industrial milling machine for complex parts manufacturing.',
-    country: 'DE',
-    imageUrl: '',
-    price: '125,000',
-    currency: '$',
-    unit: '/ Unit',
-    category: 'Machinery'
-  },
-  {
-    id: '3',
-    name: 'Raw Silk Fabric Rolls',
-    description: '100% natural raw silk, ideal for luxury garment production. Available in various weights.',
-    country: 'CN',
-    imageUrl: '',
-    price: '45',
-    currency: '$',
-    unit: '/ Meter',
-    category: 'Textile'
-  },
-  {
-    id: '4',
-    name: 'Extra Virgin Olive Oil (500L)',
-    description: 'Cold-pressed organic olive oil from Tuscany region. Bulk packaging for distributors.',
-    country: 'IT',
-    imageUrl: '',
-    price: '8.50',
-    currency: '$',
-    unit: '/ Liter',
-    category: 'Food'
-  },
-  {
-    id: '5',
-    name: 'Monocrystalline Solar Panels 550W',
-    description: 'High efficiency PV modules for commercial and residential solar installations.',
-    country: 'KR',
-    imageUrl: '',
-    price: '0.28',
-    currency: '$',
-    unit: '/ Watt',
-    category: 'Energy'
-  },
-  {
-    id: '6',
-    name: 'Porcelain Ceramic Tiles 60x120',
-    description: 'Modern minimalist design, anti-slip surface for indoor and outdoor use.',
-    country: 'ES',
-    imageUrl: '',
-    price: '22',
-    currency: '$',
-    unit: '/ Sqm',
-    category: 'Construction'
-  },
-  {
-    id: '7',
-    name: 'Seamless Steel Pipes',
-    description: 'Heavy duty seamless pipes for oil and gas industry applications. API 5L certified.',
-    country: 'UA',
-    imageUrl: '',
-    price: '950',
-    currency: '$',
-    unit: '/ Ton',
-    category: 'Industrial'
-  },
-  {
-    id: '8',
-    name: 'Organic Cotton Yarn 30/1',
-    description: 'Combed organic cotton yarn for high quality knitting and weaving.',
-    country: 'IN',
-    imageUrl: '',
-    price: '4.20',
-    currency: '$',
-    unit: '/ Kg',
-    category: 'Textile'
-  }
-];
+// Mock product fallback (ids '1'..'8', fake "Afyon marble" / "Tuscany
+// olive oil" / "CNC machine" listings) was removed on 2026-10-11.
+// It had been seeded as `useState(DEFAULT_PRODUCTS)` so Googlebot saw
+// `/product/1`..`/product/8` as the only product links in the SSR
+// homepage; every one of them returned notFound() → ~soft 404s
+// which Google read as "this site's product pages are broken",
+// cratering crawl budget. The server-component page.js now injects
+// real Firestore products via the `initialProducts` prop.
 
 // Truncate text to specified length
 const truncateText = (text, maxLength = 100) => {
@@ -300,10 +217,14 @@ export function ProductCard({ product, categories, isFavorited, onToggleFavorite
   );
 }
 
-export function FeaturedProducts() {
-  const [products, setProducts] = useState(DEFAULT_PRODUCTS);
-  const [allProducts, setAllProducts] = useState([]); // Store all fetched products
-  const [loading, setLoading] = useState(true);
+export function FeaturedProducts({ initialProducts = [] }) {
+  // Seed state from the server-fetched products so SSR HTML carries
+  // the real `/product/<firestoreId>` links Google needs to discover
+  // the catalog. The subscribeToQuery below still runs on hydration
+  // to pick up live updates (new uploads, status changes).
+  const [products, setProducts] = useState(initialProducts);
+  const [allProducts, setAllProducts] = useState(initialProducts);
+  const [loading, setLoading] = useState(initialProducts.length === 0);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(true);
   const scrollRef = useRef(null);
@@ -365,15 +286,11 @@ export function FeaturedProducts() {
             });
             setAllProducts(sorted);
             setProducts(sorted.slice(0, displayCount));
-          } else {
-            // No active products — fall back to defaults so homepage always shows cards
-            setAllProducts([]);
-            setProducts(DEFAULT_PRODUCTS);
           }
-        } else {
-          // Subscription returned empty — fall back to defaults
-          setAllProducts([]);
-          setProducts(DEFAULT_PRODUCTS);
+          // No fallback to mock data — if the live subscription returns
+          // zero active products we keep the server-seeded initial
+          // products (or empty, which shows no cards). Mock /product/1
+          // links were a soft-404 crawl trap for Google.
         }
         setLoading(false);
       },

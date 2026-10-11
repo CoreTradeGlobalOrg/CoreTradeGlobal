@@ -61,88 +61,12 @@ const CURRENCY_SYMBOLS = {
     'INR': '₹',
 };
 
-const DEFAULT_PRODUCTS = [
-    {
-        id: '1',
-        name: 'Luxury Marble Block - Carrara White',
-        price: 450,
-        currency: '$',
-        unit: 'Ton',
-        country: 'Turkey',
-        images: ['https://images.unsplash.com/photo-1618516086847-7597b9195d2b?q=80&w=600&auto=format&fit=crop'],
-        category: 'Construction'
-    },
-    {
-        id: '2',
-        name: 'Industrial Steel Pipes (Seamless)',
-        price: 850,
-        currency: '$',
-        unit: 'Ton',
-        country: 'Germany',
-        images: ['https://images.unsplash.com/photo-1535063073385-d5e8b4e76a66?q=80&w=600&auto=format&fit=crop'],
-        category: 'Industrial'
-    },
-    {
-        id: '3',
-        name: '100% Organic Silk Fabric',
-        price: 25,
-        currency: '$',
-        unit: 'Meter',
-        country: 'China',
-        images: ['https://images.unsplash.com/photo-1620799140408-ed5341cd2431?q=80&w=600&auto=format&fit=crop'],
-        category: 'Textile'
-    },
-    {
-        id: '4',
-        name: 'Extra Virgin Olive Oil (Cold Pressed)',
-        price: 6.50,
-        currency: '€',
-        unit: 'Liter',
-        country: 'Italy',
-        images: ['https://images.unsplash.com/photo-1474979266404-7caddbed77a5?q=80&w=600&auto=format&fit=crop'],
-        category: 'Food'
-    },
-    {
-        id: '5',
-        name: 'Solar Panel Monocrystalline 450W',
-        price: 180,
-        currency: '$',
-        unit: 'Pc',
-        country: 'S. Korea',
-        images: ['https://images.unsplash.com/photo-1509391366360-2e959784a276?q=80&w=600&auto=format&fit=crop'],
-        category: 'Energy'
-    },
-    {
-        id: '6',
-        name: 'Ceramic Floor Tiles (60x60)',
-        price: 12,
-        currency: '$',
-        unit: 'm²',
-        country: 'Spain',
-        images: ['https://images.unsplash.com/photo-1615971677499-54678ab563ce?q=80&w=600&auto=format&fit=crop'],
-        category: 'Construction'
-    },
-    {
-        id: '7',
-        name: 'Natural Gas Valve Set',
-        price: 45,
-        currency: '$',
-        unit: 'Set',
-        country: 'Ukraine',
-        images: ['https://images.unsplash.com/photo-1581092921461-eab62e97a780?q=80&w=600&auto=format&fit=crop'],
-        category: 'Industrial'
-    },
-    {
-        id: '8',
-        name: 'Cotton Yarn 30/1 Combed',
-        price: 3.20,
-        currency: '$',
-        unit: 'kg',
-        country: 'India',
-        images: ['https://images.unsplash.com/photo-1605218427306-022248cebf77?q=80&w=600&auto=format&fit=crop'],
-        category: 'Textile'
-    }
-];
+// DEFAULT_PRODUCTS mock array (ids '1'..'8', Unsplash placeholder images,
+// fake /product/1..8 links) was removed on 2026-10-11. Googlebot's only
+// SSR view of /products was eight 404-bound links which Google read as
+// "this site's product catalog is broken" and throttled crawl budget.
+// The /products server shell now hydrates the grid with real Firestore
+// products via the `initialProducts` prop.
 
 // Every page renders exactly 12 tiles total. When a Featured Product
 // ad is live on page 1 it eats one of those 12 slots, so we drop 11
@@ -150,13 +74,13 @@ const DEFAULT_PRODUCTS = [
 // on page 2 with 12 organic products each.
 const PAGE_SIZE = 12;
 
-export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter, countryFilter, sidebarVisible = false }) {
-    const [products, setProducts] = useState(DEFAULT_PRODUCTS);
-    const [filteredProducts, setFilteredProducts] = useState(DEFAULT_PRODUCTS);
+export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter, countryFilter, sidebarVisible = false, initialProducts = [] }) {
+    const [products, setProducts] = useState(initialProducts);
+    const [filteredProducts, setFilteredProducts] = useState(initialProducts);
     // Batch-load the owner role for every visible product so the
     // logistics-provider accent lights up without a per-card read.
     const ownerRoles = useOwnerRoles(filteredProducts.map((p) => p.userId));
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(initialProducts.length === 0);
     const [currentPage, setCurrentPage] = useState(1);
     const gridTopRef = useRef(null);
     const { categories } = useCategories();
