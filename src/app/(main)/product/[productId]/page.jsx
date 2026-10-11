@@ -49,6 +49,23 @@ async function fetchSeller(userId) {
   }
 }
 
+// Products store categoryId, not the human-readable category name. The
+// client component resolves it via useCategories (which fetches the
+// whole collection), but SSR runs before that hook and renders
+// "Unknown Category" — which is also what Googlebot's rich results
+// test ends up seeing in the Product JSON-LD. Resolving server-side
+// gives both the crawler and the first-paint UI the real name.
+async function fetchCategoryName(categoryId) {
+  if (!categoryId) return null;
+  try {
+    const snap = await getAdminFirestore().collection('categories').doc(categoryId).get();
+    if (!snap.exists) return null;
+    return snap.data()?.name || null;
+  } catch {
+    return null;
+  }
+}
+
 // Timestamp fields from Firestore aren't serializable across the
 // server/client boundary — strip them (client hook re-fetches the live
 // doc anyway, so the loss is temporary).
@@ -127,8 +144,16 @@ function ProductJsonLd({ product, seller }) {
     description: (product.description || '').slice(0, 500) || product.name,
     ...(image ? { image } : {}),
     brand: { '@type': 'Brand', name: sellerName },
-    ...(product.category ? { category: product.category } : {}),
-    ...(product.price
+    // Products persist `categoryId`; the human-readable name is
+    // injected server-side as `categoryName` so Google (and the UI
+    // first paint) see the real category instead of nothing.
+    ...(product.categoryName ? { category: product.categoryName } : {}),
+    // `product.price > 0` instead of a truthy check — a price of 0
+    // (negotiable B2B listings) was previously treated as "no price"
+    // AND would have emitted `price: 0` if the check had fired, both
+    // of which trip Google's rich-results validator. Negotiable
+    // products legitimately have no offer; omit the block entirely.
+    ...(product.price && product.price > 0
       ? {
           offers: {
             '@type': 'Offer',
@@ -157,10 +182,14 @@ export default async function ProductDetailPage({ params }) {
   const { productId } = await params;
   const product = await fetchProduct(productId);
   if (!product) return notFound();
-  const seller = await fetchSeller(product.userId);
+  const [seller, categoryName] = await Promise.all([
+    fetchSeller(product.userId),
+    fetchCategoryName(product.categoryId),
+  ]);
 
   const plainProduct = toPlain(product);
   const plainSeller = toPlain(seller);
+  if (plainProduct && categoryName) plainProduct.categoryName = categoryName;
 
   return (
     <>
