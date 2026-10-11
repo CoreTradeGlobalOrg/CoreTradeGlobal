@@ -21,6 +21,7 @@
 
 import dynamic from 'next/dynamic';
 import { HeroSection } from '@/presentation/components/homepage/Hero/HeroSection';
+import { getAdminFirestore } from '@/lib/firebase-admin';
 
 // Explicit canonical for the homepage — the root layout no longer sets
 // a global canonical (it was propagating '/' onto every dynamic route
@@ -29,10 +30,49 @@ import { HeroSection } from '@/presentation/components/homepage/Hero/HeroSection
 export const metadata = {
   alternates: { canonical: '/' },
 };
+
+// Revalidate hourly so freshly uploaded products land in the SSR
+// homepage without a redeploy. Matches the detail-page revalidate.
+export const revalidate = 3600;
 import { FeaturedProducts } from '@/presentation/components/homepage/Products/FeaturedProducts';
 import { FeaturedRFQs } from '@/presentation/components/homepage/RFQs/FeaturedRFQs';
 import { CategoriesSection } from '@/presentation/components/homepage/Categories/CategoriesSection';
 import { CompaniesSection } from '@/presentation/components/homepage/Companies/CompaniesSection';
+
+// Server-side fetch of the top N active products. Feeds the SSR
+// homepage with real `/product/<firestoreId>` links so Googlebot
+// discovers the catalog from the entry point (previously the first
+// paint shipped mock /product/1..8 links that all 404'd — Google
+// treated them as site-wide "products broken" signal and throttled
+// crawl budget).
+async function fetchFeaturedProducts(limit = 30) {
+  try {
+    const snap = await getAdminFirestore()
+      .collection('products')
+      .where('status', '==', 'active')
+      .orderBy('createdAt', 'desc')
+      .limit(limit)
+      .get();
+    const docs = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    // Firestore Timestamps aren't serializable across the server/client
+    // boundary — convert any _seconds / toDate() shaped field to ISO.
+    return JSON.parse(
+      JSON.stringify(docs, (_, value) => {
+        if (value && typeof value === 'object' && typeof value._seconds === 'number') {
+          return new Date(value._seconds * 1000).toISOString();
+        }
+        if (value && typeof value === 'object' && typeof value.toDate === 'function') {
+          return value.toDate().toISOString();
+        }
+        return value;
+      })
+    );
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error('[homepage] featured products fetch failed:', err);
+    return [];
+  }
+}
 
 // Only the *last three* sections are dynamic — they sit well below the
 // fold (after ShowcaseSection they're purely scroll-reveal content) so
@@ -56,8 +96,9 @@ const FairsSection = dynamic(
   { loading: () => <div className="fairs-wrapper" style={{ minHeight: 585 }} /> }
 );
 
-export default function Home() {
+export default async function Home() {
   const HERO_FETCH_DATA = true;
+  const initialProducts = await fetchFeaturedProducts(30);
 
   return (
     <div className="homepage">
@@ -67,7 +108,7 @@ export default function Home() {
 
 
       {/* Featured Products */}
-      <FeaturedProducts />
+      <FeaturedProducts initialProducts={initialProducts} />
 
       {/* Featured RFQ Requests */}
       <FeaturedRFQs />
