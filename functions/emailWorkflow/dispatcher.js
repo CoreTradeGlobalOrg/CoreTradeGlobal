@@ -16,9 +16,7 @@ const admin = require('firebase-admin');
 const { WORKFLOW_EMAILS } = require('./templates');
 const { buildMagicLink } = require('./magicLink');
 
-// Shared daily cap across every workflow email. The RFQ queue keeps
-// its own budget doc (rfqEmailDailyBudget/*) so the two share the
-// email account but are counted separately for clarity.
+// Shared daily cap across every workflow email.
 const WORKFLOW_DAILY_LIMIT = Number(process.env.WORKFLOW_EMAIL_DAILY_LIMIT || 60);
 
 function todayUtcDateString() {

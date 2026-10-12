@@ -5658,54 +5658,36 @@ exports.onNewMemberRegistered = onDocumentWritten(
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
-// RFQ Email Delivery — inactive-user re-engagement with daily budget
+// RFQ notifications
 // ─────────────────────────────────────────────────────────────────────────────
-//
-// The old email provider's free tier capped at 100 emails/day. Firing an email per member
-// on every new RFQ blew through the cap the moment the member base grew
-// past a few hundred. New model:
-//
-//   1. onRFQCreated still delivers in-app + FCM push to every member
-//      immediately (no rate limit, no cost).
-//   2. Email is treated as a re-engagement nudge — only members whose
-//      lastLoginAt is older than RFQ_INACTIVE_WINDOW_DAYS get queued.
-//      Active users receive nothing new.
-//   3. onRFQCreated writes one row per eligible inactive user into
-//      rfqEmailQueue (doc id = `${rfqId}_${userId}` → natural dedup).
-//   4. processRfqEmailQueue runs hourly, respects RFQ_EMAIL_DAILY_LIMIT
-//      per UTC day (tracked in rfqEmailDailyBudget/{YYYY-MM-DD}), and
-//      re-verifies at send time (RFQ still open, user still inactive,
-//      email preference still on) so a queued email that becomes stale
-//      is skipped rather than sent.
-//
-// Environment (functions/.env):
-//   RFQ_EMAIL_DAILY_LIMIT   default 90   (10 kept for other flows)
-//   RFQ_INACTIVE_WINDOW     default 30   (days)
-const RFQ_INACTIVE_WINDOW_DAYS = Number(process.env.RFQ_INACTIVE_WINDOW || 30);
-const RFQ_EMAIL_DAILY_LIMIT = Number(process.env.RFQ_EMAIL_DAILY_LIMIT || 90);
-const RFQ_QUEUE_MAX_ATTEMPTS = 3;
-const RFQ_QUEUE_PER_RUN_CAP = 30;
-const RFQ_QUEUE_SEND_SPACING_MS = 200;
 
-function todayUtcDateString() {
-  return new Date().toISOString().slice(0, 10);
+// Aynı anda işlenen üye sayısı (bildirim / push / mail)
+const RFQ_NOTIFY_CONCURRENCY = 10;
+
+function buildRfqEmailBody({ productName, categoryName }) {
+  const product = escapeEmailText(productName);
+  const category = escapeEmailText(categoryName);
+  return `<p style="margin:0 0 16px 0;">A new request for quotation has been posted in your category${category ? `, <strong>${category}</strong>` : ''}.</p>
+    <p style="margin:0 0 16px 0;">Buyer is looking for: <strong>${product}</strong></p>
+    <p style="margin:0;">Send your quote before other suppliers do.</p>`;
 }
 
 /**
  * onRFQCreated
  *
- * Fires when a new document is created in the requests collection (RFQs).
- * Notifies all members with in-app + FCM push when a new RFQ is posted.
- * Does NOT notify the creator of the RFQ.
+ * Fires when a new RFQ (requests/{id}) is created. The creator is skipped.
  *
  * Channels:
  *   - in-app notification: every member
- *   - FCM push: every member with push preference enabled
- *   - email: enqueued for inactive members only (drained by
- *     processRfqEmailQueue under a daily email budget)
+ *   - FCM push: every member with providers.push enabled
+ *   - email: members whose companyCategory matches the RFQ's categoryId
+ *     and who have providers.email enabled, sent right away via ZeptoMail
+ *
+ * Notification doc id is rfq-<requestId> so a retried trigger overwrites
+ * instead of duplicating.
  */
 exports.onRFQCreated = onDocumentCreated(
-  'requests/{requestId}',
+  { document: 'requests/{requestId}', timeoutSeconds: 540, memory: '512MiB' },
   async (event) => {
     try {
       const rfq = event.data?.data();
@@ -5715,32 +5697,44 @@ exports.onRFQCreated = onDocumentCreated(
       const now = Timestamp.now();
       const productName = rfq.productName || rfq.title || 'a product';
       const creatorId = rfq.userId;
+      const categoryId = rfq.categoryId || null;
+      const link = `/request/${requestId}`;
 
       const notifTitle = 'New RFQ Available';
       const notifBody = `A new request for quotation has been posted for ${productName}.`;
 
-      // Inactivity threshold for the email path: users whose last real
-      // login is older than this get an email, active users don't
-      // (they already got in-app + push above).
-      const INACTIVE_CUTOFF_MS = Date.now() - RFQ_INACTIVE_WINDOW_DAYS * 24 * 60 * 60 * 1000;
+      let categoryName = '';
+      if (categoryId) {
+        try {
+          const catSnap = await db.collection('categories').doc(categoryId).get();
+          categoryName = catSnap.exists ? catSnap.data().name || '' : '';
+        } catch (err) {
+          console.warn(`onRFQCreated: category lookup failed for ${categoryId}:`, err.message);
+        }
+      }
 
-      // Query all members
       const membersSnap = await db.collection('users').where('role', '==', ROLES.MEMBER).get();
-      if (membersSnap.empty) {
-        console.log(`onRFQCreated: no members found for RFQ ${requestId}`);
+      const members = membersSnap.docs.filter((d) => d.id !== creatorId && !d.data().isDeleted);
+      if (members.length === 0) {
+        console.log(`onRFQCreated: no members to notify for RFQ ${requestId}`);
         return;
       }
 
-      for (const memberDoc of membersSnap.docs) {
-        const memberId = memberDoc.id;
-        // Skip the creator of the RFQ
-        if (memberId === creatorId) continue;
+      const emailHtml = buildBrandedEmailHtml(
+        buildRfqEmailBody({ productName, categoryName }),
+        'View RFQ',
+        `${APP_URL}${link}`
+      );
+      const emailSubject = `New RFQ in ${categoryName || 'your category'}: ${productName}`;
 
+      let emailed = 0;
+      const notifyMember = async (memberDoc) => {
+        const memberId = memberDoc.id;
         const memberData = memberDoc.data();
 
-        // --- a) Firestore in-app notification ---
+        // a) In-app notification: everyone
         try {
-          await db.collection('users').doc(memberId).collection('notifications').add({
+          await db.collection('users').doc(memberId).collection('notifications').doc(`rfq-${requestId}`).set({
             type: 'rfq_created',
             title: notifTitle,
             body: notifBody,
@@ -5748,222 +5742,49 @@ exports.onRFQCreated = onDocumentCreated(
             productName,
             isRead: false,
             createdAt: now,
-            link: `/request/${requestId}`,
+            link,
           });
         } catch (err) {
-          console.error(`onRFQCreated: failed in-app notification for member ${memberId}:`, err);
+          console.error(`onRFQCreated: in-app notification failed for ${memberId}:`, err);
         }
 
-        // --- b) FCM push notification (preference check) ---
-        try {
-          const pushEnabled = memberData.preferences?.providers?.push !== false;
-          if (pushEnabled) {
+        // b) Push: everyone with push on
+        if (memberData.preferences?.providers?.push !== false) {
+          try {
             await sendFCMPushToUser(memberId, memberData, {
               type: 'rfq_created',
               title: notifTitle,
               body: notifBody,
               requestId,
-              link: `/request/${requestId}`,
+              link,
             });
+          } catch (err) {
+            console.error(`onRFQCreated: FCM error for ${memberId}:`, err);
           }
-        } catch (err) {
-          console.error(`onRFQCreated: FCM error for member ${memberId}:`, err);
         }
 
-        // --- c) Email notification: enqueue for inactive users only ---
-        //
-        // Sending email inline used to burn through the old provider's free-tier
-        // daily cap (100/day) as soon as a member base grew past a few
-        // hundred. New model: skip email for active users entirely
-        // (they get in-app + push above), and enqueue one row per
-        // inactive user (lastLoginAt < now - 30d) into rfqEmailQueue.
-        // A separate scheduled function (processRfqEmailQueue) drains
-        // the queue at a rate that respects the daily budget.
-        try {
-          const emailEnabled = memberData.preferences?.providers?.email !== false;
-          const memberEmail = memberData.email;
-          if (!memberEmail || !emailEnabled) continue;
-
-          const lastLoginAt = memberData.lastLoginAt?.toDate?.()
-            || (memberData.lastLoginAt ? new Date(memberData.lastLoginAt) : null);
-          const isInactive = lastLoginAt && lastLoginAt.getTime() < INACTIVE_CUTOFF_MS;
-          if (!isInactive) continue;
-
-          const queueDocId = `${requestId}_${memberId}`;
-          await db.collection('rfqEmailQueue').doc(queueDocId).set({
-            rfqId: requestId,
-            productName,
-            recipientId: memberId,
-            recipientEmail: memberEmail,
-            status: 'pending',
-            attempts: 0,
-            createdAt: now,
-            updatedAt: now,
-          }, { merge: false });
-        } catch (err) {
-          console.error(`onRFQCreated: enqueue error for member ${memberId}:`, err);
+        // c) Email: only members in the RFQ's category
+        const inCategory = categoryId && memberData.companyCategory === categoryId;
+        if (inCategory && memberData.email && memberData.preferences?.providers?.email !== false) {
+          const ok = await sendEmail({
+            to: memberData.email,
+            subject: emailSubject,
+            html: emailHtml,
+            tag: `onRFQCreated (${requestId} -> ${memberId})`,
+          });
+          if (ok) emailed++;
         }
+      };
+
+      for (let i = 0; i < members.length; i += RFQ_NOTIFY_CONCURRENCY) {
+        await Promise.all(members.slice(i, i + RFQ_NOTIFY_CONCURRENCY).map(notifyMember));
       }
 
-      console.log(`onRFQCreated: notified ${membersSnap.size - 1} member(s) of new RFQ ${requestId}`);
+      console.log(`onRFQCreated: RFQ ${requestId} notified=${members.length} emailed=${emailed} category=${categoryId || 'none'}`);
     } catch (err) {
       console.error('onRFQCreated: unexpected error (non-fatal):', err);
     }
   }
-);
-
-/**
- * processRfqEmailQueue
- *
- * Drains the rfqEmailQueue at a rate that respects the daily email
- * budget. Runs every 60 minutes.
- *
- * Per invocation:
- *   1. Read/init today's budget doc (rfqEmailDailyBudget/{YYYY-MM-DD}).
- *   2. Bail out if sent >= RFQ_EMAIL_DAILY_LIMIT.
- *   3. Pull up to min(RFQ_QUEUE_PER_RUN_CAP, remaining_budget) pending
- *      rows ordered by createdAt asc.
- *   4. For each row: re-verify (RFQ exists+open, user still inactive,
- *      email pref still on). Send if all still true, else mark skipped.
- *   5. On send success bump today's budget by 1. On failure increment
- *      attempts; drop to 'failed' after RFQ_QUEUE_MAX_ATTEMPTS.
- *   6. Small sleep between sends so the run doesn't spike the email provider.
- */
-exports.processRfqEmailQueue = onSchedule(
-  {
-    schedule: 'every 60 minutes',
-    timeZone: 'UTC',
-    retryCount: 1,
-    timeoutSeconds: 540,
-  },
-  async () => {
-    const dateKey = todayUtcDateString();
-    const budgetRef = db.collection('rfqEmailDailyBudget').doc(dateKey);
-    const budgetSnap = await budgetRef.get();
-    const budget = budgetSnap.exists ? budgetSnap.data() : { date: dateKey, sent: 0, limit: RFQ_EMAIL_DAILY_LIMIT };
-    if (!budgetSnap.exists) {
-      await budgetRef.set({ ...budget, updatedAt: Timestamp.now() });
-    }
-
-    const limit = Number(budget.limit || RFQ_EMAIL_DAILY_LIMIT);
-    const alreadySent = Number(budget.sent || 0);
-    const remaining = limit - alreadySent;
-    if (remaining <= 0) {
-      console.log(`processRfqEmailQueue: daily budget exhausted (${alreadySent}/${limit}) — skip.`);
-      return null;
-    }
-
-    const batchLimit = Math.min(RFQ_QUEUE_PER_RUN_CAP, remaining);
-    const pendingSnap = await db.collection('rfqEmailQueue')
-      .where('status', '==', 'pending')
-      .orderBy('createdAt', 'asc')
-      .limit(batchLimit)
-      .get();
-
-    if (pendingSnap.empty) {
-      console.log('processRfqEmailQueue: queue empty.');
-      return null;
-    }
-
-    const inactiveCutoffMs = Date.now() - RFQ_INACTIVE_WINDOW_DAYS * 24 * 60 * 60 * 1000;
-    let sent = 0;
-    let skipped = 0;
-    let failed = 0;
-
-    for (const doc of pendingSnap.docs) {
-      const row = doc.data();
-      const { rfqId, recipientId, recipientEmail, productName } = row;
-      const now = Timestamp.now();
-
-      try {
-        // ── Re-verify RFQ is still around and not closed ──────────────
-        const rfqDoc = await db.collection('requests').doc(rfqId).get();
-        if (!rfqDoc.exists) {
-          await doc.ref.update({ status: 'skipped', skipReason: 'rfq_missing', updatedAt: now });
-          skipped++;
-          continue;
-        }
-        const rfqData = rfqDoc.data();
-        if (rfqData.status === 'closed' || rfqData.status === 'expired' || rfqData.status === 'deleted') {
-          await doc.ref.update({ status: 'skipped', skipReason: `rfq_${rfqData.status}`, updatedAt: now });
-          skipped++;
-          continue;
-        }
-
-        // ── Re-verify user still inactive + email pref still on ───────
-        const userDoc = await db.collection('users').doc(recipientId).get();
-        if (!userDoc.exists) {
-          await doc.ref.update({ status: 'skipped', skipReason: 'user_missing', updatedAt: now });
-          skipped++;
-          continue;
-        }
-        const userData = userDoc.data();
-
-        if (userData.preferences?.providers?.email === false) {
-          await doc.ref.update({ status: 'skipped', skipReason: 'email_opted_out', updatedAt: now });
-          skipped++;
-          continue;
-        }
-
-        const lastLoginAt = userData.lastLoginAt?.toDate?.()
-          || (userData.lastLoginAt ? new Date(userData.lastLoginAt) : null);
-        if (!lastLoginAt || lastLoginAt.getTime() >= inactiveCutoffMs) {
-          await doc.ref.update({ status: 'skipped', skipReason: 'user_became_active', updatedAt: now });
-          skipped++;
-          continue;
-        }
-
-        // ── Send ──────────────────────────────────────────────────────
-        const notifTitle = 'New RFQ Available';
-        const notifBody = `A new request for quotation has been posted for ${productName}. We noticed you haven't stopped by lately — come see the latest deals.`;
-        const rfqUrl = `${APP_URL}/request/${rfqId}`;
-        const htmlBody = buildBrandedEmailHtml(
-          `<p style="margin:0 0 16px 0;">${notifBody}</p>`,
-          'View RFQ',
-          rfqUrl,
-        );
-
-        await sendDealEmail(recipientEmail, notifTitle, htmlBody);
-
-        await doc.ref.update({
-          status: 'sent',
-          sentAt: now,
-          updatedAt: now,
-        });
-        sent++;
-
-        // Small spacing between sends so the hour doesn't spike the email provider.
-        if (sent < batchLimit) {
-          await new Promise((r) => setTimeout(r, RFQ_QUEUE_SEND_SPACING_MS));
-        }
-      } catch (err) {
-        const attempts = Number(row.attempts || 0) + 1;
-        const isTerminal = attempts >= RFQ_QUEUE_MAX_ATTEMPTS;
-        console.error(`processRfqEmailQueue: send failed for ${doc.id} (attempt ${attempts}):`, err);
-        await doc.ref.update({
-          status: isTerminal ? 'failed' : 'pending',
-          attempts,
-          failReason: err?.message || 'send_failed',
-          updatedAt: now,
-        });
-        if (isTerminal) failed++;
-      }
-    }
-
-    if (sent > 0) {
-      await budgetRef.set({
-        date: dateKey,
-        sent: alreadySent + sent,
-        limit,
-        updatedAt: Timestamp.now(),
-      });
-    }
-
-    console.log(
-      `processRfqEmailQueue: sent=${sent} skipped=${skipped} failed=${failed} budget=${alreadySent + sent}/${limit}`,
-    );
-    return null;
-  },
 );
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -518,19 +518,6 @@ service cloud.firestore {
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // RFQ Email Queue + Daily Budget (inactive-user re-engagement)
-    //
-    // Populated by the onRFQCreated CF, drained by processRfqEmailQueue.
-    // Client access is admin-read-only; writes are CF-only via admin SDK
-    // which bypasses these rules.
-    // ─────────────────────────────────────────────────────────────────────────
-
-    match /rfqEmailQueue/{queueId} {
-      allow read: if isAdmin();
-      allow write: if false;
-    }
-
-    // ─────────────────────────────────────────────────────────────────────────
     // Social Post queue (LinkedIn / Facebook / WhatsApp)
     //
     // Written by generateSocialPost CF, state changes flow through the
@@ -577,15 +564,10 @@ service cloud.firestore {
     // Workflow email daily budget (WF1..WF6)
     //
     // Shared cap across every workflow trigger. CF-only writes; admins may
-    // read to monitor how close we are to the Resend free-tier ceiling.
+    // read to monitor how close we are to the daily cap.
     // ─────────────────────────────────────────────────────────────────────────
 
     match /workflowEmailDailyBudget/{dateKey} {
-      allow read: if isAdmin();
-      allow write: if false;
-    }
-
-    match /rfqEmailDailyBudget/{dateKey} {
       allow read: if isAdmin();
       allow write: if false;
     }
