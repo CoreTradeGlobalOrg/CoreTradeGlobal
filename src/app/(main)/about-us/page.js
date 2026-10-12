@@ -74,9 +74,17 @@ export default function AboutUsPage() {
                 <div className="w-full max-w-[1200px]">
                     <div className="relative overflow-hidden rounded-[20px] p-10 border border-[rgba(255,255,255,0.08)] bg-gradient-to-br from-[rgba(26,28,32,0.6)] to-[rgba(15,27,43,0.8)]">
                         <h2 className="text-[28px] font-bold mb-5 relative z-10" style={{ color: '#ffffff' }}>Who We Are</h2>
-                        <p className="text-base leading-[1.8] text-gray-200 relative z-10">
-                            Our motto is &ldquo;Core of the B2B.&rdquo; This is not just a slogan. It is a commitment that defines the essence of our platform. We are here to enable businesses of all sizes to participate in global trade with confidence, speed, and without intermediaries.
-                        </p>
+                        <div className="space-y-4 text-base leading-[1.8] text-gray-200 relative z-10">
+                            <p>
+                                CoreTradeGlobal is a B2B trade platform and software service based in Poland, founded by a team of entrepreneurs from Poland and Turkey.
+                            </p>
+                            <p>
+                                We built it for companies that trade across borders: exporters, importers, manufacturers, and the logistics and service firms that work with them. On CoreTradeGlobal they can list their products, post and answer requests for quotation, and contact each other directly, without going through a chain of brokers.
+                            </p>
+                            <p>
+                                We started in 2025 and have grown quickly since then. We want to keep getting better, and the best way we know to do that is to hear from the people who use the platform. If something isn&rsquo;t working for you, or you have an idea, let us know.
+                            </p>
+                        </div>
                     </div>
                 </div>
             </section>
