@@ -64,6 +64,16 @@ service cloud.firestore {
         (
           !('companyVerified' in request.resource.data) ||
           request.resource.data.companyVerified == resource.data.companyVerified
+        ) &&
+        // Misafir RFQ hesabı ad/şirketi bir kez belirler (identitySetAt);
+        // sonrasında sahibi bu üç alanı değiştiremez, sadece admin değiştirir.
+        (
+          resource.data.get('identitySetAt', null) == null ||
+          (
+            request.resource.data.get('displayName', null) == resource.data.get('displayName', null) &&
+            request.resource.data.get('companyName', null) == resource.data.get('companyName', null) &&
+            request.resource.data.get('identitySetAt', null) == resource.data.get('identitySetAt', null)
+          )
         )
       );
 

@@ -5977,7 +5977,7 @@ exports.createGuestRFQ = onCall(async (request) => {
   if (isNewAccount) {
     await userRef.set({
       email,
-      displayName: email.split('@')[0],
+      displayName: '', // "Buyer" gösterilir; e-postadan türetilen ad sızmasın
       companyName: '',
       role: ROLES.MEMBER,
       companyType: 'trade',

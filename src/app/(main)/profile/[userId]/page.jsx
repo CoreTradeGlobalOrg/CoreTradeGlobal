@@ -151,6 +151,7 @@ function ProfileContent() {
           onProfileUpdate={page.handleProfileUpdate}
           onCancelEdit={page.handleCancelEdit}
           onFieldSave={page.handleFieldSave}
+          onIdentitySave={page.handleIdentitySave}
           highlightFields={incompleteFields}
         />
 

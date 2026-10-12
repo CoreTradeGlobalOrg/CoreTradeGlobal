@@ -24,6 +24,7 @@ import { useUpdateRequest } from '@/presentation/hooks/request/useUpdateRequest'
 import { useCategories } from '@/presentation/hooks/category/useCategories';
 import toast from 'react-hot-toast';
 import { QuantityUnit } from '@/presentation/components/common/QuantityUnit/QuantityUnit';
+import { publicCompanyName } from '@/core/utils/publicIdentity';
 
 export function RequestDetailsClient({ initialRequest = null, initialAuthor = null } = {}) {
   const params = useParams();
@@ -306,7 +307,7 @@ export function RequestDetailsClient({ initialRequest = null, initialAuthor = nu
                     </div>
                   )}
                   <div>
-                    <p className="font-bold text-white hover:text-[#3B82F6] transition-colors">{author?.companyName || 'Buyer'}</p>
+                    <p className="font-bold text-white hover:text-[#3B82F6] transition-colors">{publicCompanyName(author, 'Buyer')}</p>
                     <p className="text-xs text-[#A0A0A0] flex items-center gap-1 mt-1">
                       <CountryFlag countryCode={countryCode} size={14} />
                       {countryName}
