@@ -95,9 +95,12 @@ function TickerSkeleton() {
 // --navbar-height changes, and mobile hero (margin-top: var(--navbar-height))
 // shifts by up to 32px on hard reload.
 export function CurrencyTicker() {
-  const { rates, fetchedAt, isStale, cacheExpired, error, loading } = useLiveCurrency();
+  const { rates, fetchedAt, isStale, cacheExpired } = useLiveCurrency();
 
-  const noRates = loading || cacheExpired || (error && !rates) || !rates;
+  // 24 saatten eski kurlar boş bant yerine "gecikmeli" uyarısıyla gösterilir.
+  // (CurrencyConvertPanel ise cacheExpired'da dönüşümü kapatmaya devam eder.)
+  const noRates = !rates;
+  const showDelayed = isStale || cacheExpired;
 
   if (noRates) {
     return (
@@ -111,8 +114,8 @@ export function CurrencyTicker() {
   return (
     <div className="w-full h-8 flex items-center overflow-hidden bg-[#0A1628] border-b border-[#2A3B52]">
       <div className="flex animate-marquee whitespace-nowrap text-[10px] sm:text-xs [animation-play-state:running] hover:[animation-play-state:paused]">
-        <TickerItems rates={rates} fetchedAt={fetchedAt} isStale={isStale} />
-        <TickerItems rates={rates} fetchedAt={fetchedAt} isStale={isStale} ariaHidden />
+        <TickerItems rates={rates} fetchedAt={fetchedAt} isStale={showDelayed} />
+        <TickerItems rates={rates} fetchedAt={fetchedAt} isStale={showDelayed} ariaHidden />
       </div>
     </div>
   );
