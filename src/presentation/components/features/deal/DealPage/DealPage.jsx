@@ -110,7 +110,7 @@ function TerminalBanner({ status, deal }) {
  * @param {{ submitCounterOffer: Function, acceptOffer: Function, rejectOffer: Function, withdrawOffer: Function, loading: boolean }} props.actions
  * @param {boolean} [props.otherPartyViewing]
  */
-export function DealPage({ deal, offers, currentUserUid, actions, otherPartyViewing }) {
+export function DealPage({ deal, offers, currentUserUid, actions, otherPartyViewing, readOnly = false }) {
   const router = useRouter();
   const prevStatusRef = useRef(null);
   const { openConversation } = useMessages();
@@ -187,11 +187,18 @@ export function DealPage({ deal, offers, currentUserUid, actions, otherPartyView
     <div className="min-h-screen bg-[#0F1C2E] pt-[calc(var(--navbar-height)+24px)] pb-4 px-4 sm:pb-6 sm:px-6">
       <div className="max-w-6xl mx-auto space-y-4">
 
+        {/* Admin read-only notice */}
+        {readOnly && (
+          <div className="rounded-xl border border-[#FFD700]/30 bg-[#FFD700]/5 px-4 py-2.5 text-xs text-[#FFD700]">
+            Admin view (read only). You are not a participant in this deal.
+          </div>
+        )}
+
         {/* Product Hero — full width */}
         <ProductHero deal={deal} />
 
         {/* Counterparty message button */}
-        {deal.conversationId && (
+        {deal.conversationId && !readOnly && (
           <div className="flex justify-end">
             <button
               type="button"
@@ -216,7 +223,7 @@ export function DealPage({ deal, offers, currentUserUid, actions, otherPartyView
             <div className="flex items-center gap-2 mb-1">
               <FileText size={16} className="text-[#FFD700]" />
               <p className="text-sm font-semibold text-[#FFD700]">
-                Deal Accepted — Contract Ready
+                Deal Accepted: Contract Ready
               </p>
             </div>
             <p className="text-xs text-[#8899AA] mt-0.5">
@@ -318,7 +325,7 @@ export function DealPage({ deal, offers, currentUserUid, actions, otherPartyView
               </div>
 
               {/* Counter-Offer Form — only visible during active negotiation */}
-              {deal.status === DEAL_STATUS.NEGOTIATING && (
+              {deal.status === DEAL_STATUS.NEGOTIATING && !readOnly && (
                 <CounterOfferForm
                   deal={deal}
                   latestOffer={latestOffer}
