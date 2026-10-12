@@ -7610,7 +7610,7 @@ exports.wfFormAbandonmentSweep = onSchedule(
 // Weekly product view report
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Mailde tek tek listelenen ürün sayısı; kalanlar tek satırda özetlenir
+// Mailde tek tek listelenen ürün sayısı; kalanlar sadece toplamlara girer
 const WEEKLY_VIEWS_TOP_N = 5;
 
 function escapeEmailText(value) {
@@ -7637,7 +7637,7 @@ function lastWeekRangeLabel(now) {
   return `${fmt(lastMonday)} – ${fmt(lastSunday)}`;
 }
 
-function buildWeeklyViewsEmailBody({ rangeLabel, top, restCount, restWeekly, weeklyTotal, allTimeTotal }) {
+function buildWeeklyViewsEmailBody({ rangeLabel, top, weeklyTotal, allTimeTotal }) {
   const cell = 'padding:10px 0;border-bottom:1px solid #1E3A5F;font-size:14px;font-family:Arial,sans-serif;';
   const rows = top
     .map((p) => `<tr>
@@ -7645,16 +7645,10 @@ function buildWeeklyViewsEmailBody({ rangeLabel, top, restCount, restWeekly, wee
         <td style="${cell}color:#FFD700;text-align:right;white-space:nowrap;font-weight:bold;">${formatCount(p.weekly)} ${p.weekly === 1 ? 'view' : 'views'}</td>
       </tr>`)
     .join('');
-  const restRow = restCount > 0
-    ? `<tr>
-        <td style="${cell}color:#8899AA;">+ ${formatCount(restCount)} more ${restCount === 1 ? 'product' : 'products'}</td>
-        <td style="${cell}color:#8899AA;text-align:right;white-space:nowrap;">${formatCount(restWeekly)} ${restWeekly === 1 ? 'view' : 'views'}</td>
-      </tr>`
-    : '';
 
   return `<p style="margin:0 0 8px 0;">Here is how many times your products were viewed last week (${rangeLabel}).</p>
     <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:16px 0;">
-      ${rows}${restRow}
+      ${rows}
       <tr>
         <td style="padding:12px 0 0 0;font-size:14px;font-family:Arial,sans-serif;color:#FFFFFF;font-weight:bold;">Last week, all products</td>
         <td style="padding:12px 0 0 0;font-size:14px;font-family:Arial,sans-serif;color:#FFFFFF;font-weight:bold;text-align:right;white-space:nowrap;">${formatCount(weeklyTotal)} ${weeklyTotal === 1 ? 'view' : 'views'}</td>
@@ -7672,9 +7666,8 @@ function buildWeeklyViewsEmailBody({ rangeLabel, top, restCount, restWeekly, wee
  * For every user who owns at least one product: one in-app notification,
  * a push (unless preferences.insights.push is false) and (unless
  * preferences.insights.email is false) one email listing the
- * top WEEKLY_VIEWS_TOP_N products by last week's views, a single summary
- * line for the rest, last week's total and the all-time total across all
- * of the user's products. Sent even when last week had zero views.
+ * top WEEKLY_VIEWS_TOP_N products by last week's views, last week's total
+ * and the all-time total across all of the user's products. Sent even when last week had zero views.
  *
  * Idempotent per user and week: the notification doc id is
  * weekly-views-<weekKey>; if it exists the user is skipped, so a manual
@@ -7728,10 +7721,8 @@ exports.sendWeeklyProductViewReport = onSchedule(
 
       products.sort((a, b) => b.weekly - a.weekly || a.name.localeCompare(b.name));
       const top = products.slice(0, WEEKLY_VIEWS_TOP_N);
-      const rest = products.slice(WEEKLY_VIEWS_TOP_N);
       const weeklyTotal = products.reduce((sum, p) => sum + p.weekly, 0);
       const allTimeTotal = products.reduce((sum, p) => sum + p.allTime, 0);
-      const restWeekly = rest.reduce((sum, p) => sum + p.weekly, 0);
       const link = `/profile/${uid}?tab=products`;
 
       await notifRef.set({
@@ -7757,7 +7748,7 @@ exports.sendWeeklyProductViewReport = onSchedule(
       const emailEnabled = user.preferences?.insights?.email !== false;
       if (user.email && emailEnabled) {
         const html = buildBrandedEmailHtml(
-          buildWeeklyViewsEmailBody({ rangeLabel, top, restCount: rest.length, restWeekly, weeklyTotal, allTimeTotal }),
+          buildWeeklyViewsEmailBody({ rangeLabel, top, weeklyTotal, allTimeTotal }),
           'View all products',
           `${APP_URL}${link}`
         );
