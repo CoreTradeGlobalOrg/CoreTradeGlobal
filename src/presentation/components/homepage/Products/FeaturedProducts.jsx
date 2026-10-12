@@ -328,7 +328,6 @@ export function FeaturedProducts({ initialProducts = [] }) {
         <div className="featured-products-header">
           <div>
             <h2>Latest Products</h2>
-            <p>Goods from verified suppliers.</p>
           </div>
           <Link href="/products" className="btn-section-action">
             View All Products →
