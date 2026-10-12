@@ -5673,9 +5673,10 @@ function buildRfqEmailBody({ productName, categoryName }) {
 }
 
 /**
- * onRFQCreated
+ * notifyMembersOfNewRfq
  *
- * Fires when a new RFQ (requests/{id}) is created. The creator is skipped.
+ * Runs when an RFQ goes live (created as 'active', or a guest RFQ moving
+ * from 'pending_verification' to 'active'). The creator is skipped.
  *
  * Channels:
  *   - in-app notification: every member
@@ -5686,104 +5687,460 @@ function buildRfqEmailBody({ productName, categoryName }) {
  * Notification doc id is rfq-<requestId> so a retried trigger overwrites
  * instead of duplicating.
  */
-exports.onRFQCreated = onDocumentCreated(
-  { document: 'requests/{requestId}', timeoutSeconds: 540, memory: '512MiB' },
-  async (event) => {
-    try {
-      const rfq = event.data?.data();
-      if (!rfq) return;
+async function notifyMembersOfNewRfq(requestId, rfq) {
+  try {
+    if (!rfq) return;
+    const now = Timestamp.now();
+    const productName = rfq.productName || rfq.title || 'a product';
+    const creatorId = rfq.userId;
+    const categoryId = rfq.categoryId || null;
+    const link = `/request/${requestId}`;
 
-      const requestId = event.params.requestId;
-      const now = Timestamp.now();
-      const productName = rfq.productName || rfq.title || 'a product';
-      const creatorId = rfq.userId;
-      const categoryId = rfq.categoryId || null;
-      const link = `/request/${requestId}`;
+    const notifTitle = 'New RFQ Available';
+    const notifBody = `A new request for quotation has been posted for ${productName}.`;
 
-      const notifTitle = 'New RFQ Available';
-      const notifBody = `A new request for quotation has been posted for ${productName}.`;
+    let categoryName = '';
+    if (categoryId) {
+      try {
+        const catSnap = await db.collection('categories').doc(categoryId).get();
+        categoryName = catSnap.exists ? catSnap.data().name || '' : '';
+      } catch (err) {
+        console.warn(`notifyMembersOfNewRfq: category lookup failed for ${categoryId}:`, err.message);
+      }
+    }
 
-      let categoryName = '';
-      if (categoryId) {
-        try {
-          const catSnap = await db.collection('categories').doc(categoryId).get();
-          categoryName = catSnap.exists ? catSnap.data().name || '' : '';
-        } catch (err) {
-          console.warn(`onRFQCreated: category lookup failed for ${categoryId}:`, err.message);
-        }
+    const membersSnap = await db.collection('users').where('role', '==', ROLES.MEMBER).get();
+    const members = membersSnap.docs.filter((d) => d.id !== creatorId && !d.data().isDeleted);
+    if (members.length === 0) {
+      console.log(`notifyMembersOfNewRfq: no members to notify for RFQ ${requestId}`);
+      return;
+    }
+
+    const emailHtml = buildBrandedEmailHtml(
+      buildRfqEmailBody({ productName, categoryName }),
+      'View RFQ',
+      `${APP_URL}${link}`
+    );
+    const emailSubject = `New RFQ in ${categoryName || 'your category'}: ${productName}`;
+
+    let emailed = 0;
+    const notifyMember = async (memberDoc) => {
+      const memberId = memberDoc.id;
+      const memberData = memberDoc.data();
+
+      // a) In-app notification: everyone
+      try {
+        await db.collection('users').doc(memberId).collection('notifications').doc(`rfq-${requestId}`).set({
+          type: 'rfq_created',
+          title: notifTitle,
+          body: notifBody,
+          requestId,
+          productName,
+          isRead: false,
+          createdAt: now,
+          link,
+        });
+      } catch (err) {
+        console.error(`notifyMembersOfNewRfq: in-app notification failed for ${memberId}:`, err);
       }
 
-      const membersSnap = await db.collection('users').where('role', '==', ROLES.MEMBER).get();
-      const members = membersSnap.docs.filter((d) => d.id !== creatorId && !d.data().isDeleted);
-      if (members.length === 0) {
-        console.log(`onRFQCreated: no members to notify for RFQ ${requestId}`);
-        return;
-      }
-
-      const emailHtml = buildBrandedEmailHtml(
-        buildRfqEmailBody({ productName, categoryName }),
-        'View RFQ',
-        `${APP_URL}${link}`
-      );
-      const emailSubject = `New RFQ in ${categoryName || 'your category'}: ${productName}`;
-
-      let emailed = 0;
-      const notifyMember = async (memberDoc) => {
-        const memberId = memberDoc.id;
-        const memberData = memberDoc.data();
-
-        // a) In-app notification: everyone
+      // b) Push: everyone with push on
+      if (memberData.preferences?.providers?.push !== false) {
         try {
-          await db.collection('users').doc(memberId).collection('notifications').doc(`rfq-${requestId}`).set({
+          await sendFCMPushToUser(memberId, memberData, {
             type: 'rfq_created',
             title: notifTitle,
             body: notifBody,
             requestId,
-            productName,
-            isRead: false,
-            createdAt: now,
             link,
           });
         } catch (err) {
-          console.error(`onRFQCreated: in-app notification failed for ${memberId}:`, err);
+          console.error(`notifyMembersOfNewRfq: FCM error for ${memberId}:`, err);
         }
-
-        // b) Push: everyone with push on
-        if (memberData.preferences?.providers?.push !== false) {
-          try {
-            await sendFCMPushToUser(memberId, memberData, {
-              type: 'rfq_created',
-              title: notifTitle,
-              body: notifBody,
-              requestId,
-              link,
-            });
-          } catch (err) {
-            console.error(`onRFQCreated: FCM error for ${memberId}:`, err);
-          }
-        }
-
-        // c) Email: only members in the RFQ's category
-        const inCategory = categoryId && memberData.companyCategory === categoryId;
-        if (inCategory && memberData.email && memberData.preferences?.providers?.email !== false) {
-          const ok = await sendEmail({
-            to: memberData.email,
-            subject: emailSubject,
-            html: emailHtml,
-            tag: `onRFQCreated (${requestId} -> ${memberId})`,
-          });
-          if (ok) emailed++;
-        }
-      };
-
-      for (let i = 0; i < members.length; i += RFQ_NOTIFY_CONCURRENCY) {
-        await Promise.all(members.slice(i, i + RFQ_NOTIFY_CONCURRENCY).map(notifyMember));
       }
 
-      console.log(`onRFQCreated: RFQ ${requestId} notified=${members.length} emailed=${emailed} category=${categoryId || 'none'}`);
-    } catch (err) {
-      console.error('onRFQCreated: unexpected error (non-fatal):', err);
+      // c) Email: only members in the RFQ's category
+      const inCategory = categoryId && memberData.companyCategory === categoryId;
+      if (inCategory && memberData.email && memberData.preferences?.providers?.email !== false) {
+        const ok = await sendEmail({
+          to: memberData.email,
+          subject: emailSubject,
+          html: emailHtml,
+          tag: `notifyMembersOfNewRfq (${requestId} -> ${memberId})`,
+        });
+        if (ok) emailed++;
+      }
+    };
+
+    for (let i = 0; i < members.length; i += RFQ_NOTIFY_CONCURRENCY) {
+      await Promise.all(members.slice(i, i + RFQ_NOTIFY_CONCURRENCY).map(notifyMember));
     }
+
+    console.log(`notifyMembersOfNewRfq: RFQ ${requestId} notified=${members.length} emailed=${emailed} category=${categoryId || 'none'}`);
+  } catch (err) {
+    console.error('notifyMembersOfNewRfq: unexpected error (non-fatal):', err);
+  }
+}
+
+/**
+ * onRFQCreated: RFQs created live by signed-in members notify right away.
+ * Guest RFQs are created as 'pending_verification' and notify from
+ * onRFQPublished once the email is confirmed.
+ */
+exports.onRFQCreated = onDocumentCreated(
+  { document: 'requests/{requestId}', timeoutSeconds: 540, memory: '512MiB' },
+  async (event) => {
+    const rfq = event.data?.data();
+    if (!rfq || rfq.status !== 'active') return;
+    await notifyMembersOfNewRfq(event.params.requestId, rfq);
+  }
+);
+
+/**
+ * onRFQPublished: a guest RFQ went live after its owner confirmed the
+ * email (publishGuestRFQ flips pending_verification → active).
+ */
+exports.onRFQPublished = onDocumentUpdated(
+  { document: 'requests/{requestId}', timeoutSeconds: 540, memory: '512MiB' },
+  async (event) => {
+    const before = event.data?.before?.data();
+    const after = event.data?.after?.data();
+    if (!before || !after) return;
+    if (before.status !== 'pending_verification' || after.status !== 'active') return;
+    await notifyMembersOfNewRfq(event.params.requestId, after);
+  }
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Guest RFQs (post an RFQ without an account)
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// 1. createGuestRFQ: visitor sends the RFQ fields + email. We find or create
+//    a passwordless member account for that email, store the RFQ as
+//    'pending_verification' (hidden: every list filters status == 'active')
+//    and email a sign-in link to /email-link?rfq=<id>.
+// 2. The visitor clicks the link, is signed in (that proves the email) and
+//    the page calls publishGuestRFQ → status 'active' → onRFQPublished
+//    notifies members. No admin approval; the account stays
+//    adminApproved: false until an admin approves it.
+// 3. sweepPendingGuestRFQs: one reminder after 24 h, cleanup after 7 days.
+
+const { buildMagicLink } = require('./emailWorkflow/magicLink');
+
+const GUEST_RFQ_LIMIT_PER_EMAIL = 3; // günlük
+const GUEST_RFQ_LIMIT_PER_IP = 10; // günlük
+const SIGN_IN_LINK_LIMIT_PER_EMAIL = 5; // günlük
+const SIGN_IN_LINK_LIMIT_PER_IP = 20; // günlük
+const GUEST_RFQ_REMINDER_MS = 24 * 60 * 60 * 1000;
+const GUEST_RFQ_EXPIRE_MS = 7 * 24 * 60 * 60 * 1000;
+const GUEST_EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+function sha256Hex(value) {
+  return require('crypto').createHash('sha256').update(String(value)).digest('hex');
+}
+
+function callerIp(request) {
+  const raw = request.rawRequest?.headers?.['x-forwarded-for'] || request.rawRequest?.ip || '';
+  return String(raw).split(',')[0].trim() || 'unknown';
+}
+
+/** Daily counter in guestRateLimits/{key}_{date}; false once `limit` is reached. */
+async function consumeDailyLimit(key, limit) {
+  const ref = db.collection('guestRateLimits').doc(`${key}_${trDateKey(new Date())}`);
+  return db.runTransaction(async (t) => {
+    const snap = await t.get(ref);
+    const count = snap.exists ? Number(snap.data().count) || 0 : 0;
+    if (count >= limit) return false;
+    t.set(ref, { count: count + 1, updatedAt: Timestamp.now() }, { merge: true });
+    return true;
+  });
+}
+
+function normalizeEmail(raw) {
+  const email = String(raw || '').trim().toLowerCase();
+  if (!GUEST_EMAIL_RE.test(email) || email.length > 254) {
+    throw new HttpsError('invalid-argument', 'Please enter a valid email address.');
+  }
+  return email;
+}
+
+/** Same rules as src/core/validation/requestSchema.js. */
+function validateGuestRfqFields(raw) {
+  const r = raw || {};
+  const str = (v, max) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
+  const productName = str(r.productName, 200);
+  const categoryId = str(r.categoryId, 128);
+  const targetCountry = str(r.targetCountry, 100);
+  const unit = str(r.unit, 16) || 'PCE';
+  const unitCategory = str(r.unitCategory, 32) || 'Quantity';
+  const description = str(r.description, 5000);
+  const quantity = Number(r.quantity);
+  const budget = r.budget === '' || r.budget === null || r.budget === undefined ? null : Number(r.budget);
+
+  if (productName.length < 2) throw new HttpsError('invalid-argument', 'Product name must be at least 2 characters.');
+  if (!categoryId || categoryId.includes('/')) throw new HttpsError('invalid-argument', 'Please select a category.');
+  if (!targetCountry) throw new HttpsError('invalid-argument', 'Please select a target country.');
+  if (!Number.isFinite(quantity) || quantity <= 0) throw new HttpsError('invalid-argument', 'Quantity must be greater than 0.');
+  if (description.length < 10) throw new HttpsError('invalid-argument', 'Description must be at least 10 characters.');
+  if (budget !== null && (!Number.isFinite(budget) || budget < 0)) throw new HttpsError('invalid-argument', 'Please enter a valid budget amount.');
+
+  return {
+    productName: toTitleCase(productName),
+    categoryId,
+    targetCountry,
+    quantity: Math.floor(quantity),
+    unit,
+    unitCategory,
+    description,
+    budget,
+  };
+}
+
+async function sendGuestRfqConfirmEmail(email, requestId, productName, { reminder = false } = {}) {
+  const link = await buildMagicLink(email, { landingPath: `/email-link?rfq=${encodeURIComponent(requestId)}` });
+  const product = escapeEmailText(productName);
+  const body = reminder
+    ? `<p style="margin:0 0 16px 0;">Your request for quotation for <strong>${product}</strong> is still waiting to be published.</p>
+       <p style="margin:0;">Confirm your email address and it goes live right away, and suppliers in this category are notified. Unconfirmed requests are removed after 7 days.</p>`
+    : `<p style="margin:0 0 16px 0;">Thanks for posting your request for quotation for <strong>${product}</strong> on CoreTradeGlobal.</p>
+       <p style="margin:0;">Confirm your email address to publish it. Your RFQ goes live right away and suppliers in this category are notified. You can set a password on the next screen.</p>`;
+  return sendEmail({
+    to: email,
+    subject: reminder ? 'Your RFQ is waiting to be published' : 'Confirm your email to publish your RFQ',
+    html: buildBrandedEmailHtml(body, 'Publish my RFQ', link, 'If you did not post this request, you can ignore this email.'),
+    tag: `guestRfqConfirm${reminder ? 'Reminder' : ''} (${requestId})`,
+  });
+}
+
+/**
+ * createGuestRFQ — onCall, no auth.
+ *
+ * @param {Object} data - { email, rfq: { productName, categoryId, targetCountry, quantity, unit, unitCategory, description, budget }, website }
+ *   `website` is a honeypot: real users never fill it.
+ * @returns {Promise<{ status: 'pending' }>}
+ */
+exports.createGuestRFQ = onCall(async (request) => {
+  if (request.auth) {
+    throw new HttpsError('failed-precondition', 'You are already signed in. Please create the RFQ from your account.');
+  }
+  const data = request.data || {};
+  if (data.website) return { status: 'pending' }; // bot tuzağı: sessizce yut
+
+  const email = normalizeEmail(data.email);
+  const rfq = validateGuestRfqFields(data.rfq);
+
+  const ipKey = `rfq_ip_${sha256Hex(callerIp(request)).slice(0, 24)}`;
+  const emailKey = `rfq_email_${sha256Hex(email).slice(0, 24)}`;
+  if (!(await consumeDailyLimit(ipKey, GUEST_RFQ_LIMIT_PER_IP)) || !(await consumeDailyLimit(emailKey, GUEST_RFQ_LIMIT_PER_EMAIL))) {
+    throw new HttpsError('resource-exhausted', 'Too many requests today. Please try again tomorrow.');
+  }
+
+  const categorySnap = await db.collection('categories').doc(rfq.categoryId).get();
+  if (!categorySnap.exists) throw new HttpsError('invalid-argument', 'Please select a category.');
+
+  // Mevcut hesabı bul ya da şifresiz yeni üye aç
+  let uid;
+  let isNewAccount = false;
+  try {
+    const existing = await admin.auth().getUserByEmail(email);
+    if (existing.disabled) throw new HttpsError('permission-denied', 'This account cannot post requests. Please contact support.');
+    uid = existing.uid;
+  } catch (err) {
+    if (err instanceof HttpsError) throw err;
+    if (err.code !== 'auth/user-not-found') throw err;
+    const created = await admin.auth().createUser({ email, emailVerified: false });
+    uid = created.uid;
+    isNewAccount = true;
+  }
+
+  const now = Timestamp.now();
+  const userRef = db.collection('users').doc(uid);
+  if (isNewAccount) {
+    await userRef.set({
+      email,
+      displayName: email.split('@')[0],
+      companyName: '',
+      role: ROLES.MEMBER,
+      companyType: 'trade',
+      firstName: '',
+      lastName: '',
+      phone: '',
+      position: '',
+      companyCategory: null,
+      companyWebsite: null,
+      linkedinProfile: null,
+      country: '',
+      companyLogo: null,
+      authProvider: 'emailLink',
+      profileComplete: false,
+      emailVerified: false,
+      adminApproved: false,
+      isSuspended: false,
+      source: 'guest_rfq',
+      createdAt: now,
+      updatedAt: now,
+    });
+  } else {
+    const userSnap = await userRef.get();
+    const u = userSnap.data() || {};
+    if (u.isDeleted || u.isSuspended) {
+      throw new HttpsError('permission-denied', 'This account cannot post requests. Please contact support.');
+    }
+  }
+
+  const rfqRef = await db.collection('requests').add({
+    ...rfq,
+    userId: uid,
+    status: 'pending_verification',
+    source: 'guest',
+    submittedAt: now,
+    createdAt: now,
+    updatedAt: now,
+  });
+  await userRef.set({
+    requestIds: FieldValue.arrayUnion(rfqRef.id),
+    ...(isNewAccount && { pendingGuestRfqId: rfqRef.id }),
+  }, { merge: true });
+
+  const sent = await sendGuestRfqConfirmEmail(email, rfqRef.id, rfq.productName);
+  if (!sent) {
+    throw new HttpsError('internal', 'We could not send the confirmation email. Please try again in a few minutes.');
+  }
+  console.log(`createGuestRFQ: ${rfqRef.id} pending for ${uid} (newAccount=${isNewAccount})`);
+  return { status: 'pending' };
+});
+
+/**
+ * publishGuestRFQ — onCall, signed in. Called by /email-link right after
+ * the visitor signs in with the confirmation link.
+ *
+ * @param {Object} data - { requestId }
+ * @returns {Promise<{ status: 'active' }>}
+ */
+exports.publishGuestRFQ = onCall(async (request) => {
+  if (!request.auth) throw new HttpsError('unauthenticated', 'Please sign in first.');
+  const { requestId } = request.data || {};
+  if (!requestId || typeof requestId !== 'string' || requestId.includes('/')) {
+    throw new HttpsError('invalid-argument', 'requestId is required.');
+  }
+
+  const ref = db.collection('requests').doc(requestId);
+  const snap = await ref.get();
+  if (!snap.exists) throw new HttpsError('not-found', 'This request no longer exists. Please post it again.');
+  const rfq = snap.data();
+  if (rfq.userId !== request.auth.uid) throw new HttpsError('permission-denied', 'This request belongs to another account.');
+  if (rfq.status === 'active') return { status: 'active' };
+  if (rfq.status !== 'pending_verification') throw new HttpsError('failed-precondition', 'This request cannot be published.');
+
+  const now = Timestamp.now();
+  // createdAt yayın anına çekiliyor ki listelerde yeni RFQ olarak en üstte görünsün
+  await ref.update({ status: 'active', publishedAt: now, createdAt: now, updatedAt: now });
+
+  const uid = request.auth.uid;
+  try {
+    await admin.auth().updateUser(uid, { emailVerified: true });
+    await db.collection('users').doc(uid).update({
+      emailVerified: true,
+      pendingGuestRfqId: FieldValue.delete(),
+      updatedAt: now,
+    });
+  } catch (err) {
+    console.warn(`publishGuestRFQ: could not mark ${uid} verified:`, err.message);
+  }
+  console.log(`publishGuestRFQ: ${requestId} is live`);
+  return { status: 'active' };
+});
+
+/**
+ * sendSignInLink — onCall, no auth. "Email me a sign-in link" on /login,
+ * for accounts without a password (guest RFQ accounts) or anyone who
+ * prefers it. Always answers ok so it can't be used to probe which emails
+ * have accounts.
+ *
+ * @param {Object} data - { email, next }  next: same-site path to open after sign-in
+ */
+exports.sendSignInLink = onCall(async (request) => {
+  const email = normalizeEmail(request.data?.email);
+  const rawNext = typeof request.data?.next === 'string' ? request.data.next : '/';
+  const next = rawNext.startsWith('/') && !rawNext.startsWith('//') ? rawNext.slice(0, 300) : '/';
+
+  const ipOk = await consumeDailyLimit(`link_ip_${sha256Hex(callerIp(request)).slice(0, 24)}`, SIGN_IN_LINK_LIMIT_PER_IP);
+  const emailOk = await consumeDailyLimit(`link_email_${sha256Hex(email).slice(0, 24)}`, SIGN_IN_LINK_LIMIT_PER_EMAIL);
+  if (!ipOk || !emailOk) {
+    throw new HttpsError('resource-exhausted', 'Too many requests today. Please try again tomorrow.');
+  }
+
+  try {
+    const user = await admin.auth().getUserByEmail(email);
+    const userDoc = (await db.collection('users').doc(user.uid).get()).data() || {};
+    if (user.disabled || userDoc.isDeleted || userDoc.isSuspended) return { ok: true };
+    const link = await buildMagicLink(email, { landingPath: `/email-link?next=${encodeURIComponent(next)}` });
+    await sendEmail({
+      to: email,
+      subject: 'Your CoreTradeGlobal sign-in link',
+      html: buildBrandedEmailHtml(
+        '<p style="margin:0 0 16px 0;">Click the button below to sign in to CoreTradeGlobal. The link works once.</p>',
+        'Sign in',
+        link,
+        'If you did not ask for this link, you can ignore this email.'
+      ),
+      tag: `sendSignInLink (${user.uid})`,
+    });
+  } catch (err) {
+    if (err.code !== 'auth/user-not-found') console.error('sendSignInLink failed:', err);
+  }
+  return { ok: true };
+});
+
+/**
+ * sweepPendingGuestRFQs — daily 10:00 Turkey time.
+ * Unconfirmed guest RFQs get one reminder after 24 h (with a fresh link)
+ * and are deleted after 7 days. If the account was created just for that
+ * RFQ and never signed in, the account goes too.
+ */
+exports.sweepPendingGuestRFQs = onSchedule(
+  { schedule: 'every day 10:00', timeZone: 'Europe/Istanbul', timeoutSeconds: 300 },
+  async () => {
+    const snap = await db.collection('requests').where('status', '==', 'pending_verification').get();
+    const nowMs = Date.now();
+    let reminded = 0;
+    let removed = 0;
+
+    for (const doc of snap.docs) {
+      const rfq = doc.data();
+      const submittedMs = (rfq.submittedAt || rfq.createdAt)?.toDate?.().getTime?.() || nowMs;
+      const ageMs = nowMs - submittedMs;
+      try {
+        const userRef = db.collection('users').doc(rfq.userId);
+        const user = (await userRef.get()).data() || null;
+
+        if (ageMs >= GUEST_RFQ_EXPIRE_MS) {
+          await doc.ref.delete();
+          removed++;
+          const remaining = (user?.requestIds || []).filter((id) => id !== doc.id);
+          const throwaway = user && user.source === 'guest_rfq' && !user.emailVerified && remaining.length === 0;
+          if (throwaway) {
+            await userRef.delete();
+            await admin.auth().deleteUser(rfq.userId).catch((err) => console.warn(`sweepPendingGuestRFQs: auth delete failed for ${rfq.userId}:`, err.message));
+          } else if (user) {
+            await userRef.update({ requestIds: FieldValue.arrayRemove(doc.id), pendingGuestRfqId: FieldValue.delete() });
+          }
+          continue;
+        }
+
+        if (ageMs >= GUEST_RFQ_REMINDER_MS && !rfq.reminderSentAt && user?.email) {
+          const ok = await sendGuestRfqConfirmEmail(user.email, doc.id, rfq.productName, { reminder: true });
+          if (ok) {
+            await doc.ref.update({ reminderSentAt: Timestamp.now() });
+            reminded++;
+          }
+        }
+      } catch (err) {
+        console.error(`sweepPendingGuestRFQs: failed for ${doc.id}:`, err);
+      }
+    }
+    console.log(`sweepPendingGuestRFQs: pending=${snap.size} reminded=${reminded} removed=${removed}`);
+    return null;
   }
 );
 
@@ -7161,6 +7518,8 @@ exports.wfSendEmailVerification = onDocumentCreated('users/{uid}', async (event)
     if (!data?.email) return;
     if (data.emailVerified) return; // already verified via OAuth path
     if (data.isSuspended) return;
+    // Misafir RFQ hesabı kendi "Publish my RFQ" onay mailini alıyor
+    if (data.source === 'guest_rfq') return;
 
     // Auto-verify server-side. The account owner already proved they
     // own the address by receiving our magic-link welcome — a separate
@@ -7210,7 +7569,7 @@ exports.wfHourlyEmailSweep = onSchedule(
 
     // Windows — [minAge, maxAge] in ms since createdAt / lastLoginAt.
     const WINDOWS = {
-      wf2_2: { field: 'createdAt', min: 24 * 60 * 60 * 1000, max: 72 * 60 * 60 * 1000, predicate: (u) => u.email && !u.emailVerified },
+      wf2_2: { field: 'createdAt', min: 24 * 60 * 60 * 1000, max: 72 * 60 * 60 * 1000, predicate: (u) => u.email && !u.emailVerified && u.source !== 'guest_rfq' },
       wf3_1: { field: 'createdAt', min: 24 * 60 * 60 * 1000, max: 48 * 60 * 60 * 1000, predicate: (u) => u.email && (u.productIds || []).length === 0 },
       wf3_2: { field: 'createdAt', min: 96 * 60 * 60 * 1000, max: 120 * 60 * 60 * 1000, predicate: (u) => u.email && (u.productIds || []).length === 0 },
       wf4_1: { field: 'createdAt', min: 48 * 60 * 60 * 1000, max: 96 * 60 * 60 * 1000, predicate: profileIncomplete },

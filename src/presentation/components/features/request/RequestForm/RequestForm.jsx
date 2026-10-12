@@ -8,6 +8,7 @@
 'use client';
 
 import { useForm } from 'react-hook-form';
+import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
@@ -21,7 +22,17 @@ import { toTitleCase } from '@/core/utils/nameCase';
 import { useCategories } from '@/presentation/hooks/category/useCategories';
 import { useTrackEvent } from '@/presentation/hooks/analytics';
 
-export function RequestForm({ request, onSubmit, onCancel, userId }) {
+// Misafir modu: hesap yok, sadece e-posta isteniyor
+const guestRequestSchema = requestSchema.extend({
+  email: z.string().trim().min(1, 'Email is required').email('Please enter a valid email address'),
+});
+
+/**
+ * @param {boolean} [guestMode] signed-out visitor: adds a required email
+ *   field and a hidden honeypot; onSubmit receives { ...fields, email, website }
+ *   and the page shows its own success state (no toast here).
+ */
+export function RequestForm({ request, onSubmit, onCancel, userId, guestMode = false }) {
   const { categories, loading: categoriesLoading } = useCategories();
   const [submitting, setSubmitting] = useState(false);
   const { trackCreateRequest } = useTrackEvent();
@@ -39,7 +50,7 @@ export function RequestForm({ request, onSubmit, onCancel, userId }) {
     setValue,
     watch,
   } = useForm({
-    resolver: zodResolver(requestSchema),
+    resolver: zodResolver(guestMode ? guestRequestSchema : requestSchema),
     mode: 'onSubmit',
     reValidateMode: 'onBlur',
     defaultValues: {
@@ -52,8 +63,10 @@ export function RequestForm({ request, onSubmit, onCancel, userId }) {
       description: request?.description || '',
       budget: request?.budget || '',
       status: request?.status || 'active',
+      ...(guestMode && { email: '' }),
     },
   });
+  const [honeypot, setHoneypot] = useState('');
 
   const categoryId = watch('categoryId');
   const targetCountry = watch('targetCountry');
@@ -76,6 +89,7 @@ export function RequestForm({ request, onSubmit, onCancel, userId }) {
         // Normalize RFQ title to Title Case so DB rows are consistent.
         title: toTitleCase(data.title),
         userId,
+        ...(guestMode && { website: honeypot }),
       };
 
       const result = await onSubmit(requestData);
@@ -85,7 +99,7 @@ export function RequestForm({ request, onSubmit, onCancel, userId }) {
         trackCreateRequest(result?.id || 'new', data.categoryId);
       }
 
-      toast.success(isEditing ? 'Request updated!' : 'Request created!');
+      if (!guestMode) toast.success(isEditing ? 'Request updated!' : 'Request created!');
     } catch (error) {
       toast.error(error.message || 'Failed to save request');
     } finally {
@@ -257,10 +271,48 @@ export function RequestForm({ request, onSubmit, onCancel, userId }) {
         )}
       </div>
 
+      {guestMode && (
+        <div>
+          <label htmlFor="rfq-guest-email" className="block text-sm font-medium text-gray-300 mb-2">
+            Your email <span className="text-[#3b82f6]">*</span>
+          </label>
+          <input
+            id="rfq-guest-email"
+            type="email"
+            autoComplete="email"
+            {...register('email')}
+            className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-4 transition-all duration-200 bg-[#0F1B2B] text-white placeholder:text-gray-500 ${errors.email
+              ? 'border-red-500 focus:border-red-600 focus:ring-red-500/20'
+              : 'border-[rgba(255,255,255,0.1)] focus:border-[#3b82f6] focus:ring-[#3b82f6]/20'
+              }`}
+            disabled={submitting}
+            placeholder="you@company.com"
+          />
+          {errors.email ? (
+            <p className="text-xs text-red-400 mt-1">{errors.email.message}</p>
+          ) : (
+            <p className="text-xs text-[#A0A0A0] mt-1">
+              We will send you a link to publish your request. Suppliers reply to you on CoreTradeGlobal.
+            </p>
+          )}
+          {/* Bot tuzağı: ekranda görünmez, gerçek kullanıcı doldurmaz */}
+          <input
+            type="text"
+            name="website"
+            value={honeypot}
+            onChange={(e) => setHoneypot(e.target.value)}
+            tabIndex={-1}
+            autoComplete="off"
+            aria-hidden="true"
+            className="absolute left-[-9999px] h-0 w-0 opacity-0"
+          />
+        </div>
+      )}
+
       {/* Actions */}
       <div className="flex gap-3 pt-4">
         <Button type="submit" disabled={submitting}>
-          {submitting ? 'Saving...' : isEditing ? 'Update Request' : 'Create Request'}
+          {submitting ? 'Saving...' : isEditing ? 'Update Request' : guestMode ? 'Publish Request' : 'Create Request'}
         </Button>
         <Button type="button" variant="secondary" onClick={onCancel} disabled={submitting}>
           Cancel
