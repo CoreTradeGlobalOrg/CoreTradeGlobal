@@ -19,6 +19,7 @@ import { ProductForm } from '@/presentation/components/features/product/ProductF
 import { ArrowLeft, Pencil, Trash2, Power, Star, Share2, Eye } from 'lucide-react';
 import { httpsCallable } from 'firebase/functions';
 import { getFunctionsInstance } from '@/core/config/firebase.config';
+import { useSafeBack } from '@/presentation/hooks/navigation/useSafeBack';
 import { container } from '@/core/di/container';
 import { useConversations } from '@/presentation/hooks/messaging/useConversations';
 import { useRecommendedProducts } from '@/presentation/hooks/product/useRecommendedProducts';
@@ -34,6 +35,7 @@ import { QuantityUnit } from '@/presentation/components/common/QuantityUnit/Quan
 export function ProductDetailClient({ initialProduct = null, initialSeller = null } = {}) {
   const { user: currentUser, loading: authLoading } = useAuth();
   const router = useRouter();
+  const goBack = useSafeBack('/');
   const { productId } = useParams();
 
   // Seed useProduct with the server-fetched doc so the first render on
@@ -178,7 +180,7 @@ export function ProductDetailClient({ initialProduct = null, initialSeller = nul
   return (
     <div className="min-h-screen pt-[calc(var(--navbar-height)+24px)] pb-20 bg-radial-navy">
       <div className="max-w-[1200px] mx-auto px-4">
-        <button onClick={() => router.back()} className="flex items-center gap-2 text-gray-400 hover:text-[#FFD700] mb-8 transition-colors group">
+        <button onClick={goBack} className="flex items-center gap-2 text-gray-400 hover:text-[#FFD700] mb-8 transition-colors group">
           <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
           <span className="font-medium">Back</span>
         </button>

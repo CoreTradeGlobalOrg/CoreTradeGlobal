@@ -1,12 +1,13 @@
 /**
- * (detail) route group — same chrome as (main) (Navbar, Footer, widgets)
- * but WITHOUT (main)/loading.jsx.
+ * (detail) route group — product and RFQ detail pages.
  *
- * loading.jsx wraps every (main) page in a Suspense boundary, so the
- * response starts streaming with a 200 before the page runs and notFound()
- * can only inject a noindex tag. Pages that must answer a missing record
- * with a real 404 status (product detail) live here instead; URLs are
- * unchanged because route groups do not appear in the path.
+ * Same chrome as (main) (Navbar, Footer, widgets) but without
+ * (main)/loading.jsx. That loading boundary wraps every (main) page, so
+ * responses start streaming with a 200 before the page runs and notFound()
+ * can only add a noindex tag. Here each detail segment checks that its
+ * record exists in its own layout (above its own loading.jsx), so a missing
+ * product or RFQ answers with a real 404 and navigations still show the
+ * loading screen. URLs are unchanged: route groups are not part of the path.
  */
 
 import MainLayout from '../(main)/layout';

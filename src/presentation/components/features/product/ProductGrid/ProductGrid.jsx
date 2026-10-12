@@ -74,15 +74,36 @@ const CURRENCY_SYMBOLS = {
 // on page 2 with 12 organic products each.
 const PAGE_SIZE = 12;
 
-export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter, countryFilter, sidebarVisible = false, initialProducts = [] }) {
+// ?page=N in the address bar. Written with window.history (Next.js keeps its
+// router in sync and does not refetch), read back on mount and on back/forward.
+function readPageFromUrl() {
+    if (typeof window === 'undefined') return null;
+    const n = parseInt(new URLSearchParams(window.location.search).get('page') || '', 10);
+    return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+function writePageToUrl(page, { replace = false } = {}) {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    if (page > 1) params.set('page', String(page));
+    else params.delete('page');
+    const qs = params.toString();
+    const url = `${window.location.pathname}${qs ? `?${qs}` : ''}`;
+    if (url === `${window.location.pathname}${window.location.search}`) return;
+    window.history[replace ? 'replaceState' : 'pushState'](null, '', url);
+}
+
+export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter, countryFilter, sidebarVisible = false, initialProducts = [], initialPage = 1 }) {
     const [products, setProducts] = useState(initialProducts);
     const [filteredProducts, setFilteredProducts] = useState(initialProducts);
     // Batch-load the owner role for every visible product so the
     // logistics-provider accent lights up without a per-card read.
     const ownerRoles = useOwnerRoles(filteredProducts.map((p) => p.userId));
     const [loading, setLoading] = useState(initialProducts.length === 0);
-    const [currentPage, setCurrentPage] = useState(1);
+    // Ürüne girip geri dönünce aynı sayfa açılsın: önce adres satırı, yoksa sunucudan gelen değer
+    const [currentPage, setCurrentPage] = useState(() => readPageFromUrl() || initialPage || 1);
     const gridTopRef = useRef(null);
+    const filtersMountedRef = useRef(false);
     const { categories } = useCategories();
     const { isFavorited, toggleFavorite } = useFavoriteProduct();
     const { track } = useTrackEvent();
@@ -134,10 +155,22 @@ export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter, cou
         fetchProducts();
     }, []);
 
-    // Reset to first page when filters change
+    // Reset to first page when filters change (not on mount, or ?page=N is lost)
     useEffect(() => {
+        if (!filtersMountedRef.current) {
+            filtersMountedRef.current = true;
+            return;
+        }
         setCurrentPage(1);
+        writePageToUrl(1, { replace: true });
     }, [searchQuery, categoryFilter, categoryIdFilter, countryFilter]);
+
+    // Browser back/forward between pages of the grid
+    useEffect(() => {
+        const onPopState = () => setCurrentPage(readPageFromUrl() || 1);
+        window.addEventListener('popstate', onPopState);
+        return () => window.removeEventListener('popstate', onPopState);
+    }, []);
 
     // Filter Logic
     useEffect(() => {
@@ -198,6 +231,7 @@ export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter, cou
     const goToPage = useCallback((page) => {
         const clamped = Math.min(Math.max(1, page), totalPages);
         setCurrentPage(clamped);
+        writePageToUrl(clamped);
         // Smooth-scroll back to the top of the grid on page change.
         gridTopRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, [totalPages]);
