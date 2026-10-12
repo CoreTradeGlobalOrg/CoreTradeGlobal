@@ -203,7 +203,11 @@ function EmailLinkContent() {
         title="This link has expired"
         subtitle="Sign-in links work once and expire after a while. Request a new one and use it right away."
       >
-        <Link href={`/login-link${rfqId ? '' : `?redirect=${encodeURIComponent(next)}`}`} className={primaryButton}>
+        <Link
+          href={`/login-link${rfqId ? '' : `?redirect=${encodeURIComponent(next)}`}`}
+          className={primaryButton}
+          style={{ color: '#0F1B2B', WebkitTextFillColor: '#0F1B2B' }}
+        >
           Send me a new link
         </Link>
       </Card>
