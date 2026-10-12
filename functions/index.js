@@ -5835,6 +5835,22 @@ const GUEST_RFQ_REMINDER_MS = 24 * 60 * 60 * 1000;
 const GUEST_RFQ_EXPIRE_MS = 7 * 24 * 60 * 60 * 1000;
 const GUEST_EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
+// Mail linkinin açılabileceği adresler (tam eşleşme). Link tek kullanımlık
+// giriş kodu taşıdığı için joker/regex YOK: başka bir domain kodu ele geçirebilir.
+// Listede olmayan her origin APP_URL'e (canlı site) düşer.
+const LANDING_ORIGIN_ALLOWLIST = [
+  'https://coretradeglobal.com',
+  'https://www.coretradeglobal.com',
+  'https://core-trade-global-git-development-mert-fatih-simseks-projects.vercel.app',
+  'http://localhost:3000',
+];
+
+/** Origin of the browser that called, if it is allowlisted; otherwise undefined (→ APP_URL). */
+function landingOriginFor(request) {
+  const origin = request.rawRequest?.headers?.origin;
+  return LANDING_ORIGIN_ALLOWLIST.includes(origin) ? origin : undefined;
+}
+
 function sha256Hex(value) {
   return require('crypto').createHash('sha256').update(String(value)).digest('hex');
 }
@@ -5896,8 +5912,11 @@ function validateGuestRfqFields(raw) {
   };
 }
 
-async function sendGuestRfqConfirmEmail(email, requestId, productName, { reminder = false } = {}) {
-  const link = await buildMagicLink(email, { landingPath: `/email-link?rfq=${encodeURIComponent(requestId)}` });
+async function sendGuestRfqConfirmEmail(email, requestId, productName, { reminder = false, landingOrigin } = {}) {
+  const link = await buildMagicLink(email, {
+    landingPath: `/email-link?rfq=${encodeURIComponent(requestId)}`,
+    landingOrigin,
+  });
   const product = escapeEmailText(productName);
   const body = reminder
     ? `<p style="margin:0 0 16px 0;">Your request for quotation for <strong>${product}</strong> is still waiting to be published.</p>
@@ -6002,7 +6021,7 @@ exports.createGuestRFQ = onCall(async (request) => {
     ...(isNewAccount && { pendingGuestRfqId: rfqRef.id }),
   }, { merge: true });
 
-  const sent = await sendGuestRfqConfirmEmail(email, rfqRef.id, rfq.productName);
+  const sent = await sendGuestRfqConfirmEmail(email, rfqRef.id, rfq.productName, { landingOrigin: landingOriginFor(request) });
   if (!sent) {
     throw new HttpsError('internal', 'We could not send the confirmation email. Please try again in a few minutes.');
   }
@@ -6074,7 +6093,10 @@ exports.sendSignInLink = onCall(async (request) => {
     const user = await admin.auth().getUserByEmail(email);
     const userDoc = (await db.collection('users').doc(user.uid).get()).data() || {};
     if (user.disabled || userDoc.isDeleted || userDoc.isSuspended) return { ok: true };
-    const link = await buildMagicLink(email, { landingPath: `/email-link?next=${encodeURIComponent(next)}` });
+    const link = await buildMagicLink(email, {
+      landingPath: `/email-link?next=${encodeURIComponent(next)}`,
+      landingOrigin: landingOriginFor(request),
+    });
     await sendEmail({
       to: email,
       subject: 'Your CoreTradeGlobal sign-in link',

@@ -21,8 +21,11 @@ const DEFAULT_ACTION_CODE_SETTINGS = {
  * @param {string} email
  * @param {{ continuePath?: string, landingPath?: string }} [opts]
  *   continuePath — override the continueUrl Firebase embeds
- *   landingPath  — page that consumes the link (default /onboarding);
- *                  may carry its own query string, e.g. /email-link?rfq=abc
+ *   landingPath   — page that consumes the link (default /onboarding);
+ *                   may carry its own query string, e.g. /email-link?rfq=abc
+ *   landingOrigin — host the link opens on (default APP_URL). Only pass a
+ *                   value from LANDING_ORIGIN_ALLOWLIST: the link carries a
+ *                   one-time sign-in code, so it must never open elsewhere.
  * @returns {Promise<string>} ready-to-embed sign-in URL
  */
 async function buildMagicLink(email, opts = {}) {
@@ -37,7 +40,7 @@ async function buildMagicLink(email, opts = {}) {
   // portion but preserve the query string (mode, oobCode, apiKey, lang).
   try {
     const parsed = new URL(rawLink);
-    const target = new URL(`${APP_URL}${opts.landingPath || '/onboarding'}`);
+    const target = new URL(`${opts.landingOrigin || APP_URL}${opts.landingPath || '/onboarding'}`);
     for (const key of ['mode', 'oobCode', 'apiKey', 'continueUrl', 'lang']) {
       const value = parsed.searchParams.get(key);
       if (value) target.searchParams.set(key, value);
