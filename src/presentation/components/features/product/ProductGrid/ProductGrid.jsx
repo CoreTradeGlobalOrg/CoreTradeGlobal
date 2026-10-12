@@ -261,8 +261,15 @@ export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter, cou
         );
     }
 
+    // Sponsored slot is always the first tile — on normal pages and on the
+    // zero-result view alike, so a non-matching search never hides the ad.
+    const sponsoredSlot = sponsoredAd
+        ? <SponsoredPackageCard ad={sponsoredAd} categories={categories} />
+        : <SponsoredProductPlaceholder />;
+
     if (filteredProducts.length === 0) {
-        const suggested = suggestedProducts.slice(0, 12);
+        // PAGE_SIZE - 1: the sponsored tile takes one slot, same as paged view
+        const suggested = suggestedProducts.slice(0, PAGE_SIZE - 1);
         const rfqHref = searchQuery
             ? `/request/new?title=${encodeURIComponent(searchQuery)}`
             : '/request/new';
@@ -293,28 +300,27 @@ export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter, cou
                 </div>
 
                 {suggested.length > 0 && (
-                    <>
-                        <div className="flex items-center gap-3 mb-5 mt-4">
-                            <div className="flex-1 h-px bg-[rgba(255,255,255,0.1)]" />
-                            <span className="text-xs uppercase tracking-wider text-[#A0A0A0] font-semibold">
-                                You might also like
-                            </span>
-                            <div className="flex-1 h-px bg-[rgba(255,255,255,0.1)]" />
-                        </div>
-                        <div className={`grid ${gridColsClass} gap-6`}>
-                            {suggested.map((product) => (
-                                <ProductCard
-                                    key={product.id}
-                                    product={product}
-                                    categories={categories}
-                                    isFavorited={isFavorited(product.id)}
-                                    onToggleFavorite={toggleFavorite}
-                                    ownerRole={ownerRoles.get(product.userId)}
-                                />
-                            ))}
-                        </div>
-                    </>
+                    <div className="flex items-center gap-3 mb-5 mt-4">
+                        <div className="flex-1 h-px bg-[rgba(255,255,255,0.1)]" />
+                        <span className="text-xs uppercase tracking-wider text-[#A0A0A0] font-semibold">
+                            You might also like
+                        </span>
+                        <div className="flex-1 h-px bg-[rgba(255,255,255,0.1)]" />
+                    </div>
                 )}
+                <div className={`grid ${gridColsClass} gap-6`}>
+                    {sponsoredSlot}
+                    {suggested.map((product) => (
+                        <ProductCard
+                            key={product.id}
+                            product={product}
+                            categories={categories}
+                            isFavorited={isFavorited(product.id)}
+                            onToggleFavorite={toggleFavorite}
+                            ownerRole={ownerRoles.get(product.userId)}
+                        />
+                    ))}
+                </div>
             </div>
         );
     }
@@ -338,9 +344,7 @@ export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter, cou
         <>
             <div ref={gridTopRef} className="scroll-mt-28" />
             <div className={`grid ${gridColsClass} gap-6`}>
-                {sponsoredAd
-                    ? <SponsoredPackageCard ad={sponsoredAd} categories={categories} />
-                    : <SponsoredProductPlaceholder />}
+                {sponsoredSlot}
                 {pageProducts.map((product) => (
                     <ProductCard
                         key={product.id}
@@ -519,16 +523,11 @@ function SponsoredPackageCard({ ad, categories }) {
         <div
             ref={setRef}
             onClick={trackClick}
-            className="relative"
-            style={{
-                borderRadius: 20,
-                boxShadow: '0 10px 30px rgba(255,215,0,0.18)',
-                outline: '2px solid rgba(255,215,0,0.55)',
-                outlineOffset: '-1px',
-            }}
+            className="sponsored-slot relative"
         >
+            {/* Badge sits on the image corner (card padding 20px + 8px), mirroring the favorite button */}
             <span
-                className="absolute top-2 left-2 z-20 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider pointer-events-none"
+                className="absolute top-[28px] left-[28px] z-20 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider pointer-events-none"
                 style={{ background: '#FFD700', color: '#0F1B2B' }}
             >
                 Sponsored
@@ -562,7 +561,7 @@ function SponsoredProductPlaceholder() {
             }}
         >
             <span
-                className="absolute top-2 left-2 z-20 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider"
+                className="absolute top-[28px] left-[28px] z-20 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider"
                 style={{ background: '#FFD700', color: '#0F1B2B' }}
             >
                 Available

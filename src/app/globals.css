@@ -266,6 +266,26 @@ a:hover {
   box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
 }
 
+/* Sponsored slot on /products: gold frame + badge live on the wrapper, so the
+   wrapper does the hover lift and the inner card stays put — otherwise the
+   card slides up out of its frame and under the badge. */
+.sponsored-slot {
+  border-radius: 20px;
+  outline: 2px solid rgba(255, 215, 0, 0.55);
+  outline-offset: -1px;
+  box-shadow: 0 10px 30px rgba(255, 215, 0, 0.18);
+  transition: transform 0.3s ease, box-shadow 0.3s ease, outline-color 0.3s ease;
+}
+.sponsored-slot:hover {
+  transform: translateY(-8px);
+  outline-color: rgba(255, 215, 0, 0.85);
+  box-shadow: 0 15px 40px rgba(255, 215, 0, 0.25);
+}
+.sponsored-slot .product-grid-card:hover {
+  transform: none;
+  box-shadow: none;
+}
+
 /* RFQ Card Exact Match */
 .rfq-card {
   background: linear-gradient(160deg, rgba(26, 28, 32, 0.6) 0%, rgba(15, 27, 43, 0.8) 100%);
