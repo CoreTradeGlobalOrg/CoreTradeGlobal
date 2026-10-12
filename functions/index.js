@@ -8,6 +8,12 @@
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { onDocumentCreated, onDocumentUpdated, onDocumentWritten } = require('firebase-functions/v2/firestore');
 const { onSchedule } = require('firebase-functions/v2/scheduler');
+const { setGlobalOptions } = require('firebase-functions/v2');
+
+// Cloud Run varsayılanı fonksiyon başına 100 instance; 60+ fonksiyonda bu,
+// deploy sırasında "Quota exceeded for total allowable CPU per project per
+// region" hatasına yol açıyor. 10 instance x 80 eşzamanlı istek yeterli.
+setGlobalOptions({ maxInstances: 10 });
 const admin = require('firebase-admin');
 const { Timestamp, FieldValue } = require('firebase-admin/firestore');
 const { toTitleCase } = require('./utils/nameCase');
