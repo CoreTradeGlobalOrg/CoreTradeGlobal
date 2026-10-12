@@ -15,8 +15,10 @@ import {
   Search,
   Package,
   FileText,
+  ClipboardList,
 } from 'lucide-react';
 import { RfqQuotesTab } from './RfqQuotesTab';
+import { RfqListTab } from './RfqListTab';
 
 const STATUS_CONFIG = {
   [DEAL_STATUS.NEGOTIATING]: { label: 'Negotiating', color: 'text-yellow-400 bg-yellow-900/20 border-yellow-700/30' },
@@ -374,11 +376,13 @@ function ProductTradesView({ users = [] }) {
 
 const TRADE_VIEWS = [
   { id: 'products', label: 'Product Trades', icon: Package },
+  { id: 'rfq-list', label: 'RFQs', icon: ClipboardList },
   { id: 'rfqs', label: 'RFQ Quotes', icon: FileText },
 ];
 
 /**
- * Trades tab: product trades (existing view) + quotes submitted on RFQs.
+ * Trades tab: product trades (existing view), every RFQ (including guest
+ * RFQs awaiting email confirmation) and quotes submitted on RFQs.
  */
 export function TradesManager({ users = [] }) {
   const [view, setView] = useState('products');
@@ -391,7 +395,7 @@ export function TradesManager({ users = [] }) {
 
   return (
     <div>
-      <div className="flex gap-1 bg-[#0F1B2B]/50 rounded-lg p-1 w-fit mb-6">
+      <div className="flex flex-wrap gap-1 bg-[#0F1B2B]/50 rounded-lg p-1 w-fit max-w-full mb-6">
         {TRADE_VIEWS.map(({ id, label, icon: Icon }) => (
           <button
             key={id}
@@ -405,9 +409,9 @@ export function TradesManager({ users = [] }) {
         ))}
       </div>
 
-      {view === 'products'
-        ? <ProductTradesView users={users} />
-        : <RfqQuotesTab userMap={userMap} />}
+      {view === 'products' && <ProductTradesView users={users} />}
+      {view === 'rfq-list' && <RfqListTab userMap={userMap} />}
+      {view === 'rfqs' && <RfqQuotesTab userMap={userMap} />}
     </div>
   );
 }
