@@ -103,7 +103,10 @@ export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter, cou
     // Ürüne girip geri dönünce aynı sayfa açılsın: önce adres satırı, yoksa sunucudan gelen değer
     const [currentPage, setCurrentPage] = useState(() => readPageFromUrl() || initialPage || 1);
     const gridTopRef = useRef(null);
-    const filtersMountedRef = useRef(false);
+    // Sayfayı sadece filtreler gerçekten değişince 1'e çek. "İlk açılış" bayrağı
+    // StrictMode'da işe yaramıyor: effect ikinci kez çalışıp ?page=N'i siliyordu.
+    const filterKey = `${searchQuery || ''}|${categoryFilter || ''}|${categoryIdFilter || ''}|${countryFilter || ''}`;
+    const lastFilterKeyRef = useRef(filterKey);
     const { categories } = useCategories();
     const { isFavorited, toggleFavorite } = useFavoriteProduct();
     const { track } = useTrackEvent();
@@ -155,15 +158,13 @@ export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter, cou
         fetchProducts();
     }, []);
 
-    // Reset to first page when filters change (not on mount, or ?page=N is lost)
+    // Reset to first page when the filters actually change (never on mount)
     useEffect(() => {
-        if (!filtersMountedRef.current) {
-            filtersMountedRef.current = true;
-            return;
-        }
+        if (lastFilterKeyRef.current === filterKey) return;
+        lastFilterKeyRef.current = filterKey;
         setCurrentPage(1);
         writePageToUrl(1, { replace: true });
-    }, [searchQuery, categoryFilter, categoryIdFilter, countryFilter]);
+    }, [filterKey]);
 
     // Browser back/forward between pages of the grid
     useEffect(() => {
