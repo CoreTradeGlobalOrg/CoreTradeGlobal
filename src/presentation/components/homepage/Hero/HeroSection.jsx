@@ -246,7 +246,7 @@ export function HeroSection({ fetchData = false }) {
                 </Link>
                 {/* Girişsiz ziyaretçi üye olmadan RFQ açabiliyor (/request/new misafir modu) */}
                 <Link href="/request/new" className="btn-hero-secondary btn-hero-quotes">
-                  Get Free Quotes <span className="arrow-icon">›</span>
+                  Get Free Quotes
                 </Link>
               </>
             )}
