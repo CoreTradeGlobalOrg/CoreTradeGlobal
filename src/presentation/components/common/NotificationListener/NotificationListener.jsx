@@ -97,6 +97,14 @@ export function NotificationListener() {
               ? `/messages/${payload.data.conversationId}`
               : '/messages';
             tag = payload.data?.conversationId || 'message';
+          } else if (dataType === 'announcement') {
+            // Full text is readable on the notifications page (doc id == announcementId)
+            notificationTitle = payload.data?.title || 'Announcement';
+            notificationBody = payload.data?.body || 'You have a new announcement';
+            clickUrl = payload.data?.announcementId
+              ? `/notifications?open=${encodeURIComponent(payload.data.announcementId)}`
+              : '/notifications';
+            tag = `announcement-${payload.data?.announcementId || 'general'}`;
           } else {
             // Generic fallback — handles rfq_created, new_user_approval, quote_received,
             // announcement, and any future notification types. Uses title/body fields

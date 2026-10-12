@@ -3,6 +3,7 @@
  *
  * Single notification row in the notification center.
  * Shows checkbox, type icon, title, body snippet, timestamp, unread dot.
+ * Expandable rows (announcements) open in place to show the full text.
  */
 
 'use client';
@@ -19,6 +20,7 @@ import {
   Megaphone,
   Package,
   Mail,
+  ChevronDown,
 } from 'lucide-react';
 
 // Type-specific icon mapping (mirrors NotificationBell)
@@ -119,6 +121,8 @@ const formatTime = (date) => {
 export function NotificationCenterItem({
   notification,
   isSelected,
+  isExpandable = false,
+  isExpanded = false,
   onToggleSelect,
   onNotificationClick,
 }) {
@@ -133,6 +137,8 @@ export function NotificationCenterItem({
 
   return (
     <div
+      id={`notification-${notification.id}`}
+      aria-expanded={isExpandable ? isExpanded : undefined}
       className={[
         'flex items-start gap-3 px-4 py-3 cursor-pointer transition-colors border-b border-[rgba(255,255,255,0.04)]',
         isUnread
@@ -165,7 +171,8 @@ export function NotificationCenterItem({
       <div className="flex-1 min-w-0">
         <p
           className={[
-            'text-sm mb-0.5 truncate',
+            'text-sm mb-0.5',
+            isExpanded ? 'break-words' : 'truncate',
             isUnread ? 'font-semibold text-white' : 'font-normal text-[rgba(255,255,255,0.6)]',
           ].join(' ')}
         >
@@ -173,15 +180,27 @@ export function NotificationCenterItem({
         </p>
         <p
           className={[
-            'text-xs line-clamp-2',
-            isUnread ? 'text-[#a0a0a0]' : 'text-[rgba(160,160,160,0.5)]',
-          ].join(' ')}
+            isExpanded
+              ? 'text-sm leading-relaxed whitespace-pre-wrap break-words text-[#d0d0d0] mt-1.5 mb-1'
+              : 'text-xs line-clamp-2',
+            !isExpanded && (isUnread ? 'text-[#a0a0a0]' : 'text-[rgba(160,160,160,0.5)]'),
+          ].filter(Boolean).join(' ')}
         >
           {notification.body}
         </p>
-        <span className="text-xs text-[#64748b] mt-0.5 block">
-          {formatTime(notification.createdAt)}
-        </span>
+        <div className="flex items-center gap-3 mt-0.5">
+          <span className="text-xs text-[#64748b]">
+            {formatTime(notification.createdAt)}
+          </span>
+          {isExpandable && (
+            <span className="inline-flex items-center gap-1 text-xs font-medium text-[#FFD700]">
+              {isExpanded ? 'Show less' : 'Read more'}
+              <ChevronDown
+                className={`w-3.5 h-3.5 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+              />
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Unread dot */}

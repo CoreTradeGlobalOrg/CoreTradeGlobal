@@ -18,16 +18,19 @@ const TABS = [
 
 export function NotificationFilterTabs({ activeTab, onTabChange }) {
   return (
-    <div className="flex items-center border-b border-[rgba(255,255,255,0.08)] overflow-x-auto">
+    // Alt çizgi border yerine inset shadow: sekmelerin -mb-px taşması
+    // overflow-x-auto kutusunda dikey scroll bar çıkarıyordu. Mobilde yatay
+    // kaydırma kalıyor ama scroll bar gizli.
+    <div className="flex items-center overflow-x-auto overflow-y-hidden shadow-[inset_0_-1px_0_rgba(255,255,255,0.08)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       {TABS.map((tab) => (
         <button
           key={tab.id}
           onClick={() => onTabChange(tab.id)}
           className={[
-            'px-4 py-3 text-sm font-medium whitespace-nowrap transition-colors',
+            'flex-shrink-0 px-3 sm:px-4 py-3 text-sm font-medium whitespace-nowrap transition-colors border-b-2',
             activeTab === tab.id
-              ? 'text-[#FFD700] border-b-2 border-[#FFD700] -mb-px'
-              : 'text-[#94a3b8] hover:text-white border-b-2 border-transparent -mb-px',
+              ? 'text-[#FFD700] border-[#FFD700]'
+              : 'text-[#94a3b8] hover:text-white border-transparent',
           ].join(' ')}
         >
           {tab.label}

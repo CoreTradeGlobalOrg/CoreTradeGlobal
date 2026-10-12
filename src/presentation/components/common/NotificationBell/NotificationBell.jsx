@@ -145,6 +145,9 @@ export function NotificationBell() {
     } else if (notification.type === 'member_report') {
       // Admin notification for a new member report.
       router.push(notification.link || '/admin/reports');
+    } else if (notification.type === 'announcement') {
+      // Announcements are read in full on the notifications page
+      router.push(`/notifications?open=${encodeURIComponent(notification.id)}`);
     } else if (notification.link) {
       // Navigate using the notification's link field (e.g., product_upload_request)
       router.push(notification.link);
