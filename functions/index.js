@@ -6328,6 +6328,7 @@ exports.bulkUploadProducts = onCall(
           userId,
           createdByAdmin: true,
           status: 'active',
+          viewCount: 0,
           createdAt: now,
           updatedAt: now,
         });
@@ -6608,6 +6609,66 @@ exports.trackAdImpression = onCall(async (request) => {
     return { counted: false };
   }
   return { counted: true };
+});
+
+/**
+ * ISO week key ("2026-W42") in Turkey time (UTC+3, no DST). Weeks run
+ * Monday 00:00 to Sunday 23:59 local time.
+ */
+function isoWeekKey(date) {
+  const d = new Date(date.getTime() + 3 * 60 * 60 * 1000);
+  const day = (d.getUTCDay() + 6) % 7; // Monday = 0
+  d.setUTCHours(0, 0, 0, 0);
+  d.setUTCDate(d.getUTCDate() - day + 3); // Thursday of this week decides the year
+  const year = d.getUTCFullYear();
+  const firstThursday = new Date(Date.UTC(year, 0, 4));
+  firstThursday.setUTCDate(firstThursday.getUTCDate() - ((firstThursday.getUTCDay() + 6) % 7) + 3);
+  const week = 1 + Math.round((d - firstThursday) / (7 * 24 * 60 * 60 * 1000));
+  return `${year}-W${String(week).padStart(2, '0')}`;
+}
+
+/**
+ * trackProductView — onCall
+ *
+ * Client fires this once per browser session when a product detail page
+ * opens. Increments products/{id}.viewCount (all time) and
+ * weekViewCount for the current week (weekViewKey); a new week starts the
+ * weekly count again at 1, so no reset job is needed. firestore.rules keep
+ * owners from writing these fields. The owner's own visits are not counted.
+ * Returns the all-time count including this view.
+ *
+ * @param {Object} data - { productId }
+ * @returns {Promise<{ counted: boolean, viewCount: number }>}
+ */
+exports.trackProductView = onCall(async (request) => {
+  const { productId } = request.data || {};
+  if (!productId || typeof productId !== 'string' || productId.length > 128 || productId.includes('/')) {
+    throw new HttpsError('invalid-argument', 'productId is required.');
+  }
+
+  const ref = db.collection('products').doc(productId);
+  const weekKey = isoWeekKey(new Date());
+  try {
+    return await db.runTransaction(async (t) => {
+      const snap = await t.get(ref);
+      if (!snap.exists) return { counted: false, viewCount: 0 };
+      const data = snap.data();
+      const current = Number(data.viewCount) || 0;
+      if (request.auth?.uid && request.auth.uid === data.userId) {
+        return { counted: false, viewCount: current };
+      }
+      // updatedAt'e dokunmuyoruz: görüntülenme ürünün "son güncelleme" tarihini değiştirmemeli
+      t.update(ref, {
+        viewCount: FieldValue.increment(1),
+        weekViewKey: weekKey,
+        weekViewCount: data.weekViewKey === weekKey ? FieldValue.increment(1) : 1,
+      });
+      return { counted: true, viewCount: current + 1 };
+    });
+  } catch (err) {
+    console.warn(`trackProductView: could not count ${productId}:`, err.message);
+    return { counted: false, viewCount: null };
+  }
 });
 
 /**
@@ -7543,4 +7604,187 @@ exports.wfFormAbandonmentSweep = onSchedule(
     console.log(`wfFormAbandonmentSweep: sent=${sent} cleared=${cleared} skipped=${skipped}`);
     return null;
   },
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Weekly product view report
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Mailde tek tek listelenen ürün sayısı; kalanlar tek satırda özetlenir
+const WEEKLY_VIEWS_TOP_N = 5;
+
+function escapeEmailText(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function formatCount(n) {
+  return Number(n || 0).toLocaleString('en-US');
+}
+
+/** "Oct 5 – Oct 11" for the Monday–Sunday week that ended before `now` (Turkey time). */
+function lastWeekRangeLabel(now) {
+  const DAY = 24 * 60 * 60 * 1000;
+  const local = new Date(now.getTime() + 3 * 60 * 60 * 1000);
+  const day = (local.getUTCDay() + 6) % 7;
+  const thisMonday = new Date(Date.UTC(local.getUTCFullYear(), local.getUTCMonth(), local.getUTCDate() - day));
+  const lastMonday = new Date(thisMonday.getTime() - 7 * DAY);
+  const lastSunday = new Date(thisMonday.getTime() - DAY);
+  const fmt = (d) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+  return `${fmt(lastMonday)} – ${fmt(lastSunday)}`;
+}
+
+function buildWeeklyViewsEmailBody({ rangeLabel, top, restCount, restWeekly, weeklyTotal, allTimeTotal }) {
+  const cell = 'padding:10px 0;border-bottom:1px solid #1E3A5F;font-size:14px;font-family:Arial,sans-serif;';
+  const rows = top
+    .map((p) => `<tr>
+        <td style="${cell}color:#FFFFFF;">${escapeEmailText(p.name)}</td>
+        <td style="${cell}color:#FFD700;text-align:right;white-space:nowrap;font-weight:bold;">${formatCount(p.weekly)} ${p.weekly === 1 ? 'view' : 'views'}</td>
+      </tr>`)
+    .join('');
+  const restRow = restCount > 0
+    ? `<tr>
+        <td style="${cell}color:#8899AA;">+ ${formatCount(restCount)} more ${restCount === 1 ? 'product' : 'products'}</td>
+        <td style="${cell}color:#8899AA;text-align:right;white-space:nowrap;">${formatCount(restWeekly)} ${restWeekly === 1 ? 'view' : 'views'}</td>
+      </tr>`
+    : '';
+
+  return `<p style="margin:0 0 8px 0;">Here is how many times your products were viewed last week (${rangeLabel}).</p>
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:16px 0;">
+      ${rows}${restRow}
+      <tr>
+        <td style="padding:12px 0 0 0;font-size:14px;font-family:Arial,sans-serif;color:#FFFFFF;font-weight:bold;">Last week, all products</td>
+        <td style="padding:12px 0 0 0;font-size:14px;font-family:Arial,sans-serif;color:#FFFFFF;font-weight:bold;text-align:right;white-space:nowrap;">${formatCount(weeklyTotal)} ${weeklyTotal === 1 ? 'view' : 'views'}</td>
+      </tr>
+      <tr>
+        <td style="padding:6px 0 0 0;font-size:14px;font-family:Arial,sans-serif;color:#FFFFFF;font-weight:bold;">All time, all products</td>
+        <td style="padding:6px 0 0 0;font-size:14px;font-family:Arial,sans-serif;color:#FFFFFF;font-weight:bold;text-align:right;white-space:nowrap;">${formatCount(allTimeTotal)} ${allTimeTotal === 1 ? 'view' : 'views'}</td>
+      </tr>
+    </table>`;
+}
+
+/**
+ * sendWeeklyProductViewReport — every Monday 09:00 Turkey time.
+ *
+ * For every user who owns at least one product: one in-app notification,
+ * a push (unless preferences.insights.push is false) and (unless
+ * preferences.insights.email is false) one email listing the
+ * top WEEKLY_VIEWS_TOP_N products by last week's views, a single summary
+ * line for the rest, last week's total and the all-time total across all
+ * of the user's products. Sent even when last week had zero views.
+ *
+ * Idempotent per user and week: the notification doc id is
+ * weekly-views-<weekKey>; if it exists the user is skipped, so a manual
+ * re-run never double-sends.
+ */
+exports.sendWeeklyProductViewReport = onSchedule(
+  {
+    schedule: 'every monday 09:00',
+    timeZone: 'Europe/Istanbul',
+    timeoutSeconds: 540,
+    memory: '512MiB',
+  },
+  async () => {
+    const now = new Date();
+    const weekKey = isoWeekKey(new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000));
+    const rangeLabel = lastWeekRangeLabel(now);
+
+    const productsSnap = await db
+      .collection('products')
+      .select('userId', 'name', 'viewCount', 'weekViewKey', 'weekViewCount')
+      .get();
+
+    const byOwner = new Map();
+    for (const doc of productsSnap.docs) {
+      const p = doc.data();
+      if (!p.userId) continue;
+      if (!byOwner.has(p.userId)) byOwner.set(p.userId, []);
+      byOwner.get(p.userId).push({
+        name: p.name || 'Untitled product',
+        weekly: p.weekViewKey === weekKey ? Number(p.weekViewCount) || 0 : 0,
+        allTime: Number(p.viewCount) || 0,
+      });
+    }
+
+    let notified = 0;
+    let emailed = 0;
+    let skipped = 0;
+
+    const processOwner = async (uid, products) => {
+      const notifRef = db.collection('users').doc(uid).collection('notifications').doc(`weekly-views-${weekKey}`);
+      const [userSnap, existing] = await Promise.all([db.collection('users').doc(uid).get(), notifRef.get()]);
+      if (!userSnap.exists || existing.exists) {
+        skipped++;
+        return;
+      }
+      const user = userSnap.data();
+      if (user.isDeleted) {
+        skipped++;
+        return;
+      }
+
+      products.sort((a, b) => b.weekly - a.weekly || a.name.localeCompare(b.name));
+      const top = products.slice(0, WEEKLY_VIEWS_TOP_N);
+      const rest = products.slice(WEEKLY_VIEWS_TOP_N);
+      const weeklyTotal = products.reduce((sum, p) => sum + p.weekly, 0);
+      const allTimeTotal = products.reduce((sum, p) => sum + p.allTime, 0);
+      const restWeekly = rest.reduce((sum, p) => sum + p.weekly, 0);
+      const link = `/profile/${uid}?tab=products`;
+
+      await notifRef.set({
+        type: 'product_views_weekly',
+        title: 'Your weekly product views',
+        body: `Your products were viewed ${formatCount(weeklyTotal)} ${weeklyTotal === 1 ? 'time' : 'times'} last week (${rangeLabel}). All-time total: ${formatCount(allTimeTotal)} views.`,
+        isRead: false,
+        createdAt: Timestamp.now(),
+        link,
+        data: { weekKey, weeklyTotal, allTimeTotal },
+      });
+      notified++;
+
+      if (user.preferences?.insights?.push !== false) {
+        await sendFCMPushToUser(uid, user, {
+          type: 'product_views_weekly',
+          title: 'Your weekly product views',
+          body: `Your products were viewed ${formatCount(weeklyTotal)} ${weeklyTotal === 1 ? 'time' : 'times'} last week.`,
+          link,
+        }).catch((err) => console.warn(`sendWeeklyProductViewReport: push failed for ${uid}:`, err.message));
+      }
+
+      const emailEnabled = user.preferences?.insights?.email !== false;
+      if (user.email && emailEnabled) {
+        const html = buildBrandedEmailHtml(
+          buildWeeklyViewsEmailBody({ rangeLabel, top, restCount: rest.length, restWeekly, weeklyTotal, allTimeTotal }),
+          'View all products',
+          `${APP_URL}${link}`
+        );
+        const ok = await sendEmail({
+          to: user.email,
+          subject: `Your products got ${formatCount(weeklyTotal)} ${weeklyTotal === 1 ? 'view' : 'views'} last week`,
+          html,
+          tag: `sendWeeklyProductViewReport (${uid})`,
+        });
+        if (ok) emailed++;
+      }
+    };
+
+    // 5'li gruplar: 540 sn içinde yüzlerce üyeye yetişsin, ZeptoMail'i de boğmasın
+    const owners = [...byOwner.entries()];
+    for (let i = 0; i < owners.length; i += 5) {
+      await Promise.all(
+        owners.slice(i, i + 5).map(([uid, products]) =>
+          processOwner(uid, products).catch((err) => {
+            skipped++;
+            console.error(`sendWeeklyProductViewReport: failed for ${uid}:`, err);
+          })
+        )
+      );
+    }
+
+    console.log(`sendWeeklyProductViewReport ${weekKey}: owners=${owners.length} notified=${notified} emailed=${emailed} skipped=${skipped}`);
+    return null;
+  }
 );

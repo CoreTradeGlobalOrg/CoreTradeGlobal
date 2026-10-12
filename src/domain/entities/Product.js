@@ -26,6 +26,7 @@ export class Product {
    * @param {string} status - Product status (active, inactive)
    * @param {Date} createdAt - Creation date
    * @param {Date} updatedAt - Last update date
+   * @param {number} viewCount - Product detail page views (server-managed)
    */
   constructor(
     id,
@@ -41,7 +42,8 @@ export class Product {
     images,
     status,
     createdAt,
-    updatedAt
+    updatedAt,
+    viewCount
   ) {
     this.id = id;
     this.userId = userId;
@@ -57,6 +59,7 @@ export class Product {
     this.status = status || 'active';
     this.createdAt = createdAt || new Date();
     this.updatedAt = updatedAt || new Date();
+    this.viewCount = Number.isFinite(viewCount) ? viewCount : 0;
   }
 
   /**
@@ -79,12 +82,15 @@ export class Product {
       data.images,
       data.status,
       data.createdAt,
-      data.updatedAt
+      data.updatedAt,
+      data.viewCount
     );
   }
 
   /**
-   * Convert Product to Firestore document
+   * Convert Product to Firestore document.
+   * viewCount is left out on purpose: only the trackProductView Cloud
+   * Function increments it, so writing it back here could reset the count.
    * @returns {Object}
    */
   toFirestore() {

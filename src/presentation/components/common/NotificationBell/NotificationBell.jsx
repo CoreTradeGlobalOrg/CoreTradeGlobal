@@ -10,7 +10,7 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { Bell, MessageSquare, FileText, X, Check, Trash2, CheckCircle, XCircle, UserPlus, Handshake, Scale, Mail, DollarSign } from 'lucide-react';
+import { Bell, MessageSquare, FileText, X, Check, Trash2, CheckCircle, XCircle, UserPlus, Handshake, Scale, Mail, DollarSign, Eye } from 'lucide-react';
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import { db } from '@/core/config/firebase.config';
 import { useAuth } from '@/presentation/contexts/AuthContext';
@@ -181,6 +181,8 @@ export function NotificationBell() {
         return <Scale className="w-4 h-4" />;
       case 'verify_email':
         return <Mail className="w-4 h-4" />;
+      case 'product_views_weekly':
+        return <Eye className="w-4 h-4" />;
       case 'payment_required':
         return <DollarSign className="w-4 h-4" />;
       default:

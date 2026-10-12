@@ -16,7 +16,9 @@ import { useDeleteProduct } from '@/presentation/hooks/product/useDeleteProduct'
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { ProductForm } from '@/presentation/components/features/product/ProductForm/ProductForm';
-import { ArrowLeft, Pencil, Trash2, Power, Star, Share2 } from 'lucide-react';
+import { ArrowLeft, Pencil, Trash2, Power, Star, Share2, Eye } from 'lucide-react';
+import { httpsCallable } from 'firebase/functions';
+import { getFunctionsInstance } from '@/core/config/firebase.config';
 import { container } from '@/core/di/container';
 import { useConversations } from '@/presentation/hooks/messaging/useConversations';
 import { useRecommendedProducts } from '@/presentation/hooks/product/useRecommendedProducts';
@@ -30,7 +32,7 @@ import { QuantityUnit } from '@/presentation/components/common/QuantityUnit/Quan
 
 // eslint-disable-next-line no-unused-vars
 export function ProductDetailClient({ initialProduct = null, initialSeller = null } = {}) {
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, loading: authLoading } = useAuth();
   const router = useRouter();
   const { productId } = useParams();
 
@@ -53,6 +55,8 @@ export function ProductDetailClient({ initialProduct = null, initialSeller = nul
   const [seller, setSeller] = useState(null);
   const [sendingMessage, setSendingMessage] = useState(false);
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
+  // trackProductView'ın döndürdüğü güncel sayı (bu ziyaret dahil)
+  const [trackedViewCount, setTrackedViewCount] = useState(null);
 
   const { startDirectConversation } = useConversations();
   const { trackViewItem, trackContactSeller } = useTrackEvent();
@@ -66,6 +70,28 @@ export function ProductDetailClient({ initialProduct = null, initialSeller = nul
   useEffect(() => {
     if (product?.id && product?.name) trackViewItem(product.id, product.name, product.categoryId);
   }, [product?.id, product?.name, product?.categoryId, trackViewItem]);
+
+  // Görüntülenme sayacı: oturum başına ürün başı bir kez, sahibinin kendi
+  // ziyaretleri hariç. Auth çözülmeden çağırmıyoruz ki sahip anonim sayılmasın.
+  useEffect(() => {
+    if (!product?.id || authLoading) return;
+    if (currentUser?.uid && currentUser.uid === product.userId) return;
+    const key = `ctg:pv:${product.id}`;
+    try {
+      if (sessionStorage.getItem(key)) return;
+      sessionStorage.setItem(key, '1');
+    } catch {
+      // Storage kapalıysa yine say
+    }
+    httpsCallable(getFunctionsInstance(), 'trackProductView')({ productId: product.id })
+      .then((res) => {
+        const n = res?.data?.viewCount;
+        if (Number.isFinite(n)) setTrackedViewCount(n);
+      })
+      .catch((err) => console.warn('trackProductView failed:', err?.message || err));
+  }, [product?.id, product?.userId, authLoading, currentUser?.uid]);
+
+  const viewCount = trackedViewCount ?? (Number(product?.viewCount) || 0);
 
   useEffect(() => {
     if (!product?.userId) return;
@@ -201,11 +227,25 @@ export function ProductDetailClient({ initialProduct = null, initialSeller = nul
                     </button>
                   </div>
                 </div>
-                <div className="flex items-end gap-2 mt-2">
-                  {product.price ? (
-                    <><span className="text-lg text-gray-400 font-medium mb-1.5">{product.currency}</span><div className="text-4xl font-bold bg-gradient-to-r from-white to-[#A0A0A0] bg-clip-text text-transparent">{product.price.toLocaleString()}</div></>
-                  ) : (
-                    <div className="text-4xl font-bold bg-gradient-to-r from-[#FFD700] to-[#FDB931] bg-clip-text text-transparent">Negotiable</div>
+                <div className="flex flex-wrap items-end justify-between gap-x-3 gap-y-2 mt-2">
+                  <div className="flex items-end gap-2 min-w-0">
+                    {product.price ? (
+                      <><span className="text-lg text-gray-400 font-medium mb-1.5">{product.currency}</span><div className="text-4xl font-bold bg-gradient-to-r from-white to-[#A0A0A0] bg-clip-text text-transparent">{product.price.toLocaleString()}</div></>
+                    ) : (
+                      <div className="text-4xl font-bold bg-gradient-to-r from-[#FFD700] to-[#FDB931] bg-clip-text text-transparent">Negotiable</div>
+                    )}
+                  </div>
+                  {/* Görüntülenme sayısını sadece ürün sahibi ve adminler görür */}
+                  {isOwnProduct && (
+                    <div
+                      className="product-view-badge mb-1.5 inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1"
+                      title="Total views of this product page (visible only to you)"
+                    >
+                      <Eye className="w-3.5 h-3.5 text-[#C9CED6]" aria-hidden="true" />
+                      <span className="text-xs font-semibold tabular-nums">
+                        {viewCount.toLocaleString('en-US')} {viewCount === 1 ? 'view' : 'views'}
+                      </span>
+                    </div>
                   )}
                 </div>
               </div>

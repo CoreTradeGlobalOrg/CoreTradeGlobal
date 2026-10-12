@@ -11,6 +11,7 @@
  *   legal:     { email: boolean, push: boolean },
  *   providers: { email: boolean, push: boolean },
  *   system:    { email: boolean, push: boolean },
+ *   insights:  { email: boolean, push: boolean },
  * }
  */
 
@@ -27,6 +28,7 @@ const DEFAULT_PREFERENCES = {
   legal: { email: true, push: true },
   providers: { email: true, push: true },
   system: { email: true, push: true },
+  insights: { email: true, push: true },
 };
 
 export function useNotificationPreferences(uid) {
@@ -56,6 +58,7 @@ export function useNotificationPreferences(uid) {
               legal: { ...DEFAULT_PREFERENCES.legal, ...prefs.legal },
               providers: { ...DEFAULT_PREFERENCES.providers, ...prefs.providers },
               system: { ...DEFAULT_PREFERENCES.system, ...prefs.system },
+              insights: { ...DEFAULT_PREFERENCES.insights, ...prefs.insights },
             });
           } else {
             // No preferences set yet — use defaults

@@ -38,6 +38,7 @@ const TYPE_TO_TAB = {
   admin: 'system',
   new_user_approval: 'system',
   announcement: 'system',
+  product_views_weekly: 'system',
   rfq_created: 'system',
   product_upload_request: 'system',
 };
