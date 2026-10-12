@@ -3,12 +3,12 @@
  *
  * Accounts created by a guest RFQ (source 'guest_rfq') start without a
  * name or company. Until the owner sets them once (identitySetAt), they
- * show as "Buyer" / "Anonym" everywhere, so nothing derived from the
+ * show as "Buyer" / "Anonymous" everywhere, so nothing derived from the
  * email address leaks onto public pages.
  */
 
 export const ANONYMOUS_BUYER_NAME = 'Buyer';
-export const ANONYMOUS_COMPANY_NAME = 'Anonym';
+export const ANONYMOUS_COMPANY_NAME = 'Anonymous';
 
 export function isAnonymousGuest(user) {
   return user?.source === 'guest_rfq' && !user?.identitySetAt;
