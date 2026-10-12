@@ -5837,12 +5837,11 @@ const GUEST_EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 // Mail linkinin açılabileceği adresler (tam eşleşme). Link tek kullanımlık
 // giriş kodu taşıdığı için joker/regex YOK: başka bir domain kodu ele geçirebilir.
-// Listede olmayan her origin APP_URL'e (canlı site) düşer.
+// Sadece canlı site: preview veya localhost'tan gönderilen formlar da
+// coretradeglobal.com'a link verir. Listede olmayan origin APP_URL'e düşer.
 const LANDING_ORIGIN_ALLOWLIST = [
   'https://coretradeglobal.com',
   'https://www.coretradeglobal.com',
-  'https://core-trade-global-git-development-mert-fatih-simseks-projects.vercel.app',
-  'http://localhost:3000',
 ];
 
 /** Origin of the browser that called, if it is allowlisted; otherwise undefined (→ APP_URL). */
