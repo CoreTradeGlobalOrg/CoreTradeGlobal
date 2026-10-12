@@ -29,6 +29,7 @@ import { httpsCallable } from 'firebase/functions';
 import { ref, getDownloadURL } from 'firebase/storage';
 import { getStorageInstance, getFunctionsInstance } from '@/core/config/firebase.config';
 import { SearchableSelect } from '@/presentation/components/common/SearchableSelect/SearchableSelect';
+import { useFilePickerFeedback } from '@/presentation/hooks/useFilePickerFeedback';
 
 // Valid currency codes for validation
 const VALID_CURRENCY_CODES = new Set(CURRENCIES.map((c) => c.value));
@@ -129,6 +130,7 @@ export function BulkProductUpload({ users, categories, onClose, initialMemberId,
   const [uploadResult, setUploadResult] = useState(null);
   const [loadingCsv, setLoadingCsv] = useState(false);
   const fileInputRef = useRef(null);
+  const { picking: pickingCsv, openPicker: openCsvPicker } = useFilePickerFeedback(fileInputRef);
 
   // Build simple category lookup map
   const categoryMap = useMemo(() => buildCategoryMap(categories), [categories]);
@@ -398,18 +400,24 @@ export function BulkProductUpload({ users, categories, onClose, initialMemberId,
           onDrop={handleDrop}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
-          onClick={() => fileInputRef.current?.click()}
+          onClick={openCsvPicker}
           className={[
             'border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors',
-            isDragging
+            isDragging || pickingCsv
               ? 'border-[#FFD700] bg-[rgba(255,215,0,0.06)]'
               : 'border-[rgba(255,255,255,0.15)] hover:border-[rgba(255,215,0,0.4)] hover:bg-[rgba(255,255,255,0.03)]',
           ].join(' ')}
         >
           <Upload className="w-8 h-8 text-[#A0A0A0] mx-auto mb-2" />
           <p className="text-[#A0A0A0] text-sm">
-            Drag &amp; drop a CSV file here, or{' '}
-            <span className="text-[#FFD700] underline">browse</span>
+            {pickingCsv ? (
+              'Choose a CSV file…'
+            ) : (
+              <>
+                Drag &amp; drop a CSV file here, or{' '}
+                <span className="text-[#FFD700] underline">browse</span>
+              </>
+            )}
           </p>
           <p className="text-[#606060] text-xs mt-1">.csv files only</p>
         </div>
@@ -596,7 +604,7 @@ export function BulkProductUpload({ users, categories, onClose, initialMemberId,
               <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
               <div>
                 <p className="text-green-400 font-medium text-sm">
-                  Upload complete — {uploadResult.created} product(s) created
+                  Upload complete: {uploadResult.created} product(s) created
                 </p>
                 {uploadResult.skipped > 0 && (
                   <p className="text-[#A0A0A0] text-xs mt-0.5">
@@ -605,7 +613,7 @@ export function BulkProductUpload({ users, categories, onClose, initialMemberId,
                 )}
                 {uploadResult.imagesFailed > 0 && (
                   <p className="text-amber-400 text-xs mt-0.5">
-                    {uploadResult.imagesFailed} image(s) could not be downloaded — products created without those images.
+                    {uploadResult.imagesFailed} image(s) could not be downloaded. Products were created without those images.
                   </p>
                 )}
                 {uploadResult.errors?.length > 0 && (
