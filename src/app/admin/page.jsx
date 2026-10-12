@@ -70,10 +70,6 @@ const TestimonialsManager = dynamic(
   () => import('@/presentation/components/features/admin/TestimonialsManager/TestimonialsManager').then(m => ({ default: m.TestimonialsManager })),
   { loading: () => <AdminTabSkeleton />, ssr: false }
 );
-const ResendBackfillCard = dynamic(
-  () => import('@/presentation/components/features/admin/ResendBackfill/ResendBackfillCard').then(m => ({ default: m.ResendBackfillCard })),
-  { ssr: false }
-);
 const AdInquiriesManager = dynamic(
   () => import('@/presentation/components/features/admin/AdInquiriesManager/AdInquiriesManager').then(m => ({ default: m.AdInquiriesManager })),
   { loading: () => <AdminTabSkeleton />, ssr: false }
@@ -317,9 +313,6 @@ function AdminPageContent() {
 
           {/* Users Table */}
           <UsersTable users={users} onRefresh={refetch} />
-
-          {/* Resend Audience Backfill — one-off admin utility */}
-          <ResendBackfillCard />
 
           {/* Refresh Button */}
           <div className="mt-6 flex justify-end">

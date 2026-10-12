@@ -3,7 +3,7 @@
  * calls to send an email. Keeps four things in one place:
  *
  *   1. Budget awareness — shared `workflowEmailDailyBudget/{YYYY-MM-DD}`
- *      doc so a busy day doesn't blow the Resend free tier cap.
+ *      doc so a busy day stays within the daily email budget.
  *   2. Dedup — writes `user.emailsSent[workflowId] = Timestamp` before
  *      sending so re-triggers within the same window are a no-op.
  *   3. Magic-link injection — builds a fresh link for workflows that
@@ -18,7 +18,7 @@ const { buildMagicLink } = require('./magicLink');
 
 // Shared daily cap across every workflow email. The RFQ queue keeps
 // its own budget doc (rfqEmailDailyBudget/*) so the two share the
-// Resend account but are counted separately for clarity.
+// email account but are counted separately for clarity.
 const WORKFLOW_DAILY_LIMIT = Number(process.env.WORKFLOW_EMAIL_DAILY_LIMIT || 60);
 
 function todayUtcDateString() {

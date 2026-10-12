@@ -10,24 +10,14 @@ const { onDocumentCreated, onDocumentUpdated, onDocumentWritten } = require('fir
 const { onSchedule } = require('firebase-functions/v2/scheduler');
 const admin = require('firebase-admin');
 const { Timestamp, FieldValue } = require('firebase-admin/firestore');
-const { Resend } = require('resend');
 const { toTitleCase } = require('./utils/nameCase');
+const { sendEmail } = require('./emailClient');
 
 // Initialize Firebase Admin SDK
 admin.initializeApp();
 
 const db = admin.firestore();
 const messaging = admin.messaging();
-
-// Lazy Resend initialization — only created when first email is sent.
-// Set RESEND_API_KEY in functions/.env or via firebase functions:config:set resend.api_key='re_xxxxx'
-let _resend = null;
-function getResend() {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) return null;
-  if (!_resend) _resend = new Resend(apiKey);
-  return _resend;
-}
 
 /**
  * Role constants (duplicated here to avoid ESM import in CJS Cloud Functions)
@@ -554,71 +544,41 @@ function buildProductUploadEmailHtml(displayName) {
 }
 
 /**
- * Send a welcome email via Resend. Non-blocking — failure does not fail the CF.
+ * Send a welcome email. Non-blocking — failure does not fail the CF.
  */
 async function sendWelcomeEmail(to, displayName, userID) {
-  const resend = getResend();
-  if (!resend) {
-    console.warn('sendWelcomeEmail: RESEND_API_KEY not set, skipping email.');
-    return;
-  }
-  try {
-    await resend.emails.send({
-      from: 'CoreTradeGlobal <noreply@coretradeglobal.com>',
-      to,
-      subject: 'Welcome to CoreTradeGlobal!',
-      html: buildWelcomeEmailHtml(displayName, userID),
-    });
-    console.log(`sendWelcomeEmail: sent welcome to ${to}`);
-  } catch (err) {
-    console.error(`sendWelcomeEmail: failed to send to ${to}:`, err);
-  }
+  await sendEmail({
+    to,
+    subject: 'Welcome to CoreTradeGlobal!',
+    html: buildWelcomeEmailHtml(displayName, userID),
+    tag: 'sendWelcomeEmail',
+  });
 }
 
 /**
- * Send the 24-hour "Upload Your Products" reminder via Resend.
+ * Send the 24-hour "Upload Your Products" reminder.
  * Non-blocking — failure does not fail the CF.
  */
 async function sendProductUploadEmail(to, displayName) {
-  const resend = getResend();
-  if (!resend) {
-    console.warn('sendProductUploadEmail: RESEND_API_KEY not set, skipping email.');
-    return;
-  }
-  try {
-    await resend.emails.send({
-      from: 'CoreTradeGlobal <noreply@coretradeglobal.com>',
-      to,
-      subject: 'Upload your products and start receiving quotes',
-      html: buildProductUploadEmailHtml(displayName),
-    });
-    console.log(`sendProductUploadEmail: sent to ${to}`);
-  } catch (err) {
-    console.error(`sendProductUploadEmail: failed to send to ${to}:`, err);
-  }
+  await sendEmail({
+    to,
+    subject: 'Upload your products and start receiving quotes',
+    html: buildProductUploadEmailHtml(displayName),
+    tag: 'sendProductUploadEmail',
+  });
 }
 
 /**
- * Send an invite email via Resend. Non-blocking — failure does not fail the CF.
+ * Send an invite email. Non-blocking — failure does not fail the CF.
  */
 async function sendInviteEmail(to, name, role, signInLink) {
-  const resend = getResend();
-  if (!resend) {
-    console.warn('sendInviteEmail: RESEND_API_KEY not set, skipping email.');
-    return;
-  }
   const roleName = role.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-  try {
-    await resend.emails.send({
-      from: 'CoreTradeGlobal <noreply@coretradeglobal.com>',
-      to,
-      subject: `You're invited to CoreTradeGlobal as ${roleName}`,
-      html: buildInviteEmailHtml(name, role, signInLink),
-    });
-    console.log(`sendInviteEmail: sent invite to ${to} (${role})`);
-  } catch (err) {
-    console.error(`sendInviteEmail: failed to send to ${to}:`, err);
-  }
+  await sendEmail({
+    to,
+    subject: `You're invited to CoreTradeGlobal as ${roleName}`,
+    html: buildInviteEmailHtml(name, role, signInLink),
+    tag: `sendInviteEmail (${role})`,
+  });
 }
 
 /**
@@ -727,7 +687,7 @@ exports.inviteUser = onCall(
         signInLink, // Stored for resend capability
       });
 
-      // Send invite email via Resend (non-blocking)
+      // Send invite email (non-blocking)
       await sendInviteEmail(email, name, role, signInLink);
 
       console.log(`Invited user ${uid} (${email}) with role ${role}`);
@@ -819,7 +779,7 @@ exports.resendInvite = onCall(
         company: company || null,
       });
 
-      // Send invite email via Resend (non-blocking)
+      // Send invite email (non-blocking)
       await sendInviteEmail(email, displayName, role, signInLink);
 
       console.log(`Resent invite for ${uid} (${email}) with role ${role}`);
@@ -1649,51 +1609,9 @@ exports.sendWelcomeOnRegister = onDocumentCreated(
     // Welcome email is now WF2.1 (branded + magic-link) — sendWelcomeEmail's
     // legacy template was firing alongside it, hence the double-email in
     // the inbox on the reg flow. WF2.1 fires from wfSendEmailVerification;
-    // this CF stays only to seed the Resend contact + admin notification.
+    // this CF stays only for the admin approval notification.
     const displayName = userData.displayName || userData.firstName || 'there';
     void displayName; // preserved for logging shape below
-
-    // Mirror the new user into Resend so broadcasts (dashboard-scheduled
-    // newsletters, campaigns) can reach them later.
-    //
-    // AWAITED (not fire-and-forget): GCF v2 tears down containers as
-    // soon as the trigger promise resolves, so a dangling
-    // resend.contacts.create() request can be cancelled mid-flight —
-    // that's exactly what we saw during rollout, function metrics
-    // showed 3 invocations with zero errors while the Resend audience
-    // stayed at zero contacts. A ~200 ms delay per trigger is fine.
-    //
-    // `RESEND_AUDIENCE_ID` is optional: if set we push into that
-    // specific audience/segment; if unset the contact still lands in
-    // the workspace's default audience so no one is lost.
-    try {
-      const resendClient = getResend();
-      if (resendClient) {
-        const contactPayload = {
-          email,
-          firstName: userData.firstName || null,
-          lastName: userData.lastName || null,
-          unsubscribed: false,
-        };
-        if (process.env.RESEND_AUDIENCE_ID) {
-          contactPayload.audienceId = process.env.RESEND_AUDIENCE_ID;
-        }
-        const result = await resendClient.contacts.create(contactPayload);
-        if (result?.error) {
-          const status = result.error?.statusCode ?? result.error?.status;
-          if (status !== 409) {
-            console.warn(`sendWelcomeOnRegister: Resend contacts.create returned error for ${email}:`, result.error);
-          }
-        } else {
-          console.log(`sendWelcomeOnRegister: Resend contact created for ${email} (id=${result?.data?.id ?? 'unknown'})`);
-        }
-      }
-    } catch (err) {
-      const status = err?.statusCode ?? err?.status;
-      if (status !== 409) {
-        console.warn(`sendWelcomeOnRegister: Resend contacts.create threw for ${email}:`, err.message || err);
-      }
-    }
 
     // No more "verify your email" notification — users are auto-verified
     // in wfSendEmailVerification. Keeping the notification would surface
@@ -1821,152 +1739,6 @@ exports.sendProductUploadReminder = onSchedule(
 );
 
 /**
- * syncUnsubscribeToResend
- *
- * When a user unsubscribes via our own endpoint (public API creates a
- * doc under `unsubscribes/{sha256-of-email}`), mirror the state into
- * Resend so broadcasts scheduled from the dashboard also honour the
- * opt-out and we don't get spam-reported.
- *
- * Runs on doc CREATE only — repeat unsubscribes idempotently re-write
- * the same doc so the trigger doesn't fire again, but a re-created doc
- * (rare) would still land here.
- */
-exports.syncUnsubscribeToResend = onDocumentCreated(
-  'unsubscribes/{docId}',
-  async (event) => {
-    const snapshot = event.data;
-    if (!snapshot) return null;
-
-    const data = snapshot.data();
-    const email = data?.email || data?.emailLower;
-    if (!email) {
-      console.log('syncUnsubscribeToResend: no email in doc, skipping');
-      return null;
-    }
-
-    const resendClient = getResend();
-    if (!resendClient) {
-      console.warn('syncUnsubscribeToResend: RESEND_API_KEY unset, skipping');
-      return null;
-    }
-
-    // audienceId is optional — pushed only when set. See
-    // sendWelcomeOnRegister for the same flex.
-    const audienceId = process.env.RESEND_AUDIENCE_ID || null;
-
-    try {
-      const updatePayload = { email, unsubscribed: true };
-      if (audienceId) updatePayload.audienceId = audienceId;
-      await resendClient.contacts.update(updatePayload);
-      console.log(`syncUnsubscribeToResend: marked ${email} as unsubscribed in Resend`);
-    } catch (err) {
-      // 404 = contact never existed in Resend (unsubscribed before we
-      // ever emailed them). Create as pre-suppressed so future adds
-      // still respect the opt-out.
-      const status = err?.statusCode ?? err?.status;
-      if (status === 404) {
-        try {
-          const createPayload = { email, unsubscribed: true };
-          if (audienceId) createPayload.audienceId = audienceId;
-          await resendClient.contacts.create(createPayload);
-          console.log(`syncUnsubscribeToResend: pre-created ${email} as unsubscribed in Resend`);
-        } catch (createErr) {
-          console.warn(`syncUnsubscribeToResend: fallback create failed for ${email}:`, createErr.message || createErr);
-        }
-      } else {
-        console.warn(`syncUnsubscribeToResend: update failed for ${email}:`, err.message || err);
-      }
-    }
-
-    return null;
-  }
-);
-
-/**
- * backfillResendContacts
- *
- * Admin-only, run-once helper to load every existing user into the
- * Resend Audience. Skips deleted / no-email records and swallows
- * duplicate-contact errors so re-runs are safe. Rate-limited at 10
- * req/sec to stay under Resend's default throughput.
- *
- * Invoke from a client while signed in as admin:
- *   httpsCallable(functions, 'backfillResendContacts')({ limit: 1000 })
- */
-exports.backfillResendContacts = onCall(
-  { region: 'us-central1' },
-  async (request) => {
-    if (!(await isUserAdmin(request.auth?.uid))) {
-      throw new HttpsError('permission-denied', 'Admin only.');
-    }
-    const resendClient = getResend();
-    if (!resendClient) {
-      throw new HttpsError('failed-precondition', 'RESEND_API_KEY is not set.');
-    }
-
-    const limit = Math.min(Math.max(parseInt(request.data?.limit, 10) || 1000, 1), 5000);
-    // audienceId is optional. When unset the contact still lands in the
-    // workspace's default audience — safe fallback for Resend accounts
-    // whose UI no longer exposes a distinct Audience ID to grab.
-    const audienceId = process.env.RESEND_AUDIENCE_ID || null;
-
-    // Also honour our own unsubscribe list — anyone already opted out
-    // should land in Resend as `unsubscribed: true`.
-    let unsubscribedEmails = new Set();
-    try {
-      const unsubSnap = await db.collection('unsubscribes').limit(5000).get();
-      unsubSnap.docs.forEach((d) => {
-        const em = d.data()?.emailLower || d.data()?.email;
-        if (em) unsubscribedEmails.add(String(em).toLowerCase());
-      });
-    } catch (err) {
-      console.warn('backfillResendContacts: failed to load unsubscribes list, proceeding without it:', err.message);
-    }
-
-    const snap = await db.collection('users').limit(limit).get();
-    let added = 0;
-    let alreadyIn = 0;
-    let skipped = 0;
-    const errors = [];
-
-    for (const doc of snap.docs) {
-      const d = doc.data();
-      if (!d.email || d.isDeleted === true) {
-        skipped++;
-        continue;
-      }
-      const emailLower = String(d.email).toLowerCase();
-      try {
-        const payload = {
-          email: d.email,
-          firstName: d.firstName || null,
-          lastName: d.lastName || null,
-          unsubscribed: unsubscribedEmails.has(emailLower),
-        };
-        if (audienceId) payload.audienceId = audienceId;
-        await resendClient.contacts.create(payload);
-        added++;
-      } catch (err) {
-        const status = err?.statusCode ?? err?.status;
-        if (status === 409) {
-          alreadyIn++;
-        } else {
-          errors.push({ email: d.email, message: err.message || String(err) });
-          console.warn(`backfillResendContacts: contacts.create failed for ${d.email}:`, err.message || err);
-        }
-      }
-      // Rate-limit: ~10 req/sec.
-      await new Promise((resolve) => setTimeout(resolve, 110));
-    }
-
-    const summary = { scanned: snap.size, added, alreadyIn, skipped, errorCount: errors.length };
-    console.log('backfillResendContacts: done', summary);
-    return { ...summary, errors: errors.slice(0, 10) };
-  }
-);
-
-/**
  * Build the "New Advertising Inquiry" admin email HTML.
  *
  * Compact one-column card showing the inquiry summary + a CTA link into
@@ -2033,7 +1805,7 @@ function buildAdInquiryAdminEmailHtml(inquiry) {
  * Fires when a public inquiry lands in `adInquiries`. Fans out an
  * in-app notification (subcollection `users/{adminUid}/notifications`)
  * for each admin so the bell + admin dashboard both show it, and
- * emails every admin via Resend so nothing gets lost when they're
+ * emails every admin so nothing gets lost when they're
  * away from the app.
  */
 exports.notifyAdminsOnAdInquiry = onDocumentCreated(
@@ -2073,30 +1845,21 @@ exports.notifyAdminsOnAdInquiry = onDocumentCreated(
       console.error(`notifyAdminsOnAdInquiry: in-app fan-out failed for ${inquiryId}:`, err);
     }
 
-    // Email every admin via Resend (best-effort — Resend hiccup must
-    // not block, admins still have the in-app notification).
+    // Email every admin (best-effort — a provider hiccup must not block,
+    // admins still have the in-app notification).
     try {
-      const resend = getResend();
-      if (!resend) {
-        console.warn('notifyAdminsOnAdInquiry: RESEND_API_KEY unset, skipping admin email.');
-      } else {
-        const adminsSnap = await db.collection('users').where('role', '==', 'admin').limit(50).get();
-        const adminEmails = adminsSnap.docs
-          .map((d) => d.data()?.email)
-          .filter((e) => typeof e === 'string' && e.includes('@'));
-        if (adminEmails.length > 0) {
-          const html = buildAdInquiryAdminEmailHtml(data);
-          const subject = `New Ad Inquiry: ${data.company || 'Unknown company'}`;
-          // Resend caps `to` at 50 addresses per call — we're well under that.
-          await resend.emails.send({
-            from: 'CoreTradeGlobal <noreply@coretradeglobal.com>',
-            to: adminEmails,
-            subject,
-            html,
-            reply_to: data.email || undefined,
-          });
-          console.log(`notifyAdminsOnAdInquiry: emailed ${adminEmails.length} admin(s) for ${inquiryId}`);
-        }
+      const adminsSnap = await db.collection('users').where('role', '==', 'admin').limit(50).get();
+      const adminEmails = adminsSnap.docs
+        .map((d) => d.data()?.email)
+        .filter((e) => typeof e === 'string' && e.includes('@'));
+      if (adminEmails.length > 0) {
+        await sendEmail({
+          to: adminEmails,
+          subject: `New Ad Inquiry: ${data.company || 'Unknown company'}`,
+          html: buildAdInquiryAdminEmailHtml(data),
+          replyTo: data.email || undefined,
+          tag: `notifyAdminsOnAdInquiry (${inquiryId})`,
+        });
       }
     } catch (err) {
       console.error(`notifyAdminsOnAdInquiry: email fan-out failed for ${inquiryId}:`, err);
@@ -2726,7 +2489,7 @@ exports.withdrawOffer = onCall(async (request) => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * sendDealEmail — wraps Resend SDK call.
+ * sendDealEmail — thin wrapper over emailClient.sendEmail (ZeptoMail).
  *
  * Non-blocking: email failure does NOT fail the Cloud Function.
  * From address uses verified custom domain coretradeglobal.com.
@@ -2736,24 +2499,8 @@ exports.withdrawOffer = onCall(async (request) => {
  * @param {string} htmlBody - HTML content for the email body
  */
 async function sendDealEmail(to, subject, htmlBody) {
-  if (!to || !subject || !htmlBody) return;
-  const resend = getResend();
-  if (!resend) {
-    console.warn('sendDealEmail: RESEND_API_KEY not set, skipping email.');
-    return;
-  }
-  try {
-    await resend.emails.send({
-      from: 'CoreTradeGlobal <noreply@coretradeglobal.com>',
-      to,
-      subject,
-      html: htmlBody,
-    });
-    console.log(`sendDealEmail: sent "${subject}" to ${to}`);
-  } catch (err) {
-    console.error(`sendDealEmail: failed to send to ${to}:`, err);
-    // Non-blocking — swallow the error
-  }
+  // Non-blocking — sendEmail logs and swallows provider errors
+  await sendEmail({ to, subject, html: htmlBody, tag: 'sendDealEmail' });
 }
 
 /**
@@ -2920,7 +2667,7 @@ function buildBrandedEmailHtml(body, ctaLabel, ctaUrl, footerNote) {
  * sendDealNotifications — orchestrates all 3 notification channels for deal events.
  *
  * Sends to all deal participants EXCEPT the sender (actor) uid.
- * Channels: Firestore in-app notification, FCM push (with smart suppression), Resend email.
+ * Channels: Firestore in-app notification, FCM push (with smart suppression), email.
  *
  * IMPORTANT: Call this OUTSIDE transactions to prevent duplicate sends on transaction retries.
  *
@@ -3010,7 +2757,7 @@ async function sendDealNotifications(dealId, eventType, senderUid, deal) {
           console.log(`sendDealNotifications: suppressed FCM for ${recipientId} — actively viewing deal ${dealId}`);
         }
 
-        // --- c) Resend email notification (respects email preference) ---
+        // --- c) Email notification (respects email preference) ---
         const recipientEmail = userData.email;
         if (recipientEmail && emailEnabled) {
           const { subject, body: eventBody } = getDealEventCopy(eventType, deal.productName);
@@ -5908,7 +5655,7 @@ exports.onNewMemberRegistered = onDocumentWritten(
 // RFQ Email Delivery — inactive-user re-engagement with daily budget
 // ─────────────────────────────────────────────────────────────────────────────
 //
-// Resend's free tier caps at 100 emails/day. Firing an email per member
+// The old email provider's free tier capped at 100 emails/day. Firing an email per member
 // on every new RFQ blew through the cap the moment the member base grew
 // past a few hundred. New model:
 //
@@ -5949,7 +5696,7 @@ function todayUtcDateString() {
  *   - in-app notification: every member
  *   - FCM push: every member with push preference enabled
  *   - email: enqueued for inactive members only (drained by
- *     processRfqEmailQueue under a daily Resend budget)
+ *     processRfqEmailQueue under a daily email budget)
  */
 exports.onRFQCreated = onDocumentCreated(
   'requests/{requestId}',
@@ -6019,7 +5766,7 @@ exports.onRFQCreated = onDocumentCreated(
 
         // --- c) Email notification: enqueue for inactive users only ---
         //
-        // Sending email inline used to burn through the Resend free-tier
+        // Sending email inline used to burn through the old provider's free-tier
         // daily cap (100/day) as soon as a member base grew past a few
         // hundred. New model: skip email for active users entirely
         // (they get in-app + push above), and enqueue one row per
@@ -6062,7 +5809,7 @@ exports.onRFQCreated = onDocumentCreated(
 /**
  * processRfqEmailQueue
  *
- * Drains the rfqEmailQueue at a rate that respects Resend's daily
+ * Drains the rfqEmailQueue at a rate that respects the daily email
  * budget. Runs every 60 minutes.
  *
  * Per invocation:
@@ -6074,7 +5821,7 @@ exports.onRFQCreated = onDocumentCreated(
  *      email pref still on). Send if all still true, else mark skipped.
  *   5. On send success bump today's budget by 1. On failure increment
  *      attempts; drop to 'failed' after RFQ_QUEUE_MAX_ATTEMPTS.
- *   6. Small sleep between sends so the run doesn't spike Resend.
+ *   6. Small sleep between sends so the run doesn't spike the email provider.
  */
 exports.processRfqEmailQueue = onSchedule(
   {
@@ -6179,7 +5926,7 @@ exports.processRfqEmailQueue = onSchedule(
         });
         sent++;
 
-        // Small spacing between sends so the hour doesn't spike Resend.
+        // Small spacing between sends so the hour doesn't spike the email provider.
         if (sent < batchLimit) {
           await new Promise((r) => setTimeout(r, RFQ_QUEUE_SEND_SPACING_MS));
         }
@@ -7527,7 +7274,7 @@ exports.updateReportStatus = onCall(async (request) => {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Workflow Email Automations (WF1..WF6) — HubSpot-style journeys
-// Powered entirely by Firestore triggers + scheduled crons + Resend.
+// Powered entirely by Firestore triggers + scheduled crons + ZeptoMail.
 // ─────────────────────────────────────────────────────────────────────────────
 //
 // Templates live in functions/emailWorkflow/templates.js. The dispatcher in

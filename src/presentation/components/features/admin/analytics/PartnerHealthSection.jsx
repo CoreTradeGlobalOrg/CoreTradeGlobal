@@ -3,7 +3,7 @@
  *
  * Live health-check across the external services CTG depends on.
  * Each row is a live probe (HubSpot CRM API, Firestore, Vercel
- * status, Resend, GA + Clarity CDN) — no StatusPage.io tokens
+ * status, ZeptoMail, GA + Clarity CDN) — no StatusPage.io tokens
  * required. Reads through /api/analytics/partners which caches
  * for 60 s so a page refresh burst doesn't ping every provider.
  */

@@ -4,7 +4,7 @@
  * Tracks in-app notification volume per member so the operator can
  * see who's being written to too much (fatigue risk) and who's
  * receiving nothing at all (re-engagement candidate). Email volume
- * lives in Resend and needs a separate backend integration; the
+ * lives in ZeptoMail and needs a separate backend integration; the
  * panel flags that gap inline rather than fabricating numbers.
  */
 
@@ -134,7 +134,7 @@ export function CommunicationHygieneSection() {
           <p className="text-white font-semibold mb-1">In-app channel only</p>
           <p>
             This panel reads the <code className="text-[#FFD700]">users/&lt;uid&gt;/notifications</code> subcollection.
-            Email volume lives in Resend and needs a backend integration to surface here; WhatsApp isn't wired yet.
+            Email volume lives in ZeptoMail and needs a backend integration to surface here; WhatsApp isn't wired yet.
           </p>
         </div>
       </div>
