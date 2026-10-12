@@ -429,6 +429,21 @@ html {
     gap: 12px;
 }
 
+/* "Get Free Quotes": girişsiz ziyaretçi için RFQ mavisi buton */
+.btn-hero-secondary.btn-hero-quotes {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: #ffffff;
+    border-color: rgba(96, 165, 250, 0.5);
+    box-shadow: 0 8px 30px rgba(59, 130, 246, 0.3);
+}
+
+.btn-hero-secondary.btn-hero-quotes:hover {
+    background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+    color: #ffffff;
+    border-color: rgba(147, 197, 253, 0.7);
+    box-shadow: 0 12px 40px rgba(59, 130, 246, 0.45);
+}
+
 /* Hero CTA Buttons (for logged in users) */
 .hero-cta-btn {
     padding: 16px 36px;
