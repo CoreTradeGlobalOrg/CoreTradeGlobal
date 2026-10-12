@@ -128,8 +128,8 @@ export function HeroDataCards({ fetchData, dataLoading, latestProduct, latestReq
   const sponsoredHeroProduct = sponsoredHeroId ? sponsoredProductMap.get(sponsoredHeroId) : null;
   const { profile: sponsoredCompany } = useUserProfile(sponsoredAd?.userId);
 
-  const { setRef: setProductAdRef, trackClick: trackProductAdClick } = useTrackAd(sponsoredAd?.id);
-  const { setRef: setHeroAdRef, trackClick: trackHeroAdClick } = useTrackAd(sponsoredAd?.id);
+  const { setRef: setProductAdRef, trackClick: trackProductAdClick } = useTrackAd(sponsoredAd?.id, 'hero_product');
+  const { setRef: setHeroAdRef, trackClick: trackHeroAdClick } = useTrackAd(sponsoredAd?.id, 'hero_company');
 
   // Both slots activate the moment we have EITHER a resolved product
   // or a resolved company profile — waiting for both makes the hero

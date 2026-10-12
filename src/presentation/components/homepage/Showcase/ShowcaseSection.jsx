@@ -145,7 +145,7 @@ function BookThisSpotCard() {
 }
 
 function SponsoredCard({ ad, categories }) {
-  const { setRef, trackClick } = useTrackAd(ad.id);
+  const { setRef, trackClick } = useTrackAd(ad.id, 'showcase');
   const { profile } = useUserProfile(ad.userId);
 
   const productIds = useMemo(() => {

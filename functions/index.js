@@ -6309,6 +6309,7 @@ exports.expireAds = onSchedule(
       const nowMs = Date.now();
       const batch = db.batch();
       let updatedCount = 0;
+      const justExpired = [];
 
       adsSnap.forEach((doc) => {
         const data = doc.data();
@@ -6328,6 +6329,7 @@ exports.expireAds = onSchedule(
           console.log(`expireAds: "${data.badgeText || doc.id}" ${data.status} → ${correctStatus}`);
           batch.update(doc.ref, { status: correctStatus, updatedAt: Timestamp.now() });
           updatedCount++;
+          if (correctStatus === 'expired' && !data.finalReportSentAt) justExpired.push(doc.id);
         }
       });
 
@@ -6337,100 +6339,21 @@ exports.expireAds = onSchedule(
       } else {
         console.log('expireAds: all ad statuses correct.');
       }
+
+      // Kampanyası yeni biten reklamlara final rapor (hata expireAds'i düşürmesin)
+      for (const adId of justExpired) {
+        try {
+          await sendAdFinalReport(adId);
+        } catch (err) {
+          console.error(`expireAds: final report failed for ${adId}:`, err);
+        }
+      }
     } catch (err) {
       console.error('expireAds: unexpected error:', err);
       throw err;
     }
   }
 );
-
-/**
- * Ad tracking helper: cheap in-Firestore rate-limit so a refresh spam or
- * a bot in a tight loop can't inflate counters.
- *
- * Uses a synthetic doc id from (adId, kind, clientHash). If the doc's
- * lastAt is within the cooldown window, we skip the increment. Otherwise
- * upsert and count. clientHash is a truncated SHA-1 of ip+userAgent so
- * we don't persist raw PII.
- *
- * @param {string} adId
- * @param {'impression'|'click'} kind
- * @param {string} clientHash
- * @param {number} cooldownMs
- * @returns {Promise<boolean>} true if the event should be counted
- */
-async function shouldCountAdEvent(adId, kind, clientHash, cooldownMs) {
-  const key = `${adId}_${kind}_${clientHash}`;
-  const ref = db.collection('adTracking').doc(key);
-  const nowMs = Date.now();
-
-  try {
-    return await db.runTransaction(async (t) => {
-      const snap = await t.get(ref);
-      if (snap.exists) {
-        const last = snap.data().lastAt?.toDate?.().getTime?.() ?? 0;
-        if (nowMs - last < cooldownMs) return false;
-        t.update(ref, { lastAt: Timestamp.now(), hits: FieldValue.increment(1) });
-      } else {
-        t.set(ref, {
-          adId,
-          kind,
-          clientHash,
-          lastAt: Timestamp.now(),
-          firstAt: Timestamp.now(),
-          hits: 1,
-        });
-      }
-      return true;
-    });
-  } catch (err) {
-    console.warn('shouldCountAdEvent: tx failed, allowing event:', err.message);
-    return true;
-  }
-}
-
-function hashClient(ip, userAgent) {
-  const crypto = require('crypto');
-  const raw = `${ip || 'noip'}|${userAgent || 'noua'}`;
-  return crypto.createHash('sha1').update(raw).digest('hex').slice(0, 16);
-}
-
-/**
- * trackAdImpression — onCall
- *
- * Client fires this once when the ad actually enters the viewport (the
- * hook is responsible for the IntersectionObserver). Per-client cooldown
- * = 30 minutes so refresh spam / tab restore doesn't over-count.
- *
- * @param {Object} data - { adId }
- * @returns {Promise<{ counted: boolean }>}
- */
-exports.trackAdImpression = onCall(async (request) => {
-  const { adId } = request.data || {};
-  if (!adId || typeof adId !== 'string') {
-    throw new HttpsError('invalid-argument', 'adId is required.');
-  }
-
-  const ip = request.rawRequest?.ip || request.rawRequest?.headers?.['x-forwarded-for'] || '';
-  const ua = request.rawRequest?.headers?.['user-agent'] || '';
-  const clientHash = hashClient(String(ip).split(',')[0].trim(), ua);
-
-  const IMPRESSION_COOLDOWN_MS = 30 * 60 * 1000;
-  const counted = await shouldCountAdEvent(adId, 'impression', clientHash, IMPRESSION_COOLDOWN_MS);
-  if (!counted) return { counted: false };
-
-  try {
-    await db.collection('ads').doc(adId).update({
-      impressions: FieldValue.increment(1),
-      lastImpressionAt: Timestamp.now(),
-    });
-  } catch (err) {
-    // Ad may have been deleted between snapshot render and impression fire.
-    console.warn(`trackAdImpression: could not increment ${adId}:`, err.message);
-    return { counted: false };
-  }
-  return { counted: true };
-});
 
 /**
  * ISO week key ("2026-W42") in Turkey time (UTC+3, no DST). Weeks run
@@ -6492,43 +6415,85 @@ exports.trackProductView = onCall(async (request) => {
   }
 });
 
+// Reklamın gösterildiği alanlar; bilinmeyen değer 'other' olarak sayılır
+const AD_SLOTS = ['hero_product', 'hero_company', 'showcase', 'products_list'];
+
+/** "2026-10-12" in Turkey time (UTC+3, no DST). */
+function trDateKey(date) {
+  return new Date(date.getTime() + 3 * 60 * 60 * 1000).toISOString().slice(0, 10);
+}
+
+/**
+ * Count one ad impression or click. No cooldown on purpose: every render
+ * and every refresh counts. Bumps the all-time counter on ads/{adId} and
+ * the per-day, per-slot counters in ads/{adId}/dailyStats/{YYYY-MM-DD}
+ * (Turkey date) in one batch, so both move together.
+ *
+ * @returns {Promise<boolean>} false when the ad no longer exists
+ */
+async function recordAdEvent(adId, kind, slot) {
+  const field = kind === 'click' ? 'clicks' : 'impressions';
+  const safeSlot = AD_SLOTS.includes(slot) ? slot : 'other';
+  const now = Timestamp.now();
+  const day = trDateKey(new Date());
+  const adRef = db.collection('ads').doc(adId);
+
+  const batch = db.batch();
+  batch.update(adRef, {
+    [field]: FieldValue.increment(1),
+    [kind === 'click' ? 'lastClickAt' : 'lastImpressionAt']: now,
+  });
+  batch.set(adRef.collection('dailyStats').doc(day), {
+    date: day,
+    [field]: FieldValue.increment(1),
+    slots: { [safeSlot]: { [field]: FieldValue.increment(1) } },
+    updatedAt: now,
+  }, { merge: true });
+
+  try {
+    await batch.commit();
+    return true;
+  } catch (err) {
+    // Ad may have been deleted between render and the event.
+    console.warn(`recordAdEvent: could not count ${kind} for ${adId}:`, err.message);
+    return false;
+  }
+}
+
+function validateAdEventInput(data) {
+  const { adId, slot } = data || {};
+  if (!adId || typeof adId !== 'string' || adId.length > 128 || adId.includes('/')) {
+    throw new HttpsError('invalid-argument', 'adId is required.');
+  }
+  return { adId, slot: typeof slot === 'string' ? slot : null };
+}
+
+/**
+ * trackAdImpression — onCall
+ *
+ * Client fires this when the ad enters the viewport (useTrackAd's
+ * IntersectionObserver), once per mount. A page refresh counts again.
+ *
+ * @param {Object} data - { adId, slot }
+ * @returns {Promise<{ counted: boolean }>}
+ */
+exports.trackAdImpression = onCall(async (request) => {
+  const { adId, slot } = validateAdEventInput(request.data);
+  return { counted: await recordAdEvent(adId, 'impression', slot) };
+});
+
 /**
  * trackAdClick — onCall
  *
- * Client fires this when the user actually clicks/taps the ad. Cooldown
- * is shorter (5 min) since a genuine repeat click is more meaningful
- * than a repeat impression, but we still don't want tap spam.
+ * Client fires this when the ad is tapped. Every tap counts.
  *
- * @param {Object} data - { adId }
+ * @param {Object} data - { adId, slot }
  * @returns {Promise<{ counted: boolean }>}
  */
 exports.trackAdClick = onCall(async (request) => {
-  const { adId } = request.data || {};
-  if (!adId || typeof adId !== 'string') {
-    throw new HttpsError('invalid-argument', 'adId is required.');
-  }
-
-  const ip = request.rawRequest?.ip || request.rawRequest?.headers?.['x-forwarded-for'] || '';
-  const ua = request.rawRequest?.headers?.['user-agent'] || '';
-  const clientHash = hashClient(String(ip).split(',')[0].trim(), ua);
-
-  const CLICK_COOLDOWN_MS = 5 * 60 * 1000;
-  const counted = await shouldCountAdEvent(adId, 'click', clientHash, CLICK_COOLDOWN_MS);
-  if (!counted) return { counted: false };
-
-  try {
-    await db.collection('ads').doc(adId).update({
-      clicks: FieldValue.increment(1),
-      lastClickAt: Timestamp.now(),
-    });
-  } catch (err) {
-    console.warn(`trackAdClick: could not increment ${adId}:`, err.message);
-    return { counted: false };
-  }
-  return { counted: true };
+  const { adId, slot } = validateAdEventInput(request.data);
+  return { counted: await recordAdEvent(adId, 'click', slot) };
 });
-
-
 
 // ─────────────────────────────────────────────────────────────────────────────
 // HubSpot CRM sync (Bölüm 5 + 13, automatic tier)
@@ -7600,3 +7565,251 @@ exports.sendWeeklyProductViewReport = onSchedule(
     return null;
   }
 );
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Sponsored ad reports (weekly + final)
+// ─────────────────────────────────────────────────────────────────────────────
+
+const AD_SLOT_LABELS = {
+  hero_product: 'Homepage hero, product card',
+  hero_company: 'Homepage hero, company card',
+  showcase: 'Sponsored Company showcase',
+  products_list: 'Products directory tile',
+  other: 'Other',
+};
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** "Oct 5" for a "2026-10-05" date key. */
+function formatDateKey(key) {
+  return new Date(`${key}T00:00:00Z`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+}
+
+/** Turkey-time Monday 00:00 of the week containing `date`, as a UTC Date. */
+function trWeekStart(date) {
+  const local = new Date(date.getTime() + 3 * 60 * 60 * 1000);
+  const day = (local.getUTCDay() + 6) % 7;
+  const mondayLocal = Date.UTC(local.getUTCFullYear(), local.getUTCMonth(), local.getUTCDate() - day);
+  return new Date(mondayLocal - 3 * 60 * 60 * 1000);
+}
+
+function formatCtr(impressions, clicks) {
+  if (!impressions) return '0%';
+  const pct = (clicks / impressions) * 100;
+  return `${pct >= 10 ? pct.toFixed(1) : pct.toFixed(2)}%`;
+}
+
+/** Sum dailyStats docs into totals, per-day and per-slot maps. */
+function aggregateAdStats(statDocs) {
+  const totals = { impressions: 0, clicks: 0 };
+  const byDay = new Map();
+  const bySlot = {};
+  for (const d of statDocs) {
+    const impressions = Number(d.impressions) || 0;
+    const clicks = Number(d.clicks) || 0;
+    totals.impressions += impressions;
+    totals.clicks += clicks;
+    byDay.set(d.date, { impressions, clicks });
+    for (const [slot, v] of Object.entries(d.slots || {})) {
+      bySlot[slot] = bySlot[slot] || { impressions: 0, clicks: 0 };
+      bySlot[slot].impressions += Number(v?.impressions) || 0;
+      bySlot[slot].clicks += Number(v?.clicks) || 0;
+    }
+  }
+  return { totals, byDay, bySlot };
+}
+
+async function loadAdDailyStats(adId, fromKey, toKey) {
+  let q = db.collection('ads').doc(adId).collection('dailyStats');
+  if (fromKey) q = q.where('date', '>=', fromKey);
+  if (toKey) q = q.where('date', '<=', toKey);
+  const snap = await q.get();
+  return snap.docs.map((d) => ({ date: d.id, ...d.data() }));
+}
+
+function adStatTiles(impressions, clicks) {
+  const tile = (label, value) => `<td width="33%" style="padding:12px;background-color:#132238;border-radius:6px;text-align:center;font-family:Arial,sans-serif;">
+      <div style="font-size:12px;color:#8899AA;text-transform:uppercase;letter-spacing:1px;">${label}</div>
+      <div style="font-size:22px;color:#FFD700;font-weight:bold;margin-top:4px;">${value}</div>
+    </td>`;
+  return `<table width="100%" cellpadding="0" cellspacing="6" border="0" style="margin:8px 0 16px 0;"><tr>
+      ${tile('Impressions', formatCount(impressions))}
+      ${tile('Clicks', formatCount(clicks))}
+      ${tile('CTR', formatCtr(impressions, clicks))}
+    </tr></table>`;
+}
+
+function adStatTable(title, firstColumn, rows) {
+  const th = 'padding:8px 0;border-bottom:1px solid #1E3A5F;font-size:12px;color:#8899AA;font-family:Arial,sans-serif;text-transform:uppercase;letter-spacing:1px;';
+  const td = 'padding:8px 0;border-bottom:1px solid #1E3A5F;font-size:14px;color:#FFFFFF;font-family:Arial,sans-serif;';
+  const body = rows
+    .map((r) => `<tr>
+        <td style="${td}">${escapeEmailText(r.label)}</td>
+        <td style="${td}text-align:right;">${formatCount(r.impressions)}</td>
+        <td style="${td}text-align:right;">${formatCount(r.clicks)}</td>
+        <td style="${td}text-align:right;">${formatCtr(r.impressions, r.clicks)}</td>
+      </tr>`)
+    .join('');
+  return `<p style="margin:24px 0 4px 0;font-weight:bold;">${title}</p>
+    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+      <tr>
+        <td style="${th}">${firstColumn}</td>
+        <td style="${th}text-align:right;">Impressions</td>
+        <td style="${th}text-align:right;">Clicks</td>
+        <td style="${th}text-align:right;">CTR</td>
+      </tr>
+      ${body}
+    </table>`;
+}
+
+function slotRows(bySlot) {
+  return Object.keys(AD_SLOT_LABELS)
+    .filter((slot) => bySlot[slot])
+    .map((slot) => ({ label: AD_SLOT_LABELS[slot], ...bySlot[slot] }));
+}
+
+async function deliverAdReport({ ad, adId, notifId, notifTitle, notifBody, subject, emailBody, tag }) {
+  const userSnap = await db.collection('users').doc(ad.userId).get();
+  if (!userSnap.exists || userSnap.data().isDeleted) return false;
+  const user = userSnap.data();
+  const notifRef = db.collection('users').doc(ad.userId).collection('notifications').doc(notifId);
+  if ((await notifRef.get()).exists) return false;
+
+  await notifRef.set({
+    type: 'ad_report',
+    title: notifTitle,
+    body: notifBody,
+    isRead: false,
+    createdAt: Timestamp.now(),
+    link: '/my-sponsorships',
+    data: { adId },
+  });
+  // Ücretli hizmetin raporu: tercih kapatılamaz, her zaman hesap mailine gider
+  if (user.email) {
+    await sendEmail({
+      to: user.email,
+      subject,
+      html: buildBrandedEmailHtml(emailBody, 'View full report', `${APP_URL}/my-sponsorships`),
+      tag,
+    });
+  }
+  return true;
+}
+
+/**
+ * sendWeeklyAdReports — every Monday 09:00 Turkey time.
+ *
+ * For every ad that ran last week and is still running this week (ads
+ * that ended last week get the final report from expireAds instead):
+ * in-app notification + email to the ad owner's account email with last
+ * week's impressions, clicks, CTR, a day-by-day table, a per-placement
+ * table and campaign-to-date totals. Idempotent per ad and week.
+ */
+exports.sendWeeklyAdReports = onSchedule(
+  { schedule: 'every monday 09:00', timeZone: 'Europe/Istanbul', timeoutSeconds: 300 },
+  async () => {
+    const now = new Date();
+    const thisWeekStart = trWeekStart(now);
+    const lastWeekStart = new Date(thisWeekStart.getTime() - 7 * DAY_MS);
+    const dayKeys = Array.from({ length: 7 }, (_, i) => trDateKey(new Date(lastWeekStart.getTime() + i * DAY_MS)));
+    const rangeLabel = `${formatDateKey(dayKeys[0])} – ${formatDateKey(dayKeys[6])}`;
+    const weekKey = isoWeekKey(lastWeekStart);
+
+    const adsSnap = await db.collection('ads').get();
+    let sent = 0;
+    for (const doc of adsSnap.docs) {
+      const ad = doc.data();
+      const startMs = ad.startDate?.toDate?.().getTime?.() || 0;
+      const endMs = ad.endDate?.toDate?.().getTime?.() || 0;
+      if (!ad.userId || !startMs || !endMs) continue;
+      if (startMs >= thisWeekStart.getTime()) continue; // henüz başlamadı
+      if (endMs < thisWeekStart.getTime()) continue; // bitti, final rapor gider
+
+      try {
+        const { totals, byDay, bySlot } = aggregateAdStats(await loadAdDailyStats(doc.id, dayKeys[0], dayKeys[6]));
+        const dayRows = dayKeys.map((key) => ({ label: formatDateKey(key), ...(byDay.get(key) || { impressions: 0, clicks: 0 }) }));
+        const campaignImpressions = Number(ad.impressions) || 0;
+        const campaignClicks = Number(ad.clicks) || 0;
+        const since = ad.startDate.toDate().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'Europe/Istanbul' });
+
+        const emailBody = `<p style="margin:0 0 8px 0;">Here is how your sponsored ad performed last week (${rangeLabel}).</p>
+          ${adStatTiles(totals.impressions, totals.clicks)}
+          ${adStatTable('Day by day', 'Day', dayRows)}
+          ${slotRows(bySlot).length ? adStatTable('By placement', 'Placement', slotRows(bySlot)) : ''}
+          <p style="margin:24px 0 0 0;">Campaign to date (since ${since}): <strong>${formatCount(campaignImpressions)}</strong> impressions, <strong>${formatCount(campaignClicks)}</strong> clicks, CTR <strong>${formatCtr(campaignImpressions, campaignClicks)}</strong>.</p>`;
+
+        const ok = await deliverAdReport({
+          ad,
+          adId: doc.id,
+          notifId: `ad-weekly-${doc.id}-${weekKey}`,
+          notifTitle: 'Your weekly ad report',
+          notifBody: `Last week (${rangeLabel}) your ad was seen ${formatCount(totals.impressions)} times and clicked ${formatCount(totals.clicks)} times (CTR ${formatCtr(totals.impressions, totals.clicks)}).`,
+          subject: `Your sponsored ad report: ${rangeLabel}`,
+          emailBody,
+          tag: `sendWeeklyAdReports (${doc.id})`,
+        });
+        if (ok) sent++;
+      } catch (err) {
+        console.error(`sendWeeklyAdReports: failed for ad ${doc.id}:`, err);
+      }
+    }
+    console.log(`sendWeeklyAdReports ${weekKey}: sent=${sent}`);
+    return null;
+  }
+);
+
+/**
+ * Final report for an ad whose campaign just ended. Called by expireAds
+ * when an ad flips to 'expired'. Marks ads/{id}.finalReportSentAt so it
+ * goes out once.
+ */
+async function sendAdFinalReport(adId) {
+  const adRef = db.collection('ads').doc(adId);
+  const ad = (await adRef.get()).data();
+  if (!ad || !ad.userId || ad.finalReportSentAt) return;
+
+  const { byDay, bySlot } = aggregateAdStats(await loadAdDailyStats(adId));
+  const impressions = Number(ad.impressions) || 0;
+  const clicks = Number(ad.clicks) || 0;
+  const fmtFull = (ts) => ts.toDate().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'Europe/Istanbul' });
+  const rangeLabel = `${fmtFull(ad.startDate)} – ${fmtFull(ad.endDate)}`;
+
+  // Haftalık satırlar (Pzt–Paz, Türkiye saati)
+  const weeks = new Map();
+  for (const [key, v] of [...byDay.entries()].sort(([a], [b]) => a.localeCompare(b))) {
+    const wk = isoWeekKey(new Date(`${key}T00:00:00Z`));
+    const w = weeks.get(wk) || { first: key, last: key, impressions: 0, clicks: 0 };
+    w.last = key;
+    w.impressions += v.impressions;
+    w.clicks += v.clicks;
+    weeks.set(wk, w);
+  }
+  const weekRows = [...weeks.values()].map((w) => ({
+    label: w.first === w.last ? formatDateKey(w.first) : `${formatDateKey(w.first)} – ${formatDateKey(w.last)}`,
+    impressions: w.impressions,
+    clicks: w.clicks,
+  }));
+  let bestDay = null;
+  for (const [key, v] of byDay) {
+    if (!bestDay || v.impressions > bestDay.impressions) bestDay = { key, ...v };
+  }
+
+  const emailBody = `<p style="margin:0 0 8px 0;">Your sponsored campaign on CoreTradeGlobal has ended. Here is the full report for ${rangeLabel}.</p>
+    ${adStatTiles(impressions, clicks)}
+    ${weekRows.length ? adStatTable('Week by week', 'Week', weekRows) : ''}
+    ${slotRows(bySlot).length ? adStatTable('By placement', 'Placement', slotRows(bySlot)) : ''}
+    ${bestDay && bestDay.impressions > 0 ? `<p style="margin:24px 0 0 0;">Best day: <strong>${formatDateKey(bestDay.key)}</strong> with ${formatCount(bestDay.impressions)} impressions and ${formatCount(bestDay.clicks)} clicks.</p>` : ''}
+    <p style="margin:16px 0 0 0;">Thank you for advertising with us. Reply to this email or visit the advertising page to book your next campaign.</p>`;
+
+  await deliverAdReport({
+    ad,
+    adId,
+    notifId: `ad-final-${adId}`,
+    notifTitle: 'Your ad campaign has ended',
+    notifBody: `Final report (${rangeLabel}): ${formatCount(impressions)} impressions, ${formatCount(clicks)} clicks, CTR ${formatCtr(impressions, clicks)}.`,
+    subject: `Your sponsored campaign report: ${rangeLabel}`,
+    emailBody,
+    tag: `sendAdFinalReport (${adId})`,
+  });
+  await adRef.update({ finalReportSentAt: Timestamp.now() });
+}

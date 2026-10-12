@@ -419,13 +419,14 @@ service cloud.firestore {
     match /ads/{adId} {
       allow read, list: if true;
       allow create, update, delete: if isAdmin();
-    }
 
-    // adTracking: server-only. Cloud Functions write here to record
-    // per-client cooldown state for trackAdImpression/trackAdClick.
-    // Clients have no reason to read it (would leak fingerprint hashes).
-    match /adTracking/{key} {
-      allow read, write: if false;
+      // Günlük gösterim/tıklama sayaçları: sadece reklam sahibi ve admin
+      // okur; yazma sadece trackAdImpression/trackAdClick CF'lerinden.
+      match /dailyStats/{day} {
+        allow read: if isAdmin()
+          || (isAuthenticated() && get(/databases/$(database)/documents/ads/$(adId)).data.userId == request.auth.uid);
+        allow write: if false;
+      }
     }
 
     match /adInquiries/{inquiryId} {

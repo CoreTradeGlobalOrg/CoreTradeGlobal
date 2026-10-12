@@ -28,7 +28,9 @@ import {
   serverTimestamp,
 } from 'firebase/firestore';
 import toast from 'react-hot-toast';
+import { AdPerformancePanel } from '@/presentation/components/features/ads/AdPerformancePanel/AdPerformancePanel';
 import {
+  BarChart3,
   Plus,
   Search,
   RefreshCw,
@@ -84,6 +86,8 @@ export function AdCampaignsManager() {
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [busyId, setBusyId] = useState(null);
+  // Analitiği açık olan reklam kartı
+  const [statsOpenId, setStatsOpenId] = useState(null);
 
   useEffect(() => {
     const q = query(collection(db, 'ads'), orderBy('createdAt', 'desc'));
@@ -156,9 +160,10 @@ export function AdCampaignsManager() {
   const duplicate = async (ad) => {
     setBusyId(ad.id);
     try {
-      const { id, createdAt, updatedAt, impressions, clicks, ...rest } = ad;
+      const { id, createdAt, updatedAt, impressions, clicks, finalReportSentAt, lastImpressionAt, lastClickAt, ...rest } = ad;
       // eslint-disable-line @typescript-eslint/no-unused-vars
       void id; void createdAt; void updatedAt; void impressions; void clicks;
+      void finalReportSentAt; void lastImpressionAt; void lastClickAt;
       await addDoc(collection(db, 'ads'), {
         ...rest,
         status: AD_STATUSES.SCHEDULED,
@@ -338,6 +343,15 @@ export function AdCampaignsManager() {
                     )}
                     <button
                       type="button"
+                      onClick={() => setStatsOpenId((prev) => (prev === ad.id ? null : ad.id))}
+                      aria-expanded={statsOpenId === ad.id}
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold transition-all ${statsOpenId === ad.id ? 'bg-[rgba(255,215,0,0.15)] border-[rgba(255,215,0,0.5)] text-[#FFD700]' : 'bg-[rgba(255,255,255,0.05)] border-[rgba(255,255,255,0.12)] text-white hover:bg-[rgba(255,255,255,0.1)]'}`}
+                    >
+                      <BarChart3 className="w-3.5 h-3.5" />
+                      Analytics
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => startEdit(ad)}
                       disabled={isBusy}
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.12)] text-white text-xs font-semibold hover:bg-[rgba(255,255,255,0.1)] disabled:opacity-60 transition-all"
@@ -397,6 +411,11 @@ export function AdCampaignsManager() {
                     </button>
                   </div>
                 </div>
+                {statsOpenId === ad.id && (
+                  <div className="mt-4 pt-4 border-t border-[rgba(255,255,255,0.08)]">
+                    <AdPerformancePanel ad={ad} />
+                  </div>
+                )}
               </div>
             );
           })}

@@ -9,6 +9,11 @@
  * Each row links back to /pricing/inquire/pay/{inquiryId} — that page
  * owns the actual "I've sent the wire" action and shows the bank
  * details.
+ *
+ * Above the reservations, "Ad performance" lists the user's live and past
+ * ads (ads where userId == uid) with impressions, clicks, CTR and the
+ * per-placement and day-by-day breakdown. Weekly and final report
+ * emails link here.
  */
 
 'use client';
@@ -17,11 +22,12 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { collection, getDocs, orderBy, query, where } from 'firebase/firestore';
-import { ArrowRight, Calendar, Loader2, PlusCircle, ChevronLeft } from 'lucide-react';
+import { ArrowRight, Calendar, Loader2, PlusCircle, ChevronLeft, BarChart3 } from 'lucide-react';
 import { db } from '@/core/config/firebase.config';
 import { useAuth } from '@/presentation/contexts/AuthContext';
 import { PAYMENT_STATUSES, PAYMENT_STATUS_LABELS } from '@/core/constants/wireTransfer';
-import { AD_PACKAGES, AD_TYPES } from '@/core/constants/adTypes';
+import { AD_PACKAGES, AD_TYPES, AD_STATUS_LABELS } from '@/core/constants/adTypes';
+import { AdPerformancePanel } from '@/presentation/components/features/ads/AdPerformancePanel/AdPerformancePanel';
 
 const SPONSORED_PACKAGE = AD_PACKAGES.find((p) => p.type === AD_TYPES.SPONSORED) || AD_PACKAGES[0];
 
@@ -41,6 +47,7 @@ export default function MySponsorshipsPage() {
   const { user, loading: authLoading } = useAuth();
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [ads, setAds] = useState([]);
 
   useEffect(() => {
     if (authLoading) return;
@@ -58,10 +65,19 @@ export default function MySponsorshipsPage() {
         // client-side so we don't pin a `createdAt desc` composite for
         // a tiny list. Users typically have < 12 sponsorships (one per
         // month max), so client sort is trivial.
-        const snap = await getDocs(
-          query(collection(db, 'adInquiries'), where('userId', '==', user.uid)),
-        );
+        const [snap, adsSnap] = await Promise.all([
+          getDocs(query(collection(db, 'adInquiries'), where('userId', '==', user.uid))),
+          getDocs(query(collection(db, 'ads'), where('userId', '==', user.uid))).catch((err) => {
+            console.warn('[my-sponsorships] ads fetch failed:', err);
+            return null;
+          }),
+        ]);
         if (cancelled) return;
+        if (adsSnap) {
+          const adItems = adsSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+          adItems.sort((a, b) => (tsToDate(b.startDate)?.getTime() || 0) - (tsToDate(a.startDate)?.getTime() || 0));
+          setAds(adItems);
+        }
         const items = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
         items.sort((a, b) => {
           const aCreated = tsToDate(a.createdAt)?.getTime() || 0;
@@ -120,6 +136,20 @@ export default function MySponsorshipsPage() {
           </Link>
         </div>
 
+        {!loading && ads.length > 0 && (
+          <section className="mb-10">
+            <h2 className="flex items-center gap-2 text-lg font-bold mb-3">
+              <BarChart3 className="w-5 h-5 text-[#FFD700]" />
+              Ad performance
+            </h2>
+            <div className="space-y-3">
+              {ads.map((ad) => (
+                <AdPerformanceCard key={ad.id} ad={ad} />
+              ))}
+            </div>
+          </section>
+        )}
+
         {loading ? (
           <div className="rounded-2xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] p-8 flex items-center justify-center gap-2 text-[#A0A0A0]">
             <Loader2 className="w-4 h-4 animate-spin" /> Loading your sponsorships…
@@ -135,6 +165,31 @@ export default function MySponsorshipsPage() {
         )}
       </div>
     </main>
+  );
+}
+
+function formatDay(ts) {
+  const d = tsToDate(ts);
+  return d ? d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+}
+
+function AdPerformanceCard({ ad }) {
+  return (
+    <div className="rounded-2xl border border-[rgba(255,255,255,0.08)] bg-gradient-to-br from-[rgba(26,40,59,0.6)] to-[rgba(15,27,43,0.85)] p-4 md:p-5">
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+        <div className="min-w-0">
+          <p className="text-white font-bold text-base">{ad.companyName || 'Sponsored Package'}</p>
+          <p className="flex items-center gap-1.5 text-xs text-[#A0A0A0] mt-0.5">
+            <Calendar className="w-3.5 h-3.5" />
+            {formatDay(ad.startDate)} → {formatDay(ad.endDate)}
+          </p>
+        </div>
+        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border border-[rgba(255,215,0,0.35)] text-[#FFD700] bg-[rgba(255,215,0,0.08)]">
+          {AD_STATUS_LABELS[ad.status] || ad.status || 'Scheduled'}
+        </span>
+      </div>
+      <AdPerformancePanel ad={ad} />
+    </div>
   );
 }
 

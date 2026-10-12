@@ -22,6 +22,7 @@ import {
   Mail,
   ChevronDown,
   Eye,
+  BarChart3,
 } from 'lucide-react';
 
 // Type-specific icon mapping (mirrors NotificationBell)
@@ -43,6 +44,8 @@ const getNotificationIcon = (type) => {
       return <Megaphone className="w-4 h-4" />;
     case 'product_views_weekly':
       return <Eye className="w-4 h-4" />;
+    case 'ad_report':
+      return <BarChart3 className="w-4 h-4" />;
     case 'rfq_created':
       return <Package className="w-4 h-4" />;
     case 'verify_email':

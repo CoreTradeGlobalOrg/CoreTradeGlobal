@@ -511,7 +511,7 @@ function ProductCard({ product, categories, isFavorited, onToggleFavorite, owner
  * as promoted content without breaking grid alignment.
  */
 function SponsoredPackageCard({ ad, categories }) {
-    const { setRef, trackClick } = useTrackAd(ad.id);
+    const { setRef, trackClick } = useTrackAd(ad.id, 'products_list');
     const productId = ad.productsListProductId || ad.heroProductId
         || (Array.isArray(ad.showcaseProductIds) ? ad.showcaseProductIds[0] : null);
     const productMap = useProductsByIds(productId ? [productId] : []);
