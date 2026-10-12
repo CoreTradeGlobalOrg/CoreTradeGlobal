@@ -264,11 +264,18 @@ export function ProductDetailClient({ initialProduct = null, initialSeller = nul
               <div className="glass-card p-6 flex flex-col gap-2">
                 <div className="text-sm uppercase tracking-wider text-[#FFD700] font-semibold">Stock Quantity</div>
                 <div className="flex items-center gap-3">
-                  <QuantityUnit
-                    quantity={product.stockQuantity || 0}
-                    unit={product.unit || 'PCE'}
-                    className={`text-2xl font-bold ${product.stockQuantity > 0 ? 'bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent' : 'text-red-400'}`}
-                  />
+                  {Number(product.stockQuantity) > 0 ? (
+                    <QuantityUnit
+                      quantity={product.stockQuantity}
+                      unit={product.unit || 'PCE'}
+                      className="text-2xl font-bold bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent"
+                    />
+                  ) : (
+                    // Stok 0 ya da girilmemiş: "0 Pieces" yerine satıcıyla iletişime yönlendir
+                    <span className="text-2xl font-bold bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
+                      Contact for Stock
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
