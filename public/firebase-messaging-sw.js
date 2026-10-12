@@ -57,11 +57,19 @@ self.addEventListener('push', (event) => {
     clickUrl = data.conversationId
       ? ('/messages/' + data.conversationId)
       : '/messages';
+  } else if (dataType === 'announcement') {
+    // Full text is readable on the notifications page (doc id == announcementId)
+    notificationTitle = data.title || 'Announcement';
+    notificationBody = data.body || 'You have a new announcement';
+    tag = 'announcement-' + (data.announcementId || 'general');
+    clickUrl = data.announcementId
+      ? ('/notifications?open=' + encodeURIComponent(data.announcementId))
+      : '/notifications';
   } else {
     notificationTitle = data.title || 'CoreTradeGlobal';
     notificationBody = data.body || data.messageContent || 'You have a new notification';
     tag = 'general';
-    clickUrl = '/';
+    clickUrl = data.click_action || data.link || '/';
   }
 
   event.waitUntil(

@@ -253,7 +253,7 @@ export function FairsBulkUpload({ isOpen, onClose, onImport, importing }) {
             <code className="text-[#FFD700]">imageUrl</code>,{' '}
             <code className="text-[#FFD700]">websiteUrl</code> (both must start with http://
             or https://), <code className="text-[#FFD700]">status</code>{' '}
-            (upcoming / ongoing / past — defaults to upcoming).
+            (upcoming / ongoing / past, defaults to upcoming).
           </p>
         </div>
 

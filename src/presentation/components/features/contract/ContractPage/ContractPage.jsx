@@ -151,7 +151,7 @@ function CompletionBanner({ dealId }) {
       <div className="flex items-center gap-2 mb-1">
         <CheckCircle size={16} className="text-emerald-400" />
         <p className="text-sm font-semibold text-emerald-400">
-          Contract Approved — Both parties have approved all clauses
+          Contract Approved: Both parties have approved all clauses
         </p>
       </div>
       <p className="text-xs text-[#8899AA] mb-3">

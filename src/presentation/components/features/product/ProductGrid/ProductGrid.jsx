@@ -74,15 +74,39 @@ const CURRENCY_SYMBOLS = {
 // on page 2 with 12 organic products each.
 const PAGE_SIZE = 12;
 
-export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter, countryFilter, sidebarVisible = false, initialProducts = [] }) {
+// ?page=N in the address bar. Written with window.history (Next.js keeps its
+// router in sync and does not refetch), read back on mount and on back/forward.
+function readPageFromUrl() {
+    if (typeof window === 'undefined') return null;
+    const n = parseInt(new URLSearchParams(window.location.search).get('page') || '', 10);
+    return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+function writePageToUrl(page, { replace = false } = {}) {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    if (page > 1) params.set('page', String(page));
+    else params.delete('page');
+    const qs = params.toString();
+    const url = `${window.location.pathname}${qs ? `?${qs}` : ''}`;
+    if (url === `${window.location.pathname}${window.location.search}`) return;
+    window.history[replace ? 'replaceState' : 'pushState'](null, '', url);
+}
+
+export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter, countryFilter, sidebarVisible = false, initialProducts = [], initialPage = 1 }) {
     const [products, setProducts] = useState(initialProducts);
     const [filteredProducts, setFilteredProducts] = useState(initialProducts);
     // Batch-load the owner role for every visible product so the
     // logistics-provider accent lights up without a per-card read.
     const ownerRoles = useOwnerRoles(filteredProducts.map((p) => p.userId));
     const [loading, setLoading] = useState(initialProducts.length === 0);
-    const [currentPage, setCurrentPage] = useState(1);
+    // Ürüne girip geri dönünce aynı sayfa açılsın: önce adres satırı, yoksa sunucudan gelen değer
+    const [currentPage, setCurrentPage] = useState(() => readPageFromUrl() || initialPage || 1);
     const gridTopRef = useRef(null);
+    // Sayfayı sadece filtreler gerçekten değişince 1'e çek. "İlk açılış" bayrağı
+    // StrictMode'da işe yaramıyor: effect ikinci kez çalışıp ?page=N'i siliyordu.
+    const filterKey = `${searchQuery || ''}|${categoryFilter || ''}|${categoryIdFilter || ''}|${countryFilter || ''}`;
+    const lastFilterKeyRef = useRef(filterKey);
     const { categories } = useCategories();
     const { isFavorited, toggleFavorite } = useFavoriteProduct();
     const { track } = useTrackEvent();
@@ -134,10 +158,20 @@ export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter, cou
         fetchProducts();
     }, []);
 
-    // Reset to first page when filters change
+    // Reset to first page when the filters actually change (never on mount)
     useEffect(() => {
+        if (lastFilterKeyRef.current === filterKey) return;
+        lastFilterKeyRef.current = filterKey;
         setCurrentPage(1);
-    }, [searchQuery, categoryFilter, categoryIdFilter, countryFilter]);
+        writePageToUrl(1, { replace: true });
+    }, [filterKey]);
+
+    // Browser back/forward between pages of the grid
+    useEffect(() => {
+        const onPopState = () => setCurrentPage(readPageFromUrl() || 1);
+        window.addEventListener('popstate', onPopState);
+        return () => window.removeEventListener('popstate', onPopState);
+    }, []);
 
     // Filter Logic
     useEffect(() => {
@@ -198,6 +232,7 @@ export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter, cou
     const goToPage = useCallback((page) => {
         const clamped = Math.min(Math.max(1, page), totalPages);
         setCurrentPage(clamped);
+        writePageToUrl(clamped);
         // Smooth-scroll back to the top of the grid on page change.
         gridTopRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, [totalPages]);
@@ -261,8 +296,15 @@ export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter, cou
         );
     }
 
+    // Sponsored slot is always the first tile — on normal pages and on the
+    // zero-result view alike, so a non-matching search never hides the ad.
+    const sponsoredSlot = sponsoredAd
+        ? <SponsoredPackageCard ad={sponsoredAd} categories={categories} />
+        : <SponsoredProductPlaceholder />;
+
     if (filteredProducts.length === 0) {
-        const suggested = suggestedProducts.slice(0, 12);
+        // PAGE_SIZE - 1: the sponsored tile takes one slot, same as paged view
+        const suggested = suggestedProducts.slice(0, PAGE_SIZE - 1);
         const rfqHref = searchQuery
             ? `/request/new?title=${encodeURIComponent(searchQuery)}`
             : '/request/new';
@@ -293,28 +335,27 @@ export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter, cou
                 </div>
 
                 {suggested.length > 0 && (
-                    <>
-                        <div className="flex items-center gap-3 mb-5 mt-4">
-                            <div className="flex-1 h-px bg-[rgba(255,255,255,0.1)]" />
-                            <span className="text-xs uppercase tracking-wider text-[#A0A0A0] font-semibold">
-                                You might also like
-                            </span>
-                            <div className="flex-1 h-px bg-[rgba(255,255,255,0.1)]" />
-                        </div>
-                        <div className={`grid ${gridColsClass} gap-6`}>
-                            {suggested.map((product) => (
-                                <ProductCard
-                                    key={product.id}
-                                    product={product}
-                                    categories={categories}
-                                    isFavorited={isFavorited(product.id)}
-                                    onToggleFavorite={toggleFavorite}
-                                    ownerRole={ownerRoles.get(product.userId)}
-                                />
-                            ))}
-                        </div>
-                    </>
+                    <div className="flex items-center gap-3 mb-5 mt-4">
+                        <div className="flex-1 h-px bg-[rgba(255,255,255,0.1)]" />
+                        <span className="text-xs uppercase tracking-wider text-[#A0A0A0] font-semibold">
+                            You might also like
+                        </span>
+                        <div className="flex-1 h-px bg-[rgba(255,255,255,0.1)]" />
+                    </div>
                 )}
+                <div className={`grid ${gridColsClass} gap-6`}>
+                    {sponsoredSlot}
+                    {suggested.map((product) => (
+                        <ProductCard
+                            key={product.id}
+                            product={product}
+                            categories={categories}
+                            isFavorited={isFavorited(product.id)}
+                            onToggleFavorite={toggleFavorite}
+                            ownerRole={ownerRoles.get(product.userId)}
+                        />
+                    ))}
+                </div>
             </div>
         );
     }
@@ -338,9 +379,7 @@ export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter, cou
         <>
             <div ref={gridTopRef} className="scroll-mt-28" />
             <div className={`grid ${gridColsClass} gap-6`}>
-                {sponsoredAd
-                    ? <SponsoredPackageCard ad={sponsoredAd} categories={categories} />
-                    : <SponsoredProductPlaceholder />}
+                {sponsoredSlot}
                 {pageProducts.map((product) => (
                     <ProductCard
                         key={product.id}
@@ -507,7 +546,7 @@ function ProductCard({ product, categories, isFavorited, onToggleFavorite, owner
  * as promoted content without breaking grid alignment.
  */
 function SponsoredPackageCard({ ad, categories }) {
-    const { setRef, trackClick } = useTrackAd(ad.id);
+    const { setRef, trackClick } = useTrackAd(ad.id, 'products_list');
     const productId = ad.productsListProductId || ad.heroProductId
         || (Array.isArray(ad.showcaseProductIds) ? ad.showcaseProductIds[0] : null);
     const productMap = useProductsByIds(productId ? [productId] : []);
@@ -519,16 +558,11 @@ function SponsoredPackageCard({ ad, categories }) {
         <div
             ref={setRef}
             onClick={trackClick}
-            className="relative"
-            style={{
-                borderRadius: 20,
-                boxShadow: '0 10px 30px rgba(255,215,0,0.18)',
-                outline: '2px solid rgba(255,215,0,0.55)',
-                outlineOffset: '-1px',
-            }}
+            className="sponsored-slot relative"
         >
+            {/* Badge sits on the image corner (card padding 20px + 8px), mirroring the favorite button */}
             <span
-                className="absolute top-2 left-2 z-20 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider pointer-events-none"
+                className="absolute top-[28px] left-[28px] z-20 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider pointer-events-none"
                 style={{ background: '#FFD700', color: '#0F1B2B' }}
             >
                 Sponsored
@@ -562,7 +596,7 @@ function SponsoredProductPlaceholder() {
             }}
         >
             <span
-                className="absolute top-2 left-2 z-20 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider"
+                className="absolute top-[28px] left-[28px] z-20 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider"
                 style={{ background: '#FFD700', color: '#0F1B2B' }}
             >
                 Available

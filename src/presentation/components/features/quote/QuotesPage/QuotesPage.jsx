@@ -191,7 +191,7 @@ export function QuotesPage({
             <div>
               <h1 className="text-lg font-bold text-white">Compare Provider Quotes</h1>
               <p className="text-sm text-[#8899AA] mt-0.5">
-                {deal.productName} &mdash; Deal{' '}
+                {deal.productName} · Deal{' '}
                 <span className="font-mono text-xs text-[#4A5B6E]">#{deal.id?.slice(-8)}</span>
               </p>
             </div>

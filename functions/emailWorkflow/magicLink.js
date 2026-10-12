@@ -19,7 +19,13 @@ const DEFAULT_ACTION_CODE_SETTINGS = {
  * Build a magic-link URL for the given email.
  *
  * @param {string} email
- * @param {{ continuePath?: string }} [opts] — override the landing path
+ * @param {{ continuePath?: string, landingPath?: string }} [opts]
+ *   continuePath — override the continueUrl Firebase embeds
+ *   landingPath   — page that consumes the link (default /onboarding);
+ *                   may carry its own query string, e.g. /email-link?rfq=abc
+ *   landingOrigin — host the link opens on (default APP_URL). Only pass a
+ *                   value from LANDING_ORIGIN_ALLOWLIST: the link carries a
+ *                   one-time sign-in code, so it must never open elsewhere.
  * @returns {Promise<string>} ready-to-embed sign-in URL
  */
 async function buildMagicLink(email, opts = {}) {
@@ -34,12 +40,12 @@ async function buildMagicLink(email, opts = {}) {
   // portion but preserve the query string (mode, oobCode, apiKey, lang).
   try {
     const parsed = new URL(rawLink);
-    const params = new URLSearchParams();
+    const target = new URL(`${opts.landingOrigin || APP_URL}${opts.landingPath || '/onboarding'}`);
     for (const key of ['mode', 'oobCode', 'apiKey', 'continueUrl', 'lang']) {
       const value = parsed.searchParams.get(key);
-      if (value) params.set(key, value);
+      if (value) target.searchParams.set(key, value);
     }
-    return `${APP_URL}/onboarding?${params.toString()}`;
+    return target.toString();
   } catch (err) {
     console.warn('buildMagicLink: URL rewrite failed, returning raw link', err.message);
     return rawLink;

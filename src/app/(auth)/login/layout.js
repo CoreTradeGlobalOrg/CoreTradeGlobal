@@ -9,7 +9,7 @@
 const CANONICAL_URL = 'https://www.coretradeglobal.com/login';
 
 export const metadata = {
-  title: 'Sign in — CoreTradeGlobal',
+  title: 'Sign in | CoreTradeGlobal',
   description:
     'Sign in to your CoreTradeGlobal account to manage your products, RFQs, and deals on the B2B trade network.',
   alternates: { canonical: CANONICAL_URL },
@@ -17,7 +17,7 @@ export const metadata = {
     type: 'website',
     locale: 'en_US',
     url: CANONICAL_URL,
-    title: 'Sign in — CoreTradeGlobal',
+    title: 'Sign in | CoreTradeGlobal',
     description:
       'Sign in to CoreTradeGlobal to manage your products, RFQs, deals, logistics, insurance, and payments on the trusted B2B trade network for global buyers and suppliers.',
     siteName: 'CoreTradeGlobal',
@@ -25,8 +25,8 @@ export const metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Sign in — CoreTradeGlobal',
-    description: 'Sign in to CoreTradeGlobal — the end-to-end B2B trade network for verified buyers and suppliers worldwide.',
+    title: 'Sign in | CoreTradeGlobal',
+    description: 'Sign in to CoreTradeGlobal, the end-to-end B2B trade network for verified buyers and suppliers worldwide.',
     images: ['https://www.coretradeglobal.com/og-image.png'],
   },
 };

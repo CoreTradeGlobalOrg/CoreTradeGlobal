@@ -120,7 +120,7 @@ export function FraudSection() {
         <div>
           <h3 className="text-lg font-semibold text-white">Fraud &amp; Risk</h3>
           <p className="text-xs text-[#A0A0A0] mt-0.5">
-            Self-hosted risk signals — click any card to see who tripped it.
+            Self-hosted risk signals. Click any card to see who tripped it.
           </p>
         </div>
         <button
@@ -408,10 +408,10 @@ export function FraudSection() {
         <div className="text-xs text-[#A0A0A0]">
           <p className="text-white font-semibold mb-1">First-pass scope</p>
           <p>
-            No SEON / Sift / MaxMind here — six signals derived from Firestore data we already
+            No SEON / Sift / MaxMind here. Six signals are derived from Firestore data we already
             have. IP intelligence, device fingerprinting, and payment-fraud pattern matching
             need a dedicated fraud provider. What lands today catches shared-domain sign-up
-            bursts, duplicate identities, and off-platform steering — enough to route the
+            bursts, duplicate identities, and off-platform steering, which is enough to route the
             actionable rows into the admin queue for manual review.
           </p>
         </div>

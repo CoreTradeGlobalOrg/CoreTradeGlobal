@@ -151,12 +151,12 @@ export default function PrivacyPolicyPage() {
                 <tbody className="text-gray-200 text-sm">
                   <tr className="border-b border-[rgba(255,255,255,0.05)]">
                     <td className="px-4 py-3">Account registration</td>
-                    <td className="px-4 py-3">Art. 6(1)(b) – Contract</td>
+                    <td className="px-4 py-3">Art. 6(1)(b): Contract</td>
                     <td className="px-4 py-3">Providing services</td>
                   </tr>
                   <tr className="border-b border-[rgba(255,255,255,0.05)]">
                     <td className="px-4 py-3">Fraud prevention</td>
-                    <td className="px-4 py-3">Art. 6(1)(f) – Legitimate interest</td>
+                    <td className="px-4 py-3">Art. 6(1)(f): Legitimate interest</td>
                     <td className="px-4 py-3">Detecting security incidents</td>
                   </tr>
                   <tr className="border-b border-[rgba(255,255,255,0.05)]">
@@ -166,7 +166,7 @@ export default function PrivacyPolicyPage() {
                   </tr>
                   <tr>
                     <td className="px-4 py-3">Marketing communications</td>
-                    <td className="px-4 py-3">Art. 6(1)(a) – Consent</td>
+                    <td className="px-4 py-3">Art. 6(1)(a): Consent</td>
                     <td className="px-4 py-3">Advertising and marketing</td>
                   </tr>
                 </tbody>
@@ -261,11 +261,11 @@ export default function PrivacyPolicyPage() {
               U.S. residents, particularly those in California, have the following rights:
             </p>
             <ul className="list-disc pl-6 text-gray-200 space-y-2">
-              <li>Right to Know – what categories of data we collect, use, or disclose</li>
-              <li>Right to Delete – request deletion subject to legal exceptions</li>
-              <li>Right to Correct – inaccurate information</li>
-              <li>Right to Opt-Out – of sale or sharing</li>
-              <li>Right to Limit Use – of sensitive personal data</li>
+              <li>Right to Know: what categories of data we collect, use, or disclose</li>
+              <li>Right to Delete: request deletion subject to legal exceptions</li>
+              <li>Right to Correct: inaccurate information</li>
+              <li>Right to Opt-Out of sale or sharing</li>
+              <li>Right to Limit Use of sensitive personal data</li>
               <li>Right to Non-Discrimination</li>
             </ul>
           </section>

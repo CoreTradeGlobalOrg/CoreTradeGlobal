@@ -128,8 +128,8 @@ export function HeroDataCards({ fetchData, dataLoading, latestProduct, latestReq
   const sponsoredHeroProduct = sponsoredHeroId ? sponsoredProductMap.get(sponsoredHeroId) : null;
   const { profile: sponsoredCompany } = useUserProfile(sponsoredAd?.userId);
 
-  const { setRef: setProductAdRef, trackClick: trackProductAdClick } = useTrackAd(sponsoredAd?.id);
-  const { setRef: setHeroAdRef, trackClick: trackHeroAdClick } = useTrackAd(sponsoredAd?.id);
+  const { setRef: setProductAdRef, trackClick: trackProductAdClick } = useTrackAd(sponsoredAd?.id, 'hero_product');
+  const { setRef: setHeroAdRef, trackClick: trackHeroAdClick } = useTrackAd(sponsoredAd?.id, 'hero_company');
 
   // Both slots activate the moment we have EITHER a resolved product
   // or a resolved company profile — waiting for both makes the hero
@@ -152,7 +152,7 @@ export function HeroDataCards({ fetchData, dataLoading, latestProduct, latestReq
         badgeText: sponsoredAd.badgeText || 'Sponsored',
         companyLogo: sponsoredCompany.companyLogo || sponsoredCompany.photoURL || null,
         companyName: sponsoredCompany.companyName || sponsoredCompany.displayName || 'Sponsored Company',
-        description: truncate(sponsoredCompany.companyDescription || sponsoredCompany.bio || 'Featured supplier — explore their catalog.'),
+        description: truncate(sponsoredCompany.companyDescription || sponsoredCompany.bio || 'Featured supplier. Explore their catalog.'),
         linkUrl: `/profile/${sponsoredCompany.id}`,
       }
     : null;
@@ -216,7 +216,7 @@ export function HeroDataCards({ fetchData, dataLoading, latestProduct, latestReq
           <Link
             href="/pricing/inquire?type=sponsored"
             className="hero-info-card hero-product-card hero-promo-slot-card"
-            aria-label="Feature your product here — inquire about the Featured Product placement"
+            aria-label="Feature your product here. Inquire about the Featured Product placement"
           >
             <div className="card-icon" style={{
               background: 'linear-gradient(135deg, rgba(255,215,0,0.18), rgba(253,185,49,0.06))',
@@ -369,7 +369,7 @@ export function HeroDataCards({ fetchData, dataLoading, latestProduct, latestReq
           <Link
             href="/pricing/inquire?type=sponsored"
             className="hero-info-card hero-supplier-card hero-promo-slot-card"
-            aria-label="Your company here — inquire about featured advertising"
+            aria-label="Your company here. Inquire about featured advertising"
           >
             <div className="card-icon" style={{
               background: 'linear-gradient(135deg, rgba(255,215,0,0.18), rgba(253,185,49,0.06))',

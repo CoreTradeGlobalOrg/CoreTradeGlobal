@@ -340,6 +340,16 @@ export function LoginForm() {
           {loading ? 'Logging in...' : 'Log In'}
         </button>
 
+        <p className="mt-4 text-center text-sm text-[#A0A0A0]">
+          No password?{' '}
+          <Link
+            href={redirectTo ? `/login-link?redirect=${encodeURIComponent(redirectTo)}` : '/login-link'}
+            className="text-[#FFD700] font-semibold hover:text-white transition-colors"
+          >
+            Email me a sign-in link
+          </Link>
+        </p>
+
         <div className="mt-6">
           <SocialAuthButtons
             redirectTo={redirectTo}

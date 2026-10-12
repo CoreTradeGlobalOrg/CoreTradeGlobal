@@ -6,6 +6,7 @@ import { RoleBadge } from '@/presentation/components/common/RoleBadge/RoleBadge'
 import { COUNTRIES } from '@/core/constants/countries';
 import { COMPANY_TYPES, COMPANY_TYPE_LABELS, ROLE_TO_COMPANY_TYPE } from '@/core/constants/companyTypes';
 import { useAuth } from '@/presentation/contexts/AuthContext';
+import { isAnonymousGuest, publicDisplayName, publicCompanyName } from '@/core/utils/publicIdentity';
 
 function getCountryLabel(countryCode) {
   if (!countryCode) return 'Not set';
@@ -146,7 +147,7 @@ function EditableCell({
               : <p className="text-white font-semibold text-lg truncate">{value}</p>
             : (
               <p className="text-[#A0A0A0] font-semibold text-lg">
-                {canEdit ? emptyHint || 'Not set — tap to add' : 'Not set'}
+                {canEdit ? emptyHint || 'Not set. Tap to add' : 'Not set'}
               </p>
             )}
         </div>
@@ -382,6 +383,65 @@ function LogoActionMenu({ hasLogo, disabled, onChangeFile, onRemove }) {
  * ProfileCard - The main profile info card with logo, bio, and editable fields.
  * Covers: logo, name, bio, and the 2x2 detail grid.
  */
+/**
+ * IdentityEditor — one-time name + company form for accounts created by a
+ * guest RFQ. After saving, identitySetAt is stamped and firestore.rules
+ * lock displayName/companyName for the owner.
+ */
+function IdentityEditor({ saving, onSave }) {
+  const [name, setName] = useState('');
+  const [company, setCompany] = useState('');
+
+  const submit = async (e) => {
+    e.preventDefault();
+    await onSave({ displayName: name, companyName: company });
+  };
+
+  return (
+    <form
+      onSubmit={submit}
+      className="mt-6 rounded-2xl border border-[rgba(255,215,0,0.35)] bg-[rgba(255,215,0,0.06)] p-5"
+    >
+      <p className="text-white font-semibold">Add your name and company</p>
+      <p className="text-xs text-[#A0A0A0] mt-1 mb-4">
+        Suppliers see these on your requests. You can set them once, so please check them before saving.
+      </p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <input
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Your full name"
+          autoComplete="name"
+          maxLength={80}
+          disabled={saving}
+          className="w-full bg-[rgba(255,255,255,0.05)] text-white font-semibold focus:outline-none focus:border-[#FFD700] border-2 border-[#FFD700]/50 rounded-xl px-3 py-2"
+        />
+        <input
+          type="text"
+          value={company}
+          onChange={(e) => setCompany(e.target.value)}
+          placeholder="Company name"
+          autoComplete="organization"
+          maxLength={120}
+          disabled={saving}
+          className="w-full bg-[rgba(255,255,255,0.05)] text-white font-semibold focus:outline-none focus:border-[#FFD700] border-2 border-[#FFD700]/50 rounded-xl px-3 py-2"
+        />
+      </div>
+      <div className="flex justify-end mt-3">
+        <button
+          type="submit"
+          disabled={saving}
+          className="inline-flex items-center gap-1 px-4 py-2 rounded-lg bg-gradient-to-r from-[#FFD700] to-[#FDB931] text-[#0F1B2B] text-sm font-bold hover:brightness-110 disabled:opacity-60 transition-all"
+        >
+          <Check className="w-4 h-4" />
+          {saving ? 'Saving…' : 'Save'}
+        </button>
+      </div>
+    </form>
+  );
+}
+
 export function ProfileCard({
   profileUser,
   categoryName,
@@ -408,6 +468,7 @@ export function ProfileCard({
   onProfileUpdate,
   onCancelEdit,
   onFieldSave,
+  onIdentitySave,
   highlightFields = new Set(),
 }) {
   const { user: currentUser } = useAuth();
@@ -489,10 +550,10 @@ export function ProfileCard({
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h2 className="text-2xl font-bold text-white mb-1">
-                  {profileUser?.displayName || 'User'}
+                  {publicDisplayName(profileUser)}
                 </h2>
                 <p className="text-[#FFD700] font-medium">
-                  {profileUser?.companyName || 'No company'}
+                  {publicCompanyName(profileUser)}
                   {profileUser?.position && <span className="text-[#A0A0A0]"> • {profileUser.position}</span>}
                 </p>
               </div>
@@ -519,6 +580,10 @@ export function ProfileCard({
           </div>
         </div>
 
+        {isOwnProfile && isAnonymousGuest(profileUser) && onIdentitySave && (
+          <IdentityEditor saving={profileUpdating} onSave={onIdentitySave} />
+        )}
+
         {/* Details Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-6 border-t border-[rgba(255,255,255,0.1)]">
           <div
@@ -527,7 +592,7 @@ export function ProfileCard({
           >
             <p className="text-sm font-semibold uppercase tracking-wider mb-2 bg-gradient-to-r from-[#C0C0C0] via-[#FFFFFF] to-[#C0C0C0] bg-clip-text text-transparent">Company</p>
             <div className="flex items-center gap-2 min-w-0">
-              <p className="text-white font-semibold text-lg truncate">{profileUser?.companyName || 'Not set'}</p>
+              <p className="text-white font-semibold text-lg truncate">{publicCompanyName(profileUser, 'Not set')}</p>
               {profileUser?.companyVerified && (
                 <span
                   className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-300 border border-emerald-500/40 shrink-0"
@@ -583,7 +648,7 @@ export function ProfileCard({
               label="Phone"
               privateBadge
               value={profileUser?.phone}
-              emptyHint="Not set — tap to add"
+              emptyHint="Not set. Tap to add"
               canEdit={canEdit}
               highlight={highlightFields.has('phone')}
               saving={profileUpdating}
@@ -606,7 +671,7 @@ export function ProfileCard({
             field="linkedinProfile"
             label="LinkedIn"
             value={profileUser?.linkedinProfile}
-            emptyHint="Not set — tap to add LinkedIn"
+            emptyHint="Not set. Tap to add LinkedIn"
             canEdit={canEdit}
             saving={profileUpdating}
             onSave={async (v) => (onFieldSave ? await onFieldSave('linkedinProfile', v) : false)}
@@ -642,7 +707,7 @@ export function ProfileCard({
             field="companyWebsite"
             label="Website"
             value={profileUser?.companyWebsite}
-            emptyHint="Not set — tap to add website"
+            emptyHint="Not set. Tap to add website"
             canEdit={canEdit}
             highlight={highlightFields.has('companyWebsite')}
             saving={profileUpdating}

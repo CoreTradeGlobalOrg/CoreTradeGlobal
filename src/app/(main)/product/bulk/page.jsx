@@ -42,6 +42,7 @@ import toast from 'react-hot-toast';
 import { getFunctionsInstance, getStorageInstance } from '@/core/config/firebase.config';
 import { useAuth } from '@/presentation/contexts/AuthContext';
 import { useCategories } from '@/presentation/hooks/category/useCategories';
+import { useFilePickerFeedback } from '@/presentation/hooks/useFilePickerFeedback';
 import {
   buildCategoryMap,
   validateRow,
@@ -88,6 +89,7 @@ export default function BulkUploadActionPage() {
   const [uploadState, setUploadState] = useState(null); // null | 'uploading' | 'done'
   const [uploadResult, setUploadResult] = useState(null);
   const fileInputRef = useRef(null);
+  const { picking: pickingCsv, openPicker: openCsvPicker } = useFilePickerFeedback(fileInputRef);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -323,7 +325,7 @@ export default function BulkUploadActionPage() {
             <p className="text-[#c8d3e0] text-xs leading-relaxed">
               <span className="text-white font-semibold">No image URLs needed in the CSV.</span>{' '}
               Once the file is validated, you&apos;ll see an <span className="text-white font-semibold">Images</span>{' '}
-              column in the preview — attach up to {MAX_IMAGES_PER_PRODUCT} photos per product from your device
+              column in the preview. Attach up to {MAX_IMAGES_PER_PRODUCT} photos per product from your device
               before you publish.
             </p>
           </div>
@@ -338,17 +340,17 @@ export default function BulkUploadActionPage() {
             }}
             onDragLeave={() => setIsDragging(false)}
             onDrop={onDrop}
-            onClick={() => fileInputRef.current?.click()}
+            onClick={openCsvPicker}
             role="button"
             tabIndex={0}
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
-                fileInputRef.current?.click();
+                openCsvPicker();
               }
             }}
             className={`rounded-3xl border-2 border-dashed transition-all cursor-pointer p-10 text-center ${
-              isDragging
+              isDragging || pickingCsv
                 ? 'border-[#FFD700] bg-[rgba(255,215,0,0.08)]'
                 : 'border-[rgba(255,255,255,0.15)] bg-[rgba(255,255,255,0.02)] hover:border-[rgba(255,215,0,0.4)] hover:bg-[rgba(255,215,0,0.04)]'
             }`}
@@ -356,8 +358,12 @@ export default function BulkUploadActionPage() {
             <div className="w-16 h-16 rounded-2xl bg-[rgba(255,215,0,0.12)] border border-[rgba(255,215,0,0.35)] flex items-center justify-center mx-auto mb-4">
               <UploadCloud className="w-8 h-8 text-[#FFD700]" />
             </div>
-            <p className="text-white font-bold text-lg mb-1">Drop your CSV here</p>
-            <p className="text-[#A0A0A0] text-sm">or click to browse. Up to {MAX_ROWS} rows.</p>
+            <p className="text-white font-bold text-lg mb-1">
+              {pickingCsv ? 'Choose your CSV file…' : 'Drop your CSV here'}
+            </p>
+            <p className="text-[#A0A0A0] text-sm">
+              {pickingCsv ? 'Waiting for the file picker.' : `or click to browse. Up to ${MAX_ROWS} rows.`}
+            </p>
             <input
               ref={fileInputRef}
               type="file"
@@ -620,6 +626,7 @@ function RowImageCell({ row, userId, onImagesAdded, onImageRemoved, disabled }) 
   const [removingPath, setRemovingPath] = useState(null);
   const [scrollOffset, setScrollOffset] = useState(0);
   const fileInputRef = useRef(null);
+  const { picking: pickingImages, openPicker: openImagePicker } = useFilePickerFeedback(fileInputRef);
   // A stable staging bucket per preview row — outlives re-renders and
   // is reused for every image on this row so cleanup is trivial.
   const stagingIdRef = useRef(null);
@@ -669,7 +676,7 @@ function RowImageCell({ row, userId, onImagesAdded, onImageRemoved, disabled }) 
           console.error('[RowImageCell] upload failed:', err);
           toast.error(
             `Upload failed for ${raw.name}.${
-              err?.code === 'storage/unauthorized' ? ' File too large — max 800 KB after compression.' : ''
+              err?.code === 'storage/unauthorized' ? ' File too large. Max 800 KB after compression.' : ''
             }`,
           );
         } finally {
@@ -712,7 +719,7 @@ function RowImageCell({ row, userId, onImagesAdded, onImageRemoved, disabled }) 
     <div className="flex items-center gap-1.5">
       <button
         type="button"
-        onClick={() => fileInputRef.current?.click()}
+        onClick={openImagePicker}
         disabled={!canAdd}
         className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-[rgba(255,215,0,0.1)] border border-[rgba(255,215,0,0.35)] text-[#FFD700] text-[11px] font-semibold hover:bg-[rgba(255,215,0,0.18)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors whitespace-nowrap"
       >
@@ -720,6 +727,11 @@ function RowImageCell({ row, userId, onImagesAdded, onImageRemoved, disabled }) 
           <>
             <Loader2 className="w-3 h-3 animate-spin" />
             {progress.done}/{progress.total}
+          </>
+        ) : pickingImages ? (
+          <>
+            <ImagePlus className="w-3 h-3" />
+            Choosing…
           </>
         ) : (
           <>

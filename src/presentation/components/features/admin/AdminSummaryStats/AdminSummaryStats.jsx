@@ -67,7 +67,7 @@ export function AdminSummaryStats({ users = [] }) {
     { title: 'Total Invites', value: totalInvites, icon: '✉️', color: 'blue', description: 'All invites sent' },
     { title: 'Pending', value: pendingInvites, icon: '⏳', color: 'yellow', description: 'Waiting for acceptance' },
     { title: 'Accepted', value: acceptedInvites, icon: '✅', color: 'green', description: 'Completed onboarding' },
-    { title: 'Expired', value: expiredInvites, icon: '❌', color: 'red', description: 'Link expired — resend needed' },
+    { title: 'Expired', value: expiredInvites, icon: '❌', color: 'red', description: 'Link expired, resend needed' },
   ];
 
   const colorClasses = {

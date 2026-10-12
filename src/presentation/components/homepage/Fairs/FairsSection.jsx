@@ -262,7 +262,6 @@ export function FairsSection() {
         <div className="fair-header">
           <div className="fair-title-group">
             <h2>Upcoming Fairs</h2>
-            <p>Stay up to date with the latest industry events.</p>
           </div>
           <Link href="/fairs" className="btn-section-action">
             View All Fairs →

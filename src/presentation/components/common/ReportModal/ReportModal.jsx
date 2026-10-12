@@ -144,7 +144,7 @@ export function ReportModal({
           <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
           <span>
             Reports are private. The member you report is not notified. Our team reviews every
-            submission — misuse of the report system may lead to account restrictions.
+            submission. Misuse of the report system may lead to account restrictions.
           </span>
         </div>
 

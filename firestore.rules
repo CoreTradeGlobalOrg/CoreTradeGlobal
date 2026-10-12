@@ -64,6 +64,16 @@ service cloud.firestore {
         (
           !('companyVerified' in request.resource.data) ||
           request.resource.data.companyVerified == resource.data.companyVerified
+        ) &&
+        // Misafir RFQ hesabı ad/şirketi bir kez belirler (identitySetAt);
+        // sonrasında sahibi bu üç alanı değiştiremez, sadece admin değiştirir.
+        (
+          resource.data.get('identitySetAt', null) == null ||
+          (
+            request.resource.data.get('displayName', null) == resource.data.get('displayName', null) &&
+            request.resource.data.get('companyName', null) == resource.data.get('companyName', null) &&
+            request.resource.data.get('identitySetAt', null) == resource.data.get('identitySetAt', null)
+          )
         )
       );
 
@@ -122,8 +132,16 @@ service cloud.firestore {
       // Public can view products (homepage, search)
       allow read: if true;
       // Only authenticated users can create/edit their own products
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      // viewCount / weekViewCount / weekViewKey sadece trackProductView CF
+      // tarafından yazılır; sahibi oluştururken veremez, güncellerken değiştiremez.
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid
+        && request.resource.data.get('viewCount', 0) == 0
+        && request.resource.data.get('weekViewCount', 0) == 0
+        && request.resource.data.get('weekViewKey', null) == null;
+      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid
+        && request.resource.data.get('viewCount', 0) == resource.data.get('viewCount', 0)
+        && request.resource.data.get('weekViewCount', 0) == resource.data.get('weekViewCount', 0)
+        && request.resource.data.get('weekViewKey', null) == resource.data.get('weekViewKey', null);
       allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
     }
 
@@ -411,13 +429,14 @@ service cloud.firestore {
     match /ads/{adId} {
       allow read, list: if true;
       allow create, update, delete: if isAdmin();
-    }
 
-    // adTracking: server-only. Cloud Functions write here to record
-    // per-client cooldown state for trackAdImpression/trackAdClick.
-    // Clients have no reason to read it (would leak fingerprint hashes).
-    match /adTracking/{key} {
-      allow read, write: if false;
+      // Günlük gösterim/tıklama sayaçları: sadece reklam sahibi ve admin
+      // okur; yazma sadece trackAdImpression/trackAdClick CF'lerinden.
+      match /dailyStats/{day} {
+        allow read: if isAdmin()
+          || (isAuthenticated() && get(/databases/$(database)/documents/ads/$(adId)).data.userId == request.auth.uid);
+        allow write: if false;
+      }
     }
 
     match /adInquiries/{inquiryId} {
@@ -510,19 +529,6 @@ service cloud.firestore {
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // RFQ Email Queue + Daily Budget (inactive-user re-engagement)
-    //
-    // Populated by the onRFQCreated CF, drained by processRfqEmailQueue.
-    // Client access is admin-read-only; writes are CF-only via admin SDK
-    // which bypasses these rules.
-    // ─────────────────────────────────────────────────────────────────────────
-
-    match /rfqEmailQueue/{queueId} {
-      allow read: if isAdmin();
-      allow write: if false;
-    }
-
-    // ─────────────────────────────────────────────────────────────────────────
     // Social Post queue (LinkedIn / Facebook / WhatsApp)
     //
     // Written by generateSocialPost CF, state changes flow through the
@@ -569,15 +575,10 @@ service cloud.firestore {
     // Workflow email daily budget (WF1..WF6)
     //
     // Shared cap across every workflow trigger. CF-only writes; admins may
-    // read to monitor how close we are to the Resend free-tier ceiling.
+    // read to monitor how close we are to the daily cap.
     // ─────────────────────────────────────────────────────────────────────────
 
     match /workflowEmailDailyBudget/{dateKey} {
-      allow read: if isAdmin();
-      allow write: if false;
-    }
-
-    match /rfqEmailDailyBudget/{dateKey} {
       allow read: if isAdmin();
       allow write: if false;
     }

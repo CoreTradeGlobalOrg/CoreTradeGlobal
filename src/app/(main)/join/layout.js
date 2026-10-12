@@ -15,7 +15,7 @@
 const CANONICAL_URL = 'https://www.coretradeglobal.com/join';
 
 export const metadata = {
-  title: 'Join CoreTradeGlobal — Grow your B2B trade globally',
+  title: 'Join CoreTradeGlobal: Grow your B2B trade globally',
   description:
     'Sign up to CoreTradeGlobal and connect with verified buyers and suppliers worldwide. Free to join, showcase your products, and manage deals in one platform.',
   alternates: {
@@ -25,24 +25,24 @@ export const metadata = {
     type: 'website',
     locale: 'en_US',
     url: CANONICAL_URL,
-    title: 'Join CoreTradeGlobal — Grow your B2B trade globally',
+    title: 'Join CoreTradeGlobal: Grow your B2B trade globally',
     description:
-      'Sign up to CoreTradeGlobal and connect with verified B2B buyers and suppliers worldwide — showcase products, receive RFQs, and manage deals, logistics, and payments in one platform.',
+      'Sign up to CoreTradeGlobal and connect with verified B2B buyers and suppliers worldwide. Showcase products, receive RFQs, and manage deals, logistics, and payments in one platform.',
     siteName: 'CoreTradeGlobal',
     images: [
       {
         url: 'https://www.coretradeglobal.com/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'CoreTradeGlobal — Join the B2B trade network',
+        alt: 'CoreTradeGlobal: Join the B2B trade network',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Join CoreTradeGlobal — Grow your B2B trade globally',
+    title: 'Join CoreTradeGlobal: Grow your B2B trade globally',
     description:
-      'Sign up to CoreTradeGlobal and connect with verified B2B buyers and suppliers worldwide — showcase products, receive RFQs, and manage deals, logistics, and payments in one platform.',
+      'Sign up to CoreTradeGlobal and connect with verified B2B buyers and suppliers worldwide. Showcase products, receive RFQs, and manage deals, logistics, and payments in one platform.',
     images: ['https://www.coretradeglobal.com/og-image.png'],
   },
 };

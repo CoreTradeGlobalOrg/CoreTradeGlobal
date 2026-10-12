@@ -77,6 +77,7 @@ export class CreateProductUseCase {
         description,
         images: [],
         status: 'active',
+        viewCount: 0,
         ...(ownerCountry && { country: ownerCountry }),
         ...(createdByAdmin && { createdByAdmin }),
         createdAt: new Date(),

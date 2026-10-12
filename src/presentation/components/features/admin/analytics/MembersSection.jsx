@@ -420,7 +420,7 @@ function useActivitySnapshot() {
 }
 
 function formatDaysSince(days) {
-  if (days === null || days === undefined) return '— (never signed in)';
+  if (days === null || days === undefined) return 'Never signed in';
   if (days === 0) return 'Today';
   if (days === 1) return 'Yesterday';
   if (days < 7) return `${days} days ago`;
@@ -794,7 +794,7 @@ function ChurnView() {
               {!loading && atRisk.length === 0 && (
                 <tr>
                   <td colSpan={5} className="py-10 text-center text-[#606060]">
-                    No members currently at risk — everyone signed in within the last 30 days.
+                    No members currently at risk. Everyone signed in within the last 30 days.
                   </td>
                 </tr>
               )}

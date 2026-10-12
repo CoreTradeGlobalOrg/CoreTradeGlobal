@@ -79,7 +79,7 @@ export default function TermsPage() {
               This Platform Service Agreement ("Agreement") is entered into between you ("User", "you") and CoreTradeGlobal.com ("CoreTradeGlobal", "we", "our", or "the Platform").
             </p>
             <p className="text-gray-200 mb-4">
-              By accessing or using any CoreTradeGlobal service—including product listings, advertising, communications, or payment tools—you acknowledge that you have read, understood, and agreed to be legally bound by this Agreement and all related policies (including the Privacy Policy and Product Listing Policy).
+              By accessing or using any CoreTradeGlobal service, including product listings, advertising, communications, or payment tools, you acknowledge that you have read, understood, and agreed to be legally bound by this Agreement and all related policies (including the Privacy Policy and Product Listing Policy).
             </p>
             <p className="text-gray-200">
               This Agreement governs all user activity on the Platform across the United Kingdom, the European Union (EU/EEA), and the United States (US).

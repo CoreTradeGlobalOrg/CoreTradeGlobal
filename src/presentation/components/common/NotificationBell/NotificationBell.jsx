@@ -10,7 +10,7 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { Bell, MessageSquare, FileText, X, Check, Trash2, CheckCircle, XCircle, UserPlus, Handshake, Scale, Mail, DollarSign } from 'lucide-react';
+import { Bell, MessageSquare, FileText, X, Check, Trash2, CheckCircle, XCircle, UserPlus, Handshake, Scale, Mail, DollarSign, Eye, BarChart3 } from 'lucide-react';
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import { db } from '@/core/config/firebase.config';
 import { useAuth } from '@/presentation/contexts/AuthContext';
@@ -84,7 +84,7 @@ export function NotificationBell() {
       type: 'payment_required',
       title: 'Complete your Sponsored Package payment',
       body: inq.paymentStatus === PAYMENT_STATUSES.REPORTED
-        ? `${formatMonthShort(inq.startDate)} · payment reported — waiting for confirmation`
+        ? `${formatMonthShort(inq.startDate)} · payment reported, waiting for confirmation`
         : `${formatMonthShort(inq.startDate)} · reference ${inq.paymentReference || 'CTG'}`,
       createdAt: inq.createdAt,
       isRead: false,
@@ -145,6 +145,9 @@ export function NotificationBell() {
     } else if (notification.type === 'member_report') {
       // Admin notification for a new member report.
       router.push(notification.link || '/admin/reports');
+    } else if (notification.type === 'announcement') {
+      // Announcements are read in full on the notifications page
+      router.push(`/notifications?open=${encodeURIComponent(notification.id)}`);
     } else if (notification.link) {
       // Navigate using the notification's link field (e.g., product_upload_request)
       router.push(notification.link);
@@ -178,6 +181,10 @@ export function NotificationBell() {
         return <Scale className="w-4 h-4" />;
       case 'verify_email':
         return <Mail className="w-4 h-4" />;
+      case 'product_views_weekly':
+        return <Eye className="w-4 h-4" />;
+      case 'ad_report':
+        return <BarChart3 className="w-4 h-4" />;
       case 'payment_required':
         return <DollarSign className="w-4 h-4" />;
       default:

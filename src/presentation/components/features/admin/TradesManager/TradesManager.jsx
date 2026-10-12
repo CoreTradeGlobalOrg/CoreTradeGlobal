@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 import { db } from '@/core/config/firebase.config';
@@ -13,7 +13,12 @@ import {
   ExternalLink,
   Filter,
   Search,
+  Package,
+  FileText,
+  ClipboardList,
 } from 'lucide-react';
+import { RfqQuotesTab } from './RfqQuotesTab';
+import { RfqListTab } from './RfqListTab';
 
 const STATUS_CONFIG = {
   [DEAL_STATUS.NEGOTIATING]: { label: 'Negotiating', color: 'text-yellow-400 bg-yellow-900/20 border-yellow-700/30' },
@@ -149,7 +154,7 @@ function OffersPanel({ dealId, userMap }) {
   );
 }
 
-export function TradesManager({ users = [] }) {
+function ProductTradesView({ users = [] }) {
   const [deals, setDeals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('all');
@@ -365,6 +370,48 @@ export function TradesManager({ users = [] }) {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+const TRADE_VIEWS = [
+  { id: 'products', label: 'Product Trades', icon: Package },
+  { id: 'rfq-list', label: 'RFQs', icon: ClipboardList },
+  { id: 'rfqs', label: 'RFQ Quotes', icon: FileText },
+];
+
+/**
+ * Trades tab: product trades (existing view), every RFQ (including guest
+ * RFQs awaiting email confirmation) and quotes submitted on RFQs.
+ */
+export function TradesManager({ users = [] }) {
+  const [view, setView] = useState('products');
+
+  const userMap = useMemo(() => {
+    const map = {};
+    users.forEach((u) => { map[u.id] = u; });
+    return map;
+  }, [users]);
+
+  return (
+    <div>
+      <div className="flex flex-wrap gap-1 bg-[#0F1B2B]/50 rounded-lg p-1 w-fit max-w-full mb-6">
+        {TRADE_VIEWS.map(({ id, label, icon: Icon }) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => setView(id)}
+            className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-all border ${view === id ? 'bg-[#FFD700]/10 text-[#FFD700] border-[#FFD700]/20' : 'text-gray-400 hover:text-white border-transparent'}`}
+          >
+            <Icon className="w-4 h-4" />
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {view === 'products' && <ProductTradesView users={users} />}
+      {view === 'rfq-list' && <RfqListTab userMap={userMap} />}
+      {view === 'rfqs' && <RfqQuotesTab userMap={userMap} />}
     </div>
   );
 }

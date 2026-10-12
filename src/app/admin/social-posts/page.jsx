@@ -189,7 +189,7 @@ export default function SocialPostsPage() {
     const full = tags ? `${body}\n\n${tags}` : body;
     const ok = await copyToClipboard(full);
     if (ok) toast.success('Caption copied.');
-    else toast.error('Copy failed — select text manually.');
+    else toast.error('Copy failed. Select the text manually.');
   }, []);
 
   const handleDownload = useCallback(async (row) => {

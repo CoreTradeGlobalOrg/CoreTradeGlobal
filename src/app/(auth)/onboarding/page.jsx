@@ -78,6 +78,7 @@ function OnboardingPageContent() {
           <a
             href="/login"
             className="inline-block px-6 py-3 bg-gradient-to-br from-[#FFD700] to-[#FDB931] text-[#0F1B2B] font-bold rounded-full shadow-[0_4px_20px_rgba(255,215,0,0.2)] hover:-translate-y-0.5 hover:shadow-[0_6px_30px_rgba(255,215,0,0.4)] transition-all"
+            style={{ color: '#0F1B2B', WebkitTextFillColor: '#0F1B2B' }}
           >
             Go to Login
           </a>

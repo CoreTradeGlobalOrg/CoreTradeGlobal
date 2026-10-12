@@ -398,7 +398,7 @@ export function EngagementSection() {
           Activity (35pts) tops out at 20pts today because session duration
           and page depth need the event log. Value production (25pts) misses
           message-quality scoring for the same reason. Social/Contribution
-          (10pts) sits at 0 across the board — reviews, referrals, and forum
+          (10pts) sits at 0 across the board because reviews, referrals, and forum
           activity don't exist yet as data. Once those sources arrive, this
           score fills out without any UI change.
         </p>

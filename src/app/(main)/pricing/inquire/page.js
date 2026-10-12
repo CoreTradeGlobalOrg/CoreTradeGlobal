@@ -357,7 +357,7 @@ function InquirePageInner() {
         <div className="mb-6 text-center">
           <h1 className="text-3xl md:text-4xl font-extrabold mb-2 tracking-tight">Book the Sponsored Package</h1>
           <p className="text-[#c8d3e0] text-base max-w-xl mx-auto">
-            One purchase, four surfaces — hero cards, showcase, and the products directory. Sold as a full calendar month.
+            One purchase, four surfaces: hero cards, showcase, and the products directory. Sold as a full calendar month.
           </p>
         </div>
 
@@ -495,7 +495,7 @@ function InquirePageInner() {
                 error={errors.heroProduct}
               />
               <SponsoredPickerBlock
-                title="Showcase Products (optional — up to 3)"
+                title="Showcase Products (optional, up to 3)"
                 helper="Featured mini-cards inside the sponsored company section. Blank falls back to your hero + list picks."
                 mode="multi"
                 max={3}
@@ -532,7 +532,7 @@ function InquirePageInner() {
           {user && !productsLoading && myProducts.length === 0 && (
             <div className="rounded-xl border border-dashed border-[rgba(255,255,255,0.15)] bg-[rgba(255,255,255,0.03)] px-4 py-3 text-sm text-[#c8d3e0]">
               You don&apos;t have any active products yet.{' '}
-              <Link href="/product/new" className="text-[#FFD700] underline">Add a product</Link> first — the sponsored package showcases your catalog.
+              <Link href="/product/new" className="text-[#FFD700] underline">Add a product</Link> first. The sponsored package showcases your catalog.
             </div>
           )}
 
@@ -666,7 +666,7 @@ function PriceBanner() {
         </div>
       </div>
       <p className="text-xs text-[#c8d3e0] mt-3">
-        Full-site sponsored placement — hero + showcase + /products directory — sold as a full calendar month.
+        Full-site sponsored placement (hero, showcase, and /products directory), sold as a full calendar month.
       </p>
     </div>
   );

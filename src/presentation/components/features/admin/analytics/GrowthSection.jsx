@@ -383,7 +383,7 @@ export function GrowthSection() {
         </div>
 
         <div className="rounded-2xl border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-5">
-          <h4 className="text-sm font-semibold text-white mb-4">Company Type — Monthly Trend</h4>
+          <h4 className="text-sm font-semibold text-white mb-4">Company Type: Monthly Trend</h4>
           {loading || !data ? (
             <div className="space-y-3">
               {[0, 1, 2].map((i) => (

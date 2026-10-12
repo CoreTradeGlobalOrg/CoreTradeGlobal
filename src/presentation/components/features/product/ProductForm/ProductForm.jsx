@@ -9,7 +9,7 @@
 
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import toast from 'react-hot-toast';
 import { productSchema } from '@/core/validation/productSchema';
 import { Button } from '@/components/ui/Button';
@@ -20,6 +20,7 @@ import { UNIT_CATEGORIES, getUnitsByCategory } from '@/core/constants/units';
 import { toTitleCase } from '@/core/utils/nameCase';
 import { Zap } from 'lucide-react';
 import { useCategories } from '@/presentation/hooks/category/useCategories';
+import { useFilePickerFeedback } from '@/presentation/hooks/useFilePickerFeedback';
 
 // Max product images. Was 5 in an older version; bumped to 10 to match
 // the label ("Product Images (max 10)") and the upload-side guard in
@@ -29,6 +30,8 @@ import { useCategories } from '@/presentation/hooks/category/useCategories';
 const MAX_PRODUCT_IMAGES = 10;
 
 export function ProductForm({ product, onSubmit, onCancel, userId }) {
+  const imageInputRef = useRef(null);
+  const { picking: pickingImages, markPicking: markPickingImages } = useFilePickerFeedback(imageInputRef);
   const { categories, loading: categoriesLoading } = useCategories();
   const [imageFiles, setImageFiles] = useState([]);
   const [imagePreviews, setImagePreviews] = useState(product?.images || []);
@@ -405,15 +408,17 @@ export function ProductForm({ product, onSubmit, onCancel, userId }) {
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
-            className={`relative border-2 border-dashed rounded-lg p-8 text-center transition-all ${isDragging
+            className={`relative border-2 border-dashed rounded-lg p-8 text-center transition-all ${isDragging || pickingImages
               ? 'border-[#FFD700] bg-[rgba(255,215,0,0.1)]'
               : 'border-[rgba(255,215,0,0.4)] hover:border-[#FFD700]'
               } ${submitting ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
           >
             <input
+              ref={imageInputRef}
               type="file"
               accept="image/*"
               multiple
+              onClick={markPickingImages}
               onChange={handleImageChange}
               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
               disabled={submitting}
@@ -437,7 +442,7 @@ export function ProductForm({ product, onSubmit, onCancel, userId }) {
 
               <div>
                 <p className="text-sm font-medium text-white">
-                  {isDragging ? 'Drop images here' : 'Drag & drop images here'}
+                  {isDragging ? 'Drop images here' : pickingImages ? 'Choose images…' : 'Drag & drop images here'}
                 </p>
                 <p className="text-xs text-[#A0A0A0] mt-1">
                   or click to browse ({imagePreviews.length}/{MAX_PRODUCT_IMAGES})

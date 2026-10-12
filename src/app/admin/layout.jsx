@@ -7,7 +7,10 @@ import { MessagesWidget } from '@/presentation/components/common/MessagesWidget/
 
 export default function AdminLayout({ children }) {
   return (
-    <div className="min-h-screen bg-[#0F1B2B] text-white font-sans selection:bg-[#FFD700] selection:text-black flex flex-col">
+    // overflow-x-clip: iOS Safari body'deki overflow-x:hidden'ı yok sayıp sayfayı
+    // yatay kaydırabiliyor. clip (hidden değil) scroll container oluşturmaz,
+    // window scroll / sticky / fixed navbar etkilenmez.
+    <div className="min-h-screen overflow-x-clip bg-[#0F1B2B] text-white font-sans selection:bg-[#FFD700] selection:text-black flex flex-col">
       <Navbar />
       <div className="flex-1">
         <ErrorBoundary>

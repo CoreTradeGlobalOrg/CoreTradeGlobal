@@ -120,8 +120,10 @@ export function ProductCategorySidebar({ activeCategoryId, activeCountry, onCate
     };
 
     return (
-        <aside className="hidden lg:flex flex-col w-56 flex-shrink-0">
-            <div className="bg-[#1a2332] rounded-2xl border border-[rgba(255,255,255,0.07)] overflow-hidden flex flex-col sticky top-[calc(var(--navbar-height)+1rem)] max-h-[calc(100vh-var(--navbar-height)-3rem)]">
+        // sticky aside'ın kendisinde olmalı: içteki kutu sticky olunca kendi
+        // yüksekliğindeki aside'ın içinde kayacak yer bulamıyordu
+        <aside className="hidden lg:flex flex-col w-56 flex-shrink-0 self-start sticky top-[calc(var(--navbar-height)+1rem)]">
+            <div className="bg-[#1a2332] rounded-2xl border border-[rgba(255,255,255,0.07)] overflow-hidden flex flex-col max-h-[calc(100vh-var(--navbar-height)-2rem)]">
 
                 {/* ── Categories Section ── */}
                 <div className="px-4 pt-4 pb-3 border-b border-[rgba(255,255,255,0.06)]">

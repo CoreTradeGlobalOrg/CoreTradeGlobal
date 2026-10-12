@@ -93,7 +93,7 @@ export function ConversationsManager() {
     if (conversation.type === 'product_upload') {
       const contactName = conversation.metadata?.contactName || 'Unknown';
       const uploadType = conversation.metadata?.uploadType === 'csv_upload' ? 'CSV Upload' : 'Help Request';
-      return `${contactName} (Product Upload - ${uploadType})`;
+      return `${contactName} (Product Upload: ${uploadType})`;
     }
 
     const names = Object.values(conversation.participantDetails || {})

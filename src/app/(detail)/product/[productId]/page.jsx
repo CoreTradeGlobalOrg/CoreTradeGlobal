@@ -101,9 +101,9 @@ export async function generateMetadata({ params }) {
 
   const seller = await fetchSeller(product.userId);
   const sellerName = seller?.companyName || seller?.displayName || 'CoreTradeGlobal supplier';
-  const rawDescription = product.description || `${product.name} — B2B wholesale offer on CoreTradeGlobal.`;
+  const rawDescription = product.description || `${product.name}: B2B wholesale offer on CoreTradeGlobal.`;
 
-  const title = `${product.name} — ${sellerName} | CoreTradeGlobal`;
+  const title = `${product.name} by ${sellerName} | CoreTradeGlobal`;
   const description = truncate(rawDescription, 155);
   const canonical = `/product/${productId}`;
   const image = product.images?.[0];

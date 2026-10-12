@@ -82,6 +82,25 @@ export class NotificationRepository {
   }
 
   /**
+   * Get a single notification by id
+   * @param {string} userId
+   * @param {string} notificationId
+   * @returns {Promise<Object|null>}
+   */
+  async getById(userId, notificationId) {
+    const results = await this.firestoreDataSource.querySubcollection(
+      COLLECTIONS.USERS,
+      userId,
+      SUBCOLLECTIONS.NOTIFICATIONS,
+      {
+        where: [['__name__', '==', notificationId]],
+        limit: 1,
+      }
+    );
+    return results[0] || null;
+  }
+
+  /**
    * Get unread notifications for a user
    * @param {string} userId
    * @param {number} limitCount

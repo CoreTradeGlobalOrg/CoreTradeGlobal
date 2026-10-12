@@ -36,7 +36,7 @@ const SURFACES = [
   {
     icon: Grid,
     title: 'Sponsored Company Showcase',
-    body: 'Dedicated homepage section — your logo, description, and 3 featured products.',
+    body: 'A dedicated homepage section with your logo, description, and 3 featured products.',
   },
   {
     icon: Package,
@@ -61,7 +61,7 @@ function SponsoredHero() {
         <div className="text-center mb-8">
           <h2 className="text-3xl md:text-4xl font-extrabold mb-2 tracking-tight">Grow Your Brand Globally</h2>
           <p className="text-[#c8d3e0] text-base md:text-lg max-w-2xl mx-auto">
-            One package, four surfaces — the whole site works for you for a full month.
+            One package, four surfaces. The whole site works for you for a full month.
           </p>
         </div>
 

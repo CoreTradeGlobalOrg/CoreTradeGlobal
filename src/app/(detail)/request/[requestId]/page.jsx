@@ -13,6 +13,7 @@
 import { notFound } from 'next/navigation';
 import { getAdminFirestore } from '@/lib/firebase-admin';
 import { RequestDetailsClient } from './RequestDetailsClient';
+import { isAnonymousGuest } from '@/core/utils/publicIdentity';
 
 export const revalidate = 3600;
 
@@ -71,14 +72,14 @@ export async function generateMetadata({ params }) {
   }
 
   const author = await fetchAuthor(request.userId);
-  const buyerName = author?.companyName || author?.displayName || 'Verified buyer';
+  const buyerName = (!isAnonymousGuest(author) && (author?.companyName || author?.displayName)) || 'Verified buyer';
   const rawDescription = request.description || `${request.productName || request.title || 'B2B request for quotation'} on CoreTradeGlobal.`;
   const name = request.productName || request.title || 'RFQ';
   const qty = request.quantity ? `${request.quantity}${request.unit ? ` ${request.unit}` : ''}` : null;
 
   const title = qty
-    ? `RFQ: ${name} (${qty}) — ${buyerName} | CoreTradeGlobal`
-    : `RFQ: ${name} — ${buyerName} | CoreTradeGlobal`;
+    ? `RFQ: ${name} (${qty}) by ${buyerName} | CoreTradeGlobal`
+    : `RFQ: ${name} by ${buyerName} | CoreTradeGlobal`;
   const description = truncate(rawDescription, 155);
   const canonical = `/request/${requestId}`;
 
@@ -103,7 +104,7 @@ export async function generateMetadata({ params }) {
 
 function RequestJsonLd({ request, author }) {
   if (!request) return null;
-  const buyerName = author?.companyName || author?.displayName || 'CoreTradeGlobal buyer';
+  const buyerName = (!isAnonymousGuest(author) && (author?.companyName || author?.displayName)) || 'CoreTradeGlobal buyer';
   const canonicalUrl = `https://www.coretradeglobal.com/request/${request.id}`;
   const name = request.productName || request.title || 'RFQ';
   const payload = {

@@ -160,7 +160,7 @@ export function QuotesSection({ request, isOwner }) {
         quote.userId,
         {
           source: 'quote_accepted',
-          subject: `Quote Accepted - ${productName}`,
+          subject: `Quote Accepted: ${productName}`,
           requestId: request.id,
           requestName: productName,
           requestQuantity: request.quantity,
@@ -354,7 +354,7 @@ export function QuotesSection({ request, isOwner }) {
                 <div className="flex items-center gap-1.5 px-4 pt-3 pb-0">
                   <Star size={12} className="text-[#FFD700] fill-[#FFD700]" />
                   <span className="text-xs font-bold text-[#FFD700] uppercase tracking-wider">
-                    Best Offer — Lowest Price
+                    Best Offer: Lowest Price
                   </span>
                 </div>
               )}

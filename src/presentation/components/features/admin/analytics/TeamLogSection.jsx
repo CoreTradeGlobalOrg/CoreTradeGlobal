@@ -143,7 +143,7 @@ function EntryForm({ teamMembers, currentUid, onSaved }) {
         channels,
         note,
       });
-      toast.success(`Saved — your total for today: ${saved.total} messages`);
+      toast.success(`Saved. Your total for today: ${saved.total} messages`);
       setHasExisting(true);
       onSaved?.(saved);
     } catch (err) {
@@ -265,7 +265,7 @@ function OverviewTable({ range, summary, loading, refreshTick }) {
     <div className="rounded-2xl border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-5">
       <div className="flex items-center justify-between mb-4">
         <h4 className="text-sm font-semibold text-white">
-          Team Total — {RANGES.find((r) => r.value === range)?.label}
+          Team Total: {RANGES.find((r) => r.value === range)?.label}
         </h4>
         {!loading && summary && (
           <span className="text-xs text-[#A0A0A0]">
@@ -365,10 +365,10 @@ function MissingWarnings({ warnings }) {
             <span className="text-white">{w.displayName}</span>
             <span className="text-[#606060]">
               {w.daysSince === null
-                ? '— no entries yet'
+                ? '(no entries yet)'
                 : w.daysSince === 0
-                  ? '— no entry today yet'
-                  : `— silent for ${w.daysSince} days`}
+                  ? '(no entry today yet)'
+                  : `(silent for ${w.daysSince} days)`}
             </span>
           </li>
         ))}

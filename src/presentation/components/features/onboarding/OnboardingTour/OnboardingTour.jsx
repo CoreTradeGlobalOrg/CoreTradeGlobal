@@ -363,7 +363,7 @@ export function OnboardingTour({ user, onComplete }) {
         aria-label="Resume tour guide"
       >
         <span className="text-base">?</span>
-        <span>Resume Guide — Step {screen.type === 'step' ? `${screen.partStep}/${screen.partTotal}` : '...'}</span>
+        <span>Resume Guide: Step {screen.type === 'step' ? `${screen.partStep}/${screen.partTotal}` : '...'}</span>
       </button>,
       document.body
     );
@@ -375,7 +375,7 @@ export function OnboardingTour({ user, onComplete }) {
       onClick={() => setCollapsed(true)}
       className="text-gray-400 text-xs hover:text-gray-200 transition-colors px-2 py-1 rounded hover:bg-white/5"
       aria-label="Minimize tour to make edits"
-      title="Minimize — make your edits, then resume"
+      title="Minimize, make your edits, then resume"
     >
       ▼ Minimize
     </button>

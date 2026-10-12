@@ -4,12 +4,16 @@
  * Full-page notification center with filter tabs, infinite scroll, and bulk actions.
  * Uses real-time notifications from MessagesContext (page 1) and cursor-based
  * pagination for older notifications (historyNotifications).
+ *
+ * Announcements have no page of their own: they expand in place so the full
+ * text is readable. `/notifications?open=<id>` (bell dropdown, push click)
+ * opens and scrolls to that notification.
  */
 
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { Bell } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useMessages } from '@/presentation/contexts/MessagesContext';
@@ -34,15 +38,24 @@ const TYPE_TO_TAB = {
   admin: 'system',
   new_user_approval: 'system',
   announcement: 'system',
+  product_views_weekly: 'system',
+  ad_report: 'system',
   rfq_created: 'system',
   product_upload_request: 'system',
 };
 
 const HISTORY_PAGE_SIZE = 30;
 
+// Duyurular (ve linki zaten bu sayfayı gösteren bildirimler) başka sayfaya
+// gitmez; satır açılıp tam metin burada okunur.
+const isExpandableNotification = (n) =>
+  n.type === 'announcement' || n.link?.startsWith('/notifications');
+
 export function NotificationCenterPage() {
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const openId = searchParams.get('open');
   const { user } = useAuth();
   const { notifications: realtimeNotifications } = useMessages();
   const notificationRepository = container.getNotificationRepository();
@@ -56,6 +69,8 @@ export function NotificationCenterPage() {
   // Filter + selection state
   const [activeTab, setActiveTab] = useState('all');
   const [selected, setSelected] = useState(new Set());
+  const [expandedId, setExpandedId] = useState(null);
+  const scrolledToRef = useRef(null);
 
   // Infinite scroll sentinel
   const sentinelRef = useRef(null);
@@ -137,9 +152,55 @@ export function NotificationCenterPage() {
     return () => observer.disconnect();
   }, [loadMore, hasMore]);
 
+  // ?open=<id>: expand that notification, fetching it if it isn't loaded yet
+  useEffect(() => {
+    if (!openId || !user?.uid) return;
+    setActiveTab('all');
+    setExpandedId(openId);
+    scrolledToRef.current = null;
+
+    if (allNotifications().some((n) => n.id === openId)) return;
+    let cancelled = false;
+    notificationRepository
+      .getById(user.uid, openId)
+      .then((found) => {
+        if (cancelled || !found) return;
+        setHistoryNotifications((prev) =>
+          prev.some((n) => n.id === found.id) ? prev : [found, ...prev]
+        );
+      })
+      .catch((err) => console.error('Failed to load notification:', err));
+    return () => {
+      cancelled = true;
+    };
+    // allNotifications intentionally omitted: only re-run when the requested id changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openId, user?.uid, notificationRepository]);
+
+  // Mark the opened notification read and scroll it into view once it renders
+  const openedNotification = allNotifications().find((n) => n.id === openId);
+  useEffect(() => {
+    if (!openedNotification || scrolledToRef.current === openedNotification.id) return;
+    scrolledToRef.current = openedNotification.id;
+    if (!openedNotification.isRead && user?.uid) {
+      notificationRepository
+        .markAsRead(user.uid, openedNotification.id)
+        .catch((err) => console.error('Failed to mark notification as read:', err));
+    }
+    requestAnimationFrame(() => {
+      document
+        .getElementById(`notification-${openedNotification.id}`)
+        ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+  }, [openedNotification, user?.uid, notificationRepository]);
+
   // Handle notification click: mark as read, navigate
   const handleNotificationClick = useCallback(
     async (notification) => {
+      if (isExpandableNotification(notification)) {
+        setExpandedId((prev) => (prev === notification.id ? null : notification.id));
+      }
+
       if (!notification.isRead) {
         try {
           await notificationRepository.markAsRead(user.uid, notification.id);
@@ -149,7 +210,9 @@ export function NotificationCenterPage() {
       }
 
       // Navigate based on notification type/link
-      if (notification.link) {
+      if (isExpandableNotification(notification)) {
+        // Read in place, no navigation
+      } else if (notification.link) {
         router.push(notification.link);
       } else if (notification.type === 'report_reviewed') {
         // Old CF writes shipped no `link` field; route by type instead.
@@ -283,6 +346,8 @@ export function NotificationCenterPage() {
                   key={notification.id}
                   notification={notification}
                   isSelected={selected.has(notification.id)}
+                  isExpandable={isExpandableNotification(notification)}
+                  isExpanded={expandedId === notification.id}
                   onToggleSelect={handleToggleSelect}
                   onNotificationClick={handleNotificationClick}
                 />

@@ -10,7 +10,7 @@
 const CANONICAL_URL = 'https://www.coretradeglobal.com/pricing/inquire/thank-you';
 
 export const metadata = {
-  title: 'Inquiry Received — CoreTradeGlobal',
+  title: 'Inquiry Received | CoreTradeGlobal',
   description: 'Thanks for your advertising inquiry. Our team will follow up within 1 business day.',
   alternates: { canonical: CANONICAL_URL },
   robots: { index: false, follow: false },

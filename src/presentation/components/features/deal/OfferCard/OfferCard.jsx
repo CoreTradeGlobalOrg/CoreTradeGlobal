@@ -215,7 +215,7 @@ export function OfferCard({
       <div className={`${headerBg} px-4 py-2.5 flex items-center justify-between`}>
         <div className="flex items-center gap-2">
           <span className={`text-xs font-bold ${accentLabel} uppercase tracking-wide`}>
-            {roleLabel} — Round {offer.round}
+            {roleLabel} · Round {offer.round}
           </span>
           <span className="text-xs text-[#8899AA]">by {submitterName}</span>
         </div>

@@ -8,10 +8,13 @@
  * and CurrencyConvertPanel in DealSidebar both calling useLiveCurrency).
  *
  * Data flow:
- * 1. On first subscriber mount: load localStorage cache, then fetch fresh rates
- * 2. setInterval fires every 60s — skips if tab is hidden (Pitfall 3)
- * 3. All localStorage access is inside effects or guarded (Pitfall 4)
- * 4. On last subscriber unmount: clear interval
+ * 1. On first subscriber mount: push localStorage cache to subscribers
+ *    immediately (ticker paints without waiting for the network), then fetch
+ * 2. setInterval fires every POLL_INTERVAL (1h) — skips if tab is hidden (Pitfall 3)
+ * 3. visibilitychange: tab/app comes back → refetch if data is older than POLL_INTERVAL
+ *    (covers interval ticks skipped while hidden / timers suspended on mobile)
+ * 4. All localStorage access is inside effects or guarded (Pitfall 4)
+ * 5. On last subscriber unmount: clear interval + visibility listener
  *
  * Returns: { rates, previousRates, fetchedAt, isStale, cacheExpired, error, loading }
  */
@@ -44,6 +47,9 @@ let _loading = true;
 
 /** @type {string|null} Error message from last failed fetch */
 let _error = null;
+
+/** @type {boolean} Guards against overlapping fetches (interval + visibilitychange) */
+let _inFlight = false;
 
 /** @type {Set<Function>} Subscriber callbacks — each hook instance adds one */
 const _subscribers = new Set();
@@ -88,6 +94,8 @@ function notifySubscribers() {
 async function fetchAndNotify() {
   // Skip fetch on hidden tabs to avoid unnecessary API calls (Pitfall 3)
   if (typeof document !== 'undefined' && document.hidden) return;
+  if (_inFlight) return;
+  _inFlight = true;
 
   try {
     // Fetch via our own API proxy to avoid CORS — Frankfurter doesn't set
@@ -142,6 +150,16 @@ async function fetchAndNotify() {
     }
 
     notifySubscribers();
+  } finally {
+    _inFlight = false;
+  }
+}
+
+// Sekmeye/uygulamaya dönülünce veri bayatsa hemen yenile
+function handleVisibilityChange() {
+  if (document.hidden) return;
+  if (_fetchedAt === null || Date.now() - _fetchedAt >= POLL_INTERVAL) {
+    fetchAndNotify();
   }
 }
 
@@ -163,23 +181,27 @@ export function useLiveCurrency() {
 
     // First subscriber: hydrate from cache immediately, then start polling
     if (_subscribers.size === 1) {
-      // Hydrate from localStorage cache before first fetch completes (Pitfall 4)
+      // Hydrate from localStorage cache before first fetch completes (Pitfall 4).
+      // Must notify — otherwise this component keeps its null initial state and
+      // the ticker stays blank until the network fetch resolves.
+      // No stale flag here: "Updated X ago" is already accurate for cached data;
+      // the stale badge is reserved for a failed fetch (see fetchAndNotify).
       if (typeof window !== 'undefined') {
         const cached = loadFromCache();
         if (cached && _rates === null) {
           _rates = cached.rates;
           _fetchedAt = cached.fetchedAt;
-          // Mark stale so UI can show "may be delayed" — fresh fetch will clear it
-          _error = 'Using cached rates';
           _loading = false;
+          notifySubscribers();
         }
       }
 
       // Trigger immediate fetch
       fetchAndNotify();
 
-      // Start 60s polling interval
+      // Start hourly polling + refetch on return to tab
       _intervalId = setInterval(fetchAndNotify, POLL_INTERVAL);
+      document.addEventListener('visibilitychange', handleVisibilityChange);
     } else {
       // Late subscriber: push current module state to the new component immediately
       update({
@@ -194,9 +216,12 @@ export function useLiveCurrency() {
     return () => {
       _subscribers.delete(update);
       // Last subscriber: stop polling
-      if (_subscribers.size === 0 && _intervalId) {
-        clearInterval(_intervalId);
-        _intervalId = null;
+      if (_subscribers.size === 0) {
+        if (_intervalId) {
+          clearInterval(_intervalId);
+          _intervalId = null;
+        }
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
       }
     };
   }, []);

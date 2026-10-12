@@ -71,12 +71,12 @@ export const AD_TIERS = [
     typeOptions: [
       { id: AD_TYPES.SPONSORED, label: 'Sponsored Package (full-site placement)' },
     ],
-    desc: 'One purchase, four surfaces. Your brand takes both hero cards, the sponsored company showcase, and the products directory sponsored tile — all resolved live from your CTG profile.',
+    desc: 'One purchase, four surfaces. Your brand takes both hero cards, the sponsored company showcase, and the products directory sponsored tile, all resolved live from your CTG profile.',
     features: [
       'Both homepage hero cards (product left + company right)',
       'Full "Sponsored Company" showcase with your 3 picked products',
       'Top-of-grid sponsored tile on /products',
-      'Sold monthly — one advertiser per calendar month, no overlap',
+      'Sold monthly: one advertiser per calendar month, no overlap',
     ],
     cta: 'Inquire About Sponsored Package',
     mockup: 'sponsored',

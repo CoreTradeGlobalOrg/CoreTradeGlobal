@@ -244,6 +244,38 @@ export function useProfilePage({ userId, currentUser, authLoading, isAuthenticat
    * a toast. On failure: reverts the corresponding local state to the
    * profile's server value so the UI matches what's actually stored.
    */
+  // Misafir RFQ hesabı: ad + şirket bir kez belirlenir (firestore.rules kilitler)
+  const handleIdentitySave = async ({ displayName, companyName }) => {
+    if (!isOwnProfile) return false;
+    const name = (displayName || '').trim().replace(/\s+/g, ' ');
+    const company = (companyName || '').trim().replace(/\s+/g, ' ');
+    if (name.length < 2 || company.length < 2) {
+      toast.error('Please enter your name and company (at least 2 characters each).');
+      return false;
+    }
+    const [firstName, ...rest] = name.split(' ');
+    const patch = {
+      displayName: name,
+      companyName: company,
+      firstName,
+      lastName: rest.join(' '),
+      identitySetAt: new Date(),
+      updatedAt: new Date(),
+    };
+    setProfileUpdating(true);
+    try {
+      await container.getUserRepository().update(userId, patch);
+      setProfileUser((prev) => (prev ? { ...prev, ...patch } : prev));
+      toast.success('Saved');
+      return true;
+    } catch {
+      toast.error('Failed to save');
+      return false;
+    } finally {
+      setProfileUpdating(false);
+    }
+  };
+
   const handleFieldSave = async (field, rawValue) => {
     if (!canEdit) return;
     const normalizeUrl = (raw) => {
@@ -346,7 +378,7 @@ export function useProfilePage({ userId, currentUser, authLoading, isAuthenticat
     // Computed
     isOwnProfile, canEdit, isAdmin,
     // Handlers
-    handleLogoChange, handleRemoveLogo, handleProfileUpdate, handleCancelEdit, handleFieldSave,
+    handleLogoChange, handleRemoveLogo, handleProfileUpdate, handleCancelEdit, handleFieldSave, handleIdentitySave,
     handleProductSubmit, handleDeleteProduct, handleToggleProductStatus,
     handleRequestSubmit, handleDeleteRequest, handleCloseRequest, handleReopenRequest,
   };

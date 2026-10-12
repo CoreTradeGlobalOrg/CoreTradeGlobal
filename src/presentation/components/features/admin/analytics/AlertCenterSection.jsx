@@ -219,7 +219,7 @@ export function AlertCenterSection() {
         ) : filtered.length === 0 ? (
           <div className="py-10 text-center text-[#606060] text-sm">
             {(!data || data.alerts.length === 0)
-              ? 'No alerts right now — everything looks green.'
+              ? 'No alerts right now. Everything looks green.'
               : 'No alerts match this filter.'}
           </div>
         ) : (

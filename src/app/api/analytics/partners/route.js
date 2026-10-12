@@ -55,7 +55,7 @@ async function probeHubSpot() {
     'HubSpot',
   );
   if (res.status === 401) return { status: 'auth_failed', note: 'Token rejected' };
-  if (res.status === 429) return { status: 'rate_limited', note: 'HubSpot 429 — still up' };
+  if (res.status === 429) return { status: 'rate_limited', note: 'HubSpot 429 (still up)' };
   if (!res.ok) return { status: 'degraded', note: `HTTP ${res.status}` };
   return { status: 'ok', note: 'CRM API reachable' };
 }
@@ -102,22 +102,23 @@ async function probeVercel() {
   return { status: 'down', note: body.status.description || `Status: ${indicator}` };
 }
 
-async function probeResend() {
-  // Resend doesn't have a public status page endpoint, but a token
-  // ping tells us both auth + connectivity. GET /domains needs a
-  // valid API key so this is a two-in-one check.
-  const key = process.env.RESEND_API_KEY;
-  if (!key) return { status: 'not_configured', note: 'RESEND_API_KEY not set (functions env)' };
+async function probeZeptoMail() {
+  // ZeptoMail has no read-only endpoint for send tokens. An empty POST is
+  // rejected before anything is sent: 401 means the token is bad, 400
+  // (TM_3301 "Bad Syntax") means the token was accepted. Without a token
+  // in the web env we can only check that the API is reachable.
+  const url = process.env.ZEPTOMAIL_API_URL || 'https://api.zeptomail.eu/v1.1/email';
+  const token = (process.env.ZEPTOMAIL_TOKEN || '').trim().replace(/^Zoho-enczapikey\s+/i, '');
+  const headers = { 'Content-Type': 'application/json', Accept: 'application/json' };
+  if (token) headers.Authorization = `Zoho-enczapikey ${token}`;
   const res = await withTimeout(
-    fetch('https://api.resend.com/domains', {
-      headers: { Authorization: `Bearer ${key}` },
-      cache: 'no-store',
-    }),
+    fetch(url, { method: 'POST', headers, body: '{}', cache: 'no-store' }),
     PROBE_TIMEOUT_MS,
-    'Resend',
+    'ZeptoMail',
   );
-  if (res.status === 401) return { status: 'auth_failed', note: 'API key rejected' };
-  if (!res.ok) return { status: 'degraded', note: `HTTP ${res.status}` };
+  if (res.status >= 500) return { status: 'degraded', note: `HTTP ${res.status}` };
+  if (!token) return { status: 'ok', note: 'API reachable (token not set in web env, auth not checked)' };
+  if (res.status === 401) return { status: 'auth_failed', note: 'Send Mail Token rejected' };
   return { status: 'ok', note: 'API reachable, auth valid' };
 }
 
@@ -141,11 +142,11 @@ async function probeGoogleClarity() {
 }
 
 async function collectPartners() {
-  const [hubspot, firebase, vercel, resend, tagProbes] = await Promise.all([
+  const [hubspot, firebase, vercel, zeptomail, tagProbes] = await Promise.all([
     measure(probeHubSpot),
     measure(probeFirebase),
     measure(probeVercel),
-    measure(probeResend),
+    measure(probeZeptoMail),
     measure(probeGoogleClarity),
   ]);
 
@@ -156,7 +157,7 @@ async function collectPartners() {
       { key: 'firebase', label: 'Firebase (Firestore + Storage + Auth)', ...firebase },
       { key: 'vercel', label: 'Vercel Platform', ...vercel },
       { key: 'hubspot', label: 'HubSpot CRM', ...hubspot },
-      { key: 'resend', label: 'Resend (transactional email)', ...resend },
+      { key: 'zeptomail', label: 'Zoho ZeptoMail (email)', ...zeptomail },
       {
         key: 'ga_clarity',
         label: 'Analytics tag CDN (GA + Clarity)',

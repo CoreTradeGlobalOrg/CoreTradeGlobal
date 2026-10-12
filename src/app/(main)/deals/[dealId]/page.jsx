@@ -3,7 +3,8 @@
  *
  * URL: /deals/[dealId]
  * Auth-protected: redirects to /login if not authenticated.
- * Access check: only buyer or seller may view; others see "Access Denied".
+ * Access check: buyer or seller may view; admins get a read-only view;
+ * everyone else sees "Access Denied".
  *
  * Renders DealPage with real-time offer timeline and counter-offer flow.
  */
@@ -62,7 +63,11 @@ export default function DealDetailPage() {
   const currentUid = user?.uid ?? null;
   const { deal, offers, loading: dealLoading, error } = useDeal(dealId, currentUid);
   const actions = useDealActions();
-  const { otherPartyViewing } = useDealPresence(dealId, deal);
+
+  // Admin reviewing someone else's deal → read-only, no presence heartbeat
+  const isParticipantUser = !!deal && (deal.buyerId === currentUid || deal.sellerId === currentUid);
+  const isAdminViewer = user?.role === 'admin' && !!deal && !isParticipantUser;
+  const { otherPartyViewing } = useDealPresence(isAdminViewer ? null : dealId, deal);
 
   // ── Auth guard ─────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -120,11 +125,9 @@ export default function DealDetailPage() {
     );
   }
 
-  // ── Access denied — user is neither buyer nor seller ───────────────────────
+  // ── Access denied — user is neither buyer nor seller (admins are let through) ─
   if (deal && currentUid) {
-    const isParticipant =
-      deal.buyerId === currentUid || deal.sellerId === currentUid;
-    if (!isParticipant) {
+    if (!isParticipantUser && !isAdminViewer) {
       return (
         <div className="min-h-screen bg-[#0F1C2E] flex items-center justify-center p-6">
           <div className="text-center max-w-sm">
@@ -153,6 +156,7 @@ export default function DealDetailPage() {
       currentUserUid={currentUid}
       actions={actions}
       otherPartyViewing={otherPartyViewing}
+      readOnly={isAdminViewer}
     />
   );
 }

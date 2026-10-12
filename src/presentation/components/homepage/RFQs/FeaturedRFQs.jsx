@@ -285,7 +285,6 @@ export function FeaturedRFQs() {
         <div className="featured-rfqs-header">
           <div>
             <h2>Latest RFQs</h2>
-            <p>Join active requests.</p>
           </div>
           <Link href="/requests" className="btn-section-action btn-section-action-blue">
             View All RFQs →

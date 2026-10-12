@@ -16,7 +16,10 @@ import { useDeleteProduct } from '@/presentation/hooks/product/useDeleteProduct'
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { ProductForm } from '@/presentation/components/features/product/ProductForm/ProductForm';
-import { ArrowLeft, Pencil, Trash2, Power, Star, Share2 } from 'lucide-react';
+import { ArrowLeft, Pencil, Trash2, Power, Star, Share2, Eye } from 'lucide-react';
+import { httpsCallable } from 'firebase/functions';
+import { getFunctionsInstance } from '@/core/config/firebase.config';
+import { useSafeBack } from '@/presentation/hooks/navigation/useSafeBack';
 import { container } from '@/core/di/container';
 import { useConversations } from '@/presentation/hooks/messaging/useConversations';
 import { useRecommendedProducts } from '@/presentation/hooks/product/useRecommendedProducts';
@@ -30,8 +33,9 @@ import { QuantityUnit } from '@/presentation/components/common/QuantityUnit/Quan
 
 // eslint-disable-next-line no-unused-vars
 export function ProductDetailClient({ initialProduct = null, initialSeller = null } = {}) {
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, loading: authLoading } = useAuth();
   const router = useRouter();
+  const goBack = useSafeBack('/');
   const { productId } = useParams();
 
   // Seed useProduct with the server-fetched doc so the first render on
@@ -53,6 +57,8 @@ export function ProductDetailClient({ initialProduct = null, initialSeller = nul
   const [seller, setSeller] = useState(null);
   const [sendingMessage, setSendingMessage] = useState(false);
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
+  // trackProductView'ın döndürdüğü güncel sayı (bu ziyaret dahil)
+  const [trackedViewCount, setTrackedViewCount] = useState(null);
 
   const { startDirectConversation } = useConversations();
   const { trackViewItem, trackContactSeller } = useTrackEvent();
@@ -66,6 +72,28 @@ export function ProductDetailClient({ initialProduct = null, initialSeller = nul
   useEffect(() => {
     if (product?.id && product?.name) trackViewItem(product.id, product.name, product.categoryId);
   }, [product?.id, product?.name, product?.categoryId, trackViewItem]);
+
+  // Görüntülenme sayacı: oturum başına ürün başı bir kez, sahibinin kendi
+  // ziyaretleri hariç. Auth çözülmeden çağırmıyoruz ki sahip anonim sayılmasın.
+  useEffect(() => {
+    if (!product?.id || authLoading) return;
+    if (currentUser?.uid && currentUser.uid === product.userId) return;
+    const key = `ctg:pv:${product.id}`;
+    try {
+      if (sessionStorage.getItem(key)) return;
+      sessionStorage.setItem(key, '1');
+    } catch {
+      // Storage kapalıysa yine say
+    }
+    httpsCallable(getFunctionsInstance(), 'trackProductView')({ productId: product.id })
+      .then((res) => {
+        const n = res?.data?.viewCount;
+        if (Number.isFinite(n)) setTrackedViewCount(n);
+      })
+      .catch((err) => console.warn('trackProductView failed:', err?.message || err));
+  }, [product?.id, product?.userId, authLoading, currentUser?.uid]);
+
+  const viewCount = trackedViewCount ?? (Number(product?.viewCount) || 0);
 
   useEffect(() => {
     if (!product?.userId) return;
@@ -152,7 +180,7 @@ export function ProductDetailClient({ initialProduct = null, initialSeller = nul
   return (
     <div className="min-h-screen pt-[calc(var(--navbar-height)+24px)] pb-20 bg-radial-navy">
       <div className="max-w-[1200px] mx-auto px-4">
-        <button onClick={() => router.back()} className="flex items-center gap-2 text-gray-400 hover:text-[#FFD700] mb-8 transition-colors group">
+        <button onClick={goBack} className="flex items-center gap-2 text-gray-400 hover:text-[#FFD700] mb-8 transition-colors group">
           <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
           <span className="font-medium">Back</span>
         </button>
@@ -201,11 +229,25 @@ export function ProductDetailClient({ initialProduct = null, initialSeller = nul
                     </button>
                   </div>
                 </div>
-                <div className="flex items-end gap-2 mt-2">
-                  {product.price ? (
-                    <><span className="text-lg text-gray-400 font-medium mb-1.5">{product.currency}</span><div className="text-4xl font-bold bg-gradient-to-r from-white to-[#A0A0A0] bg-clip-text text-transparent">{product.price.toLocaleString()}</div></>
-                  ) : (
-                    <div className="text-4xl font-bold bg-gradient-to-r from-[#FFD700] to-[#FDB931] bg-clip-text text-transparent">Negotiable</div>
+                <div className="flex flex-wrap items-end justify-between gap-x-3 gap-y-2 mt-2">
+                  <div className="flex items-end gap-2 min-w-0">
+                    {product.price ? (
+                      <><span className="text-lg text-gray-400 font-medium mb-1.5">{product.currency}</span><div className="text-4xl font-bold bg-gradient-to-r from-white to-[#A0A0A0] bg-clip-text text-transparent">{product.price.toLocaleString()}</div></>
+                    ) : (
+                      <div className="text-4xl font-bold bg-gradient-to-r from-[#FFD700] to-[#FDB931] bg-clip-text text-transparent">Negotiable</div>
+                    )}
+                  </div>
+                  {/* Görüntülenme sayısını sadece ürün sahibi ve adminler görür */}
+                  {isOwnProduct && (
+                    <div
+                      className="product-view-badge mb-1.5 inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1"
+                      title="Total views of this product page (visible only to you)"
+                    >
+                      <Eye className="w-3.5 h-3.5 text-[#C9CED6]" aria-hidden="true" />
+                      <span className="text-xs font-semibold tabular-nums">
+                        {viewCount.toLocaleString('en-US')} {viewCount === 1 ? 'view' : 'views'}
+                      </span>
+                    </div>
                   )}
                 </div>
               </div>
@@ -222,11 +264,18 @@ export function ProductDetailClient({ initialProduct = null, initialSeller = nul
               <div className="glass-card p-6 flex flex-col gap-2">
                 <div className="text-sm uppercase tracking-wider text-[#FFD700] font-semibold">Stock Quantity</div>
                 <div className="flex items-center gap-3">
-                  <QuantityUnit
-                    quantity={product.stockQuantity || 0}
-                    unit={product.unit || 'PCE'}
-                    className={`text-2xl font-bold ${product.stockQuantity > 0 ? 'bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent' : 'text-red-400'}`}
-                  />
+                  {Number(product.stockQuantity) > 0 ? (
+                    <QuantityUnit
+                      quantity={product.stockQuantity}
+                      unit={product.unit || 'PCE'}
+                      className="text-2xl font-bold bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent"
+                    />
+                  ) : (
+                    // Stok 0 ya da girilmemiş: "0 Pieces" yerine satıcıyla iletişime yönlendir
+                    <span className="text-2xl font-bold bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
+                      Contact for Stock
+                    </span>
+                  )}
                 </div>
               </div>
             </div>

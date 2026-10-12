@@ -1,7 +1,7 @@
 /**
  * NotificationsSection
  *
- * Displays a 5-category notification preference grid with Email and Push toggles.
+ * Displays a 6-category notification preference grid with Email and Push toggles.
  * Reads/writes preferences from Firestore via useNotificationPreferences hook.
  */
 
@@ -41,6 +41,11 @@ const CATEGORIES = [
     key: 'system',
     label: 'System',
     description: 'Platform announcements and account alerts',
+  },
+  {
+    key: 'insights',
+    label: 'Product Insights',
+    description: 'Weekly report of how often your products were viewed',
   },
 ];
 

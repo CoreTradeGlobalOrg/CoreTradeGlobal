@@ -26,8 +26,8 @@ import { useTrackAd } from '@/presentation/hooks/ads/useTrackAd';
 import { useProductsByIds } from '@/presentation/hooks/product/useProductsByIds';
 import { useUserProfile } from '@/presentation/hooks/user/useUserProfile';
 
-function AdSlot({ ad, placeholder, ariaLabel }) {
-  const { setRef, trackClick } = useTrackAd(ad?.id);
+function AdSlot({ ad, slot, placeholder, ariaLabel }) {
+  const { setRef, trackClick } = useTrackAd(ad?.id, slot);
   // Only treat this as a real ad when we have the minimum fields to
   // render — otherwise a half-populated Firestore doc would render an
   // empty sponsored card instead of the "Book Spot" placeholder.
@@ -144,6 +144,7 @@ export function HeroMobileAdCards() {
     <div className="hero-mobile-promo-cards md:hidden">
       <AdSlot
         ad={featuredProductAd}
+        slot="hero_product"
         ariaLabel="Feature your product here"
         placeholder={{
           tag: 'Featured Product',
@@ -154,6 +155,7 @@ export function HeroMobileAdCards() {
       />
       <AdSlot
         ad={heroAd}
+        slot="hero_company"
         ariaLabel="Feature your brand in the hero spotlight"
         placeholder={{
           tag: 'Hero Spotlight',

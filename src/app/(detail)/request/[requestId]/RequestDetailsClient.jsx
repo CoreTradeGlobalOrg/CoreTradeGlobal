@@ -24,10 +24,13 @@ import { useUpdateRequest } from '@/presentation/hooks/request/useUpdateRequest'
 import { useCategories } from '@/presentation/hooks/category/useCategories';
 import toast from 'react-hot-toast';
 import { QuantityUnit } from '@/presentation/components/common/QuantityUnit/QuantityUnit';
+import { useSafeBack } from '@/presentation/hooks/navigation/useSafeBack';
+import { publicCompanyName } from '@/core/utils/publicIdentity';
 
 export function RequestDetailsClient({ initialRequest = null, initialAuthor = null } = {}) {
   const params = useParams();
   const router = useRouter();
+  const goBack = useSafeBack('/');
   const { isAuthenticated, user } = useAuth();
 
   // Seed local state with the server-fetched doc so the first render on
@@ -173,7 +176,7 @@ export function RequestDetailsClient({ initialRequest = null, initialAuthor = nu
       <div className="max-w-4xl mx-auto pb-8">
         {/* Back Button */}
         <button
-          onClick={() => router.back()}
+          onClick={goBack}
           className="flex items-center gap-2 text-[#A0A0A0] hover:text-white mb-6 transition-colors"
         >
           <ArrowLeft size={20} />
@@ -306,7 +309,7 @@ export function RequestDetailsClient({ initialRequest = null, initialAuthor = nu
                     </div>
                   )}
                   <div>
-                    <p className="font-bold text-white hover:text-[#3B82F6] transition-colors">{author?.companyName || 'Buyer'}</p>
+                    <p className="font-bold text-white hover:text-[#3B82F6] transition-colors">{publicCompanyName(author, 'Buyer')}</p>
                     <p className="text-xs text-[#A0A0A0] flex items-center gap-1 mt-1">
                       <CountryFlag countryCode={countryCode} size={14} />
                       {countryName}

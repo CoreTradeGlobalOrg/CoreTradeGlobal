@@ -266,6 +266,26 @@ a:hover {
   box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
 }
 
+/* Sponsored slot on /products: gold frame + badge live on the wrapper, so the
+   wrapper does the hover lift and the inner card stays put — otherwise the
+   card slides up out of its frame and under the badge. */
+.sponsored-slot {
+  border-radius: 20px;
+  outline: 2px solid rgba(255, 215, 0, 0.55);
+  outline-offset: -1px;
+  box-shadow: 0 10px 30px rgba(255, 215, 0, 0.18);
+  transition: transform 0.3s ease, box-shadow 0.3s ease, outline-color 0.3s ease;
+}
+.sponsored-slot:hover {
+  transform: translateY(-8px);
+  outline-color: rgba(255, 215, 0, 0.85);
+  box-shadow: 0 15px 40px rgba(255, 215, 0, 0.25);
+}
+.sponsored-slot .product-grid-card:hover {
+  transform: none;
+  box-shadow: none;
+}
+
 /* RFQ Card Exact Match */
 .rfq-card {
   background: linear-gradient(160deg, rgba(26, 28, 32, 0.6) 0%, rgba(15, 27, 43, 0.8) 100%);
@@ -1561,4 +1581,38 @@ a:hover {
     font-size: 9px;
     color: #999;
   }
+}
+/* Ürün detayı: fiyatın yanındaki görüntülenme rozeti (silver efekt) */
+.product-view-badge {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.03));
+  border: 1px solid rgba(214, 219, 226, 0.3);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 1px 6px rgba(0, 0, 0, 0.25);
+}
+
+.product-view-badge span {
+  background: linear-gradient(180deg, #ffffff 0%, #d9dde3 45%, #9ea4ad 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.product-view-badge::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 30%, rgba(255, 255, 255, 0.22) 50%, transparent 70%);
+  transform: translateX(-120%);
+  animation: product-view-sheen 6s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes product-view-sheen {
+  0%, 70% { transform: translateX(-120%); }
+  100% { transform: translateX(120%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .product-view-badge::after { animation: none; display: none; }
 }

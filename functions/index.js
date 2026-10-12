@@ -8,26 +8,22 @@
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { onDocumentCreated, onDocumentUpdated, onDocumentWritten } = require('firebase-functions/v2/firestore');
 const { onSchedule } = require('firebase-functions/v2/scheduler');
+const { setGlobalOptions } = require('firebase-functions/v2');
+
+// Cloud Run varsayılanı fonksiyon başına 100 instance; 60+ fonksiyonda bu,
+// deploy sırasında "Quota exceeded for total allowable CPU per project per
+// region" hatasına yol açıyor. 10 instance x 80 eşzamanlı istek yeterli.
+setGlobalOptions({ maxInstances: 10 });
 const admin = require('firebase-admin');
 const { Timestamp, FieldValue } = require('firebase-admin/firestore');
-const { Resend } = require('resend');
 const { toTitleCase } = require('./utils/nameCase');
+const { sendEmail } = require('./emailClient');
 
 // Initialize Firebase Admin SDK
 admin.initializeApp();
 
 const db = admin.firestore();
 const messaging = admin.messaging();
-
-// Lazy Resend initialization — only created when first email is sent.
-// Set RESEND_API_KEY in functions/.env or via firebase functions:config:set resend.api_key='re_xxxxx'
-let _resend = null;
-function getResend() {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) return null;
-  if (!_resend) _resend = new Resend(apiKey);
-  return _resend;
-}
 
 /**
  * Role constants (duplicated here to avoid ESM import in CJS Cloud Functions)
@@ -554,71 +550,41 @@ function buildProductUploadEmailHtml(displayName) {
 }
 
 /**
- * Send a welcome email via Resend. Non-blocking — failure does not fail the CF.
+ * Send a welcome email. Non-blocking — failure does not fail the CF.
  */
 async function sendWelcomeEmail(to, displayName, userID) {
-  const resend = getResend();
-  if (!resend) {
-    console.warn('sendWelcomeEmail: RESEND_API_KEY not set, skipping email.');
-    return;
-  }
-  try {
-    await resend.emails.send({
-      from: 'CoreTradeGlobal <noreply@coretradeglobal.com>',
-      to,
-      subject: 'Welcome to CoreTradeGlobal!',
-      html: buildWelcomeEmailHtml(displayName, userID),
-    });
-    console.log(`sendWelcomeEmail: sent welcome to ${to}`);
-  } catch (err) {
-    console.error(`sendWelcomeEmail: failed to send to ${to}:`, err);
-  }
+  await sendEmail({
+    to,
+    subject: 'Welcome to CoreTradeGlobal!',
+    html: buildWelcomeEmailHtml(displayName, userID),
+    tag: 'sendWelcomeEmail',
+  });
 }
 
 /**
- * Send the 24-hour "Upload Your Products" reminder via Resend.
+ * Send the 24-hour "Upload Your Products" reminder.
  * Non-blocking — failure does not fail the CF.
  */
 async function sendProductUploadEmail(to, displayName) {
-  const resend = getResend();
-  if (!resend) {
-    console.warn('sendProductUploadEmail: RESEND_API_KEY not set, skipping email.');
-    return;
-  }
-  try {
-    await resend.emails.send({
-      from: 'CoreTradeGlobal <noreply@coretradeglobal.com>',
-      to,
-      subject: 'Upload your products and start receiving quotes',
-      html: buildProductUploadEmailHtml(displayName),
-    });
-    console.log(`sendProductUploadEmail: sent to ${to}`);
-  } catch (err) {
-    console.error(`sendProductUploadEmail: failed to send to ${to}:`, err);
-  }
+  await sendEmail({
+    to,
+    subject: 'Upload your products and start receiving quotes',
+    html: buildProductUploadEmailHtml(displayName),
+    tag: 'sendProductUploadEmail',
+  });
 }
 
 /**
- * Send an invite email via Resend. Non-blocking — failure does not fail the CF.
+ * Send an invite email. Non-blocking — failure does not fail the CF.
  */
 async function sendInviteEmail(to, name, role, signInLink) {
-  const resend = getResend();
-  if (!resend) {
-    console.warn('sendInviteEmail: RESEND_API_KEY not set, skipping email.');
-    return;
-  }
   const roleName = role.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-  try {
-    await resend.emails.send({
-      from: 'CoreTradeGlobal <noreply@coretradeglobal.com>',
-      to,
-      subject: `You're invited to CoreTradeGlobal as ${roleName}`,
-      html: buildInviteEmailHtml(name, role, signInLink),
-    });
-    console.log(`sendInviteEmail: sent invite to ${to} (${role})`);
-  } catch (err) {
-    console.error(`sendInviteEmail: failed to send to ${to}:`, err);
-  }
+  await sendEmail({
+    to,
+    subject: `You're invited to CoreTradeGlobal as ${roleName}`,
+    html: buildInviteEmailHtml(name, role, signInLink),
+    tag: `sendInviteEmail (${role})`,
+  });
 }
 
 /**
@@ -727,7 +693,7 @@ exports.inviteUser = onCall(
         signInLink, // Stored for resend capability
       });
 
-      // Send invite email via Resend (non-blocking)
+      // Send invite email (non-blocking)
       await sendInviteEmail(email, name, role, signInLink);
 
       console.log(`Invited user ${uid} (${email}) with role ${role}`);
@@ -819,7 +785,7 @@ exports.resendInvite = onCall(
         company: company || null,
       });
 
-      // Send invite email via Resend (non-blocking)
+      // Send invite email (non-blocking)
       await sendInviteEmail(email, displayName, role, signInLink);
 
       console.log(`Resent invite for ${uid} (${email}) with role ${role}`);
@@ -1649,51 +1615,9 @@ exports.sendWelcomeOnRegister = onDocumentCreated(
     // Welcome email is now WF2.1 (branded + magic-link) — sendWelcomeEmail's
     // legacy template was firing alongside it, hence the double-email in
     // the inbox on the reg flow. WF2.1 fires from wfSendEmailVerification;
-    // this CF stays only to seed the Resend contact + admin notification.
+    // this CF stays only for the admin approval notification.
     const displayName = userData.displayName || userData.firstName || 'there';
     void displayName; // preserved for logging shape below
-
-    // Mirror the new user into Resend so broadcasts (dashboard-scheduled
-    // newsletters, campaigns) can reach them later.
-    //
-    // AWAITED (not fire-and-forget): GCF v2 tears down containers as
-    // soon as the trigger promise resolves, so a dangling
-    // resend.contacts.create() request can be cancelled mid-flight —
-    // that's exactly what we saw during rollout, function metrics
-    // showed 3 invocations with zero errors while the Resend audience
-    // stayed at zero contacts. A ~200 ms delay per trigger is fine.
-    //
-    // `RESEND_AUDIENCE_ID` is optional: if set we push into that
-    // specific audience/segment; if unset the contact still lands in
-    // the workspace's default audience so no one is lost.
-    try {
-      const resendClient = getResend();
-      if (resendClient) {
-        const contactPayload = {
-          email,
-          firstName: userData.firstName || null,
-          lastName: userData.lastName || null,
-          unsubscribed: false,
-        };
-        if (process.env.RESEND_AUDIENCE_ID) {
-          contactPayload.audienceId = process.env.RESEND_AUDIENCE_ID;
-        }
-        const result = await resendClient.contacts.create(contactPayload);
-        if (result?.error) {
-          const status = result.error?.statusCode ?? result.error?.status;
-          if (status !== 409) {
-            console.warn(`sendWelcomeOnRegister: Resend contacts.create returned error for ${email}:`, result.error);
-          }
-        } else {
-          console.log(`sendWelcomeOnRegister: Resend contact created for ${email} (id=${result?.data?.id ?? 'unknown'})`);
-        }
-      }
-    } catch (err) {
-      const status = err?.statusCode ?? err?.status;
-      if (status !== 409) {
-        console.warn(`sendWelcomeOnRegister: Resend contacts.create threw for ${email}:`, err.message || err);
-      }
-    }
 
     // No more "verify your email" notification — users are auto-verified
     // in wfSendEmailVerification. Keeping the notification would surface
@@ -1821,152 +1745,6 @@ exports.sendProductUploadReminder = onSchedule(
 );
 
 /**
- * syncUnsubscribeToResend
- *
- * When a user unsubscribes via our own endpoint (public API creates a
- * doc under `unsubscribes/{sha256-of-email}`), mirror the state into
- * Resend so broadcasts scheduled from the dashboard also honour the
- * opt-out and we don't get spam-reported.
- *
- * Runs on doc CREATE only — repeat unsubscribes idempotently re-write
- * the same doc so the trigger doesn't fire again, but a re-created doc
- * (rare) would still land here.
- */
-exports.syncUnsubscribeToResend = onDocumentCreated(
-  'unsubscribes/{docId}',
-  async (event) => {
-    const snapshot = event.data;
-    if (!snapshot) return null;
-
-    const data = snapshot.data();
-    const email = data?.email || data?.emailLower;
-    if (!email) {
-      console.log('syncUnsubscribeToResend: no email in doc, skipping');
-      return null;
-    }
-
-    const resendClient = getResend();
-    if (!resendClient) {
-      console.warn('syncUnsubscribeToResend: RESEND_API_KEY unset, skipping');
-      return null;
-    }
-
-    // audienceId is optional — pushed only when set. See
-    // sendWelcomeOnRegister for the same flex.
-    const audienceId = process.env.RESEND_AUDIENCE_ID || null;
-
-    try {
-      const updatePayload = { email, unsubscribed: true };
-      if (audienceId) updatePayload.audienceId = audienceId;
-      await resendClient.contacts.update(updatePayload);
-      console.log(`syncUnsubscribeToResend: marked ${email} as unsubscribed in Resend`);
-    } catch (err) {
-      // 404 = contact never existed in Resend (unsubscribed before we
-      // ever emailed them). Create as pre-suppressed so future adds
-      // still respect the opt-out.
-      const status = err?.statusCode ?? err?.status;
-      if (status === 404) {
-        try {
-          const createPayload = { email, unsubscribed: true };
-          if (audienceId) createPayload.audienceId = audienceId;
-          await resendClient.contacts.create(createPayload);
-          console.log(`syncUnsubscribeToResend: pre-created ${email} as unsubscribed in Resend`);
-        } catch (createErr) {
-          console.warn(`syncUnsubscribeToResend: fallback create failed for ${email}:`, createErr.message || createErr);
-        }
-      } else {
-        console.warn(`syncUnsubscribeToResend: update failed for ${email}:`, err.message || err);
-      }
-    }
-
-    return null;
-  }
-);
-
-/**
- * backfillResendContacts
- *
- * Admin-only, run-once helper to load every existing user into the
- * Resend Audience. Skips deleted / no-email records and swallows
- * duplicate-contact errors so re-runs are safe. Rate-limited at 10
- * req/sec to stay under Resend's default throughput.
- *
- * Invoke from a client while signed in as admin:
- *   httpsCallable(functions, 'backfillResendContacts')({ limit: 1000 })
- */
-exports.backfillResendContacts = onCall(
-  { region: 'us-central1' },
-  async (request) => {
-    if (!(await isUserAdmin(request.auth?.uid))) {
-      throw new HttpsError('permission-denied', 'Admin only.');
-    }
-    const resendClient = getResend();
-    if (!resendClient) {
-      throw new HttpsError('failed-precondition', 'RESEND_API_KEY is not set.');
-    }
-
-    const limit = Math.min(Math.max(parseInt(request.data?.limit, 10) || 1000, 1), 5000);
-    // audienceId is optional. When unset the contact still lands in the
-    // workspace's default audience — safe fallback for Resend accounts
-    // whose UI no longer exposes a distinct Audience ID to grab.
-    const audienceId = process.env.RESEND_AUDIENCE_ID || null;
-
-    // Also honour our own unsubscribe list — anyone already opted out
-    // should land in Resend as `unsubscribed: true`.
-    let unsubscribedEmails = new Set();
-    try {
-      const unsubSnap = await db.collection('unsubscribes').limit(5000).get();
-      unsubSnap.docs.forEach((d) => {
-        const em = d.data()?.emailLower || d.data()?.email;
-        if (em) unsubscribedEmails.add(String(em).toLowerCase());
-      });
-    } catch (err) {
-      console.warn('backfillResendContacts: failed to load unsubscribes list, proceeding without it:', err.message);
-    }
-
-    const snap = await db.collection('users').limit(limit).get();
-    let added = 0;
-    let alreadyIn = 0;
-    let skipped = 0;
-    const errors = [];
-
-    for (const doc of snap.docs) {
-      const d = doc.data();
-      if (!d.email || d.isDeleted === true) {
-        skipped++;
-        continue;
-      }
-      const emailLower = String(d.email).toLowerCase();
-      try {
-        const payload = {
-          email: d.email,
-          firstName: d.firstName || null,
-          lastName: d.lastName || null,
-          unsubscribed: unsubscribedEmails.has(emailLower),
-        };
-        if (audienceId) payload.audienceId = audienceId;
-        await resendClient.contacts.create(payload);
-        added++;
-      } catch (err) {
-        const status = err?.statusCode ?? err?.status;
-        if (status === 409) {
-          alreadyIn++;
-        } else {
-          errors.push({ email: d.email, message: err.message || String(err) });
-          console.warn(`backfillResendContacts: contacts.create failed for ${d.email}:`, err.message || err);
-        }
-      }
-      // Rate-limit: ~10 req/sec.
-      await new Promise((resolve) => setTimeout(resolve, 110));
-    }
-
-    const summary = { scanned: snap.size, added, alreadyIn, skipped, errorCount: errors.length };
-    console.log('backfillResendContacts: done', summary);
-    return { ...summary, errors: errors.slice(0, 10) };
-  }
-);
-
-/**
  * Build the "New Advertising Inquiry" admin email HTML.
  *
  * Compact one-column card showing the inquiry summary + a CTA link into
@@ -2033,7 +1811,7 @@ function buildAdInquiryAdminEmailHtml(inquiry) {
  * Fires when a public inquiry lands in `adInquiries`. Fans out an
  * in-app notification (subcollection `users/{adminUid}/notifications`)
  * for each admin so the bell + admin dashboard both show it, and
- * emails every admin via Resend so nothing gets lost when they're
+ * emails every admin so nothing gets lost when they're
  * away from the app.
  */
 exports.notifyAdminsOnAdInquiry = onDocumentCreated(
@@ -2073,30 +1851,21 @@ exports.notifyAdminsOnAdInquiry = onDocumentCreated(
       console.error(`notifyAdminsOnAdInquiry: in-app fan-out failed for ${inquiryId}:`, err);
     }
 
-    // Email every admin via Resend (best-effort — Resend hiccup must
-    // not block, admins still have the in-app notification).
+    // Email every admin (best-effort — a provider hiccup must not block,
+    // admins still have the in-app notification).
     try {
-      const resend = getResend();
-      if (!resend) {
-        console.warn('notifyAdminsOnAdInquiry: RESEND_API_KEY unset, skipping admin email.');
-      } else {
-        const adminsSnap = await db.collection('users').where('role', '==', 'admin').limit(50).get();
-        const adminEmails = adminsSnap.docs
-          .map((d) => d.data()?.email)
-          .filter((e) => typeof e === 'string' && e.includes('@'));
-        if (adminEmails.length > 0) {
-          const html = buildAdInquiryAdminEmailHtml(data);
-          const subject = `New Ad Inquiry: ${data.company || 'Unknown company'}`;
-          // Resend caps `to` at 50 addresses per call — we're well under that.
-          await resend.emails.send({
-            from: 'CoreTradeGlobal <noreply@coretradeglobal.com>',
-            to: adminEmails,
-            subject,
-            html,
-            reply_to: data.email || undefined,
-          });
-          console.log(`notifyAdminsOnAdInquiry: emailed ${adminEmails.length} admin(s) for ${inquiryId}`);
-        }
+      const adminsSnap = await db.collection('users').where('role', '==', 'admin').limit(50).get();
+      const adminEmails = adminsSnap.docs
+        .map((d) => d.data()?.email)
+        .filter((e) => typeof e === 'string' && e.includes('@'));
+      if (adminEmails.length > 0) {
+        await sendEmail({
+          to: adminEmails,
+          subject: `New Ad Inquiry: ${data.company || 'Unknown company'}`,
+          html: buildAdInquiryAdminEmailHtml(data),
+          replyTo: data.email || undefined,
+          tag: `notifyAdminsOnAdInquiry (${inquiryId})`,
+        });
       }
     } catch (err) {
       console.error(`notifyAdminsOnAdInquiry: email fan-out failed for ${inquiryId}:`, err);
@@ -2726,7 +2495,7 @@ exports.withdrawOffer = onCall(async (request) => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * sendDealEmail — wraps Resend SDK call.
+ * sendDealEmail — thin wrapper over emailClient.sendEmail (ZeptoMail).
  *
  * Non-blocking: email failure does NOT fail the Cloud Function.
  * From address uses verified custom domain coretradeglobal.com.
@@ -2736,24 +2505,8 @@ exports.withdrawOffer = onCall(async (request) => {
  * @param {string} htmlBody - HTML content for the email body
  */
 async function sendDealEmail(to, subject, htmlBody) {
-  if (!to || !subject || !htmlBody) return;
-  const resend = getResend();
-  if (!resend) {
-    console.warn('sendDealEmail: RESEND_API_KEY not set, skipping email.');
-    return;
-  }
-  try {
-    await resend.emails.send({
-      from: 'CoreTradeGlobal <noreply@coretradeglobal.com>',
-      to,
-      subject,
-      html: htmlBody,
-    });
-    console.log(`sendDealEmail: sent "${subject}" to ${to}`);
-  } catch (err) {
-    console.error(`sendDealEmail: failed to send to ${to}:`, err);
-    // Non-blocking — swallow the error
-  }
+  // Non-blocking — sendEmail logs and swallows provider errors
+  await sendEmail({ to, subject, html: htmlBody, tag: 'sendDealEmail' });
 }
 
 /**
@@ -2920,7 +2673,7 @@ function buildBrandedEmailHtml(body, ctaLabel, ctaUrl, footerNote) {
  * sendDealNotifications — orchestrates all 3 notification channels for deal events.
  *
  * Sends to all deal participants EXCEPT the sender (actor) uid.
- * Channels: Firestore in-app notification, FCM push (with smart suppression), Resend email.
+ * Channels: Firestore in-app notification, FCM push (with smart suppression), email.
  *
  * IMPORTANT: Call this OUTSIDE transactions to prevent duplicate sends on transaction retries.
  *
@@ -3010,7 +2763,7 @@ async function sendDealNotifications(dealId, eventType, senderUid, deal) {
           console.log(`sendDealNotifications: suppressed FCM for ${recipientId} — actively viewing deal ${dealId}`);
         }
 
-        // --- c) Resend email notification (respects email preference) ---
+        // --- c) Email notification (respects email preference) ---
         const recipientEmail = userData.email;
         if (recipientEmail && emailEnabled) {
           const { subject, body: eventBody } = getDealEventCopy(eventType, deal.productName);
@@ -5905,312 +5658,512 @@ exports.onNewMemberRegistered = onDocumentWritten(
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
-// RFQ Email Delivery — inactive-user re-engagement with daily budget
+// RFQ notifications
 // ─────────────────────────────────────────────────────────────────────────────
-//
-// Resend's free tier caps at 100 emails/day. Firing an email per member
-// on every new RFQ blew through the cap the moment the member base grew
-// past a few hundred. New model:
-//
-//   1. onRFQCreated still delivers in-app + FCM push to every member
-//      immediately (no rate limit, no cost).
-//   2. Email is treated as a re-engagement nudge — only members whose
-//      lastLoginAt is older than RFQ_INACTIVE_WINDOW_DAYS get queued.
-//      Active users receive nothing new.
-//   3. onRFQCreated writes one row per eligible inactive user into
-//      rfqEmailQueue (doc id = `${rfqId}_${userId}` → natural dedup).
-//   4. processRfqEmailQueue runs hourly, respects RFQ_EMAIL_DAILY_LIMIT
-//      per UTC day (tracked in rfqEmailDailyBudget/{YYYY-MM-DD}), and
-//      re-verifies at send time (RFQ still open, user still inactive,
-//      email preference still on) so a queued email that becomes stale
-//      is skipped rather than sent.
-//
-// Environment (functions/.env):
-//   RFQ_EMAIL_DAILY_LIMIT   default 90   (10 kept for other flows)
-//   RFQ_INACTIVE_WINDOW     default 30   (days)
-const RFQ_INACTIVE_WINDOW_DAYS = Number(process.env.RFQ_INACTIVE_WINDOW || 30);
-const RFQ_EMAIL_DAILY_LIMIT = Number(process.env.RFQ_EMAIL_DAILY_LIMIT || 90);
-const RFQ_QUEUE_MAX_ATTEMPTS = 3;
-const RFQ_QUEUE_PER_RUN_CAP = 30;
-const RFQ_QUEUE_SEND_SPACING_MS = 200;
 
-function todayUtcDateString() {
-  return new Date().toISOString().slice(0, 10);
+// Aynı anda işlenen üye sayısı (bildirim / push / mail)
+const RFQ_NOTIFY_CONCURRENCY = 10;
+
+function buildRfqEmailBody({ productName, categoryName }) {
+  const product = escapeEmailText(productName);
+  const category = escapeEmailText(categoryName);
+  return `<p style="margin:0 0 16px 0;">A new request for quotation has been posted in your category${category ? `, <strong>${category}</strong>` : ''}.</p>
+    <p style="margin:0 0 16px 0;">Buyer is looking for: <strong>${product}</strong></p>
+    <p style="margin:0;">Send your quote before other suppliers do.</p>`;
 }
 
 /**
- * onRFQCreated
+ * notifyMembersOfNewRfq
  *
- * Fires when a new document is created in the requests collection (RFQs).
- * Notifies all members with in-app + FCM push when a new RFQ is posted.
- * Does NOT notify the creator of the RFQ.
+ * Runs when an RFQ goes live (created as 'active', or a guest RFQ moving
+ * from 'pending_verification' to 'active'). The creator is skipped.
  *
  * Channels:
  *   - in-app notification: every member
- *   - FCM push: every member with push preference enabled
- *   - email: enqueued for inactive members only (drained by
- *     processRfqEmailQueue under a daily Resend budget)
+ *   - FCM push: every member with providers.push enabled
+ *   - email: members whose companyCategory matches the RFQ's categoryId
+ *     and who have providers.email enabled, sent right away via ZeptoMail
+ *
+ * Notification doc id is rfq-<requestId> so a retried trigger overwrites
+ * instead of duplicating.
  */
-exports.onRFQCreated = onDocumentCreated(
-  'requests/{requestId}',
-  async (event) => {
-    try {
-      const rfq = event.data?.data();
-      if (!rfq) return;
+async function notifyMembersOfNewRfq(requestId, rfq) {
+  try {
+    if (!rfq) return;
+    const now = Timestamp.now();
+    const productName = rfq.productName || rfq.title || 'a product';
+    const creatorId = rfq.userId;
+    const categoryId = rfq.categoryId || null;
+    const link = `/request/${requestId}`;
 
-      const requestId = event.params.requestId;
-      const now = Timestamp.now();
-      const productName = rfq.productName || rfq.title || 'a product';
-      const creatorId = rfq.userId;
+    const notifTitle = 'New RFQ Available';
+    const notifBody = `A new request for quotation has been posted for ${productName}.`;
 
-      const notifTitle = 'New RFQ Available';
-      const notifBody = `A new request for quotation has been posted for ${productName}.`;
+    let categoryName = '';
+    if (categoryId) {
+      try {
+        const catSnap = await db.collection('categories').doc(categoryId).get();
+        categoryName = catSnap.exists ? catSnap.data().name || '' : '';
+      } catch (err) {
+        console.warn(`notifyMembersOfNewRfq: category lookup failed for ${categoryId}:`, err.message);
+      }
+    }
 
-      // Inactivity threshold for the email path: users whose last real
-      // login is older than this get an email, active users don't
-      // (they already got in-app + push above).
-      const INACTIVE_CUTOFF_MS = Date.now() - RFQ_INACTIVE_WINDOW_DAYS * 24 * 60 * 60 * 1000;
+    const membersSnap = await db.collection('users').where('role', '==', ROLES.MEMBER).get();
+    const members = membersSnap.docs.filter((d) => d.id !== creatorId && !d.data().isDeleted);
+    if (members.length === 0) {
+      console.log(`notifyMembersOfNewRfq: no members to notify for RFQ ${requestId}`);
+      return;
+    }
 
-      // Query all members
-      const membersSnap = await db.collection('users').where('role', '==', ROLES.MEMBER).get();
-      if (membersSnap.empty) {
-        console.log(`onRFQCreated: no members found for RFQ ${requestId}`);
-        return;
+    const emailHtml = buildBrandedEmailHtml(
+      buildRfqEmailBody({ productName, categoryName }),
+      'View RFQ',
+      `${APP_URL}${link}`
+    );
+    const emailSubject = `New RFQ in ${categoryName || 'your category'}: ${productName}`;
+
+    let emailed = 0;
+    const notifyMember = async (memberDoc) => {
+      const memberId = memberDoc.id;
+      const memberData = memberDoc.data();
+
+      // a) In-app notification: everyone
+      try {
+        await db.collection('users').doc(memberId).collection('notifications').doc(`rfq-${requestId}`).set({
+          type: 'rfq_created',
+          title: notifTitle,
+          body: notifBody,
+          requestId,
+          productName,
+          isRead: false,
+          createdAt: now,
+          link,
+        });
+      } catch (err) {
+        console.error(`notifyMembersOfNewRfq: in-app notification failed for ${memberId}:`, err);
       }
 
-      for (const memberDoc of membersSnap.docs) {
-        const memberId = memberDoc.id;
-        // Skip the creator of the RFQ
-        if (memberId === creatorId) continue;
-
-        const memberData = memberDoc.data();
-
-        // --- a) Firestore in-app notification ---
+      // b) Push: everyone with push on
+      if (memberData.preferences?.providers?.push !== false) {
         try {
-          await db.collection('users').doc(memberId).collection('notifications').add({
+          await sendFCMPushToUser(memberId, memberData, {
             type: 'rfq_created',
             title: notifTitle,
             body: notifBody,
             requestId,
-            productName,
-            isRead: false,
-            createdAt: now,
-            link: `/request/${requestId}`,
+            link,
           });
         } catch (err) {
-          console.error(`onRFQCreated: failed in-app notification for member ${memberId}:`, err);
-        }
-
-        // --- b) FCM push notification (preference check) ---
-        try {
-          const pushEnabled = memberData.preferences?.providers?.push !== false;
-          if (pushEnabled) {
-            await sendFCMPushToUser(memberId, memberData, {
-              type: 'rfq_created',
-              title: notifTitle,
-              body: notifBody,
-              requestId,
-              link: `/request/${requestId}`,
-            });
-          }
-        } catch (err) {
-          console.error(`onRFQCreated: FCM error for member ${memberId}:`, err);
-        }
-
-        // --- c) Email notification: enqueue for inactive users only ---
-        //
-        // Sending email inline used to burn through the Resend free-tier
-        // daily cap (100/day) as soon as a member base grew past a few
-        // hundred. New model: skip email for active users entirely
-        // (they get in-app + push above), and enqueue one row per
-        // inactive user (lastLoginAt < now - 30d) into rfqEmailQueue.
-        // A separate scheduled function (processRfqEmailQueue) drains
-        // the queue at a rate that respects the daily budget.
-        try {
-          const emailEnabled = memberData.preferences?.providers?.email !== false;
-          const memberEmail = memberData.email;
-          if (!memberEmail || !emailEnabled) continue;
-
-          const lastLoginAt = memberData.lastLoginAt?.toDate?.()
-            || (memberData.lastLoginAt ? new Date(memberData.lastLoginAt) : null);
-          const isInactive = lastLoginAt && lastLoginAt.getTime() < INACTIVE_CUTOFF_MS;
-          if (!isInactive) continue;
-
-          const queueDocId = `${requestId}_${memberId}`;
-          await db.collection('rfqEmailQueue').doc(queueDocId).set({
-            rfqId: requestId,
-            productName,
-            recipientId: memberId,
-            recipientEmail: memberEmail,
-            status: 'pending',
-            attempts: 0,
-            createdAt: now,
-            updatedAt: now,
-          }, { merge: false });
-        } catch (err) {
-          console.error(`onRFQCreated: enqueue error for member ${memberId}:`, err);
+          console.error(`notifyMembersOfNewRfq: FCM error for ${memberId}:`, err);
         }
       }
 
-      console.log(`onRFQCreated: notified ${membersSnap.size - 1} member(s) of new RFQ ${requestId}`);
-    } catch (err) {
-      console.error('onRFQCreated: unexpected error (non-fatal):', err);
+      // c) Email: only members in the RFQ's category
+      const inCategory = categoryId && memberData.companyCategory === categoryId;
+      if (inCategory && memberData.email && memberData.preferences?.providers?.email !== false) {
+        const ok = await sendEmail({
+          to: memberData.email,
+          subject: emailSubject,
+          html: emailHtml,
+          tag: `notifyMembersOfNewRfq (${requestId} -> ${memberId})`,
+        });
+        if (ok) emailed++;
+      }
+    };
+
+    for (let i = 0; i < members.length; i += RFQ_NOTIFY_CONCURRENCY) {
+      await Promise.all(members.slice(i, i + RFQ_NOTIFY_CONCURRENCY).map(notifyMember));
     }
+
+    console.log(`notifyMembersOfNewRfq: RFQ ${requestId} notified=${members.length} emailed=${emailed} category=${categoryId || 'none'}`);
+  } catch (err) {
+    console.error('notifyMembersOfNewRfq: unexpected error (non-fatal):', err);
+  }
+}
+
+/**
+ * onRFQCreated: RFQs created live by signed-in members notify right away.
+ * Guest RFQs are created as 'pending_verification' and notify from
+ * onRFQPublished once the email is confirmed.
+ */
+exports.onRFQCreated = onDocumentCreated(
+  { document: 'requests/{requestId}', timeoutSeconds: 540, memory: '512MiB' },
+  async (event) => {
+    const rfq = event.data?.data();
+    if (!rfq || rfq.status !== 'active') return;
+    await notifyMembersOfNewRfq(event.params.requestId, rfq);
   }
 );
 
 /**
- * processRfqEmailQueue
- *
- * Drains the rfqEmailQueue at a rate that respects Resend's daily
- * budget. Runs every 60 minutes.
- *
- * Per invocation:
- *   1. Read/init today's budget doc (rfqEmailDailyBudget/{YYYY-MM-DD}).
- *   2. Bail out if sent >= RFQ_EMAIL_DAILY_LIMIT.
- *   3. Pull up to min(RFQ_QUEUE_PER_RUN_CAP, remaining_budget) pending
- *      rows ordered by createdAt asc.
- *   4. For each row: re-verify (RFQ exists+open, user still inactive,
- *      email pref still on). Send if all still true, else mark skipped.
- *   5. On send success bump today's budget by 1. On failure increment
- *      attempts; drop to 'failed' after RFQ_QUEUE_MAX_ATTEMPTS.
- *   6. Small sleep between sends so the run doesn't spike Resend.
+ * onRFQPublished: a guest RFQ went live after its owner confirmed the
+ * email (publishGuestRFQ flips pending_verification → active).
  */
-exports.processRfqEmailQueue = onSchedule(
-  {
-    schedule: 'every 60 minutes',
-    timeZone: 'UTC',
-    retryCount: 1,
-    timeoutSeconds: 540,
-  },
+exports.onRFQPublished = onDocumentUpdated(
+  { document: 'requests/{requestId}', timeoutSeconds: 540, memory: '512MiB' },
+  async (event) => {
+    const before = event.data?.before?.data();
+    const after = event.data?.after?.data();
+    if (!before || !after) return;
+    if (before.status !== 'pending_verification' || after.status !== 'active') return;
+    await notifyMembersOfNewRfq(event.params.requestId, after);
+  }
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Guest RFQs (post an RFQ without an account)
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// 1. createGuestRFQ: visitor sends the RFQ fields + email. We find or create
+//    a passwordless member account for that email, store the RFQ as
+//    'pending_verification' (hidden: every list filters status == 'active')
+//    and email a sign-in link to /email-link?rfq=<id>.
+// 2. The visitor clicks the link, is signed in (that proves the email) and
+//    the page calls publishGuestRFQ → status 'active' → onRFQPublished
+//    notifies members. No admin approval; the account stays
+//    adminApproved: false until an admin approves it.
+// 3. sweepPendingGuestRFQs: one reminder after 24 h, cleanup after 7 days.
+
+const { buildMagicLink } = require('./emailWorkflow/magicLink');
+
+const GUEST_RFQ_LIMIT_PER_EMAIL = 3; // günlük
+const GUEST_RFQ_LIMIT_PER_IP = 10; // günlük
+const SIGN_IN_LINK_LIMIT_PER_EMAIL = 5; // günlük
+const SIGN_IN_LINK_LIMIT_PER_IP = 20; // günlük
+const GUEST_RFQ_REMINDER_MS = 24 * 60 * 60 * 1000;
+const GUEST_RFQ_EXPIRE_MS = 7 * 24 * 60 * 60 * 1000;
+const GUEST_EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+// Mail linkinin açılabileceği adresler (tam eşleşme). Link tek kullanımlık
+// giriş kodu taşıdığı için joker/regex YOK: başka bir domain kodu ele geçirebilir.
+// Listede olmayan her origin APP_URL'e (canlı site) düşer.
+const LANDING_ORIGIN_ALLOWLIST = [
+  'https://coretradeglobal.com',
+  'https://www.coretradeglobal.com',
+  'https://core-trade-global-git-development-mert-fatih-simseks-projects.vercel.app',
+  'http://localhost:3000',
+];
+
+/** Origin of the browser that called, if it is allowlisted; otherwise undefined (→ APP_URL). */
+function landingOriginFor(request) {
+  const origin = request.rawRequest?.headers?.origin;
+  return LANDING_ORIGIN_ALLOWLIST.includes(origin) ? origin : undefined;
+}
+
+function sha256Hex(value) {
+  return require('crypto').createHash('sha256').update(String(value)).digest('hex');
+}
+
+function callerIp(request) {
+  const raw = request.rawRequest?.headers?.['x-forwarded-for'] || request.rawRequest?.ip || '';
+  return String(raw).split(',')[0].trim() || 'unknown';
+}
+
+/** Daily counter in guestRateLimits/{key}_{date}; false once `limit` is reached. */
+async function consumeDailyLimit(key, limit) {
+  const ref = db.collection('guestRateLimits').doc(`${key}_${trDateKey(new Date())}`);
+  return db.runTransaction(async (t) => {
+    const snap = await t.get(ref);
+    const count = snap.exists ? Number(snap.data().count) || 0 : 0;
+    if (count >= limit) return false;
+    t.set(ref, { count: count + 1, updatedAt: Timestamp.now() }, { merge: true });
+    return true;
+  });
+}
+
+function normalizeEmail(raw) {
+  const email = String(raw || '').trim().toLowerCase();
+  if (!GUEST_EMAIL_RE.test(email) || email.length > 254) {
+    throw new HttpsError('invalid-argument', 'Please enter a valid email address.');
+  }
+  return email;
+}
+
+/** Same rules as src/core/validation/requestSchema.js. */
+function validateGuestRfqFields(raw) {
+  const r = raw || {};
+  const str = (v, max) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
+  const productName = str(r.productName, 200);
+  const categoryId = str(r.categoryId, 128);
+  const targetCountry = str(r.targetCountry, 100);
+  const unit = str(r.unit, 16) || 'PCE';
+  const unitCategory = str(r.unitCategory, 32) || 'Quantity';
+  const description = str(r.description, 5000);
+  const quantity = Number(r.quantity);
+  const budget = r.budget === '' || r.budget === null || r.budget === undefined ? null : Number(r.budget);
+
+  if (productName.length < 2) throw new HttpsError('invalid-argument', 'Product name must be at least 2 characters.');
+  if (!categoryId || categoryId.includes('/')) throw new HttpsError('invalid-argument', 'Please select a category.');
+  if (!targetCountry) throw new HttpsError('invalid-argument', 'Please select a target country.');
+  if (!Number.isFinite(quantity) || quantity <= 0) throw new HttpsError('invalid-argument', 'Quantity must be greater than 0.');
+  if (description.length < 10) throw new HttpsError('invalid-argument', 'Description must be at least 10 characters.');
+  if (budget !== null && (!Number.isFinite(budget) || budget < 0)) throw new HttpsError('invalid-argument', 'Please enter a valid budget amount.');
+
+  return {
+    productName: toTitleCase(productName),
+    categoryId,
+    targetCountry,
+    quantity: Math.floor(quantity),
+    unit,
+    unitCategory,
+    description,
+    budget,
+  };
+}
+
+async function sendGuestRfqConfirmEmail(email, requestId, productName, { reminder = false, landingOrigin } = {}) {
+  const link = await buildMagicLink(email, {
+    landingPath: `/email-link?rfq=${encodeURIComponent(requestId)}`,
+    landingOrigin,
+  });
+  const product = escapeEmailText(productName);
+  const body = reminder
+    ? `<p style="margin:0 0 16px 0;">Your request for quotation for <strong>${product}</strong> is still waiting to be published.</p>
+       <p style="margin:0;">Confirm your email address and it goes live right away, and suppliers in this category are notified. Unconfirmed requests are removed after 7 days.</p>`
+    : `<p style="margin:0 0 16px 0;">Thanks for posting your request for quotation for <strong>${product}</strong> on CoreTradeGlobal.</p>
+       <p style="margin:0;">Confirm your email address to publish it. Your RFQ goes live right away and suppliers in this category are notified. You can set a password on the next screen.</p>`;
+  return sendEmail({
+    to: email,
+    subject: reminder ? 'Your RFQ is waiting to be published' : 'Confirm your email to publish your RFQ',
+    html: buildBrandedEmailHtml(body, 'Publish my RFQ', link, 'If you did not post this request, you can ignore this email.'),
+    tag: `guestRfqConfirm${reminder ? 'Reminder' : ''} (${requestId})`,
+  });
+}
+
+/**
+ * createGuestRFQ — onCall, no auth.
+ *
+ * @param {Object} data - { email, rfq: { productName, categoryId, targetCountry, quantity, unit, unitCategory, description, budget }, website }
+ *   `website` is a honeypot: real users never fill it.
+ * @returns {Promise<{ status: 'pending' }>}
+ */
+exports.createGuestRFQ = onCall(async (request) => {
+  if (request.auth) {
+    throw new HttpsError('failed-precondition', 'You are already signed in. Please create the RFQ from your account.');
+  }
+  const data = request.data || {};
+  if (data.website) return { status: 'pending' }; // bot tuzağı: sessizce yut
+
+  const email = normalizeEmail(data.email);
+  const rfq = validateGuestRfqFields(data.rfq);
+
+  const ipKey = `rfq_ip_${sha256Hex(callerIp(request)).slice(0, 24)}`;
+  const emailKey = `rfq_email_${sha256Hex(email).slice(0, 24)}`;
+  if (!(await consumeDailyLimit(ipKey, GUEST_RFQ_LIMIT_PER_IP)) || !(await consumeDailyLimit(emailKey, GUEST_RFQ_LIMIT_PER_EMAIL))) {
+    throw new HttpsError('resource-exhausted', 'Too many requests today. Please try again tomorrow.');
+  }
+
+  const categorySnap = await db.collection('categories').doc(rfq.categoryId).get();
+  if (!categorySnap.exists) throw new HttpsError('invalid-argument', 'Please select a category.');
+
+  // Mevcut hesabı bul ya da şifresiz yeni üye aç
+  let uid;
+  let isNewAccount = false;
+  try {
+    const existing = await admin.auth().getUserByEmail(email);
+    if (existing.disabled) throw new HttpsError('permission-denied', 'This account cannot post requests. Please contact support.');
+    uid = existing.uid;
+  } catch (err) {
+    if (err instanceof HttpsError) throw err;
+    if (err.code !== 'auth/user-not-found') throw err;
+    const created = await admin.auth().createUser({ email, emailVerified: false });
+    uid = created.uid;
+    isNewAccount = true;
+  }
+
+  const now = Timestamp.now();
+  const userRef = db.collection('users').doc(uid);
+  if (isNewAccount) {
+    await userRef.set({
+      email,
+      displayName: '', // "Buyer" gösterilir; e-postadan türetilen ad sızmasın
+      companyName: '',
+      role: ROLES.MEMBER,
+      companyType: 'trade',
+      firstName: '',
+      lastName: '',
+      phone: '',
+      position: '',
+      companyCategory: null,
+      companyWebsite: null,
+      linkedinProfile: null,
+      country: '',
+      companyLogo: null,
+      authProvider: 'emailLink',
+      profileComplete: false,
+      emailVerified: false,
+      adminApproved: false,
+      isSuspended: false,
+      source: 'guest_rfq',
+      createdAt: now,
+      updatedAt: now,
+    });
+  } else {
+    const userSnap = await userRef.get();
+    const u = userSnap.data() || {};
+    if (u.isDeleted || u.isSuspended) {
+      throw new HttpsError('permission-denied', 'This account cannot post requests. Please contact support.');
+    }
+  }
+
+  const rfqRef = await db.collection('requests').add({
+    ...rfq,
+    userId: uid,
+    status: 'pending_verification',
+    source: 'guest',
+    submittedAt: now,
+    createdAt: now,
+    updatedAt: now,
+  });
+  await userRef.set({
+    requestIds: FieldValue.arrayUnion(rfqRef.id),
+    ...(isNewAccount && { pendingGuestRfqId: rfqRef.id }),
+  }, { merge: true });
+
+  const sent = await sendGuestRfqConfirmEmail(email, rfqRef.id, rfq.productName, { landingOrigin: landingOriginFor(request) });
+  if (!sent) {
+    throw new HttpsError('internal', 'We could not send the confirmation email. Please try again in a few minutes.');
+  }
+  console.log(`createGuestRFQ: ${rfqRef.id} pending for ${uid} (newAccount=${isNewAccount})`);
+  return { status: 'pending' };
+});
+
+/**
+ * publishGuestRFQ — onCall, signed in. Called by /email-link right after
+ * the visitor signs in with the confirmation link.
+ *
+ * @param {Object} data - { requestId }
+ * @returns {Promise<{ status: 'active' }>}
+ */
+exports.publishGuestRFQ = onCall(async (request) => {
+  if (!request.auth) throw new HttpsError('unauthenticated', 'Please sign in first.');
+  const { requestId } = request.data || {};
+  if (!requestId || typeof requestId !== 'string' || requestId.includes('/')) {
+    throw new HttpsError('invalid-argument', 'requestId is required.');
+  }
+
+  const ref = db.collection('requests').doc(requestId);
+  const snap = await ref.get();
+  if (!snap.exists) throw new HttpsError('not-found', 'This request no longer exists. Please post it again.');
+  const rfq = snap.data();
+  if (rfq.userId !== request.auth.uid) throw new HttpsError('permission-denied', 'This request belongs to another account.');
+  if (rfq.status === 'active') return { status: 'active' };
+  if (rfq.status !== 'pending_verification') throw new HttpsError('failed-precondition', 'This request cannot be published.');
+
+  const now = Timestamp.now();
+  // createdAt yayın anına çekiliyor ki listelerde yeni RFQ olarak en üstte görünsün
+  await ref.update({ status: 'active', publishedAt: now, createdAt: now, updatedAt: now });
+
+  const uid = request.auth.uid;
+  try {
+    await admin.auth().updateUser(uid, { emailVerified: true });
+    await db.collection('users').doc(uid).update({
+      emailVerified: true,
+      pendingGuestRfqId: FieldValue.delete(),
+      updatedAt: now,
+    });
+  } catch (err) {
+    console.warn(`publishGuestRFQ: could not mark ${uid} verified:`, err.message);
+  }
+  console.log(`publishGuestRFQ: ${requestId} is live`);
+  return { status: 'active' };
+});
+
+/**
+ * sendSignInLink — onCall, no auth. "Email me a sign-in link" on /login,
+ * for accounts without a password (guest RFQ accounts) or anyone who
+ * prefers it. Always answers ok so it can't be used to probe which emails
+ * have accounts.
+ *
+ * @param {Object} data - { email, next }  next: same-site path to open after sign-in
+ */
+exports.sendSignInLink = onCall(async (request) => {
+  const email = normalizeEmail(request.data?.email);
+  const rawNext = typeof request.data?.next === 'string' ? request.data.next : '/';
+  const next = rawNext.startsWith('/') && !rawNext.startsWith('//') ? rawNext.slice(0, 300) : '/';
+
+  const ipOk = await consumeDailyLimit(`link_ip_${sha256Hex(callerIp(request)).slice(0, 24)}`, SIGN_IN_LINK_LIMIT_PER_IP);
+  const emailOk = await consumeDailyLimit(`link_email_${sha256Hex(email).slice(0, 24)}`, SIGN_IN_LINK_LIMIT_PER_EMAIL);
+  if (!ipOk || !emailOk) {
+    throw new HttpsError('resource-exhausted', 'Too many requests today. Please try again tomorrow.');
+  }
+
+  try {
+    const user = await admin.auth().getUserByEmail(email);
+    const userDoc = (await db.collection('users').doc(user.uid).get()).data() || {};
+    if (user.disabled || userDoc.isDeleted || userDoc.isSuspended) return { ok: true };
+    const link = await buildMagicLink(email, {
+      landingPath: `/email-link?next=${encodeURIComponent(next)}`,
+      landingOrigin: landingOriginFor(request),
+    });
+    await sendEmail({
+      to: email,
+      subject: 'Your CoreTradeGlobal sign-in link',
+      html: buildBrandedEmailHtml(
+        '<p style="margin:0 0 16px 0;">Click the button below to sign in to CoreTradeGlobal. The link works once.</p>',
+        'Sign in',
+        link,
+        'If you did not ask for this link, you can ignore this email.'
+      ),
+      tag: `sendSignInLink (${user.uid})`,
+    });
+  } catch (err) {
+    if (err.code !== 'auth/user-not-found') console.error('sendSignInLink failed:', err);
+  }
+  return { ok: true };
+});
+
+/**
+ * sweepPendingGuestRFQs — daily 10:00 Turkey time.
+ * Unconfirmed guest RFQs get one reminder after 24 h (with a fresh link)
+ * and are deleted after 7 days. If the account was created just for that
+ * RFQ and never signed in, the account goes too.
+ */
+exports.sweepPendingGuestRFQs = onSchedule(
+  { schedule: 'every day 10:00', timeZone: 'Europe/Istanbul', timeoutSeconds: 300 },
   async () => {
-    const dateKey = todayUtcDateString();
-    const budgetRef = db.collection('rfqEmailDailyBudget').doc(dateKey);
-    const budgetSnap = await budgetRef.get();
-    const budget = budgetSnap.exists ? budgetSnap.data() : { date: dateKey, sent: 0, limit: RFQ_EMAIL_DAILY_LIMIT };
-    if (!budgetSnap.exists) {
-      await budgetRef.set({ ...budget, updatedAt: Timestamp.now() });
-    }
+    const snap = await db.collection('requests').where('status', '==', 'pending_verification').get();
+    const nowMs = Date.now();
+    let reminded = 0;
+    let removed = 0;
 
-    const limit = Number(budget.limit || RFQ_EMAIL_DAILY_LIMIT);
-    const alreadySent = Number(budget.sent || 0);
-    const remaining = limit - alreadySent;
-    if (remaining <= 0) {
-      console.log(`processRfqEmailQueue: daily budget exhausted (${alreadySent}/${limit}) — skip.`);
-      return null;
-    }
-
-    const batchLimit = Math.min(RFQ_QUEUE_PER_RUN_CAP, remaining);
-    const pendingSnap = await db.collection('rfqEmailQueue')
-      .where('status', '==', 'pending')
-      .orderBy('createdAt', 'asc')
-      .limit(batchLimit)
-      .get();
-
-    if (pendingSnap.empty) {
-      console.log('processRfqEmailQueue: queue empty.');
-      return null;
-    }
-
-    const inactiveCutoffMs = Date.now() - RFQ_INACTIVE_WINDOW_DAYS * 24 * 60 * 60 * 1000;
-    let sent = 0;
-    let skipped = 0;
-    let failed = 0;
-
-    for (const doc of pendingSnap.docs) {
-      const row = doc.data();
-      const { rfqId, recipientId, recipientEmail, productName } = row;
-      const now = Timestamp.now();
-
+    for (const doc of snap.docs) {
+      const rfq = doc.data();
+      const submittedMs = (rfq.submittedAt || rfq.createdAt)?.toDate?.().getTime?.() || nowMs;
+      const ageMs = nowMs - submittedMs;
       try {
-        // ── Re-verify RFQ is still around and not closed ──────────────
-        const rfqDoc = await db.collection('requests').doc(rfqId).get();
-        if (!rfqDoc.exists) {
-          await doc.ref.update({ status: 'skipped', skipReason: 'rfq_missing', updatedAt: now });
-          skipped++;
-          continue;
-        }
-        const rfqData = rfqDoc.data();
-        if (rfqData.status === 'closed' || rfqData.status === 'expired' || rfqData.status === 'deleted') {
-          await doc.ref.update({ status: 'skipped', skipReason: `rfq_${rfqData.status}`, updatedAt: now });
-          skipped++;
-          continue;
-        }
+        const userRef = db.collection('users').doc(rfq.userId);
+        const user = (await userRef.get()).data() || null;
 
-        // ── Re-verify user still inactive + email pref still on ───────
-        const userDoc = await db.collection('users').doc(recipientId).get();
-        if (!userDoc.exists) {
-          await doc.ref.update({ status: 'skipped', skipReason: 'user_missing', updatedAt: now });
-          skipped++;
-          continue;
-        }
-        const userData = userDoc.data();
-
-        if (userData.preferences?.providers?.email === false) {
-          await doc.ref.update({ status: 'skipped', skipReason: 'email_opted_out', updatedAt: now });
-          skipped++;
+        if (ageMs >= GUEST_RFQ_EXPIRE_MS) {
+          await doc.ref.delete();
+          removed++;
+          const remaining = (user?.requestIds || []).filter((id) => id !== doc.id);
+          const throwaway = user && user.source === 'guest_rfq' && !user.emailVerified && remaining.length === 0;
+          if (throwaway) {
+            await userRef.delete();
+            await admin.auth().deleteUser(rfq.userId).catch((err) => console.warn(`sweepPendingGuestRFQs: auth delete failed for ${rfq.userId}:`, err.message));
+          } else if (user) {
+            await userRef.update({ requestIds: FieldValue.arrayRemove(doc.id), pendingGuestRfqId: FieldValue.delete() });
+          }
           continue;
         }
 
-        const lastLoginAt = userData.lastLoginAt?.toDate?.()
-          || (userData.lastLoginAt ? new Date(userData.lastLoginAt) : null);
-        if (!lastLoginAt || lastLoginAt.getTime() >= inactiveCutoffMs) {
-          await doc.ref.update({ status: 'skipped', skipReason: 'user_became_active', updatedAt: now });
-          skipped++;
-          continue;
-        }
-
-        // ── Send ──────────────────────────────────────────────────────
-        const notifTitle = 'New RFQ Available';
-        const notifBody = `A new request for quotation has been posted for ${productName}. We noticed you haven't stopped by lately — come see the latest deals.`;
-        const rfqUrl = `${APP_URL}/request/${rfqId}`;
-        const htmlBody = buildBrandedEmailHtml(
-          `<p style="margin:0 0 16px 0;">${notifBody}</p>`,
-          'View RFQ',
-          rfqUrl,
-        );
-
-        await sendDealEmail(recipientEmail, notifTitle, htmlBody);
-
-        await doc.ref.update({
-          status: 'sent',
-          sentAt: now,
-          updatedAt: now,
-        });
-        sent++;
-
-        // Small spacing between sends so the hour doesn't spike Resend.
-        if (sent < batchLimit) {
-          await new Promise((r) => setTimeout(r, RFQ_QUEUE_SEND_SPACING_MS));
+        if (ageMs >= GUEST_RFQ_REMINDER_MS && !rfq.reminderSentAt && user?.email) {
+          const ok = await sendGuestRfqConfirmEmail(user.email, doc.id, rfq.productName, { reminder: true });
+          if (ok) {
+            await doc.ref.update({ reminderSentAt: Timestamp.now() });
+            reminded++;
+          }
         }
       } catch (err) {
-        const attempts = Number(row.attempts || 0) + 1;
-        const isTerminal = attempts >= RFQ_QUEUE_MAX_ATTEMPTS;
-        console.error(`processRfqEmailQueue: send failed for ${doc.id} (attempt ${attempts}):`, err);
-        await doc.ref.update({
-          status: isTerminal ? 'failed' : 'pending',
-          attempts,
-          failReason: err?.message || 'send_failed',
-          updatedAt: now,
-        });
-        if (isTerminal) failed++;
+        console.error(`sweepPendingGuestRFQs: failed for ${doc.id}:`, err);
       }
     }
-
-    if (sent > 0) {
-      await budgetRef.set({
-        date: dateKey,
-        sent: alreadySent + sent,
-        limit,
-        updatedAt: Timestamp.now(),
-      });
-    }
-
-    console.log(
-      `processRfqEmailQueue: sent=${sent} skipped=${skipped} failed=${failed} budget=${alreadySent + sent}/${limit}`,
-    );
+    console.log(`sweepPendingGuestRFQs: pending=${snap.size} reminded=${reminded} removed=${removed}`);
     return null;
-  },
+  }
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -6575,6 +6528,7 @@ exports.bulkUploadProducts = onCall(
           userId,
           createdByAdmin: true,
           status: 'active',
+          viewCount: 0,
           createdAt: now,
           updatedAt: now,
         });
@@ -6734,6 +6688,7 @@ exports.expireAds = onSchedule(
       const nowMs = Date.now();
       const batch = db.batch();
       let updatedCount = 0;
+      const justExpired = [];
 
       adsSnap.forEach((doc) => {
         const data = doc.data();
@@ -6753,6 +6708,7 @@ exports.expireAds = onSchedule(
           console.log(`expireAds: "${data.badgeText || doc.id}" ${data.status} → ${correctStatus}`);
           batch.update(doc.ref, { status: correctStatus, updatedAt: Timestamp.now() });
           updatedCount++;
+          if (correctStatus === 'expired' && !data.finalReportSentAt) justExpired.push(doc.id);
         }
       });
 
@@ -6762,6 +6718,15 @@ exports.expireAds = onSchedule(
       } else {
         console.log('expireAds: all ad statuses correct.');
       }
+
+      // Kampanyası yeni biten reklamlara final rapor (hata expireAds'i düşürmesin)
+      for (const adId of justExpired) {
+        try {
+          await sendAdFinalReport(adId);
+        } catch (err) {
+          console.error(`expireAds: final report failed for ${adId}:`, err);
+        }
+      }
     } catch (err) {
       console.error('expireAds: unexpected error:', err);
       throw err;
@@ -6770,130 +6735,144 @@ exports.expireAds = onSchedule(
 );
 
 /**
- * Ad tracking helper: cheap in-Firestore rate-limit so a refresh spam or
- * a bot in a tight loop can't inflate counters.
- *
- * Uses a synthetic doc id from (adId, kind, clientHash). If the doc's
- * lastAt is within the cooldown window, we skip the increment. Otherwise
- * upsert and count. clientHash is a truncated SHA-1 of ip+userAgent so
- * we don't persist raw PII.
- *
- * @param {string} adId
- * @param {'impression'|'click'} kind
- * @param {string} clientHash
- * @param {number} cooldownMs
- * @returns {Promise<boolean>} true if the event should be counted
+ * ISO week key ("2026-W42") in Turkey time (UTC+3, no DST). Weeks run
+ * Monday 00:00 to Sunday 23:59 local time.
  */
-async function shouldCountAdEvent(adId, kind, clientHash, cooldownMs) {
-  const key = `${adId}_${kind}_${clientHash}`;
-  const ref = db.collection('adTracking').doc(key);
-  const nowMs = Date.now();
+function isoWeekKey(date) {
+  const d = new Date(date.getTime() + 3 * 60 * 60 * 1000);
+  const day = (d.getUTCDay() + 6) % 7; // Monday = 0
+  d.setUTCHours(0, 0, 0, 0);
+  d.setUTCDate(d.getUTCDate() - day + 3); // Thursday of this week decides the year
+  const year = d.getUTCFullYear();
+  const firstThursday = new Date(Date.UTC(year, 0, 4));
+  firstThursday.setUTCDate(firstThursday.getUTCDate() - ((firstThursday.getUTCDay() + 6) % 7) + 3);
+  const week = 1 + Math.round((d - firstThursday) / (7 * 24 * 60 * 60 * 1000));
+  return `${year}-W${String(week).padStart(2, '0')}`;
+}
 
+/**
+ * trackProductView — onCall
+ *
+ * Client fires this once per browser session when a product detail page
+ * opens. Increments products/{id}.viewCount (all time) and
+ * weekViewCount for the current week (weekViewKey); a new week starts the
+ * weekly count again at 1, so no reset job is needed. firestore.rules keep
+ * owners from writing these fields. The owner's own visits are not counted.
+ * Returns the all-time count including this view.
+ *
+ * @param {Object} data - { productId }
+ * @returns {Promise<{ counted: boolean, viewCount: number }>}
+ */
+exports.trackProductView = onCall(async (request) => {
+  const { productId } = request.data || {};
+  if (!productId || typeof productId !== 'string' || productId.length > 128 || productId.includes('/')) {
+    throw new HttpsError('invalid-argument', 'productId is required.');
+  }
+
+  const ref = db.collection('products').doc(productId);
+  const weekKey = isoWeekKey(new Date());
   try {
     return await db.runTransaction(async (t) => {
       const snap = await t.get(ref);
-      if (snap.exists) {
-        const last = snap.data().lastAt?.toDate?.().getTime?.() ?? 0;
-        if (nowMs - last < cooldownMs) return false;
-        t.update(ref, { lastAt: Timestamp.now(), hits: FieldValue.increment(1) });
-      } else {
-        t.set(ref, {
-          adId,
-          kind,
-          clientHash,
-          lastAt: Timestamp.now(),
-          firstAt: Timestamp.now(),
-          hits: 1,
-        });
+      if (!snap.exists) return { counted: false, viewCount: 0 };
+      const data = snap.data();
+      const current = Number(data.viewCount) || 0;
+      if (request.auth?.uid && request.auth.uid === data.userId) {
+        return { counted: false, viewCount: current };
       }
-      return true;
+      // updatedAt'e dokunmuyoruz: görüntülenme ürünün "son güncelleme" tarihini değiştirmemeli
+      t.update(ref, {
+        viewCount: FieldValue.increment(1),
+        weekViewKey: weekKey,
+        weekViewCount: data.weekViewKey === weekKey ? FieldValue.increment(1) : 1,
+      });
+      return { counted: true, viewCount: current + 1 };
     });
   } catch (err) {
-    console.warn('shouldCountAdEvent: tx failed, allowing event:', err.message);
+    console.warn(`trackProductView: could not count ${productId}:`, err.message);
+    return { counted: false, viewCount: null };
+  }
+});
+
+// Reklamın gösterildiği alanlar; bilinmeyen değer 'other' olarak sayılır
+const AD_SLOTS = ['hero_product', 'hero_company', 'showcase', 'products_list'];
+
+/** "2026-10-12" in Turkey time (UTC+3, no DST). */
+function trDateKey(date) {
+  return new Date(date.getTime() + 3 * 60 * 60 * 1000).toISOString().slice(0, 10);
+}
+
+/**
+ * Count one ad impression or click. No cooldown on purpose: every render
+ * and every refresh counts. Bumps the all-time counter on ads/{adId} and
+ * the per-day, per-slot counters in ads/{adId}/dailyStats/{YYYY-MM-DD}
+ * (Turkey date) in one batch, so both move together.
+ *
+ * @returns {Promise<boolean>} false when the ad no longer exists
+ */
+async function recordAdEvent(adId, kind, slot) {
+  const field = kind === 'click' ? 'clicks' : 'impressions';
+  const safeSlot = AD_SLOTS.includes(slot) ? slot : 'other';
+  const now = Timestamp.now();
+  const day = trDateKey(new Date());
+  const adRef = db.collection('ads').doc(adId);
+
+  const batch = db.batch();
+  batch.update(adRef, {
+    [field]: FieldValue.increment(1),
+    [kind === 'click' ? 'lastClickAt' : 'lastImpressionAt']: now,
+  });
+  batch.set(adRef.collection('dailyStats').doc(day), {
+    date: day,
+    [field]: FieldValue.increment(1),
+    slots: { [safeSlot]: { [field]: FieldValue.increment(1) } },
+    updatedAt: now,
+  }, { merge: true });
+
+  try {
+    await batch.commit();
     return true;
+  } catch (err) {
+    // Ad may have been deleted between render and the event.
+    console.warn(`recordAdEvent: could not count ${kind} for ${adId}:`, err.message);
+    return false;
   }
 }
 
-function hashClient(ip, userAgent) {
-  const crypto = require('crypto');
-  const raw = `${ip || 'noip'}|${userAgent || 'noua'}`;
-  return crypto.createHash('sha1').update(raw).digest('hex').slice(0, 16);
+function validateAdEventInput(data) {
+  const { adId, slot } = data || {};
+  if (!adId || typeof adId !== 'string' || adId.length > 128 || adId.includes('/')) {
+    throw new HttpsError('invalid-argument', 'adId is required.');
+  }
+  return { adId, slot: typeof slot === 'string' ? slot : null };
 }
 
 /**
  * trackAdImpression — onCall
  *
- * Client fires this once when the ad actually enters the viewport (the
- * hook is responsible for the IntersectionObserver). Per-client cooldown
- * = 30 minutes so refresh spam / tab restore doesn't over-count.
+ * Client fires this when the ad enters the viewport (useTrackAd's
+ * IntersectionObserver), once per mount. A page refresh counts again.
  *
- * @param {Object} data - { adId }
+ * @param {Object} data - { adId, slot }
  * @returns {Promise<{ counted: boolean }>}
  */
 exports.trackAdImpression = onCall(async (request) => {
-  const { adId } = request.data || {};
-  if (!adId || typeof adId !== 'string') {
-    throw new HttpsError('invalid-argument', 'adId is required.');
-  }
-
-  const ip = request.rawRequest?.ip || request.rawRequest?.headers?.['x-forwarded-for'] || '';
-  const ua = request.rawRequest?.headers?.['user-agent'] || '';
-  const clientHash = hashClient(String(ip).split(',')[0].trim(), ua);
-
-  const IMPRESSION_COOLDOWN_MS = 30 * 60 * 1000;
-  const counted = await shouldCountAdEvent(adId, 'impression', clientHash, IMPRESSION_COOLDOWN_MS);
-  if (!counted) return { counted: false };
-
-  try {
-    await db.collection('ads').doc(adId).update({
-      impressions: FieldValue.increment(1),
-      lastImpressionAt: Timestamp.now(),
-    });
-  } catch (err) {
-    // Ad may have been deleted between snapshot render and impression fire.
-    console.warn(`trackAdImpression: could not increment ${adId}:`, err.message);
-    return { counted: false };
-  }
-  return { counted: true };
+  const { adId, slot } = validateAdEventInput(request.data);
+  return { counted: await recordAdEvent(adId, 'impression', slot) };
 });
 
 /**
  * trackAdClick — onCall
  *
- * Client fires this when the user actually clicks/taps the ad. Cooldown
- * is shorter (5 min) since a genuine repeat click is more meaningful
- * than a repeat impression, but we still don't want tap spam.
+ * Client fires this when the ad is tapped. Every tap counts.
  *
- * @param {Object} data - { adId }
+ * @param {Object} data - { adId, slot }
  * @returns {Promise<{ counted: boolean }>}
  */
 exports.trackAdClick = onCall(async (request) => {
-  const { adId } = request.data || {};
-  if (!adId || typeof adId !== 'string') {
-    throw new HttpsError('invalid-argument', 'adId is required.');
-  }
-
-  const ip = request.rawRequest?.ip || request.rawRequest?.headers?.['x-forwarded-for'] || '';
-  const ua = request.rawRequest?.headers?.['user-agent'] || '';
-  const clientHash = hashClient(String(ip).split(',')[0].trim(), ua);
-
-  const CLICK_COOLDOWN_MS = 5 * 60 * 1000;
-  const counted = await shouldCountAdEvent(adId, 'click', clientHash, CLICK_COOLDOWN_MS);
-  if (!counted) return { counted: false };
-
-  try {
-    await db.collection('ads').doc(adId).update({
-      clicks: FieldValue.increment(1),
-      lastClickAt: Timestamp.now(),
-    });
-  } catch (err) {
-    console.warn(`trackAdClick: could not increment ${adId}:`, err.message);
-    return { counted: false };
-  }
-  return { counted: true };
+  const { adId, slot } = validateAdEventInput(request.data);
+  return { counted: await recordAdEvent(adId, 'click', slot) };
 });
-
-
 
 // ─────────────────────────────────────────────────────────────────────────────
 // HubSpot CRM sync (Bölüm 5 + 13, automatic tier)
@@ -7527,7 +7506,7 @@ exports.updateReportStatus = onCall(async (request) => {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Workflow Email Automations (WF1..WF6) — HubSpot-style journeys
-// Powered entirely by Firestore triggers + scheduled crons + Resend.
+// Powered entirely by Firestore triggers + scheduled crons + ZeptoMail.
 // ─────────────────────────────────────────────────────────────────────────────
 //
 // Templates live in functions/emailWorkflow/templates.js. The dispatcher in
@@ -7561,6 +7540,8 @@ exports.wfSendEmailVerification = onDocumentCreated('users/{uid}', async (event)
     if (!data?.email) return;
     if (data.emailVerified) return; // already verified via OAuth path
     if (data.isSuspended) return;
+    // Misafir RFQ hesabı kendi "Publish my RFQ" onay mailini alıyor
+    if (data.source === 'guest_rfq') return;
 
     // Auto-verify server-side. The account owner already proved they
     // own the address by receiving our magic-link welcome — a separate
@@ -7610,7 +7591,7 @@ exports.wfHourlyEmailSweep = onSchedule(
 
     // Windows — [minAge, maxAge] in ms since createdAt / lastLoginAt.
     const WINDOWS = {
-      wf2_2: { field: 'createdAt', min: 24 * 60 * 60 * 1000, max: 72 * 60 * 60 * 1000, predicate: (u) => u.email && !u.emailVerified },
+      wf2_2: { field: 'createdAt', min: 24 * 60 * 60 * 1000, max: 72 * 60 * 60 * 1000, predicate: (u) => u.email && !u.emailVerified && u.source !== 'guest_rfq' },
       wf3_1: { field: 'createdAt', min: 24 * 60 * 60 * 1000, max: 48 * 60 * 60 * 1000, predicate: (u) => u.email && (u.productIds || []).length === 0 },
       wf3_2: { field: 'createdAt', min: 96 * 60 * 60 * 1000, max: 120 * 60 * 60 * 1000, predicate: (u) => u.email && (u.productIds || []).length === 0 },
       wf4_1: { field: 'createdAt', min: 48 * 60 * 60 * 1000, max: 96 * 60 * 60 * 1000, predicate: profileIncomplete },
@@ -7791,3 +7772,425 @@ exports.wfFormAbandonmentSweep = onSchedule(
     return null;
   },
 );
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Weekly product view report
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Mailde tek tek listelenen ürün sayısı; kalanlar sadece toplamlara girer
+const WEEKLY_VIEWS_TOP_N = 5;
+
+function escapeEmailText(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function formatCount(n) {
+  return Number(n || 0).toLocaleString('en-US');
+}
+
+/** "Oct 5 – Oct 11" for the Monday–Sunday week that ended before `now` (Turkey time). */
+function lastWeekRangeLabel(now) {
+  const DAY = 24 * 60 * 60 * 1000;
+  const local = new Date(now.getTime() + 3 * 60 * 60 * 1000);
+  const day = (local.getUTCDay() + 6) % 7;
+  const thisMonday = new Date(Date.UTC(local.getUTCFullYear(), local.getUTCMonth(), local.getUTCDate() - day));
+  const lastMonday = new Date(thisMonday.getTime() - 7 * DAY);
+  const lastSunday = new Date(thisMonday.getTime() - DAY);
+  const fmt = (d) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+  return `${fmt(lastMonday)} – ${fmt(lastSunday)}`;
+}
+
+function buildWeeklyViewsEmailBody({ rangeLabel, top, weeklyTotal, allTimeTotal }) {
+  const cell = 'padding:10px 0;border-bottom:1px solid #1E3A5F;font-size:14px;font-family:Arial,sans-serif;';
+  const rows = top
+    .map((p) => `<tr>
+        <td style="${cell}color:#FFFFFF;">${escapeEmailText(p.name)}</td>
+        <td style="${cell}color:#FFD700;text-align:right;white-space:nowrap;font-weight:bold;">${formatCount(p.weekly)} ${p.weekly === 1 ? 'view' : 'views'}</td>
+      </tr>`)
+    .join('');
+
+  return `<p style="margin:0 0 8px 0;">Here is how many times your products were viewed last week (${rangeLabel}).</p>
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:16px 0;">
+      ${rows}
+      <tr>
+        <td style="padding:12px 0 0 0;font-size:14px;font-family:Arial,sans-serif;color:#FFFFFF;font-weight:bold;">Last week, all products</td>
+        <td style="padding:12px 0 0 0;font-size:14px;font-family:Arial,sans-serif;color:#FFFFFF;font-weight:bold;text-align:right;white-space:nowrap;">${formatCount(weeklyTotal)} ${weeklyTotal === 1 ? 'view' : 'views'}</td>
+      </tr>
+      <tr>
+        <td style="padding:6px 0 0 0;font-size:14px;font-family:Arial,sans-serif;color:#FFFFFF;font-weight:bold;">All time, all products</td>
+        <td style="padding:6px 0 0 0;font-size:14px;font-family:Arial,sans-serif;color:#FFFFFF;font-weight:bold;text-align:right;white-space:nowrap;">${formatCount(allTimeTotal)} ${allTimeTotal === 1 ? 'view' : 'views'}</td>
+      </tr>
+    </table>`;
+}
+
+/**
+ * sendWeeklyProductViewReport — every Monday 09:00 Turkey time.
+ *
+ * For every user who owns at least one product: one in-app notification,
+ * a push (unless preferences.insights.push is false) and (unless
+ * preferences.insights.email is false) one email listing the
+ * top WEEKLY_VIEWS_TOP_N products by last week's views, last week's total
+ * and the all-time total across all of the user's products. Sent even when last week had zero views.
+ *
+ * Idempotent per user and week: the notification doc id is
+ * weekly-views-<weekKey>; if it exists the user is skipped, so a manual
+ * re-run never double-sends.
+ */
+exports.sendWeeklyProductViewReport = onSchedule(
+  {
+    schedule: 'every monday 09:00',
+    timeZone: 'Europe/Istanbul',
+    timeoutSeconds: 540,
+    memory: '512MiB',
+  },
+  async () => {
+    const now = new Date();
+    const weekKey = isoWeekKey(new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000));
+    const rangeLabel = lastWeekRangeLabel(now);
+
+    const productsSnap = await db
+      .collection('products')
+      .select('userId', 'name', 'viewCount', 'weekViewKey', 'weekViewCount')
+      .get();
+
+    const byOwner = new Map();
+    for (const doc of productsSnap.docs) {
+      const p = doc.data();
+      if (!p.userId) continue;
+      if (!byOwner.has(p.userId)) byOwner.set(p.userId, []);
+      byOwner.get(p.userId).push({
+        name: p.name || 'Untitled product',
+        weekly: p.weekViewKey === weekKey ? Number(p.weekViewCount) || 0 : 0,
+        allTime: Number(p.viewCount) || 0,
+      });
+    }
+
+    let notified = 0;
+    let emailed = 0;
+    let skipped = 0;
+
+    const processOwner = async (uid, products) => {
+      const notifRef = db.collection('users').doc(uid).collection('notifications').doc(`weekly-views-${weekKey}`);
+      const [userSnap, existing] = await Promise.all([db.collection('users').doc(uid).get(), notifRef.get()]);
+      if (!userSnap.exists || existing.exists) {
+        skipped++;
+        return;
+      }
+      const user = userSnap.data();
+      if (user.isDeleted) {
+        skipped++;
+        return;
+      }
+
+      products.sort((a, b) => b.weekly - a.weekly || a.name.localeCompare(b.name));
+      const top = products.slice(0, WEEKLY_VIEWS_TOP_N);
+      const weeklyTotal = products.reduce((sum, p) => sum + p.weekly, 0);
+      const allTimeTotal = products.reduce((sum, p) => sum + p.allTime, 0);
+      const link = `/profile/${uid}?tab=products`;
+
+      await notifRef.set({
+        type: 'product_views_weekly',
+        title: 'Your weekly product views',
+        body: `Your products were viewed ${formatCount(weeklyTotal)} ${weeklyTotal === 1 ? 'time' : 'times'} last week (${rangeLabel}). All-time total: ${formatCount(allTimeTotal)} views.`,
+        isRead: false,
+        createdAt: Timestamp.now(),
+        link,
+        data: { weekKey, weeklyTotal, allTimeTotal },
+      });
+      notified++;
+
+      if (user.preferences?.insights?.push !== false) {
+        await sendFCMPushToUser(uid, user, {
+          type: 'product_views_weekly',
+          title: 'Your weekly product views',
+          body: `Your products were viewed ${formatCount(weeklyTotal)} ${weeklyTotal === 1 ? 'time' : 'times'} last week.`,
+          link,
+        }).catch((err) => console.warn(`sendWeeklyProductViewReport: push failed for ${uid}:`, err.message));
+      }
+
+      const emailEnabled = user.preferences?.insights?.email !== false;
+      if (user.email && emailEnabled) {
+        const html = buildBrandedEmailHtml(
+          buildWeeklyViewsEmailBody({ rangeLabel, top, weeklyTotal, allTimeTotal }),
+          'View all products',
+          `${APP_URL}${link}`
+        );
+        const ok = await sendEmail({
+          to: user.email,
+          subject: `Your products got ${formatCount(weeklyTotal)} ${weeklyTotal === 1 ? 'view' : 'views'} last week`,
+          html,
+          tag: `sendWeeklyProductViewReport (${uid})`,
+        });
+        if (ok) emailed++;
+      }
+    };
+
+    // 5'li gruplar: 540 sn içinde yüzlerce üyeye yetişsin, ZeptoMail'i de boğmasın
+    const owners = [...byOwner.entries()];
+    for (let i = 0; i < owners.length; i += 5) {
+      await Promise.all(
+        owners.slice(i, i + 5).map(([uid, products]) =>
+          processOwner(uid, products).catch((err) => {
+            skipped++;
+            console.error(`sendWeeklyProductViewReport: failed for ${uid}:`, err);
+          })
+        )
+      );
+    }
+
+    console.log(`sendWeeklyProductViewReport ${weekKey}: owners=${owners.length} notified=${notified} emailed=${emailed} skipped=${skipped}`);
+    return null;
+  }
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Sponsored ad reports (weekly + final)
+// ─────────────────────────────────────────────────────────────────────────────
+
+const AD_SLOT_LABELS = {
+  hero_product: 'Homepage hero, product card',
+  hero_company: 'Homepage hero, company card',
+  showcase: 'Sponsored Company showcase',
+  products_list: 'Products directory tile',
+  other: 'Other',
+};
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** "Oct 5" for a "2026-10-05" date key. */
+function formatDateKey(key) {
+  return new Date(`${key}T00:00:00Z`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+}
+
+/** Turkey-time Monday 00:00 of the week containing `date`, as a UTC Date. */
+function trWeekStart(date) {
+  const local = new Date(date.getTime() + 3 * 60 * 60 * 1000);
+  const day = (local.getUTCDay() + 6) % 7;
+  const mondayLocal = Date.UTC(local.getUTCFullYear(), local.getUTCMonth(), local.getUTCDate() - day);
+  return new Date(mondayLocal - 3 * 60 * 60 * 1000);
+}
+
+function formatCtr(impressions, clicks) {
+  if (!impressions) return '0%';
+  const pct = (clicks / impressions) * 100;
+  return `${pct >= 10 ? pct.toFixed(1) : pct.toFixed(2)}%`;
+}
+
+/** Sum dailyStats docs into totals, per-day and per-slot maps. */
+function aggregateAdStats(statDocs) {
+  const totals = { impressions: 0, clicks: 0 };
+  const byDay = new Map();
+  const bySlot = {};
+  for (const d of statDocs) {
+    const impressions = Number(d.impressions) || 0;
+    const clicks = Number(d.clicks) || 0;
+    totals.impressions += impressions;
+    totals.clicks += clicks;
+    byDay.set(d.date, { impressions, clicks });
+    for (const [slot, v] of Object.entries(d.slots || {})) {
+      bySlot[slot] = bySlot[slot] || { impressions: 0, clicks: 0 };
+      bySlot[slot].impressions += Number(v?.impressions) || 0;
+      bySlot[slot].clicks += Number(v?.clicks) || 0;
+    }
+  }
+  return { totals, byDay, bySlot };
+}
+
+async function loadAdDailyStats(adId, fromKey, toKey) {
+  let q = db.collection('ads').doc(adId).collection('dailyStats');
+  if (fromKey) q = q.where('date', '>=', fromKey);
+  if (toKey) q = q.where('date', '<=', toKey);
+  const snap = await q.get();
+  return snap.docs.map((d) => ({ date: d.id, ...d.data() }));
+}
+
+function adStatTiles(impressions, clicks) {
+  const tile = (label, value) => `<td width="33%" style="padding:12px;background-color:#132238;border-radius:6px;text-align:center;font-family:Arial,sans-serif;">
+      <div style="font-size:12px;color:#8899AA;text-transform:uppercase;letter-spacing:1px;">${label}</div>
+      <div style="font-size:22px;color:#FFD700;font-weight:bold;margin-top:4px;">${value}</div>
+    </td>`;
+  return `<table width="100%" cellpadding="0" cellspacing="6" border="0" style="margin:8px 0 16px 0;"><tr>
+      ${tile('Impressions', formatCount(impressions))}
+      ${tile('Clicks', formatCount(clicks))}
+      ${tile('CTR', formatCtr(impressions, clicks))}
+    </tr></table>`;
+}
+
+function adStatTable(title, firstColumn, rows) {
+  const th = 'padding:8px 0;border-bottom:1px solid #1E3A5F;font-size:12px;color:#8899AA;font-family:Arial,sans-serif;text-transform:uppercase;letter-spacing:1px;';
+  const td = 'padding:8px 0;border-bottom:1px solid #1E3A5F;font-size:14px;color:#FFFFFF;font-family:Arial,sans-serif;';
+  const body = rows
+    .map((r) => `<tr>
+        <td style="${td}">${escapeEmailText(r.label)}</td>
+        <td style="${td}text-align:right;">${formatCount(r.impressions)}</td>
+        <td style="${td}text-align:right;">${formatCount(r.clicks)}</td>
+        <td style="${td}text-align:right;">${formatCtr(r.impressions, r.clicks)}</td>
+      </tr>`)
+    .join('');
+  return `<p style="margin:24px 0 4px 0;font-weight:bold;">${title}</p>
+    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+      <tr>
+        <td style="${th}">${firstColumn}</td>
+        <td style="${th}text-align:right;">Impressions</td>
+        <td style="${th}text-align:right;">Clicks</td>
+        <td style="${th}text-align:right;">CTR</td>
+      </tr>
+      ${body}
+    </table>`;
+}
+
+function slotRows(bySlot) {
+  return Object.keys(AD_SLOT_LABELS)
+    .filter((slot) => bySlot[slot])
+    .map((slot) => ({ label: AD_SLOT_LABELS[slot], ...bySlot[slot] }));
+}
+
+async function deliverAdReport({ ad, adId, notifId, notifTitle, notifBody, subject, emailBody, tag }) {
+  const userSnap = await db.collection('users').doc(ad.userId).get();
+  if (!userSnap.exists || userSnap.data().isDeleted) return false;
+  const user = userSnap.data();
+  const notifRef = db.collection('users').doc(ad.userId).collection('notifications').doc(notifId);
+  if ((await notifRef.get()).exists) return false;
+
+  await notifRef.set({
+    type: 'ad_report',
+    title: notifTitle,
+    body: notifBody,
+    isRead: false,
+    createdAt: Timestamp.now(),
+    link: '/my-sponsorships',
+    data: { adId },
+  });
+  // Ücretli hizmetin raporu: tercih kapatılamaz, her zaman hesap mailine gider
+  if (user.email) {
+    await sendEmail({
+      to: user.email,
+      subject,
+      html: buildBrandedEmailHtml(emailBody, 'View full report', `${APP_URL}/my-sponsorships`),
+      tag,
+    });
+  }
+  return true;
+}
+
+/**
+ * sendWeeklyAdReports — every Monday 09:00 Turkey time.
+ *
+ * For every ad that ran last week and is still running this week (ads
+ * that ended last week get the final report from expireAds instead):
+ * in-app notification + email to the ad owner's account email with last
+ * week's impressions, clicks, CTR, a day-by-day table, a per-placement
+ * table and campaign-to-date totals. Idempotent per ad and week.
+ */
+exports.sendWeeklyAdReports = onSchedule(
+  { schedule: 'every monday 09:00', timeZone: 'Europe/Istanbul', timeoutSeconds: 300 },
+  async () => {
+    const now = new Date();
+    const thisWeekStart = trWeekStart(now);
+    const lastWeekStart = new Date(thisWeekStart.getTime() - 7 * DAY_MS);
+    const dayKeys = Array.from({ length: 7 }, (_, i) => trDateKey(new Date(lastWeekStart.getTime() + i * DAY_MS)));
+    const rangeLabel = `${formatDateKey(dayKeys[0])} – ${formatDateKey(dayKeys[6])}`;
+    const weekKey = isoWeekKey(lastWeekStart);
+
+    const adsSnap = await db.collection('ads').get();
+    let sent = 0;
+    for (const doc of adsSnap.docs) {
+      const ad = doc.data();
+      const startMs = ad.startDate?.toDate?.().getTime?.() || 0;
+      const endMs = ad.endDate?.toDate?.().getTime?.() || 0;
+      if (!ad.userId || !startMs || !endMs) continue;
+      if (startMs >= thisWeekStart.getTime()) continue; // henüz başlamadı
+      if (endMs < thisWeekStart.getTime()) continue; // bitti, final rapor gider
+
+      try {
+        const { totals, byDay, bySlot } = aggregateAdStats(await loadAdDailyStats(doc.id, dayKeys[0], dayKeys[6]));
+        const dayRows = dayKeys.map((key) => ({ label: formatDateKey(key), ...(byDay.get(key) || { impressions: 0, clicks: 0 }) }));
+        const campaignImpressions = Number(ad.impressions) || 0;
+        const campaignClicks = Number(ad.clicks) || 0;
+        const since = ad.startDate.toDate().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'Europe/Istanbul' });
+
+        const emailBody = `<p style="margin:0 0 8px 0;">Here is how your sponsored ad performed last week (${rangeLabel}).</p>
+          ${adStatTiles(totals.impressions, totals.clicks)}
+          ${adStatTable('Day by day', 'Day', dayRows)}
+          ${slotRows(bySlot).length ? adStatTable('By placement', 'Placement', slotRows(bySlot)) : ''}
+          <p style="margin:24px 0 0 0;">Campaign to date (since ${since}): <strong>${formatCount(campaignImpressions)}</strong> impressions, <strong>${formatCount(campaignClicks)}</strong> clicks, CTR <strong>${formatCtr(campaignImpressions, campaignClicks)}</strong>.</p>`;
+
+        const ok = await deliverAdReport({
+          ad,
+          adId: doc.id,
+          notifId: `ad-weekly-${doc.id}-${weekKey}`,
+          notifTitle: 'Your weekly ad report',
+          notifBody: `Last week (${rangeLabel}) your ad was seen ${formatCount(totals.impressions)} times and clicked ${formatCount(totals.clicks)} times (CTR ${formatCtr(totals.impressions, totals.clicks)}).`,
+          subject: `Your sponsored ad report: ${rangeLabel}`,
+          emailBody,
+          tag: `sendWeeklyAdReports (${doc.id})`,
+        });
+        if (ok) sent++;
+      } catch (err) {
+        console.error(`sendWeeklyAdReports: failed for ad ${doc.id}:`, err);
+      }
+    }
+    console.log(`sendWeeklyAdReports ${weekKey}: sent=${sent}`);
+    return null;
+  }
+);
+
+/**
+ * Final report for an ad whose campaign just ended. Called by expireAds
+ * when an ad flips to 'expired'. Marks ads/{id}.finalReportSentAt so it
+ * goes out once.
+ */
+async function sendAdFinalReport(adId) {
+  const adRef = db.collection('ads').doc(adId);
+  const ad = (await adRef.get()).data();
+  if (!ad || !ad.userId || ad.finalReportSentAt) return;
+
+  const { byDay, bySlot } = aggregateAdStats(await loadAdDailyStats(adId));
+  const impressions = Number(ad.impressions) || 0;
+  const clicks = Number(ad.clicks) || 0;
+  const fmtFull = (ts) => ts.toDate().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'Europe/Istanbul' });
+  const rangeLabel = `${fmtFull(ad.startDate)} – ${fmtFull(ad.endDate)}`;
+
+  // Haftalık satırlar (Pzt–Paz, Türkiye saati)
+  const weeks = new Map();
+  for (const [key, v] of [...byDay.entries()].sort(([a], [b]) => a.localeCompare(b))) {
+    const wk = isoWeekKey(new Date(`${key}T00:00:00Z`));
+    const w = weeks.get(wk) || { first: key, last: key, impressions: 0, clicks: 0 };
+    w.last = key;
+    w.impressions += v.impressions;
+    w.clicks += v.clicks;
+    weeks.set(wk, w);
+  }
+  const weekRows = [...weeks.values()].map((w) => ({
+    label: w.first === w.last ? formatDateKey(w.first) : `${formatDateKey(w.first)} – ${formatDateKey(w.last)}`,
+    impressions: w.impressions,
+    clicks: w.clicks,
+  }));
+  let bestDay = null;
+  for (const [key, v] of byDay) {
+    if (!bestDay || v.impressions > bestDay.impressions) bestDay = { key, ...v };
+  }
+
+  const emailBody = `<p style="margin:0 0 8px 0;">Your sponsored campaign on CoreTradeGlobal has ended. Here is the full report for ${rangeLabel}.</p>
+    ${adStatTiles(impressions, clicks)}
+    ${weekRows.length ? adStatTable('Week by week', 'Week', weekRows) : ''}
+    ${slotRows(bySlot).length ? adStatTable('By placement', 'Placement', slotRows(bySlot)) : ''}
+    ${bestDay && bestDay.impressions > 0 ? `<p style="margin:24px 0 0 0;">Best day: <strong>${formatDateKey(bestDay.key)}</strong> with ${formatCount(bestDay.impressions)} impressions and ${formatCount(bestDay.clicks)} clicks.</p>` : ''}
+    <p style="margin:16px 0 0 0;">Thank you for advertising with us. Reply to this email or visit the advertising page to book your next campaign.</p>`;
+
+  await deliverAdReport({
+    ad,
+    adId,
+    notifId: `ad-final-${adId}`,
+    notifTitle: 'Your ad campaign has ended',
+    notifBody: `Final report (${rangeLabel}): ${formatCount(impressions)} impressions, ${formatCount(clicks)} clicks, CTR ${formatCtr(impressions, clicks)}.`,
+    subject: `Your sponsored campaign report: ${rangeLabel}`,
+    emailBody,
+    tag: `sendAdFinalReport (${adId})`,
+  });
+  await adRef.update({ finalReportSentAt: Timestamp.now() });
+}

@@ -197,7 +197,7 @@ export function OnboardingPathSection() {
             </div>
           ) : data.byCountry.length === 0 ? (
             <p className="text-xs text-[#606060]">
-              No country has ≥3 members yet — filter suppresses single-user noise.
+              No country has ≥3 members yet. The filter suppresses single-user noise.
             </p>
           ) : (
             <div className="overflow-x-auto -mx-5 px-5">

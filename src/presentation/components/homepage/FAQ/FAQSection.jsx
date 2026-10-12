@@ -45,7 +45,7 @@ const getFaqSections = (onAddProduct) => [
         id: 4,
         question: 'How does the Deal system work?',
         answer: (
-          <>The &ldquo;Deal&rdquo; system is our platform&apos;s smart workflow that provides end-to-end tracking for your international trade transactions. A &ldquo;Deal&rdquo; is initiated as soon as a buyer and seller reach an agreement via an RFQ or direct messaging. Through this unified panel, you can track all foreign trade stages step-by-step — including contract preparation, production tracking, logistics booking, and customs clearance — while deploying integrated logistics and insurance solutions along the way.</>
+          <>The &ldquo;Deal&rdquo; system is our platform&apos;s smart workflow that provides end-to-end tracking for your international trade transactions. A &ldquo;Deal&rdquo; is initiated as soon as a buyer and seller reach an agreement via an RFQ or direct messaging. Through this unified panel, you can track all foreign trade stages step-by-step, including contract preparation, production tracking, logistics booking, and customs clearance, while deploying integrated logistics and insurance solutions along the way.</>
         ),
       },
     ],
@@ -69,7 +69,7 @@ const getFaqSections = (onAddProduct) => [
         id: 6,
         question: 'Which industries and product categories are available?',
         answer: (
-          <>CoreTradeGlobal features a comprehensive sectoral range covering all major arteries of global industry. Dozens of main sectors and thousands of subcategories — including construction and building materials, industrial machinery and equipment, textiles and apparel, food and agriculture, chemicals, and technology components — are actively traded on our platform. <Link href="/categories" className={faqLinkClass}>Browse all categories</Link>.</>
+          <>CoreTradeGlobal features a comprehensive sectoral range covering all major arteries of global industry. Dozens of main sectors and thousands of subcategories, including construction and building materials, industrial machinery and equipment, textiles and apparel, food and agriculture, chemicals, and technology components, are actively traded on our platform. <Link href="/categories" className={faqLinkClass}>Browse all categories</Link>.</>
         ),
       },
     ],

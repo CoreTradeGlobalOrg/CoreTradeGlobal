@@ -109,7 +109,7 @@ export function LiquiditySection() {
         <div>
           <h3 className="text-lg font-semibold text-white">Marketplace Liquidity</h3>
           <p className="text-xs text-[#A0A0A0] mt-0.5">
-            The composite vitals — WAB, response times, supply/demand balance.
+            The composite vitals: WAB, response times, and supply/demand balance.
           </p>
         </div>
         <button

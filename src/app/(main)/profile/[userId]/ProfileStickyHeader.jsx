@@ -1,5 +1,7 @@
 'use client';
 
+import { publicDisplayName, publicCompanyName } from '@/core/utils/publicIdentity';
+
 /**
  * ProfileStickyHeader - Appears when scrolling past the fold on the profile page.
  */
@@ -28,10 +30,10 @@ export function ProfileStickyHeader({ profileUser, isOwnProfile, currentUser, sh
 
             <div className="min-w-0">
               <h1 className="text-xl sm:text-3xl font-bold text-white mb-1 truncate">
-                {profileUser?.displayName || profileUser?.email || 'User'}
+                {publicDisplayName(profileUser)}
               </h1>
               <p className="text-[#A0A0A0] flex items-center gap-2 text-sm sm:text-base flex-wrap">
-                <span className="text-[#FFD700] font-medium truncate">{profileUser?.companyName || 'No company'}</span>
+                <span className="text-[#FFD700] font-medium truncate">{publicCompanyName(profileUser)}</span>
                 {profileUser?.position && <span className="w-1 h-1 rounded-full bg-[#A0A0A0] hidden sm:block"></span>}
                 {profileUser?.position && <span className="hidden sm:inline truncate">{profileUser.position}</span>}
               </p>

@@ -34,6 +34,22 @@ function getRoleBadgeClasses(role) {
 /**
  * UsersTab - filter controls + user list (desktop table + mobile cards).
  */
+// Native select (mobile'da iOS/Android picker korunur) + sağ kenarda tema chevron'u
+function FilterSelect({ value, onChange, className = '', children }) {
+  return (
+    <div className={`relative w-full min-w-0 md:w-auto ${className}`}>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full appearance-none pl-3 pr-9 py-2 bg-[#1a2a3a] border border-[rgba(255,255,255,0.2)] rounded-lg text-white text-sm truncate focus:border-[#FFD700] focus:outline-none cursor-pointer hover:border-[#FFD700]/50 transition-colors"
+      >
+        {children}
+      </select>
+      <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#FFD700]" />
+    </div>
+  );
+}
+
 export function UsersTab({ users = [], onAction, onOpenDialog, actionLoading }) {
   const router = useRouter();
   const { categories } = useCategories();
@@ -141,27 +157,27 @@ export function UsersTab({ users = [], onAction, onOpenDialog, actionLoading }) 
           />
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">🔍</span>
         </div>
-        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0 md:flex-wrap">
-          <select value={filterVerified} onChange={(e) => setFilterVerified(e.target.value)} className="px-3 py-2 bg-[#1a2a3a] border border-[rgba(255,255,255,0.2)] rounded-lg text-white focus:border-[#FFD700] focus:outline-none cursor-pointer text-sm flex-shrink-0 min-w-[100px]">
+        <div className="grid grid-cols-2 gap-2 md:flex md:flex-wrap">
+          <FilterSelect value={filterVerified} onChange={setFilterVerified} className="md:min-w-[140px]">
             <option value="all">All Status</option>
             <option value="verified">Verified</option>
             <option value="unverified">Unverified</option>
-          </select>
-          <select value={filterApproved} onChange={(e) => setFilterApproved(e.target.value)} className="px-3 py-2 bg-[#1a2a3a] border border-[rgba(255,255,255,0.2)] rounded-lg text-white focus:border-[#FFD700] focus:outline-none cursor-pointer text-sm flex-shrink-0 min-w-[110px]">
+          </FilterSelect>
+          <FilterSelect value={filterApproved} onChange={setFilterApproved} className="md:min-w-[150px]">
             <option value="all">All Approval</option>
             <option value="approved">Approved</option>
             <option value="pending">Pending</option>
             <option value="banned">Banned</option>
             <option value="expired">Expired</option>
-          </select>
-          <select value={filterRole} onChange={(e) => setFilterRole(e.target.value)} className="px-3 py-2 bg-[#1a2a3a] border border-[rgba(255,255,255,0.2)] rounded-lg text-white focus:border-[#FFD700] focus:outline-none cursor-pointer text-sm flex-shrink-0 min-w-[130px]">
+          </FilterSelect>
+          <FilterSelect value={filterRole} onChange={setFilterRole} className="col-span-2 md:min-w-[190px]">
             <option value="all">All Roles</option>
             <option value={ROLES.MEMBER}>Members</option>
             <option value={ROLES.LOGISTICS_PROVIDER}>Logistics Providers</option>
             <option value={ROLES.INSURANCE_PROVIDER}>Insurance Providers</option>
             <option value={ROLES.LAWYER}>Lawyers</option>
             <option value={ROLES.ADMIN}>Admins</option>
-          </select>
+          </FilterSelect>
         </div>
       </div>
 
