@@ -136,7 +136,6 @@ export function CategoriesSection() {
         <div className="cat-header">
           <div>
             <h2 className="cat-title">Browse by Category</h2>
-            <p className="text-[#A0A0A0] mt-1 text-sm">Find products by industry.</p>
           </div>
           <Link href="/categories" className="btn-section-action">
             View All Categories →
