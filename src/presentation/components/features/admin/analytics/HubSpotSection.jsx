@@ -111,7 +111,7 @@ export function HubSpotSection() {
         <div>
           <h3 className="text-lg font-semibold text-white">HubSpot CRM</h3>
           <p className="text-xs text-[#A0A0A0] mt-0.5">
-            Contacts, companies, deals — pulled live from HubSpot's Private App API.
+            Contacts, companies, and deals, pulled live from HubSpot's Private App API.
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -142,7 +142,7 @@ export function HubSpotSection() {
           <p className="font-semibold mb-1">HubSpot request failed</p>
           <p>{error}</p>
           <p className="mt-2 text-[11px] text-red-300/70">
-            Check <code>HUBSPOT_ACCESS_TOKEN</code> in the environment — must be a valid Private
+            Check <code>HUBSPOT_ACCESS_TOKEN</code> in the environment. It must be a valid Private
             App token with <code>crm.objects.contacts.read</code>, <code>companies.read</code>,
             and <code>deals.read</code> scopes.
           </p>
@@ -226,7 +226,7 @@ export function HubSpotSection() {
           </div>
         ) : data.lifecycleDistribution.length === 0 ? (
           <p className="text-xs text-[#606060]">
-            No contacts have a lifecycle stage set yet — assign one in HubSpot to populate this
+            No contacts have a lifecycle stage set yet. Assign one in HubSpot to populate this
             chart.
           </p>
         ) : (

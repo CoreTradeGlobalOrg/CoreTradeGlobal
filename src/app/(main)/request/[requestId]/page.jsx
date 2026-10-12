@@ -77,8 +77,8 @@ export async function generateMetadata({ params }) {
   const qty = request.quantity ? `${request.quantity}${request.unit ? ` ${request.unit}` : ''}` : null;
 
   const title = qty
-    ? `RFQ: ${name} (${qty}) — ${buyerName} | CoreTradeGlobal`
-    : `RFQ: ${name} — ${buyerName} | CoreTradeGlobal`;
+    ? `RFQ: ${name} (${qty}) by ${buyerName} | CoreTradeGlobal`
+    : `RFQ: ${name} by ${buyerName} | CoreTradeGlobal`;
   const description = truncate(rawDescription, 155);
   const canonical = `/request/${requestId}`;
 

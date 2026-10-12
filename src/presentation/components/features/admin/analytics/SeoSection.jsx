@@ -102,7 +102,7 @@ export function SeoSection() {
         <div>
           <h3 className="text-lg font-semibold text-white">SEO &amp; Organic Growth</h3>
           <p className="text-xs text-[#A0A0A0] mt-0.5">
-            Google Search Console — clicks, impressions, ranking, top queries.
+            Google Search Console: clicks, impressions, ranking, and top queries.
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -140,7 +140,7 @@ export function SeoSection() {
           <p className="text-[11px] text-[#A0A0A0]">
             Window: <span className="text-white">{data.window.startDate}</span> →
             <span className="text-white"> {data.window.endDate}</span> ({data.window.days} days).
-            Google Search Console holds data back 2-3 days for finality — panel window ends
+            Google Search Console holds data back 2-3 days for finality, so the panel window ends
             three days ago on purpose so no row is provisional.
           </p>
         </div>

@@ -256,7 +256,7 @@ export function CatalogHealthSection() {
                     <span className="text-white font-semibold">
                       {data.emptyCategories.length}
                     </span>{' '}
-                    empty categories — supplier-recruitment opportunity
+                    empty categories (supplier-recruitment opportunity)
                   </p>
                   <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto">
                     {data.emptyCategories.slice(0, 20).map((c) => (
@@ -278,7 +278,7 @@ export function CatalogHealthSection() {
               {data.crowdedCategories.length > 0 && (
                 <div className="text-xs">
                   <p className="text-[#A0A0A0] mb-1">
-                    Crowded (competition tight — quality-lift priority):
+                    Crowded (tight competition, quality-lift priority):
                   </p>
                   <ul className="space-y-1">
                     {data.crowdedCategories.slice(0, 5).map((c) => (
@@ -338,7 +338,7 @@ export function CatalogHealthSection() {
           </div>
         ) : filteredLowQuality.length === 0 ? (
           <p className="text-xs text-[#606060] py-6 text-center">
-            Nothing scoring below 40 — nice.
+            Nothing scoring below 40. Nice.
           </p>
         ) : (
           <div className="overflow-x-auto -mx-5 px-5">

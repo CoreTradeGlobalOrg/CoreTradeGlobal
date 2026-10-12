@@ -204,7 +204,7 @@ export function OnboardingWizard({ uid: initialUid }) {
           <motion.div key={step} custom={direction} variants={slideVariants} initial="enter" animate="center" exit="exit" transition={{ duration: 0.25, ease: 'easeInOut' }}>
             {step === 1 && <IdentityStep registerStep1={registerStep1} watchStep1={watchStep1} handleStep1Submit={handleStep1Submit} onSubmit={onStep1Submit} step1Errors={step1Errors} isLoading={isLoading} showPassword={showPassword} setShowPassword={setShowPassword} showConfirm={showConfirm} setShowConfirm={setShowConfirm} />}
             {step === 2 && <DetailsStep userProfile={userProfile} step2Loading={step2Loading} onContinue={goNext} />}
-            {step === 3 && <PhotoStep photoPreview={photoPreview} photoUploading={photoUploading} photoFile={photoFile} onPhotoSelect={handlePhotoSelect} onPhotoUpload={handlePhotoUpload} onSkip={() => { toast('Photo skipped — you can add it from your profile later.', { icon: 'ℹ️' }); goNext(); }} onBack={goBack} />}
+            {step === 3 && <PhotoStep photoPreview={photoPreview} photoUploading={photoUploading} photoFile={photoFile} onPhotoSelect={handlePhotoSelect} onPhotoUpload={handlePhotoUpload} onSkip={() => { toast('Photo skipped. You can add it from your profile later.', { icon: 'ℹ️' }); goNext(); }} onBack={goBack} />}
             {step === 4 && <PreferencesStep emailNotifications={emailNotifications} setEmailNotifications={setEmailNotifications} marketingEmails={marketingEmails} setMarketingEmails={setMarketingEmails} completing={completing} onComplete={handleComplete} onBack={goBack} />}
           </motion.div>
         </AnimatePresence>

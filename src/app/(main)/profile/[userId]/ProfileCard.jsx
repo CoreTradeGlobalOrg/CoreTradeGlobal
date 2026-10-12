@@ -146,7 +146,7 @@ function EditableCell({
               : <p className="text-white font-semibold text-lg truncate">{value}</p>
             : (
               <p className="text-[#A0A0A0] font-semibold text-lg">
-                {canEdit ? emptyHint || 'Not set — tap to add' : 'Not set'}
+                {canEdit ? emptyHint || 'Not set. Tap to add' : 'Not set'}
               </p>
             )}
         </div>
@@ -583,7 +583,7 @@ export function ProfileCard({
               label="Phone"
               privateBadge
               value={profileUser?.phone}
-              emptyHint="Not set — tap to add"
+              emptyHint="Not set. Tap to add"
               canEdit={canEdit}
               highlight={highlightFields.has('phone')}
               saving={profileUpdating}
@@ -606,7 +606,7 @@ export function ProfileCard({
             field="linkedinProfile"
             label="LinkedIn"
             value={profileUser?.linkedinProfile}
-            emptyHint="Not set — tap to add LinkedIn"
+            emptyHint="Not set. Tap to add LinkedIn"
             canEdit={canEdit}
             saving={profileUpdating}
             onSave={async (v) => (onFieldSave ? await onFieldSave('linkedinProfile', v) : false)}
@@ -642,7 +642,7 @@ export function ProfileCard({
             field="companyWebsite"
             label="Website"
             value={profileUser?.companyWebsite}
-            emptyHint="Not set — tap to add website"
+            emptyHint="Not set. Tap to add website"
             canEdit={canEdit}
             highlight={highlightFields.has('companyWebsite')}
             saving={profileUpdating}

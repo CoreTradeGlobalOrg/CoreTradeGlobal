@@ -447,7 +447,7 @@ export function AdCampaignForm({
           {isSponsored && (
             <div className="rounded-xl border border-[rgba(255,215,0,0.25)] bg-[rgba(255,215,0,0.04)] p-4 space-y-3">
               <p className="text-xs uppercase tracking-wider text-[#FFD700] font-semibold">
-                Sponsored Package — sponsor + slot references
+                Sponsored Package: sponsor and slot references
               </p>
               <p className="text-[11px] text-[#A0A0A0]">
                 These fields come from the buyer&apos;s inquiry. Editable so you can fix a paste error or a legacy URL-shaped value; paste bare doc IDs (no <span className="font-mono">https://…/product/</span> prefix).
@@ -612,7 +612,7 @@ export function AdCampaignForm({
               updates their profile. */}
           {isSponsored && (
             <div className="rounded-xl border border-[rgba(56,189,248,0.25)] bg-[rgba(56,189,248,0.05)] px-4 py-3 text-xs text-[#c8d3e0]">
-              Description and company logo are auto-fetched from the sponsor&apos;s CTG profile when the ad renders — no upload or copy needed here.
+              Description and company logo are auto-fetched from the sponsor&apos;s CTG profile when the ad renders. No upload or copy needed here.
             </div>
           )}
 
@@ -837,7 +837,7 @@ function ProductSlotPicker({ label, value, onChange, options, inputClass }) {
           onChange={(e) => onChange(e.target.value)}
           className={inputClass(false) + ' text-[12px]'}
         >
-          <option value="">— select a product —</option>
+          <option value="">Select a product</option>
           {options.map((p) => (
             <option key={p.id} value={p.id} className="bg-[#0F1B2B]">
               {p.name || p.id}

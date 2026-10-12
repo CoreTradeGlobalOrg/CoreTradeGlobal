@@ -20,8 +20,8 @@ export function ProductUploadRequestButton({ user }) {
         <div>
           <h4 className="text-white font-semibold text-base mb-1">Bulk Upload</h4>
           <p className="text-[#A0A0A0] text-xs">
-            Upload your entire product catalog from a CSV file — live validation
-            in the browser, image attach per row, then publish.
+            Upload your entire product catalog from a CSV file. Validate it live
+            in the browser, attach images per row, then publish.
           </p>
         </div>
         <Link

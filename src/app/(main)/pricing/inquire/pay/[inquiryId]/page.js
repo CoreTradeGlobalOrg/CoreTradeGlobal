@@ -67,7 +67,7 @@ function CopyableField({ label, value }) {
       setCopied(true);
       setTimeout(() => setCopied(false), 1600);
     } catch {
-      toast.error('Copy failed — long-press to copy manually.');
+      toast.error('Copy failed. Long-press to copy manually.');
     }
   };
   return (
@@ -169,7 +169,7 @@ export default function PayPage() {
       await navigator.clipboard.writeText(link);
       toast.success('Payment link copied. You can come back to it later.');
     } catch {
-      toast.error('Copy failed — long-press the URL bar to copy.');
+      toast.error('Copy failed. Long-press the URL bar to copy.');
     }
   };
 
@@ -253,7 +253,7 @@ export default function PayPage() {
             )}
             {isExpired && !alreadyReported && (
               <span className="text-red-300">
-                Reservation expired — start a new inquiry to reserve another month.
+                Reservation expired. Start a new inquiry to reserve another month.
               </span>
             )}
           </div>
@@ -277,7 +277,7 @@ export default function PayPage() {
                     await navigator.clipboard.writeText(inquiry.paymentReference);
                     toast.success('Reference copied.');
                   } catch {
-                    toast.error('Copy failed — long-press to copy manually.');
+                    toast.error('Copy failed. Long-press to copy manually.');
                   }
                 }}
                 className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-gradient-to-r from-[#FFD700] to-[#FDB931] font-bold text-xs"
@@ -351,7 +351,7 @@ export default function PayPage() {
             </p>
             <p className="text-emerald-200/90 text-xs leading-relaxed">
               {status === PAYMENT_STATUSES.PAID
-                ? 'Your sponsored placement is live — thanks for choosing CoreTradeGlobal.'
+                ? 'Your sponsored placement is live. Thanks for choosing CoreTradeGlobal.'
                 : "We'll email you the moment the wire clears our account. This usually takes 1–3 business days for international transfers."}
             </p>
           </div>

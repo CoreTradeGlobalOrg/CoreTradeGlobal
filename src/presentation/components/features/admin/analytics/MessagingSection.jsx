@@ -272,7 +272,7 @@ export function MessagingSection() {
           </div>
         ) : data.flaggedMessages.length === 0 ? (
           <p className="text-xs text-[#606060] py-6 text-center">
-            No off-platform patterns detected — messaging is clean.
+            No off-platform patterns detected. Messaging is clean.
           </p>
         ) : (
           <>
@@ -341,7 +341,7 @@ export function MessagingSection() {
               Off-platform steering uses regex on message text (email, phone,
               WhatsApp, Telegram, Skype, IBAN). Language distribution, fraud
               scoring, and content-quality ML need dedicated models or the
-              event log — not built yet. Response times are attributed to the
+              event log, which is not built yet. Response times are attributed to the
               first replier who isn't the conversation opener; multi-party
               threads are treated as a single conversation.
             </p>

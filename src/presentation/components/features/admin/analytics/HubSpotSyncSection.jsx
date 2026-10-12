@@ -94,8 +94,8 @@ export function HubSpotSyncSection() {
       if (!res.ok || !body?.ok) throw new Error(body?.error || `HTTP ${res.status}`);
       if (body.skipped) {
         const reason = body.reason === 'hubspot_rejected_email' || body.reason === 'invalid_email_shape'
-          ? `Skipped — HubSpot rejected email (${body.email || 'invalid format'})`
-          : `Skipped — ${body.reason}`;
+          ? `Skipped: HubSpot rejected email (${body.email || 'invalid format'})`
+          : `Skipped: ${body.reason}`;
         toast(reason, { icon: '⚠️' });
       } else {
         toast.success(body.created ? 'Created in HubSpot' : 'Updated in HubSpot');
@@ -137,7 +137,7 @@ export function HubSpotSyncSection() {
     const parts = [`${done} synced`];
     if (skipped) parts.push(`${skipped} skipped (bad email)`);
     if (failed) parts.push(`${failed} failed`);
-    toast.success(`Bulk sync complete — ${parts.join(', ')}`);
+    toast.success(`Bulk sync complete: ${parts.join(', ')}`);
     setBulkSyncing(false);
     setRefreshTick((t) => t + 1);
   }
@@ -187,7 +187,7 @@ export function HubSpotSyncSection() {
 
       {data?.truncatedHubspot && (
         <div className="rounded-lg border border-amber-400/30 bg-amber-400/10 p-3 text-xs text-amber-300">
-          HubSpot contact list truncated at 2,000 — bump the soft cap in
+          HubSpot contact list truncated at 2,000. Bump the soft cap in
           /api/analytics/hubspot/diff/route.js when contact count exceeds this.
         </div>
       )}
@@ -358,7 +358,7 @@ export function HubSpotSyncSection() {
           <div className="overflow-x-auto -mx-5 px-5">
             <div className="flex items-center justify-between mb-3">
               <p className="text-[11px] text-[#A0A0A0]">
-                These HubSpot contacts have no matching platform member — cold outreach / lead
+                These HubSpot contacts have no matching platform member. Use them as a cold outreach / lead
                 pool.
               </p>
               <button
@@ -418,7 +418,7 @@ export function HubSpotSyncSection() {
           <div className="space-y-2">
             <p className="text-[11px] text-[#A0A0A0] mb-3 flex items-start gap-2">
               <AlertTriangle className="w-3.5 h-3.5 text-amber-400 mt-0.5" />
-              Same email on both sides but firstName / lastName / company differs — someone
+              Same email on both sides but firstName / lastName / company differs. Someone
               renamed themselves in one of the two systems. Resolve manually.
             </p>
             {activeRows.map(({ user, contact }) => {
@@ -510,7 +510,7 @@ export function HubSpotSyncSection() {
                             </span>
                           </span>
                         ) : (
-                          <span className="text-[10px] text-amber-400">Missing — resync to fix</span>
+                          <span className="text-[10px] text-amber-400">Missing, resync to fix</span>
                         )}
                       </td>
                       <td className="py-2 pr-3 text-right">

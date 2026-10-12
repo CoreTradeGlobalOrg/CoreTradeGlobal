@@ -22,7 +22,7 @@ export default function InquiryThankYouPage() {
         </div>
         <h1 className="text-3xl md:text-4xl font-extrabold mb-4 tracking-tight">Inquiry Received</h1>
         <p className="text-[#c8d3e0] text-base md:text-lg mb-2">
-          Thanks for reaching out — your advertising inquiry is now on our team's desk.
+          Thanks for reaching out! Your advertising inquiry is now on our team's desk.
         </p>
         <p className="text-[#A0A0A0] text-sm md:text-base mb-10">
           A member of the CoreTradeGlobal team will follow up within <strong className="text-white">1 business day</strong> with pricing, availability, and next steps.
@@ -50,7 +50,7 @@ export default function InquiryThankYouPage() {
         <div className="mt-12 rounded-2xl border border-[rgba(255,255,255,0.08)] bg-gradient-to-br from-[rgba(26,40,59,0.85)] to-[rgba(15,27,43,0.95)] p-5 md:p-6 text-left">
           <p className="text-xs uppercase tracking-wider text-[#FFD700] font-semibold mb-2">While you wait</p>
           <p className="text-[#c8d3e0] text-sm leading-relaxed">
-            Feel free to browse the platform, list your products, and post RFQs. Everything on CoreTradeGlobal is free forever — the placement is an optional boost, not a gate.
+            Feel free to browse the platform, list your products, and post RFQs. Everything on CoreTradeGlobal is free forever. The placement is an optional boost, not a gate.
           </p>
         </div>
       </div>

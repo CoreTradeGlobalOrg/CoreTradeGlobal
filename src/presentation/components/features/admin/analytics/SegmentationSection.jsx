@@ -292,7 +292,7 @@ export function SegmentationSection() {
         <p>
           The score used here is a first-pass composite (profile 50pts + activity 25pts + value
           production 15pts + engagement 10pts). It approximates the fuller engagement model
-          described in Bölüm 18 — when that lands, the score field on every segment row swaps
+          described in Bölüm 18. When that lands, the score field on every segment row swaps
           for the new one without touching this UI.
         </p>
       </div>

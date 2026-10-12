@@ -26,28 +26,28 @@ const STEPS = [
   {
     icon: Download,
     title: '1. Download the template',
-    body: "Grab the CSV file with the exact columns we expect — Product Name, Category, Price, Currency, Quantity, Unit, Description, Image URLs. Don't rename the headers.",
+    body: "Grab the CSV file with the exact columns we expect: Product Name, Category, Price, Currency, Quantity, Unit, Description, Image URLs. Don't rename the headers.",
   },
   {
     icon: FileSpreadsheet,
     title: '2. Fill it in Excel or Google Sheets',
-    body: 'One product per row. Prices as numbers, currencies as 3-letter codes (USD, EUR, TRY…). Paste image URLs comma-separated — we fetch and store them for you.',
+    body: 'One product per row. Prices as numbers, currencies as 3-letter codes (USD, EUR, TRY…). Paste image URLs separated by commas, and we fetch and store them for you.',
   },
   {
     icon: UploadCloud,
     title: '3. Upload and review',
-    body: 'Drop the file back on the upload page. We parse it in your browser and show a row-by-row check — valid ✅, needs-category ⚠️, invalid ❌. Fix any issues inline, then hit Publish.',
+    body: 'Drop the file back on the upload page. We parse it in your browser and show a row-by-row check: valid ✅, needs-category ⚠️, invalid ❌. Fix any issues inline, then hit Publish.',
   },
 ];
 
 const FAQ = [
   {
     q: "What if my category isn't in your list?",
-    a: 'You can leave the Category column blank and pick from a dropdown per-row on the review screen. Unmatched categories never block the upload — they just wait for your click.',
+    a: 'You can leave the Category column blank and pick from a dropdown per-row on the review screen. Unmatched categories never block the upload. They just wait for your click.',
   },
   {
     q: 'What formats work for images?',
-    a: 'JPG, PNG, or WebP. You attach photos per product in the preview table after the CSV is validated — files are auto-compressed to WebP before upload.',
+    a: 'JPG, PNG, or WebP. You attach photos per product in the preview table after the CSV is validated. Files are auto-compressed to WebP before upload.',
   },
   {
     q: 'Can I upload thousands at once?',
@@ -55,7 +55,7 @@ const FAQ = [
   },
   {
     q: 'What happens if a row fails?',
-    a: "Only the valid rows publish — invalid rows are listed with the exact reason so you can fix them and re-upload. Nothing partially breaks.",
+    a: "Only the valid rows publish. Invalid rows are listed with the exact reason so you can fix them and re-upload. Nothing partially breaks.",
   },
 ];
 

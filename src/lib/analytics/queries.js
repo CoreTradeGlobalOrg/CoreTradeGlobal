@@ -279,7 +279,7 @@ export async function getAlertCenter() {
       row.daysRemaining === 0 ? 'Ad ends today' : 'Ad ending soon',
       row.daysRemaining === 0
         ? `${row.companyName} campaign closes today`
-        : `${row.companyName} — ${row.daysRemaining} days remaining`,
+        : `${row.companyName}: ${row.daysRemaining} days remaining`,
       {
         actor: row.companyName,
         ageDays: null,
@@ -3012,7 +3012,7 @@ export const MEMBER_SEGMENTS = [
     label: 'Passive Seller',
     emoji: '😴',
     color: '#F59E0B',
-    action: 'Nurture email — "haven\'t seen you in a while"',
+    action: 'Nurture email: "haven\'t seen you in a while"',
     detail: 'Has products, no login in 14+ days',
   },
   {

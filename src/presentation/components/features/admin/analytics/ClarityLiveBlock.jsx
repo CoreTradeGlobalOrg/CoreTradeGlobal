@@ -86,7 +86,7 @@ export function ClarityLiveBlock() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Eye className="w-4 h-4 text-[#8B5CF6]" />
-          <h4 className="text-sm font-semibold text-white">Microsoft Clarity — Live</h4>
+          <h4 className="text-sm font-semibold text-white">Microsoft Clarity (Live)</h4>
           <span className="text-[10px] uppercase tracking-wider text-purple-300 border border-purple-400/30 bg-purple-400/5 px-1.5 py-0.5 rounded">
             {data?.window?.days || 3}d window
           </span>
@@ -180,7 +180,7 @@ export function ClarityLiveBlock() {
             />
             <FrictionTile
               label="Rage Clicks"
-              detail="Repeated fast clicks — frustration"
+              detail="Repeated fast clicks (frustration)"
               pct={m.rageClick.pct}
               sessions={m.rageClick.sessions}
               total={m.rageClick.total}

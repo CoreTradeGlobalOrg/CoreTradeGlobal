@@ -84,7 +84,7 @@ export function NotificationBell() {
       type: 'payment_required',
       title: 'Complete your Sponsored Package payment',
       body: inq.paymentStatus === PAYMENT_STATUSES.REPORTED
-        ? `${formatMonthShort(inq.startDate)} · payment reported — waiting for confirmation`
+        ? `${formatMonthShort(inq.startDate)} · payment reported, waiting for confirmation`
         : `${formatMonthShort(inq.startDate)} · reference ${inq.paymentReference || 'CTG'}`,
       createdAt: inq.createdAt,
       isRead: false,

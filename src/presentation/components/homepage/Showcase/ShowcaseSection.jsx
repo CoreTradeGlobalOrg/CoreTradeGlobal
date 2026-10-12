@@ -95,7 +95,7 @@ function SectionHeader() {
   return (
     <div className="section-header">
       <h2 className="section-title">Sponsored Company</h2>
-      <Link href="/pricing" className="showcase-cta-link">
+      <Link href="/advertising" className="showcase-cta-link">
         <span>Want to see your company here? View Advertising Options</span>
         <ArrowRightIcon />
       </Link>
@@ -188,7 +188,7 @@ function SponsoredCard({ ad, categories }) {
     profile?.companyDescription
     || profile?.bio
     || ad.description
-    || 'Featured supplier — explore their catalog and start a conversation.';
+    || 'Featured supplier. Explore their catalog and start a conversation.';
 
   const categoryEntry = categories?.find((c) => c.value === profile?.companyCategory);
   const categoryName = categoryEntry?.label?.replace(/^[^\s]+\s/, '') || profile?.companyCategory || '';

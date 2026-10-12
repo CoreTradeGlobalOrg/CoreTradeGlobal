@@ -188,7 +188,7 @@ export function TwoFactorSetup({
 
     const handleDownload = () => {
       const content = [
-        'CoreTradeGlobal - 2FA Backup Codes',
+        'CoreTradeGlobal 2FA Backup Codes',
         '====================================',
         'Keep these codes in a safe place. Each code can only be used once.',
         '',

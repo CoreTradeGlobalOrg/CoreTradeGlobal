@@ -200,7 +200,7 @@ export function OnboardingFunnelSection() {
       {/* Funnel — current cohort with delta vs previous cohort */}
       <div className="rounded-2xl border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-5">
         <div className="flex items-center justify-between mb-4">
-          <h4 className="text-sm font-semibold text-white">Funnel — Current Cohort</h4>
+          <h4 className="text-sm font-semibold text-white">Funnel: Current Cohort</h4>
           <span className="text-xs text-[#A0A0A0]">
             Δ vs previous cohort
           </span>
@@ -249,7 +249,7 @@ export function OnboardingFunnelSection() {
       {/* All-time completion */}
       <div className="rounded-2xl border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-5">
         <div className="flex items-center justify-between mb-4">
-          <h4 className="text-sm font-semibold text-white">All Members — Ever Completed</h4>
+          <h4 className="text-sm font-semibold text-white">All Members: Ever Completed</h4>
           {!loading && data && (
             <span className="text-xs text-[#A0A0A0]">
               {data.cohorts.allTime.size} members

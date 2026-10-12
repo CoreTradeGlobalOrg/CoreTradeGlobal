@@ -69,7 +69,7 @@ export async function generateMetadata({ params }) {
   }
 
   const location = fair.location || 'Global';
-  const title = `${fair.name} — ${location} | CoreTradeGlobal`;
+  const title = `${fair.name}, ${location} | CoreTradeGlobal`;
   const rawDescription =
     fair.description ||
     `${fair.name} trade fair in ${location}. Dates, venue, organizer and registration details on CoreTradeGlobal.`;

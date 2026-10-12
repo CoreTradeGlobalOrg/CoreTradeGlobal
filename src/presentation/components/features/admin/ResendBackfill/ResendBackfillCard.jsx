@@ -31,7 +31,7 @@ export function ResendBackfillCard() {
       const data = res.data || {};
       setResult(data);
       toast.success(
-        `Backfill done — added ${data.added ?? 0}, already-in ${data.alreadyIn ?? 0}, skipped ${data.skipped ?? 0}, errors ${data.errorCount ?? 0}`,
+        `Backfill done: added ${data.added ?? 0}, already-in ${data.alreadyIn ?? 0}, skipped ${data.skipped ?? 0}, errors ${data.errorCount ?? 0}`,
         { duration: 6000 }
       );
     } catch (err) {

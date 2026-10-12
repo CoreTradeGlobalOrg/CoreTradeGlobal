@@ -89,7 +89,7 @@ export function QuoteGrid({
               onClick={onSkip}
               className="text-xs text-[#8899AA] hover:text-amber-400 transition-colors"
             >
-              Skip — I'll arrange my own
+              Skip, I'll arrange my own
             </button>
           )}
           <SortSelect options={sortOptions} value={sortValue} onChange={onSortChange} />

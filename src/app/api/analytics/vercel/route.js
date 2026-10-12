@@ -115,7 +115,7 @@ export async function GET(request) {
       {
         ok: false,
         error:
-          'Vercel Analytics not configured — need VERCEL_ANALYTICS_TOKEN + VERCEL_PROJECT_ID (VERCEL_TEAM_ID for team projects)',
+          'Vercel Analytics not configured: need VERCEL_ANALYTICS_TOKEN + VERCEL_PROJECT_ID (VERCEL_TEAM_ID for team projects)',
       },
       { status: 500 },
     );

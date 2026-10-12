@@ -44,9 +44,9 @@ export function useBulkCreateFairs() {
       if (created > 0 && errors.length === 0) {
         toast.success(`${created} fair${created === 1 ? '' : 's'} imported successfully`);
       } else if (created > 0 && errors.length > 0) {
-        toast.success(`${created} imported, ${errors.length} failed — see details`);
+        toast.success(`${created} imported, ${errors.length} failed. See details.`);
       } else {
-        toast.error(`Import failed — ${errors.length} row${errors.length === 1 ? '' : 's'} rejected`);
+        toast.error(`Import failed: ${errors.length} row${errors.length === 1 ? '' : 's'} rejected`);
       }
 
       return { created, failed: errors.length, errors };

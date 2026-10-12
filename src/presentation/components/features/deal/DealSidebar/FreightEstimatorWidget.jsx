@@ -377,7 +377,7 @@ export function FreightEstimatorWidget({ deal, latestOffer, standalone = false }
                 >
                   Freightos
                 </a>
-                . Estimates only — actual rates may vary.
+                . Estimates only. Actual rates may vary.
               </p>
             </div>
           )}

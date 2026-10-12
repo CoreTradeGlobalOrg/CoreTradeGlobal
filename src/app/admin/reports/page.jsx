@@ -250,7 +250,7 @@ function ResolutionNoteModal({ action, onCancel, onSubmit }) {
   const config = isAction
     ? {
         title: 'Mark as action taken',
-        subtitle: 'Add a short note describing what you did — this stays in the audit trail.',
+        subtitle: 'Add a short note describing what you did. This stays in the audit trail.',
         placeholder: 'Example: Suspended the account and sent a warning email.',
         confirmLabel: 'Mark action taken',
         confirmClass: 'bg-red-500/20 hover:bg-red-500/30 border-red-500/50 text-red-200',
@@ -258,7 +258,7 @@ function ResolutionNoteModal({ action, onCancel, onSubmit }) {
       }
     : {
         title: 'Dismiss report',
-        subtitle: 'Optional note — why is this report being dismissed?',
+        subtitle: 'Optional note: why is this report being dismissed?',
         placeholder: 'Example: No violation found, member misunderstood the interaction.',
         confirmLabel: 'Dismiss',
         confirmClass: 'bg-white/10 hover:bg-white/15 border-white/20 text-white',

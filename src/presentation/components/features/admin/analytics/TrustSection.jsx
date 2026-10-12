@@ -171,7 +171,7 @@ export function TrustSection() {
             )}
           </div>
           <span className="text-[10px] text-[#606060]">
-            Sorted by wait time — longest first
+            Sorted by wait time, longest first
           </span>
         </div>
         {loading ? (
@@ -182,7 +182,7 @@ export function TrustSection() {
           </div>
         ) : !data?.approvalQueue?.length ? (
           <p className="text-xs text-[#606060] py-6 text-center">
-            Nobody is waiting on approval — inbox clean.
+            Nobody is waiting on approval. Inbox clean.
           </p>
         ) : (
           <div className="overflow-x-auto -mx-5 px-5">

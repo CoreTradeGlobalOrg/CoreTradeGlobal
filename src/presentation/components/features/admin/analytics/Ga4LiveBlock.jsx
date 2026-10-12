@@ -101,7 +101,7 @@ export function Ga4LiveBlock() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <BarChart3 className="w-4 h-4 text-[#10B981]" />
-          <h4 className="text-sm font-semibold text-white">Google Analytics 4 — Live</h4>
+          <h4 className="text-sm font-semibold text-white">Google Analytics 4 (Live)</h4>
           <span className="text-[10px] uppercase tracking-wider text-green-400 border border-green-400/30 bg-green-400/5 px-1.5 py-0.5 rounded">
             {data?.window?.days || 28}d window
           </span>

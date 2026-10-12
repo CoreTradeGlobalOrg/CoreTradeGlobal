@@ -14,7 +14,7 @@ export function PhotoStep({ photoPreview, photoUploading, onPhotoSelect, onPhoto
         </div>
         <div>
           <h2 className="text-lg font-bold text-white">Profile Photo</h2>
-          <p className="text-xs text-gray-400">Optional — helps others recognize you</p>
+          <p className="text-xs text-gray-400">Optional, but it helps others recognize you</p>
         </div>
       </div>
 

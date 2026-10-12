@@ -224,17 +224,17 @@ export default function ProductListingPolicyPage() {
                 </thead>
                 <tbody className="text-gray-200 text-sm">
                   <tr className="border-b border-[rgba(255,255,255,0.05)]">
-                    <td className="px-4 py-3">Level 1 – Minor</td>
+                    <td className="px-4 py-3">Level 1: Minor</td>
                     <td className="px-4 py-3">Incomplete labeling, minor data error</td>
                     <td className="px-4 py-3">Warning or temporary delisting</td>
                   </tr>
                   <tr className="border-b border-[rgba(255,255,255,0.05)]">
-                    <td className="px-4 py-3">Level 2 – Moderate</td>
+                    <td className="px-4 py-3">Level 2: Moderate</td>
                     <td className="px-4 py-3">Misleading content, repeated non-compliance</td>
                     <td className="px-4 py-3">Account suspension</td>
                   </tr>
                   <tr>
-                    <td className="px-4 py-3">Level 3 – Severe</td>
+                    <td className="px-4 py-3">Level 3: Severe</td>
                     <td className="px-4 py-3">Counterfeit, illegal, or dangerous products</td>
                     <td className="px-4 py-3">Permanent ban and regulatory referral</td>
                   </tr>

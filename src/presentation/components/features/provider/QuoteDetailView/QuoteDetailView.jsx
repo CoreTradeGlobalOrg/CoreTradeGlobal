@@ -172,7 +172,7 @@ export function QuoteDetailView({ request, providerType, onBack, existingQuote }
                   <InfoRow
                     icon={FileText}
                     label="Incoterm"
-                    value={namedPlace ? `${incoterm} — ${namedPlace}` : incoterm}
+                    value={namedPlace ? `${incoterm} ${namedPlace}` : incoterm}
                   />
                 )}
                 {/* Insurance Arrangement — only for insurance providers */}

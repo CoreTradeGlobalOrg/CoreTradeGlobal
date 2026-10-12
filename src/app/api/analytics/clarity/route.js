@@ -127,7 +127,7 @@ async function fetchClarity() {
     dailyExhausted = true;
     dailyExhaustedAt = Date.now();
     const body = await res.text().catch(() => '');
-    const err = new Error(`Clarity 429 — daily quota exhausted: ${body.slice(0, 200)}`);
+    const err = new Error(`Clarity 429 (daily quota exhausted): ${body.slice(0, 200)}`);
     err.status = 429;
     throw err;
   }
@@ -164,7 +164,7 @@ export async function GET(request) {
         ...cached,
         cached: true,
         throttled: true,
-        note: `Refresh throttled — wait ${Math.ceil((MIN_REFRESH_INTERVAL_MS - (now - lastRefreshAt)) / 60000)} more minutes`,
+        note: `Refresh throttled. Wait ${Math.ceil((MIN_REFRESH_INTERVAL_MS - (now - lastRefreshAt)) / 60000)} more minutes`,
       });
     }
   }
@@ -176,7 +176,7 @@ export async function GET(request) {
       ...cached,
       cached: true,
       rateLimited: true,
-      note: 'Daily 10-call quota exhausted upstream — showing last cached snapshot',
+      note: 'Daily 10-call quota exhausted upstream, showing last cached snapshot',
     });
   }
 
@@ -220,7 +220,7 @@ export async function GET(request) {
         ...cached,
         cached: true,
         rateLimited: true,
-        note: 'Daily 10-call quota exhausted upstream — showing last cached snapshot',
+        note: 'Daily 10-call quota exhausted upstream, showing last cached snapshot',
       });
     }
     return NextResponse.json(

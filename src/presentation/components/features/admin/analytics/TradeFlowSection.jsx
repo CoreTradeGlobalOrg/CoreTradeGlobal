@@ -111,7 +111,7 @@ export function TradeFlowSection() {
         <div>
           <h3 className="text-lg font-semibold text-white">Trade Flow Map</h3>
           <p className="text-xs text-[#A0A0A0] mt-0.5">
-            The marketplace pipeline — from RFQ to delivered.
+            The marketplace pipeline, from RFQ to delivered.
           </p>
         </div>
         <button

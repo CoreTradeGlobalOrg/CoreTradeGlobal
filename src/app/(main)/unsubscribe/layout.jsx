@@ -1,5 +1,5 @@
 export const metadata = {
-  title: 'Unsubscribe — Core Trade Global',
+  title: 'Unsubscribe | Core Trade Global',
   robots: { index: false, follow: false },
 };
 

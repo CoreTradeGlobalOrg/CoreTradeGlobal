@@ -162,7 +162,7 @@ export async function GET(request) {
     return NextResponse.json(
       {
         ok: false,
-        error: 'GA4 not configured — need GSC_CLIENT_EMAIL, GSC_PRIVATE_KEY, and GA4_PROPERTY_ID on the server',
+        error: 'GA4 not configured: need GSC_CLIENT_EMAIL, GSC_PRIVATE_KEY, and GA4_PROPERTY_ID on the server',
       },
       { status: 500 },
     );

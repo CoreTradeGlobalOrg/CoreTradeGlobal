@@ -55,7 +55,7 @@ async function probeHubSpot() {
     'HubSpot',
   );
   if (res.status === 401) return { status: 'auth_failed', note: 'Token rejected' };
-  if (res.status === 429) return { status: 'rate_limited', note: 'HubSpot 429 — still up' };
+  if (res.status === 429) return { status: 'rate_limited', note: 'HubSpot 429 (still up)' };
   if (!res.ok) return { status: 'degraded', note: `HTTP ${res.status}` };
   return { status: 'ok', note: 'CRM API reachable' };
 }

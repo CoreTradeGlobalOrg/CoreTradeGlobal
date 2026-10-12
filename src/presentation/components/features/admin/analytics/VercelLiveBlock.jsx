@@ -74,7 +74,7 @@ export function VercelLiveBlock() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Activity className="w-4 h-4 text-white" />
-          <h4 className="text-sm font-semibold text-white">Vercel Web Analytics — Live</h4>
+          <h4 className="text-sm font-semibold text-white">Vercel Web Analytics (Live)</h4>
           <span className="text-[10px] uppercase tracking-wider text-white/70 border border-white/20 bg-white/5 px-1.5 py-0.5 rounded">
             {data?.window?.days || 7}d window
           </span>
