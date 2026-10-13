@@ -91,11 +91,33 @@ function loadAuthModule() {
   return _authModulePromise;
 }
 
+/**
+ * Same as getAuth(app) minus the popupRedirectResolver. With the resolver,
+ * Firebase loads its popup iframe (auth/iframe.js + gapi + a
+ * getProjectConfig request) on every page load in mobile browsers and
+ * Safari, which was the longest request chain on the mobile homepage.
+ * The popup calls in FirebaseAuthDataSource pass the resolver themselves.
+ */
+function createAuth(mod) {
+  try {
+    return mod.initializeAuth(app, {
+      persistence: [
+        mod.indexedDBLocalPersistence,
+        mod.browserLocalPersistence,
+        mod.browserSessionPersistence,
+      ],
+    });
+  } catch {
+    // auth/already-initialized (e.g. after a dev hot reload): reuse it.
+    return mod.getAuth(app);
+  }
+}
+
 export async function getAuthAsync() {
   if (_authInstance) return _authInstance;
   const mod = await loadAuthModule();
   if (!_authInstance) {
-    _authInstance = mod.getAuth(app);
+    _authInstance = createAuth(mod);
   }
   return _authInstance;
 }
@@ -117,7 +139,7 @@ export const auth = new Proxy(
         // before AuthProvider mounts, both of which fix themselves on
         // the next tick / re-render.
         loadAuthModule().then((mod) => {
-          if (!_authInstance) _authInstance = mod.getAuth(app);
+          if (!_authInstance) _authInstance = createAuth(mod);
         });
         return undefined;
       }

@@ -262,11 +262,10 @@ function Scene({ isMobile, disableInteraction, onReady }) {
     pointSize: isMobile ? 0.28 : 0.22, // Slightly smaller for denser points
     pointColor: 0xFFFFFF,
     waterColor: 0x0A1628,
-    // Self-hosted copy of the three.js earth specular map — loading it from
-    // raw.githubusercontent.com pulled it in on every visit against a 5 min
-    // cache TTL and blocked LCP by ~200 ms. Serving it from /public lets
-    // Vercel's CDN cache it aggressively instead.
-    mapUrl: '/textures/earth_specular_2048.jpg',
+    // Self-hosted land mask: the three.js earth specular map scaled to the
+    // 1024×512 we sample and thresholded at 50 (7.5 KiB instead of the
+    // 219 KiB 2048 px JPEG). Served from /public so Vercel's CDN caches it.
+    mapUrl: '/textures/earth_landmask_1024.webp',
     maxRoutes: isMobile ? 4 : 8, // Further reduced for a cleaner look
     tubeSegments: isMobile ? 32 : 64,
     cameraZ: isMobile ? 22 : 35,

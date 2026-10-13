@@ -101,7 +101,7 @@ export default async function Home() {
   const initialProducts = await fetchFeaturedProducts(30);
 
   return (
-    <div className="homepage">
+    <main className="homepage">
       {/* Hero Section with 3D Globe */}
       <HeroSection fetchData={HERO_FETCH_DATA} />
 
@@ -125,6 +125,6 @@ export default async function Home() {
       {/* Upcoming Fairs */}
       <FairsSection />
 
-    </div>
+    </main>
   );
 }

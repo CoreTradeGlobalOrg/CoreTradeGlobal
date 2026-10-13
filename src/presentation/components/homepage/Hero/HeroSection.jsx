@@ -178,12 +178,14 @@ export function HeroSection({ fetchData = false }) {
             parse/eval on a 4x-throttled mobile CPU costs ~1.5-2 s of TBT
             plus WebGL context ~30-50 MB RAM — the LCP element is
             h1.hero-slogan (text), so the Globe never earned that cost on
-            mobile. `mounted={false}` blocks the dynamic() call inside
-            HeroGlobe, so the three chunks are never fetched at all.
-            #canvas-container's mobile CSS reserves 320 px, so removing
-            the Globe leaves a same-size empty slot and CLS stays at 0.
-            Desktop path is unchanged. */}
-        <HeroGlobe mounted={canMountGlobe && !isMobile} globeLoaded={globeLoaded} onGlobeReady={handleGlobeReady} />
+            mobile. Once isMobile is known, HeroGlobe (the canvas container
+            and the "Welcome to CoreTradeGlobal" text) is not rendered, so
+            the three chunks are never fetched. The server can't know the
+            viewport and still renders it; homepage.css hides both elements
+            on mobile until hydration, so CLS stays at 0. */}
+        {!isMobile && (
+          <HeroGlobe mounted={canMountGlobe} globeLoaded={globeLoaded} onGlobeReady={handleGlobeReady} />
+        )}
 
         {/* Hero Overlay with Slogan and Search */}
         <div className="hero-overlay">

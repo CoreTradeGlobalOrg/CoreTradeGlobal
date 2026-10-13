@@ -214,6 +214,15 @@ export class AuthRepository {
   }
 
   /**
+   * Load what the Google popup needs before it is clicked, so mobile
+   * browsers and Safari do not block the popup. Never throws.
+   * @returns {Promise<void>}
+   */
+  async prewarmGooglePopup() {
+    return this.authDataSource.prewarmPopup();
+  }
+
+  /**
    * Sign in with a Firebase custom token (our LinkedIn flow). Unlike
    * loginWithBackupCode this does NOT log out on a missing Firestore profile —
    * AuthContext routes such users to profile completion.
