@@ -23,6 +23,26 @@ function loadAuthMod() {
   return _authModulePromise;
 }
 
+// Auth is initialized without a popupRedirectResolver (firebase.config.js),
+// so popup calls pass this one. Firebase makes one instance of the class it
+// is given and keeps its popup iframe on that instance; this subclass always
+// returns the same instance, so prewarmPopup() can load the iframe on the
+// instance signInWithPopup / linkWithPopup will later use.
+let _PopupResolver = null;
+function getPopupResolver(mod) {
+  if (!_PopupResolver) {
+    let instance = null;
+    _PopupResolver = class extends mod.browserPopupRedirectResolver {
+      constructor() {
+        if (instance) return instance;
+        super();
+        instance = this;
+      }
+    };
+  }
+  return _PopupResolver;
+}
+
 export class FirebaseAuthDataSource {
   /**
    * Constructor
@@ -131,14 +151,28 @@ export class FirebaseAuthDataSource {
    * @returns {Promise<User>} Firebase User object
    */
   async signInWithGoogle() {
-    const [{ GoogleAuthProvider, signInWithPopup }, auth] = await Promise.all([
-      loadAuthMod(),
-      this._resolveAuth(),
-    ]);
-    const provider = new GoogleAuthProvider();
+    const [mod, auth] = await Promise.all([loadAuthMod(), this._resolveAuth()]);
+    const provider = new mod.GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
-    const userCredential = await signInWithPopup(auth, provider);
+    const userCredential = await mod.signInWithPopup(auth, provider, getPopupResolver(mod));
     return userCredential.user;
+  }
+
+  /**
+   * Load Firebase's popup iframe before the user clicks a Google button.
+   * The popup only opens once the iframe is ready, and Safari and mobile
+   * browsers block a popup that opens too long after the tap. Call this when
+   * a Google button mounts. Best effort: `_initialize` is SDK-internal, and
+   * without it the popup call loads the iframe itself.
+   */
+  async prewarmPopup() {
+    try {
+      const [mod, auth] = await Promise.all([loadAuthMod(), this._resolveAuth()]);
+      const PopupResolver = getPopupResolver(mod);
+      await new PopupResolver()._initialize(auth);
+    } catch {
+      // Ignore: the popup call retries the load.
+    }
   }
 
   /**
@@ -146,15 +180,12 @@ export class FirebaseAuthDataSource {
    * @returns {Promise<User>} The updated current user.
    */
   async linkGoogle() {
-    const [{ GoogleAuthProvider, linkWithPopup }, auth] = await Promise.all([
-      loadAuthMod(),
-      this._resolveAuth(),
-    ]);
+    const [mod, auth] = await Promise.all([loadAuthMod(), this._resolveAuth()]);
     const user = auth.currentUser;
     if (!user) throw new Error('No authenticated user to link.');
-    const provider = new GoogleAuthProvider();
+    const provider = new mod.GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
-    const result = await linkWithPopup(user, provider);
+    const result = await mod.linkWithPopup(user, provider, getPopupResolver(mod));
     return result.user;
   }
 

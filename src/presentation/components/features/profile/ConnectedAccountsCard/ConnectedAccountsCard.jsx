@@ -56,6 +56,11 @@ export function ConnectedAccountsCard({ user }) {
     setHasPassword(pd.some((p) => p.providerId === 'password'));
   }, []);
 
+  // The "Connect Google" button opens a popup; load what it needs up front.
+  useEffect(() => {
+    container.getAuthRepository().prewarmGooglePopup();
+  }, []);
+
   useEffect(() => {
     syncProviders();
   }, [syncProviders]);

@@ -11,7 +11,7 @@
  * when "Link accounts that use the same email" is enabled in the console.
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { container } from '@/core/di/container';
 import toast from 'react-hot-toast';
@@ -19,6 +19,12 @@ import toast from 'react-hot-toast';
 export function useGoogleAuth() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+
+  // Load the popup's iframe while the Google button is on screen, so the
+  // popup opens right on click (Safari and mobile block late popups).
+  useEffect(() => {
+    container.getAuthRepository().prewarmGooglePopup();
+  }, []);
 
   const signInWithGoogle = useCallback(
     async (redirectTo) => {
