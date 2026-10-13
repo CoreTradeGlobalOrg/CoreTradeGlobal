@@ -3,9 +3,8 @@
 Created 2026-10-12 from Lighthouse 13.5 runs on https://www.coretradeglobal.com (homepage).
 
 **Status (2026-10-13)**: quick batch done (1.1, 1.4, 2.3, Priority 3, plus a mobile CLS fix)
-and live in production; 1.2 measured and not kept; 2.6 done. See "Progress log" at the bottom.
-Next: 1.3 thumbnails (now the biggest mobile LCP lever, see the 2.6 entry), then the rest of
-Priority 2.
+and live in production; 1.2 measured and not kept; 2.6 done and live in production. See "Progress log" at the bottom.
+Next: merge the 1.3 frontend to `main` and measure, then the rest of Priority 2.
 
 ## Baseline (2026-10-12, production)
 
@@ -60,7 +59,27 @@ every load, render-blocking CSS, full-size images, and main-thread JS.
   every page; a note is left in `next.config.mjs`.
 - **Better fix, moved to 2.5**: shrink the CSS.
 
-### 1.3 Product and logo thumbnails
+### 1.3 Product and logo thumbnails (product photos: deployed and backfilled 2026-10-13, frontend not yet on main)
+- **Done (code)**: Cloud Functions `generateProductThumbnail` / `deleteProductThumbnail`
+  (us-west1, the bucket's region) write/remove a 640 px WebP at
+  `users/{uid}/products/{pid}/thumbs/{same file name}`; shared code in
+  `functions/utils/productThumbnail.js`. No Firestore field: the frontend derives the thumb URL
+  from the original (`src/lib/productThumbnail.js`, `?alt=media&v=<token>`, public read via a
+  new `storage.rules` match) and falls back to the original on error (`ProductThumbImg`,
+  FeaturedProducts). Used by FeaturedProducts, Showcase, ProductGrid, ProductList and the
+  hero ad cards. Backfill: `scripts/generate-product-thumbnails.js` (dry run: 1,569 photos,
+  143 MiB). Tested on the emulator (upload, overwrite, delete, PNG, rules) and locally with
+  missing thumbs (cards fall back, nothing broken). Logos (81 KiB on the homepage) left out.
+- **Rollout order**: storage rules → the two functions → backfill `--apply` → merge the
+  frontend. Until the thumbs exist every card makes one failed request before the original.
+- **Rollout (2026-10-13)**: storage rules deployed; both functions created in us-west1;
+  production smoke test on `users/__thumbnail-smoke-test__/` (thumb in 1–3 s, survives an
+  overwrite, removed with the original; cleaned up). Backfill: 1,568 thumbs, 138.6 MiB of
+  originals → 42.0 MiB; 1 failure, a `.heic` photo (sharp's prebuilt binary has no HEIC; it
+  is a 5th photo, not a card image). The 12 product photos on the live homepage: 1,497 KiB →
+  513 KiB. Functions deploy warnings: Node.js 20 runtime is decommissioned on 2026-10-30
+  (no deploys after that until `functions/package.json` moves to Node 22), and us-west1 has
+  no Artifact Registry cleanup policy (`firebase functions:artifacts:setpolicy`).
 - **Problem**: `images.unoptimized: true` in `next.config.mjs`. Cards that are 175 px wide get
   1200×1200 originals from Firebase Storage. Savings: about 600 KiB mobile, 1.5 MiB desktop.
 - **Fix** (preferred over Vercel Image Optimization, which is billed per image):
@@ -255,6 +274,23 @@ FCP is a bit later because the first paint is now the real page instead of the "
 fallback; FCP and LCP are now the same paint. In the observed (unthrottled) runs that paint
 happens at ~170–230 ms, but ~1.5 MB has been requested by then, including ~870 KiB of product
 card images (see 1.3), and the simulation charges all of it to FCP and LCP.
+
+### 2026-10-13: 2.6 in production (merge 83feb51)
+PageSpeed Insights web UI, 5 mobile runs and the desktop tab of the same 5 reports. PSI is
+very noisy here (mobile 55–89); compare medians.
+
+| Production PSI | Quick batch (n=3 / 2) | After 2.6 (n=5) |
+|---|---|---|
+| Mobile performance | 71 [71,65,72] | **74** [74,55,62,89,82] |
+| Mobile FCP / LCP | 1.5 s / 4.5 s | 2.0 s / **3.3 s** [3.3,4.9,7.1,3.3,3.0] |
+| Mobile TBT | 490 ms | 400 ms [640,1070,210,160,400] |
+| Mobile Speed Index | 3.0 s | 4.1 s [4.1,4.6,7.8,2.5,3.3] |
+| Desktop performance | 98–99 | 94 [81,100,94,98,76] |
+| Desktop LCP / TBT | 0.9–1.0 s / 40–60 ms | 0.7 s / 180 ms [340,50,180,100,490] |
+
+LCP is clearly better; FCP is later as expected (no early "Loading…" paint). The score swings
+come mostly from TBT, which varies 5x between runs on the same build (desktop included), so
+TBT work (2.1, 2.2) and the images (1.3) are next.
 
 ## Open items outside this plan (from the same session)
 - Unused components: `src/presentation/components/features/product/ProductCard/ProductCard.jsx`

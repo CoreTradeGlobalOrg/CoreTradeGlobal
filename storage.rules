@@ -26,6 +26,13 @@ service firebase.storage {
       allow delete: if request.auth != null && request.auth.uid == userId;
     }
 
+    // 640 px card thumbnails, written by the generateProductThumbnail Cloud
+    // Function (Admin SDK). Public read so cards can load them by URL
+    // without a download token (src/lib/productThumbnail.js).
+    match /users/{userId}/products/{productId}/thumbs/{filename} {
+      allow read: if true;
+    }
+
     match /users/{userId}/company-logo/{filename} {
       allow read: if true;
       allow write: if request.auth != null
