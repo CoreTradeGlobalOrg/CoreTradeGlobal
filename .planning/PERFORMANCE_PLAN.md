@@ -4,7 +4,7 @@ Created 2026-10-12 from Lighthouse 13.5 runs on https://www.coretradeglobal.com 
 
 **Status (2026-10-13)**: quick batch done (1.1, 1.4, 2.3, Priority 3, plus a mobile CLS fix)
 and live in production; 1.2 measured and not kept; 2.6 done and live in production. See "Progress log" at the bottom.
-Next: merge the 1.3 frontend to `main` and measure, then the rest of Priority 2.
+Next: Priority 2 (2.1/2.2 main-thread JS: in slow PSI runs the first paint waits for it).
 
 ## Baseline (2026-10-12, production)
 
@@ -59,7 +59,7 @@ every load, render-blocking CSS, full-size images, and main-thread JS.
   every page; a note is left in `next.config.mjs`.
 - **Better fix, moved to 2.5**: shrink the CSS.
 
-### 1.3 Product and logo thumbnails (product photos: deployed and backfilled 2026-10-13, frontend not yet on main)
+### 1.3 Product and logo thumbnails (product photos: DONE 2026-10-13, merge 596d46b)
 - **Done (code)**: Cloud Functions `generateProductThumbnail` / `deleteProductThumbnail`
   (us-west1, the bucket's region) write/remove a 640 px WebP at
   `users/{uid}/products/{pid}/thumbs/{same file name}`; shared code in
@@ -78,8 +78,9 @@ every load, render-blocking CSS, full-size images, and main-thread JS.
   originals → 42.0 MiB; 1 failure, a `.heic` photo (sharp's prebuilt binary has no HEIC; it
   is a 5th photo, not a card image). The 12 product photos on the live homepage: 1,497 KiB →
   513 KiB. Functions deploy warnings: Node.js 20 runtime is decommissioned on 2026-10-30
-  (no deploys after that until `functions/package.json` moves to Node 22), and us-west1 has
-  no Artifact Registry cleanup policy (`firebase functions:artifacts:setpolicy`).
+  (fixed 2026-10-14: `functions/package.json` is on Node 22 and all 73 functions are
+  redeployed on nodejs22), and us-west1 has no Artifact Registry cleanup policy
+  (`firebase functions:artifacts:setpolicy`).
 - **Problem**: `images.unoptimized: true` in `next.config.mjs`. Cards that are 175 px wide get
   1200×1200 originals from Firebase Storage. Savings: about 600 KiB mobile, 1.5 MiB desktop.
 - **Fix** (preferred over Vercel Image Optimization, which is billed per image):
@@ -291,6 +292,25 @@ very noisy here (mobile 55–89); compare medians.
 LCP is clearly better; FCP is later as expected (no early "Loading…" paint). The score swings
 come mostly from TBT, which varies 5x between runs on the same build (desktop included), so
 TBT work (2.1, 2.2) and the images (1.3) are next.
+
+### 2026-10-13: 1.3 thumbnails in production (merge 596d46b)
+PageSpeed Insights web UI, 5 mobile runs.
+
+| Production PSI mobile | After 2.6 (n=5) | After 1.3 (n=5) |
+|---|---|---|
+| Performance | 74 [74,55,62,89,82] | **81** [65,88,66,85,81] |
+| FCP | 2.0 s | 2.0 s [2.7,2.0,2.3,2.0,2.0] |
+| LCP | 3.3 s [3.3,4.9,7.1,3.3,3.0] | 4.4 s [6.7,3.6,6.2,3.8,4.4] |
+| TBT | 400 ms | 160 ms [80,20,260,160,160] |
+| Speed Index | 4.1 s | 2.9 s [7.8,2.9,5.2,2.8,2.6] |
+| "Improve image delivery" | ~780–840 KiB | ~330 KiB [360,307,360,331,278] |
+
+Image bytes are down as planned, but LCP is still bimodal: good runs land at 3.6–4.4 s, bad
+runs at 6–7 s. In a bad run the LCP element (`h1.hero-slogan`) showed 1,270 ms of "element
+render delay" in PSI's own unthrottled load, i.e. the first paint waited for main-thread
+JS, and the simulation then charges every request made before it. Reducing the JS that runs
+before first paint (2.1, 2.2) is the next lever; `content-visibility: auto` on below-the-fold
+sections may also make the first paint cheaper.
 
 ## Open items outside this plan (from the same session)
 - Unused components: `src/presentation/components/features/product/ProductCard/ProductCard.jsx`
