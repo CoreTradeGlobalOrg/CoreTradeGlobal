@@ -25,6 +25,7 @@ import { useSponsoredHeroAd } from '@/presentation/hooks/ads/useSponsoredHeroAd'
 import { useTrackAd } from '@/presentation/hooks/ads/useTrackAd';
 import { useProductsByIds } from '@/presentation/hooks/product/useProductsByIds';
 import { useUserProfile } from '@/presentation/hooks/user/useUserProfile';
+import { ProductThumbImg } from '@/presentation/components/common/ProductThumbImg/ProductThumbImg';
 
 function AdSlot({ ad, slot, placeholder, ariaLabel }) {
   const { setRef, trackClick } = useTrackAd(ad?.id, slot);
@@ -44,7 +45,7 @@ function AdSlot({ ad, slot, placeholder, ariaLabel }) {
       >
         <div className="hero-mobile-promo-card-media">
           {ad.companyLogo ? (
-            <img
+            <ProductThumbImg
               src={ad.companyLogo}
               alt={ad.companyName || 'Sponsored'}
               loading="lazy"

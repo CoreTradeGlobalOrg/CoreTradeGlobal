@@ -27,6 +27,7 @@ import { useSponsoredHeroAd } from '@/presentation/hooks/ads/useSponsoredHeroAd'
 import { useTrackAd } from '@/presentation/hooks/ads/useTrackAd';
 import { useUserProfile } from '@/presentation/hooks/user/useUserProfile';
 import { useProductsByIds } from '@/presentation/hooks/product/useProductsByIds';
+import { ProductThumbImg } from '@/presentation/components/common/ProductThumbImg/ProductThumbImg';
 import { useCategories } from '@/presentation/hooks/category/useCategories';
 import './ShowcaseSection.css';
 
@@ -108,8 +109,7 @@ function MiniProductCard({ product }) {
     <Link href={`/product/${product.id}`} className="mini-product-card">
       <div className="mini-product-thumb">
         {product.images?.[0] ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={product.images[0]} alt={product.name} />
+          <ProductThumbImg src={product.images[0]} alt={product.name} />
         ) : (
           <PlaceholderIcon />
         )}

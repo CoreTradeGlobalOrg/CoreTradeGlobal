@@ -16,6 +16,7 @@ import { useSponsoredHeroAd } from '@/presentation/hooks/ads/useSponsoredHeroAd'
 import { useTrackAd } from '@/presentation/hooks/ads/useTrackAd';
 import { useProductsByIds } from '@/presentation/hooks/product/useProductsByIds';
 import { useUserProfile } from '@/presentation/hooks/user/useUserProfile';
+import { ProductThumbImg } from '@/presentation/components/common/ProductThumbImg/ProductThumbImg';
 import { getUnitByCode, getUnitName, getUnitNamePluralized } from '@/core/constants/units';
 
 function truncate(text, max = 90) {
@@ -191,13 +192,15 @@ export function HeroDataCards({ fetchData, dataLoading, latestProduct, latestReq
           >
             <div className="card-icon" style={{ position: 'relative', overflow: 'hidden' }}>
               {productAd.companyLogo ? (
-                <Image
+                // Usually the sponsored product's first photo: thumbnail
+                // with fallback (same box as next/image `fill`).
+                <ProductThumbImg
                   src={productAd.companyLogo}
                   alt={productAd.companyName || 'Sponsored'}
-                  fill
-                  sizes="48px"
+                  loading="lazy"
+                  decoding="async"
                   className="object-cover rounded"
-                  unoptimized
+                  style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
                 />
               ) : (
                 <span style={{ fontSize: '24px' }}>✨</span>

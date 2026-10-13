@@ -12,6 +12,7 @@ import { Package, MoreVertical, Edit, Trash2, Eye, EyeOff } from 'lucide-react';
 import { useState, memo } from 'react';
 import { useCategories } from '@/presentation/hooks/category/useCategories';
 import { getUnitByCode, getUnitName } from '@/core/constants/units';
+import { ProductThumbImg } from '@/presentation/components/common/ProductThumbImg/ProductThumbImg';
 
 // Map codes to symbols
 const CURRENCY_SYMBOLS = {
@@ -60,7 +61,7 @@ const ProductCardImage = memo(function ProductCardImage({ src, alt, inactive }) 
           <div className="w-8 h-8 border-2 border-[#FFD700] border-t-transparent rounded-full animate-spin"></div>
         </div>
       )}
-      <img
+      <ProductThumbImg
         src={src}
         alt={alt}
         className={`w-full h-full object-cover transition-opacity duration-300 ${loading ? 'opacity-0' : 'opacity-100'} ${inactive ? 'opacity-50 grayscale' : ''}`}

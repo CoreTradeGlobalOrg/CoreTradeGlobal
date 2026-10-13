@@ -14,6 +14,7 @@ import { Star, MessageSquarePlus } from 'lucide-react';
 import { container } from '@/core/di/container';
 import { COUNTRIES } from '@/core/constants/countries';
 import { CountryFlag } from '@/presentation/components/common/CountryFlag/CountryFlag';
+import { ProductThumbImg } from '@/presentation/components/common/ProductThumbImg/ProductThumbImg';
 import { useCategories } from '@/presentation/hooks/category/useCategories';
 import { useFavoriteProduct } from '@/presentation/hooks/product/useFavoriteProduct';
 import { useOwnerRoles } from '@/presentation/hooks/user/useOwnerRoles';
@@ -461,7 +462,7 @@ function ProductCard({ product, categories, isFavorited, onToggleFavorite, owner
                                 <div className="w-8 h-8 border-2 border-[#FFD700] border-t-transparent rounded-full animate-spin"></div>
                             </div>
                         )}
-                        <img
+                        <ProductThumbImg
                             src={product.images[0]}
                             alt={product.name}
                             className={`w-full h-full object-cover transition-all duration-500 group-hover:scale-110 ${imageLoading ? 'opacity-0' : 'opacity-100'}`}

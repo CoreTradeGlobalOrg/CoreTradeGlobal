@@ -16,6 +16,7 @@ import { useCategories } from '@/presentation/hooks/category/useCategories';
 import { useOwnerRoles } from '@/presentation/hooks/user/useOwnerRoles';
 import { useResponsiveLimit, useScrollLoadMore } from '@/presentation/hooks/useResponsiveLimit';
 import { getUnitByCode, getUnitName } from '@/core/constants/units';
+import { productThumbUrl } from '@/lib/productThumbnail';
 
 // Mock product fallback (ids '1'..'8', fake "Afyon marble" / "Tuscany
 // olive oil" / "CNC machine" listings) was removed on 2026-10-11.
@@ -75,6 +76,10 @@ function isUnoptimizedProduct(product) {
 const ProductCardImage = memo(function ProductCardImage({ src, alt, unoptimized = false }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  // 640 px thumbnail; falls back to the original if it is missing.
+  const thumb = productThumbUrl(src);
+  const [thumbFailed, setThumbFailed] = useState(false);
+  const shownSrc = thumbFailed ? src : thumb;
 
   if (!src || error) {
     return (
@@ -90,7 +95,7 @@ const ProductCardImage = memo(function ProductCardImage({ src, alt, unoptimized 
         <div className="absolute inset-0 animate-shimmer z-10" />
       )}
       <Image
-        src={src}
+        src={shownSrc}
         alt={alt}
         fill
         unoptimized={unoptimized}
@@ -108,7 +113,11 @@ const ProductCardImage = memo(function ProductCardImage({ src, alt, unoptimized 
         sizes="(max-width: 639px) 100vw, (max-width: 900px) 50vw, (max-width: 1200px) 33vw, 300px"
         className={`object-cover transition-opacity duration-300 ${loading ? 'opacity-0' : 'opacity-100'}`}
         onLoad={() => setLoading(false)}
-        onError={() => { setLoading(false); setError(true); }}
+        onError={() => {
+          if (shownSrc !== src) { setThumbFailed(true); return; }
+          setLoading(false);
+          setError(true);
+        }}
       />
     </>
   );

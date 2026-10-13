@@ -8193,3 +8193,48 @@ async function sendAdFinalReport(adId) {
   });
   await adRef.update({ finalReportSentAt: Timestamp.now() });
 }
+
+// ─── Product card thumbnails ─────────────────────────────────────────────────
+// 640 px WebP copies of product photos for cards, next to the originals in
+// a thumbs/ folder (see utils/productThumbnail.js). The bucket is in
+// us-west1 and a storage trigger has to run in the bucket's region.
+
+const { onObjectFinalized, onObjectDeleted } = require('firebase-functions/v2/storage');
+const productThumbnail = require('./utils/productThumbnail');
+
+exports.generateProductThumbnail = onObjectFinalized(
+  { region: 'us-west1', memory: '512MiB' },
+  async (event) => {
+    const { name, contentType, bucket: bucketName } = event.data;
+    if (!productThumbnail.isProductImagePath(name, contentType)) return;
+
+    const bucket = admin.storage().bucket(bucketName);
+    try {
+      const [input] = await bucket.file(name).download();
+      const thumb = await productThumbnail.makeThumbnail(input, contentType);
+      await bucket.file(productThumbnail.thumbPathFor(name)).save(thumb.buffer, {
+        resumable: false,
+        metadata: { contentType: thumb.contentType, cacheControl: productThumbnail.THUMB_CACHE_CONTROL },
+      });
+    } catch (err) {
+      // Cards fall back to the original image when the thumb is missing.
+      console.error(`generateProductThumbnail failed for ${name}:`, err);
+    }
+  }
+);
+
+exports.deleteProductThumbnail = onObjectDeleted(
+  { region: 'us-west1' },
+  async (event) => {
+    const { name, bucket: bucketName } = event.data;
+    if (!productThumbnail.isProductImagePath(name)) return;
+
+    const bucket = admin.storage().bucket(bucketName);
+    // Overwriting an object also sends a delete event for the old version.
+    // Keep the thumb if the original still exists; the finalize trigger
+    // replaces it.
+    const [stillExists] = await bucket.file(name).exists();
+    if (stillExists) return;
+    await bucket.file(productThumbnail.thumbPathFor(name)).delete({ ignoreNotFound: true });
+  }
+);
