@@ -124,30 +124,25 @@ export default function RootLayout({ children }) {
 
             Preconnect is expensive (TLS + TCP + DNS) — Google recommends
             ≤ 4. So we split by criticality: origins on the LCP path get
-            preconnect, origins needed later (Firebase auth GAPI, app
-            check installations) get the much cheaper dns-prefetch.
+            preconnect, origins needed later (app check installations) get
+            the much cheaper dns-prefetch. next/font adds one more
+            preconnect (to "/") because the Inter font is not preloaded.
 
             Removed: firebase.googleapis.com — Lighthouse flagged it as
             an unused preconnect on the homepage (the SDK reaches the
             Google servers via other origins first).
 
-            Added: core-trade-global.firebaseapp.com — hosts the Firebase
-            Auth iframe (__/auth/iframe.js), which Lighthouse's network
-            dependency tree currently pins as the 1.76 s critical-path
-            leaf. Preconnecting shaves ~310 ms per Lighthouse's estimate.
-            No crossOrigin because the iframe fetch is credentialed. */}
+            Removed: core-trade-global.firebaseapp.com and apis.google.com
+            (the Firebase Auth popup iframe and its gapi loader). Auth no
+            longer loads that iframe on page load, only on pages with a
+            Google button (see firebase.config.js).
+
+            Removed: scripts.clarity.ms. Clarity loads with lazyOnload,
+            long after a head preconnect would have gone idle. */}
         <link rel="preconnect" href="https://firebasestorage.googleapis.com" crossOrigin="anonymous" />
         <link rel="preconnect" href="https://firestore.googleapis.com" />
-        <link rel="preconnect" href="https://core-trade-global.firebaseapp.com" />
-        <link rel="dns-prefetch" href="https://apis.google.com" />
         <link rel="dns-prefetch" href="https://www.googleapis.com" />
         <link rel="dns-prefetch" href="https://firebaseinstallations.googleapis.com" />
-        {/* Clarity's tag script fetches from scripts.clarity.ms after
-            the tag is injected. Lighthouse flagged ~160 ms LCP savings
-            from preconnecting because the CDN handshake was cold. */}
-        {CLARITY_PROJECT_ID && (
-          <link rel="preconnect" href="https://scripts.clarity.ms" crossOrigin="anonymous" />
-        )}
         {/* Critical CLS reservation.
             Real-browser CLS is already 0 with these rules in homepage.css /
             globals.css, but Lighthouse's slow-network simulation AND
@@ -183,16 +178,18 @@ export default function RootLayout({ children }) {
              thin buffer. News was retired Sept 2026 — the old 4600
              reservation left ~620 px of blank space under Fairs.
 
-             (main)/page is now a server component, so the initial HTML
-             contains the real section tree and no reservation is
-             needed — but the clamp is kept as belt-and-braces in case
-             any child forces a client bailout in the future. Mobile is
-             set to 0 because the real content is taller than any fixed
-             clamp we'd pick, and any over-reserve produces a visible
-             blank strip at the bottom of the page. */
+             (main)/page is a server component now, but (main)/loading.jsx
+             still wraps it in a Suspense boundary: the static HTML ships
+             the loading fallback and the footer first, and the real
+             sections sit in <div hidden id="S:0"> until an inline script
+             swaps them in. Mobile reserves one viewport height so the
+             footer starts below the fold during that window (it used to
+             reserve 0, which measured 0.40 CLS in local Lighthouse runs).
+             Not more than 100vh: the real mobile content is ~4600 px,
+             but a fixed clamp risks a blank strip at the bottom. */
           .main-content-reservation{min-height:3980px}
           @media (max-width:1024px){.main-content-reservation{min-height:3400px}}
-          @media (max-width:600px){.main-content-reservation{min-height:0}}
+          @media (max-width:600px){.main-content-reservation{min-height:100vh}}
         ` }} />
         {/* Analytics stack moved to strategy="lazyOnload" — the browser
             defers fetch/eval until the window load event, so gtag.js

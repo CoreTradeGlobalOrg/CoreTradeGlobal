@@ -8,6 +8,12 @@ const nextConfig = {
   // shipping dead config. Critical-CSS inlining on the LCP path is
   // still handled by the `<style dangerouslySetInnerHTML>` block in
   // src/app/layout.js (sticky-footer + tagline + homepage reservation).
+  //
+  // experimental.inlineCss was measured on 2026-10-13 and not kept: our CSS
+  // is ~262 KB raw and Next also repeats it in the RSC payload, so the
+  // homepage HTML went from 29 KB to 146 KB gzip. Local Lighthouse mobile
+  // score was flat (75 vs 76); FCP got 0.6 s worse, simulated LCP 1.7 s
+  // better. Shrinking the CSS is the better fix (.planning/PERFORMANCE_PLAN.md).
   images: {
     // Global bypass of the Vercel Image Optimizer. Every user upload
     // now arrives WebP-compressed (src/lib/image-utils.js on the client)

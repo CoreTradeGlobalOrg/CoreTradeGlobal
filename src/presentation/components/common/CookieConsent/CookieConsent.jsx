@@ -124,7 +124,7 @@ export function CookieConsent() {
                 <p className="text-gray-400 text-xs md:text-sm leading-relaxed">
                   We use cookies to improve your experience and analyze site traffic.{' '}
                   <Link href="/cookie-policy" className="text-[#FFD700] hover:underline">
-                    Learn more
+                    Read our Cookie Policy
                   </Link>
                 </p>
               </div>

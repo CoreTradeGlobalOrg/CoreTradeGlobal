@@ -9,11 +9,12 @@
  *
  *   - Water sphere: SphereGeometry(5.95, 32, 32), MeshBasicMaterial
  *     water color 0x0A1628, opacity 0.9, FrontSide
- *   - Land points: sunflower distribution sampled against the earth
- *     specular map at /textures/earth_specular_2048.jpg; dark pixels
- *     (< 50) are land. Positions kept in a Float32Array on a
- *     BufferGeometry rendered with PointsMaterial + procedural circle
- *     texture + additive blending
+ *   - Land points: sunflower distribution sampled against the land mask
+ *     at /textures/earth_landmask_1024.webp (the three.js earth specular
+ *     map scaled to 1024×512 and thresholded at 50); dark pixels are
+ *     land. Positions kept in a Float32Array on a BufferGeometry
+ *     rendered with PointsMaterial + procedural circle texture +
+ *     additive blending
  *   - Trade routes: spawned randomly (1.5% per frame, capped by
  *     maxRoutes), rendered as TubeGeometry along a quadratic bezier
  *     arc between two land points, with a custom shader that draws a
@@ -274,7 +275,7 @@ async function init({ canvas, width, height, dpr, isMobile }) {
     pointSize: isMobile ? 0.28 : 0.22,
     pointColor: 0xffffff,
     waterColor: 0x0a1628,
-    mapUrl: '/textures/earth_specular_2048.jpg',
+    mapUrl: '/textures/earth_landmask_1024.webp',
     maxRoutes: isMobile ? 4 : 8,
     tubeSegments: isMobile ? 32 : 64,
     // Original camera was at (0, y, z) with y == z ∈ {22, 35} — distance from

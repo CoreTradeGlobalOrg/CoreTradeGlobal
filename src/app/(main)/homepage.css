@@ -117,9 +117,9 @@ html {
     }
 
     #canvas-container {
-        /* Mobile: no globe is ever mounted here (HeroSection gates
-           three.js behind !isMobile), so drop the whole slot from
-           layout instead of reserving a 320 px blank band under the
+        /* Mobile: no globe here. HeroSection stops rendering this
+           container after hydration; until then (server HTML) drop it
+           from layout instead of reserving a 320 px blank band under the
            search bar. The mobile ad cards take that middle spot now. */
         display: none !important;
     }
