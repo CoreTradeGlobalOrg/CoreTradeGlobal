@@ -4,8 +4,7 @@ Created 2026-10-12 from Lighthouse 13.5 runs on https://www.coretradeglobal.com 
 
 **Status (2026-10-13)**: quick batch done (1.1, 1.4, 2.3, Priority 3, plus a mobile CLS fix)
 and live in production; 1.2 measured and not kept; 2.6 done and live in production. See "Progress log" at the bottom.
-Next: deploy 1.3 (rules, functions, backfill; code is on `development`), then the rest of
-Priority 2.
+Next: merge the 1.3 frontend to `main` and measure, then the rest of Priority 2.
 
 ## Baseline (2026-10-12, production)
 
@@ -60,7 +59,7 @@ every load, render-blocking CSS, full-size images, and main-thread JS.
   every page; a note is left in `next.config.mjs`.
 - **Better fix, moved to 2.5**: shrink the CSS.
 
-### 1.3 Product and logo thumbnails (product photos: code done 2026-10-13, deploy pending)
+### 1.3 Product and logo thumbnails (product photos: deployed and backfilled 2026-10-13, frontend not yet on main)
 - **Done (code)**: Cloud Functions `generateProductThumbnail` / `deleteProductThumbnail`
   (us-west1, the bucket's region) write/remove a 640 px WebP at
   `users/{uid}/products/{pid}/thumbs/{same file name}`; shared code in
@@ -73,6 +72,14 @@ every load, render-blocking CSS, full-size images, and main-thread JS.
   missing thumbs (cards fall back, nothing broken). Logos (81 KiB on the homepage) left out.
 - **Rollout order**: storage rules → the two functions → backfill `--apply` → merge the
   frontend. Until the thumbs exist every card makes one failed request before the original.
+- **Rollout (2026-10-13)**: storage rules deployed; both functions created in us-west1;
+  production smoke test on `users/__thumbnail-smoke-test__/` (thumb in 1–3 s, survives an
+  overwrite, removed with the original; cleaned up). Backfill: 1,568 thumbs, 138.6 MiB of
+  originals → 42.0 MiB; 1 failure, a `.heic` photo (sharp's prebuilt binary has no HEIC; it
+  is a 5th photo, not a card image). The 12 product photos on the live homepage: 1,497 KiB →
+  513 KiB. Functions deploy warnings: Node.js 20 runtime is decommissioned on 2026-10-30
+  (no deploys after that until `functions/package.json` moves to Node 22), and us-west1 has
+  no Artifact Registry cleanup policy (`firebase functions:artifacts:setpolicy`).
 - **Problem**: `images.unoptimized: true` in `next.config.mjs`. Cards that are 175 px wide get
   1200×1200 originals from Firebase Storage. Savings: about 600 KiB mobile, 1.5 MiB desktop.
 - **Fix** (preferred over Vercel Image Optimization, which is billed per image):
