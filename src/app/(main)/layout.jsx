@@ -144,13 +144,15 @@ export default function MainLayout({ children }) {
       {/* Content reservation to keep the footer out of the initial
           viewport across all (main) routes.
 
-          Homepage uses .main-content-reservation (6500 px, matches the
-          .homepage tall content) because React 19 streams (main)/page
-          via a BAILOUT_TO_CLIENT_SIDE_RENDERING placeholder — server
-          HTML ships an empty <div hidden> here and stashes real content
-          in <div hidden id="S:0"> at the bottom of <body>. Without the
-          reservation the footer paints at y≈396 and only jumps to
-          y≈6510 after client hydration, worth ~0.40 CLS.
+          Homepage ((home)/page.js, which reuses this layout) uses
+          .main-content-reservation (sizes in the inline style in
+          src/app/layout.js). It was added when the homepage shipped an
+          empty <div hidden> here with the real content stashed in
+          <div hidden id="S:0"> at the bottom of <body>; without the
+          reservation the footer painted at y≈396 and jumped to y≈6510
+          after the swap, worth ~0.40 CLS. The homepage now renders in
+          place (see (home)/layout.jsx) and the reservation stays as a
+          guard.
 
           Non-homepage routes reserve exactly 100vh (min-h-screen). Every
           (main) page currently gates its real UI behind a useAuth

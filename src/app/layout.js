@@ -178,15 +178,14 @@ export default function RootLayout({ children }) {
              thin buffer. News was retired Sept 2026 — the old 4600
              reservation left ~620 px of blank space under Fairs.
 
-             (main)/page is a server component now, but (main)/loading.jsx
-             still wraps it in a Suspense boundary: the static HTML ships
-             the loading fallback and the footer first, and the real
-             sections sit in <div hidden id="S:0"> until an inline script
-             swaps them in. Mobile reserves one viewport height so the
-             footer starts below the fold during that window (it used to
-             reserve 0, which measured 0.40 CLS in local Lighthouse runs).
-             Not more than 100vh: the real mobile content is ~4600 px,
-             but a fixed clamp risks a blank strip at the bottom. */
+             The homepage is a server component in the (home) route group
+             now, outside (main)/loading.jsx, so its sections are in the
+             HTML before the footer. Until 2026-10-13 that loading
+             boundary shipped the fallback and the footer first; mobile
+             reserving 0 here measured 0.40 CLS in local Lighthouse runs.
+             Mobile keeps one viewport height as a cheap guard. Not more:
+             the real mobile content is ~4600 px, but a fixed clamp risks
+             a blank strip at the bottom. */
           .main-content-reservation{min-height:3980px}
           @media (max-width:1024px){.main-content-reservation{min-height:3400px}}
           @media (max-width:600px){.main-content-reservation{min-height:100vh}}
