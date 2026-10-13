@@ -2,9 +2,10 @@
 
 Created 2026-10-12 from Lighthouse 13.5 runs on https://www.coretradeglobal.com (homepage).
 
-**Status (2026-10-13)**: quick batch done (1.1, 1.4, 2.3, Priority 3, plus a mobile CLS fix);
-1.2 measured and not kept. See "Progress log" at the bottom. Next: 1.3 thumbnails, then
-Priority 2 (now including 2.5 and 2.6).
+**Status (2026-10-13)**: quick batch done (1.1, 1.4, 2.3, Priority 3, plus a mobile CLS fix)
+and live in production; 1.2 measured and not kept; 2.6 done. See "Progress log" at the bottom.
+Next: 1.3 thumbnails (now the biggest mobile LCP lever, see the 2.6 entry), then the rest of
+Priority 2.
 
 ## Baseline (2026-10-12, production)
 
@@ -70,7 +71,13 @@ every load, render-blocking CSS, full-size images, and main-thread JS.
   - cards and hero ad cards use the thumbnail, the product detail page keeps the full image.
 - **Also**: the mobile LCP element is probably a hero ad image
   (`src/presentation/components/homepage/Hero/HeroMobileAdCards.jsx`). Give it
-  `fetchpriority="high"` and no lazy loading.
+  `fetchpriority="high"` and no lazy loading. (Local runs on 2026-10-13 showed
+  `h1.hero-slogan` as the LCP element; check again with real ad data.)
+- **Why it matters for LCP (measured 2026-10-13)**: the product card images are
+  `loading="lazy"`, but on mobile the first six are inside the lazy-load distance, so Chrome
+  requests them during the first layout: ~870 KiB (145–187 KiB each). Lighthouse's simulated
+  LCP counts every request that started before the observed LCP, so these images are most of
+  the remaining ~5 s.
 - **Note**: the biggest work item: upload flow, a function and a backfill.
 
 ### 1.4 Globe (DONE 2026-10-13)
@@ -113,13 +120,20 @@ every load, render-blocking CSS, full-size images, and main-thread JS.
   Tailwind + homepage.css), plus 44 KB, 7 KB, 2 KB. Find unused global rules and per-page CSS
   that ships on every route; smaller CSS shortens the render-blocking step without inlining.
 
-### 2.6 Hero text waits for a Suspense swap (added 2026-10-13)
+### 2.6 Hero text waits for a Suspense swap (added 2026-10-13, DONE 2026-10-13)
 - Mobile LCP is still ~7 s (simulated). The LCP element is `h1.hero-slogan` (text), but
   `src/app/(main)/loading.jsx` wraps the homepage in a Suspense boundary: even the static HTML
   ships the loading fallback first and the real sections in `<div hidden id="S:0">`, revealed by
   an inline `$RC` script near byte 79K of the 159 KB HTML. Worth testing the homepage without
   that boundary (for example a route that is not under `(main)/loading.jsx`), keeping the
   `notFound()` caveat in "Working rules" in mind.
+- **Cause**: React writes a Suspense boundary larger than ~12.8 KB (`progressiveChunkSize`)
+  out of order even when it is already complete, and Next does not expose that setting.
+- **Done**: the homepage moved to `src/app/(home)/page.js`; `(home)/layout.jsx` reuses
+  `(main)/layout` (same pattern as `(detail)`), `(home)/error.jsx` reuses `(main)/error`.
+  Trade-off: navigating between `/` and a `(main)` page remounts the layout (Navbar, widgets),
+  as it already did for `/product/*` and `/request/*`; client-side navigation still works
+  without a page reload (checked in headless Chrome).
 
 ## Priority 3: small score fixes (DONE 2026-10-13)
 - Link text was the cookie banner's "Learn more" (`CookieConsent.jsx`), now "Read our Cookie Policy".
@@ -157,7 +171,8 @@ Rough target: mobile 55 → 75–85, desktop 82 → 90+. Measure after every ste
   group-level `loading.jsx`). Each segment's `layout.jsx` checks existence (`src/lib/docExists.js`)
   before its own `loading.jsx`, so missing records return a real 404.
 - `src/app/(main)/loading.jsx` makes every `(main)` page stream: `notFound()` inside those pages
-  can only produce a 200 with noindex.
+  can only produce a 200 with noindex. The homepage is not under it any more: it lives in
+  `src/app/(home)/` (see 2.6).
 - Global `a { color: ... }` in `globals.css` overrides Tailwind text colors on links; set the
   color inline (`style={{ color, WebkitTextFillColor }}`).
 - The Chrome extension may be disconnected; headless Chrome via
@@ -204,6 +219,42 @@ What changed:
   hidden Suspense content (see 2.6) and jumped down when it was swapped in (0.40 CLS locally).
   `.main-content-reservation` is now `min-height: 100vh` on mobile (was 0), in
   `src/app/layout.js`.
+
+### 2026-10-13: quick batch in production (merge a210538)
+PageSpeed Insights web UI (pagespeed.web.dev; the keyless PSI API has a quota of 0). Mobile is
+the median of 3 runs, desktop of 2.
+
+| Production PSI | Baseline 2026-10-12 | After quick batch |
+|---|---|---|
+| Mobile performance | 55 | **71** [71,65,72] |
+| Mobile FCP / LCP | 2.3 s / 6.2 s | 1.5 s / 4.5 s |
+| Mobile TBT / CLS | 640 ms / 0 | 490 ms / 0.006 |
+| Mobile Speed Index | 5.5 s | 3.0 s |
+| Mobile a11y / SEO | 98 / 92 | 100 / 100 |
+| Desktop performance | 82 | **98–99** |
+| Desktop TBT / SI | 340 ms / 1.7 s | 40–60 ms / 0.9–1.1 s |
+
+No auth iframe, gapi or old globe texture requests in the reports. Remaining mobile insights:
+render-blocking requests (est. 780 ms, see 2.5), image delivery (est. 781 KiB, see 1.3), LCP
+still 4.5 s (see 2.6).
+
+### 2026-10-13: 2.6 homepage outside the loading boundary
+Local Lighthouse 13.5, `next build && next start`, headless Chrome. "Before" is the quick-batch
+build (`fix-extcss` runs, 5 each); "After" is median of 3 mobile runs on the final build and
+5 desktop runs on the same change tested as a deleted `(main)/loading.jsx`.
+
+| Local | Before | After 2.6 |
+|---|---|---|
+| Mobile performance | 75 | **79** [79,79,75] |
+| Mobile FCP / LCP | 1.66 s / 7.07 s | 2.11 s / **4.97 s** |
+| Mobile TBT / CLS | 124 ms / 0.006 | ~100 ms / 0.006 |
+| Desktop performance | 97 | **99** |
+| Desktop FCP / LCP | 0.41 s / 1.29 s | 0.49 s / 0.97 s |
+
+FCP is a bit later because the first paint is now the real page instead of the "Loading…"
+fallback; FCP and LCP are now the same paint. In the observed (unthrottled) runs that paint
+happens at ~170–230 ms, but ~1.5 MB has been requested by then, including ~870 KiB of product
+card images (see 1.3), and the simulation charges all of it to FCP and LCP.
 
 ## Open items outside this plan (from the same session)
 - Unused components: `src/presentation/components/features/product/ProductCard/ProductCard.jsx`
