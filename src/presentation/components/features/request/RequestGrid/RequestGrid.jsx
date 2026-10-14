@@ -50,9 +50,20 @@ const getRelativeTime = (date) => {
 // FeaturedProducts/ProductGrid. The /requests server shell now seeds
 // via firebase-admin and passes `initialRequests` down.
 
+// Firestore request doc → card fields. The docs store `productName` and
+// `targetCountry`, not `title`/`country`, so the server-seeded
+// initialRequests must go through this too (a ?search= URL filters them
+// on the first render).
+const toCardRequest = (r) => ({
+    ...r,
+    title: r.productName || r.title || '',
+    country: r.targetCountry || r.country, // ISO code
+    budget: r.budget ?? 'Negotiable',
+});
+
 export function RequestGrid({ searchQuery, categoryFilter, initialRequests = [] }) {
-    const [requests, setRequests] = useState(initialRequests);
-    const [filteredRequests, setFilteredRequests] = useState(initialRequests);
+    const [requests, setRequests] = useState(() => initialRequests.map(toCardRequest));
+    const [filteredRequests, setFilteredRequests] = useState(requests);
     const ownerRoles = useOwnerRoles(filteredRequests.map((r) => r.userId));
     const [loading, setLoading] = useState(initialRequests.length === 0);
     const { categories } = useCategories();
@@ -74,15 +85,10 @@ export function RequestGrid({ searchQuery, categoryFilter, initialRequests = [] 
 
                     if (sorted.length > 0) {
                         setRequests(
-                            sorted.map((r) => {
-                                return {
-                                    ...r,
-                                    title: r.productName || r.title,
-                                    country: r.targetCountry || r.country, // ISO code
-                                    timeAgo: getRelativeTime(r.updatedAt || r.createdAt),
-                                    budget: r.budget ?? 'Negotiable',
-                                };
-                            })
+                            sorted.map((r) => ({
+                                ...toCardRequest(r),
+                                timeAgo: getRelativeTime(r.updatedAt || r.createdAt),
+                            }))
                         );
                     }
                 }
@@ -109,11 +115,9 @@ export function RequestGrid({ searchQuery, categoryFilter, initialRequests = [] 
 
         if (searchQuery) {
             const lowerQ = searchQuery.toLowerCase();
+            const matches = (value) => typeof value === 'string' && value.toLowerCase().includes(lowerQ);
             result = result.filter(r =>
-                r.title.toLowerCase().includes(lowerQ) ||
-                (r.description && r.description.toLowerCase().includes(lowerQ)) ||
-                (r.categoryName && r.categoryName.toLowerCase().includes(lowerQ)) ||
-                (r.country && r.country.toLowerCase().includes(lowerQ))
+                matches(r.title) || matches(r.description) || matches(r.categoryName) || matches(r.country)
             );
         }
 
