@@ -1,7 +1,7 @@
 /**
  * Requests — SERVER metadata wrapper (see about-us/layout.js for rationale).
  * Individual RFQ pages have their own metadata in
- * src/app/(detail)/request/[requestId]/page.jsx. The canonical also
+ * src/app/(catalog)/request/[requestId]/page.jsx. The canonical also
  * covers the ?search= variants of this page.
  */
 

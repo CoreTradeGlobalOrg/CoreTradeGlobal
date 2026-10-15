@@ -1,7 +1,7 @@
 /**
  * Products — SERVER metadata wrapper (see about-us/layout.js for rationale).
  * Individual product pages have their own metadata under
- * src/app/(main)/product/[productId]/layout.
+ * src/app/(catalog)/product/[productId]/page.jsx.
  */
 
 const CANONICAL_URL = 'https://www.coretradeglobal.com/products';

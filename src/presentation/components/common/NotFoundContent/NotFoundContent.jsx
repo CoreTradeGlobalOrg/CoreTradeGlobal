@@ -3,7 +3,7 @@
  *
  * Used by src/app/not-found.jsx (adds its own Navbar/Footer because it sits
  * directly under the root layout) and by route groups whose layout already
- * renders the chrome, e.g. src/app/(detail)/not-found.jsx.
+ * renders the chrome, e.g. src/app/(catalog)/not-found.jsx.
  *
  * Links set color inline: the global `a { color }` rule in globals.css
  * overrides Tailwind text colors on anchors.
