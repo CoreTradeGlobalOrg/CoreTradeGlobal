@@ -17,6 +17,7 @@ import {
 import toast from 'react-hot-toast';
 import { ExternalLink, Trash2 } from 'lucide-react';
 import { db } from '@/core/config/firebase.config';
+import { revalidatePublicPage } from '@/lib/revalidatePublicPage';
 import { ConfirmDialog } from '@/presentation/components/common/ConfirmDialog/ConfirmDialog';
 import { formatDate, toMillis, searchText } from './quoteUtils';
 import { QuotesToolbar, StatCard, StatusPill, EmptyState, ListSkeleton } from './QuotesShared';
@@ -112,6 +113,7 @@ export function RfqListTab({ userMap }) {
         });
       }
       await batch.commit();
+      await revalidatePublicPage('request', target.id);
       setItems((prev) => prev.filter((i) => i.id !== target.id));
       toast.success('RFQ deleted');
       setDeleteTarget(null);

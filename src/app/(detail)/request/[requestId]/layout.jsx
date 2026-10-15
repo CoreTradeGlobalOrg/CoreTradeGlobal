@@ -1,7 +1,7 @@
 /**
- * Runs before this segment's loading.jsx, so a missing RFQ can still
- * answer with a real 404 status. A failed lookup (null) renders the page
- * as usual; only a confirmed "does not exist" becomes a 404.
+ * Answers a missing RFQ with a real 404 for this segment and its /edit
+ * page. A failed lookup (null) renders the page as usual; only a confirmed
+ * "does not exist" becomes a 404.
  */
 
 import { notFound } from 'next/navigation';

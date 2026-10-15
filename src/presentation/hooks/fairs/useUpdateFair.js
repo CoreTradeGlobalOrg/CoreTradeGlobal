@@ -8,6 +8,7 @@
 
 import { useState } from 'react';
 import { container } from '@/core/di/container';
+import { revalidatePublicPage } from '@/lib/revalidatePublicPage';
 import toast from 'react-hot-toast';
 
 export function useUpdateFair() {
@@ -22,6 +23,7 @@ export function useUpdateFair() {
       const fairsRepository = container.getFairsRepository();
 
       await fairsRepository.update(fairId, fairData);
+      await revalidatePublicPage('fair', fairId);
 
       toast.success('Fuar başarıyla güncellendi!');
     } catch (err) {

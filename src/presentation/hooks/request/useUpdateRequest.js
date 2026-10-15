@@ -8,6 +8,7 @@
 
 import { useState } from 'react';
 import { container } from '@/core/di/container';
+import { revalidatePublicPage } from '@/lib/revalidatePublicPage';
 import { UpdateRequestUseCase } from '@/domain/usecases/request/UpdateRequestUseCase';
 
 export function useUpdateRequest() {
@@ -27,6 +28,7 @@ export function useUpdateRequest() {
         updateData,
         { isAdmin }
       );
+      await revalidatePublicPage('request', requestId);
       return request;
     } catch (err) {
       console.error('useUpdateRequest error:', err);

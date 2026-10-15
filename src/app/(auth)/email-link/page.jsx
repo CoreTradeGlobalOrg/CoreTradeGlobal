@@ -21,6 +21,7 @@ import { httpsCallable } from 'firebase/functions';
 import { CheckCircle2, Eye, EyeOff, Loader2, Mail, AlertTriangle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { auth, getFunctionsInstance } from '@/core/config/firebase.config';
+import { revalidatePublicPage } from '@/lib/revalidatePublicPage';
 
 const EMAIL_KEY = 'emailForSignIn';
 
@@ -86,6 +87,8 @@ function EmailLinkContent() {
       return;
     }
     await httpsCallable(getFunctionsInstance(), 'publishGuestRFQ')({ requestId: rfqId });
+    // A page cached while the RFQ was still pending would show it unpublished
+    await revalidatePublicPage('request', rfqId);
     setStatus('rfq-live');
   }, [rfqId, next]);
 
