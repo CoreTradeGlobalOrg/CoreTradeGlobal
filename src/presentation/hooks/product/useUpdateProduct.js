@@ -8,6 +8,7 @@
 
 import { useState } from 'react';
 import { container } from '@/core/di/container';
+import { revalidatePublicPage } from '@/lib/revalidatePublicPage';
 import { UpdateProductUseCase } from '@/domain/usecases/product/UpdateProductUseCase';
 
 export function useUpdateProduct() {
@@ -28,6 +29,7 @@ export function useUpdateProduct() {
         newImageFiles,
         { isAdmin }
       );
+      await revalidatePublicPage('product', productId);
       return product;
     } catch (err) {
       console.error('useUpdateProduct error:', err);

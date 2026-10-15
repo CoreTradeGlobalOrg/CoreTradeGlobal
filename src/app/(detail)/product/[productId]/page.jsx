@@ -21,10 +21,20 @@ import { notFound } from 'next/navigation';
 import { getAdminFirestore } from '@/lib/firebase-admin';
 import { ProductDetailClient } from './ProductDetailClient';
 
-// Revalidate hourly so listing edits (price/status/description tweaks)
-// flow into cached HTML without waiting for a manual redeploy.
+// Revalidate hourly as a fallback; edits and deletes made in the app
+// refresh the page right away through /api/revalidate.
 export const revalidate = 3600;
 
+// No paths at build time: each product page is rendered on its first
+// visit and then served from the cache (ISR). Without this the route is
+// dynamic, so every request re-ran the Firestore reads and Next streamed
+// the title/description/canonical into <body> instead of <head>.
+export async function generateStaticParams() {
+  return [];
+}
+
+// Returns null only when the product does not exist. A Firestore error
+// throws instead, so the cache never keeps a 404 for a page that exists.
 async function fetchProduct(productId) {
   if (!productId) return null;
   try {
@@ -34,7 +44,7 @@ async function fetchProduct(productId) {
   } catch (err) {
     // eslint-disable-next-line no-console
     console.error('[product page] fetch failed:', err);
-    return null;
+    throw err;
   }
 }
 

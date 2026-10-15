@@ -8,6 +8,7 @@
 
 import { useState } from 'react';
 import { container } from '@/core/di/container';
+import { revalidatePublicPage } from '@/lib/revalidatePublicPage';
 import { DeleteRequestUseCase } from '@/domain/usecases/request/DeleteRequestUseCase';
 
 export function useDeleteRequest() {
@@ -22,6 +23,7 @@ export function useDeleteRequest() {
       const requestRepository = container.getRequestRepository();
       const deleteRequestUseCase = new DeleteRequestUseCase(requestRepository);
       await deleteRequestUseCase.execute(requestId, userId, { isAdmin });
+      await revalidatePublicPage('request', requestId);
     } catch (err) {
       console.error('useDeleteRequest error:', err);
       setError(err.message);

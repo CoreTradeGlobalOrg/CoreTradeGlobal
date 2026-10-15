@@ -15,8 +15,18 @@ import { getAdminFirestore } from '@/lib/firebase-admin';
 import { RequestDetailsClient } from './RequestDetailsClient';
 import { isAnonymousGuest } from '@/core/utils/publicIdentity';
 
+// Revalidate hourly as a fallback; edits and deletes made in the app
+// refresh the page right away through /api/revalidate.
 export const revalidate = 3600;
 
+// Rendered on first visit, then served from the cache (ISR). See
+// product/[productId]/page.jsx.
+export async function generateStaticParams() {
+  return [];
+}
+
+// null only when the RFQ does not exist; a Firestore error throws so the
+// cache never keeps a 404 for a page that exists.
 async function fetchRequest(requestId) {
   if (!requestId) return null;
   try {
@@ -26,7 +36,7 @@ async function fetchRequest(requestId) {
   } catch (err) {
     // eslint-disable-next-line no-console
     console.error('[request page] fetch failed:', err);
-    return null;
+    throw err;
   }
 }
 

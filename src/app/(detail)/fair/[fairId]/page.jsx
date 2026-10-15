@@ -13,8 +13,18 @@ import { notFound } from 'next/navigation';
 import { getAdminFirestore } from '@/lib/firebase-admin';
 import { FairDetailClient } from './FairDetailClient';
 
+// Revalidate hourly as a fallback; admin edits and deletes refresh the
+// page right away through /api/revalidate.
 export const revalidate = 3600;
 
+// Rendered on first visit, then served from the cache (ISR). See
+// product/[productId]/page.jsx.
+export async function generateStaticParams() {
+  return [];
+}
+
+// null only when the fair does not exist; a Firestore error throws so the
+// cache never keeps a 404 for a page that exists.
 async function fetchFair(fairId) {
   if (!fairId) return null;
   try {
@@ -24,7 +34,7 @@ async function fetchFair(fairId) {
   } catch (err) {
     // eslint-disable-next-line no-console
     console.error('[fair page] fetch failed:', err);
-    return null;
+    throw err;
   }
 }
 

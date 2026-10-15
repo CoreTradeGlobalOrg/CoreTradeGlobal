@@ -2,8 +2,8 @@
  * docExists(collection, id) → true | false | null
  *
  * Server-side existence check used by detail-route layouts to answer a
- * missing record with a real 404 before any loading boundary starts the
- * response. null means "could not tell" (Firestore error): callers must
+ * missing record with a real 404 (for the page and its /edit route).
+ * null means "could not tell" (Firestore error): callers must
  * NOT treat that as missing, so a transient error never turns into a 404.
  * Wrapped in React cache() so one request does at most one read per doc.
  */

@@ -8,6 +8,7 @@
 
 import { useState } from 'react';
 import { container } from '@/core/di/container';
+import { revalidatePublicPage } from '@/lib/revalidatePublicPage';
 import { DeleteProductUseCase } from '@/domain/usecases/product/DeleteProductUseCase';
 
 export function useDeleteProduct() {
@@ -22,6 +23,7 @@ export function useDeleteProduct() {
       const productRepository = container.getProductRepository();
       const deleteProductUseCase = new DeleteProductUseCase(productRepository);
       await deleteProductUseCase.execute(productId, userId, { isAdmin });
+      await revalidatePublicPage('product', productId);
     } catch (err) {
       console.error('useDeleteProduct error:', err);
       setError(err.message);

@@ -8,6 +8,7 @@
 
 import { useState } from 'react';
 import { container } from '@/core/di/container';
+import { revalidatePublicPage } from '@/lib/revalidatePublicPage';
 import toast from 'react-hot-toast';
 
 export function useDeleteFair() {
@@ -22,6 +23,7 @@ export function useDeleteFair() {
       const fairsRepository = container.getFairsRepository();
 
       await fairsRepository.delete(fairId);
+      await revalidatePublicPage('fair', fairId);
 
       toast.success('Fuar başarıyla silindi!');
     } catch (err) {
