@@ -3,7 +3,9 @@
 Created 2026-10-12 from Lighthouse 13.5 runs on https://www.coretradeglobal.com (homepage).
 
 **Status (2026-10-13)**: quick batch done (1.1, 1.4, 2.3, Priority 3, plus a mobile CLS fix)
-and live in production; 1.2 measured and not kept; 2.6 done and live in production. See "Progress log" at the bottom.
+and live in production; 1.2 measured and not kept; 2.6 and 1.3 done and live in production.
+2026-10-15: catalog pages (product/RFQ/fair detail, /products, /requests) moved out of the loading
+screen and the detail pages made ISR, for SEO and TTFB. See "Progress log" at the bottom.
 Next: Priority 2 (2.1/2.2 main-thread JS: in slow PSI runs the first paint waits for it).
 
 ## Baseline (2026-10-12, production)
@@ -187,12 +189,20 @@ Rough target: mobile 55 → 75–85, desktop 82 → 90+. Measure after every ste
 - The active middleware is the **root** `middleware.js`. `src/middleware.js` is dead code (its
   2026-07-31 login/register fix never shipped). The root matcher is deliberately narrow so detail
   pages stay CDN-cacheable: do not add `/product` or `/request` to it.
-- Product and RFQ detail routes live in `src/app/(detail)/` (same layout as `(main)`, with no
-  group-level `loading.jsx`). Each segment's `layout.jsx` checks existence (`src/lib/docExists.js`)
-  before its own `loading.jsx`, so missing records return a real 404.
+- The public catalog lives in `src/app/(catalog)/` (renamed from `(detail)` on 2026-10-15): the
+  product, RFQ and fair detail pages plus `/products` and `/requests`. Same layout as `(main)` and
+  no `loading.jsx` anywhere in the group. The detail pages are ISR (`generateStaticParams()`
+  returns `[]`, `revalidate = 3600`); edits and deletes in the app call `/api/revalidate`
+  (`src/lib/revalidatePublicPage.js`) so the cached page is rebuilt on the next visit.
 - `src/app/(main)/loading.jsx` makes every `(main)` page stream: `notFound()` inside those pages
-  can only produce a 200 with noindex. The homepage is not under it any more: it lives in
-  `src/app/(home)/` (see 2.6).
+  can only produce a 200 with noindex, and any page content over ~12 KB is sent in a hidden
+  `<div id="S:0">` behind "Loading…". The homepage (`(home)`) and the catalog are not under it.
+- A dynamic page (no `generateStaticParams`, or reads `searchParams`) gets its
+  `generateMetadata` output streamed into `<body>`, not `<head>` (Next 16 streaming metadata).
+  Pages with static `metadata` are not affected.
+- Vercel starts every production deployment with an empty ISR cache. To warm it, GET every
+  sitemap URL after the deploy (plain `fetch(url, { cache: 'no-store' })` from a browser bypasses
+  the CDN and always shows MISS; use curl or a default fetch).
 - Global `a { color: ... }` in `globals.css` overrides Tailwind text colors on links; set the
   color inline (`style={{ color, WebkitTextFillColor }}`).
 - The Chrome extension may be disconnected; headless Chrome via
@@ -311,6 +321,23 @@ render delay" in PSI's own unthrottled load, i.e. the first paint waited for mai
 JS, and the simulation then charges every request made before it. Reducing the JS that runs
 before first paint (2.1, 2.2) is the next lever; `content-visibility: auto` on below-the-fold
 sections may also make the first paint cheaper.
+
+### 2026-10-15: SEO pass on the catalog pages (merges 4e27b6a and this one)
+Googlebot's HTML for the 621 product pages (and RFQ/fair pages) had title, description,
+canonical and robots inside `<body>` in a hidden Suspense segment, the visible part was
+"Loading…", and every request was dynamic (`private, no-store`, 1.5–1.9 s).
+- Detail pages are ISR now: metadata in `<head>`, content visible in the first HTML, CDN HIT in
+  0.12–0.17 s after the first visit (was 1.5–1.9 s every time); missing records still 404.
+- A Firestore error throws instead of rendering a 404 the cache would keep for an hour.
+- `/api/revalidate` (owner or admin; fairs admin only) refreshes a page right after an edit or
+  delete; wired into the product/request/fair update and delete hooks, the admin RFQ delete and
+  the guest RFQ publish. Tested locally with Auth emulator tokens.
+- `/requests` got its own title/description/canonical. `/products` and `/requests` moved into
+  `(catalog)`, so no "Loading…" and no hidden segment there either.
+- The `s-maxage` Cache-Control rule for detail pages in `next.config.mjs` was removed (it was
+  overridden in production anyway).
+- Not done: HS code / GTİP (no such field on products). Search Console resubmission is for the
+  user (the Chrome profile has no Search Console property).
 
 ## Open items outside this plan (from the same session)
 - Unused components: `src/presentation/components/features/product/ProductCard/ProductCard.jsx`
