@@ -142,7 +142,7 @@ export function Footer() {
                 </svg>
               </a>
               <a
-                href="https://www.facebook.com/coretradeglobal"
+                href="https://www.facebook.com/profile.php?id=61592507555068"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-gray-400 hover:text-[#1877F2] transition-colors"
