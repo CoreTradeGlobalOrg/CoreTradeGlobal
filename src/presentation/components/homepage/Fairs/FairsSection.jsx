@@ -8,10 +8,11 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import Link from 'next/link';
+import Link from '@/presentation/components/common/DeferredLink/DeferredLink';
 import { container } from '@/core/di/container';
 import { ChevronLeft, ChevronRight, MapPin, Calendar } from 'lucide-react';
 import { useResponsiveLimit, useScrollLoadMore } from '@/presentation/hooks/useResponsiveLimit';
+import { usePageSettled } from '@/presentation/hooks/usePageSettled';
 import { COUNTRIES } from '@/core/constants/countries';
 
 // Build a lookup map: lowercase country name → 2-letter code (with common aliases)
@@ -169,6 +170,8 @@ export function FairsSection() {
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(true);
   const scrollRef = useRef(null);
+  // Below the fold: query once the page has settled (or the visitor scrolls).
+  const settled = usePageSettled();
 
   // Responsive limits with lazy loading: mobile 3, tablet 4, desktop 6, max 15
   const { limit, displayCount, isReady, loadMore, hasMore } = useResponsiveLimit({
@@ -204,7 +207,7 @@ export function FairsSection() {
   }, [fairs]);
 
   useEffect(() => {
-    if (!isReady) return; // Wait for responsive limit to be determined
+    if (!isReady || !settled) return; // Wait for responsive limit and a settled page
 
     const fetchFairs = async () => {
       try {
@@ -235,7 +238,7 @@ export function FairsSection() {
     };
 
     fetchFairs();
-  }, [isReady]);
+  }, [isReady, settled]);
 
   const handleScroll = () => {
     if (scrollRef.current) {

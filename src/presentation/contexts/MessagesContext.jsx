@@ -77,8 +77,10 @@ export function MessagesProvider({ children }) {
   // reads that only shrink the count (marking-as-read).
   const audioRef = useRef(null);
   const lastUnreadCountRef = useRef(null);
+  // Only signed-in users get notifications, so guests (most homepage
+  // visits) never download the mp3.
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined' || !isAuthenticated) return;
     const audio = new Audio('/sounds/notification.mp3');
     audio.preload = 'auto';
     audio.volume = 0.6;
@@ -86,7 +88,7 @@ export function MessagesProvider({ children }) {
     return () => {
       audioRef.current = null;
     };
-  }, []);
+  }, [isAuthenticated]);
 
   // Subscribe to user's notifications
   useEffect(() => {

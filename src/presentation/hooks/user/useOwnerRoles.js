@@ -28,13 +28,15 @@ function chunk(arr, size) {
 
 /**
  * @param {Array<string|null|undefined>} userIds
+ * @param {boolean} [enabled=true] false holds the lookup back (e.g. until the page has settled)
  * @returns {Map<string, string>} uid → role
  */
-export function useOwnerRoles(userIds) {
+export function useOwnerRoles(userIds, enabled = true) {
   const [rolesMap, setRolesMap] = useState(() => new Map());
   const cacheRef = useRef(new Map());
 
   useEffect(() => {
+    if (!enabled) return;
     const cleaned = Array.from(new Set((userIds || []).filter(Boolean)));
     if (cleaned.length === 0) return;
     const missing = cleaned.filter((uid) => !cacheRef.current.has(uid));
@@ -75,7 +77,7 @@ export function useOwnerRoles(userIds) {
     // Serialised key so a shallow-changed array reference does not
     // re-trigger the effect when the actual ids are the same.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [JSON.stringify((userIds || []).filter(Boolean).sort())]);
+  }, [enabled, JSON.stringify((userIds || []).filter(Boolean).sort())]);
 
   return rolesMap;
 }

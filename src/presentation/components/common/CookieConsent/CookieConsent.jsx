@@ -8,7 +8,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
+import Link from '@/presentation/components/common/DeferredLink/DeferredLink';
 import { Cookie, X, Settings } from 'lucide-react';
 
 const COOKIE_CONSENT_KEY = 'cookie_consent';

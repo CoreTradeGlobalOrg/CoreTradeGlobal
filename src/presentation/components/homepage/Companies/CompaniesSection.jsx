@@ -8,7 +8,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import Link from 'next/link';
+import Link from '@/presentation/components/common/DeferredLink/DeferredLink';
 import Image from 'next/image';
 import { container } from '@/core/di/container';
 import { CountryFlag } from '@/presentation/components/common/CountryFlag/CountryFlag';
@@ -16,6 +16,7 @@ import { COUNTRIES } from '@/core/constants/countries';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useCategories } from '@/presentation/hooks/category/useCategories';
 import { useResponsiveLimit, useScrollLoadMore } from '@/presentation/hooks/useResponsiveLimit';
+import { usePageSettled } from '@/presentation/hooks/usePageSettled';
 
 
 // Get abbreviation from company name
@@ -137,6 +138,8 @@ export function CompaniesSection() {
   const [showRightArrow, setShowRightArrow] = useState(true);
   const scrollRef = useRef(null);
   const sectionRef = useRef(null);
+  // Below the fold: query once the page has settled (or the visitor scrolls).
+  const settled = usePageSettled();
   const { categories } = useCategories();
 
   // Responsive limits with lazy loading: mobile 4, tablet 8, desktop 12, max 30
@@ -172,7 +175,7 @@ export function CompaniesSection() {
   }, [companies]);
 
   useEffect(() => {
-    if (!isReady) return; // Wait for responsive limit to be determined
+    if (!isReady || !settled) return; // Wait for responsive limit and a settled page
 
     const fetchCompanies = async () => {
       try {
@@ -209,7 +212,7 @@ export function CompaniesSection() {
     };
 
     fetchCompanies();
-  }, [isReady]);
+  }, [isReady, settled]);
 
   const handleScroll = () => {
     if (scrollRef.current) {

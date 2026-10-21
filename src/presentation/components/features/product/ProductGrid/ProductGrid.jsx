@@ -23,6 +23,7 @@ import { useTrackEvent } from '@/presentation/hooks/analytics';
 import { useActiveAd } from '@/presentation/hooks/ads/useActiveAd';
 import { useTrackAd } from '@/presentation/hooks/ads/useTrackAd';
 import { AD_TYPES } from '@/core/constants/adTypes';
+import { CurrencySymbol } from '@/presentation/components/common/CurrencySymbol/CurrencySymbol';
 
 // Sort helper — products with an image come first (visual browsing beats a
 // wall of placeholder tiles), tie-broken by newest createdAt. Applied at
@@ -511,7 +512,7 @@ function ProductCard({ product, categories, isFavorited, onToggleFavorite, owner
                     <div className="text-[#FFD700] font-bold text-xl">
                         {product.price ? (
                             <>
-                                {CURRENCY_SYMBOLS[product.currency] || product.currency || '$'} {product.price}
+                                <CurrencySymbol symbol={CURRENCY_SYMBOLS[product.currency] || product.currency || '$'} /> {product.price}
                                 {product.unit && (
                                     <span
                                         className="text-sm font-semibold ml-1"

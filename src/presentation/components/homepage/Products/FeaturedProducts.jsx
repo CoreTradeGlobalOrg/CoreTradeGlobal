@@ -8,15 +8,17 @@
 'use client';
 
 import { useState, useEffect, useRef, memo } from 'react';
-import Link from 'next/link';
+import Link from '@/presentation/components/common/DeferredLink/DeferredLink';
 import Image from 'next/image';
 import { container } from '@/core/di/container';
 import { ChevronLeft, ChevronRight, Package, Star } from 'lucide-react';
 import { useCategories } from '@/presentation/hooks/category/useCategories';
 import { useOwnerRoles } from '@/presentation/hooks/user/useOwnerRoles';
 import { useResponsiveLimit, useScrollLoadMore } from '@/presentation/hooks/useResponsiveLimit';
+import { usePageSettled } from '@/presentation/hooks/usePageSettled';
 import { getUnitByCode, getUnitName } from '@/core/constants/units';
 import { productThumbUrl } from '@/lib/productThumbnail';
+import { CurrencySymbol } from '@/presentation/components/common/CurrencySymbol/CurrencySymbol';
 
 // Mock product fallback (ids '1'..'8', fake "Afyon marble" / "Tuscany
 // olive oil" / "CNC machine" listings) was removed on 2026-10-11.
@@ -188,7 +190,7 @@ export function ProductCard({ product, categories, isFavorited, onToggleFavorite
         <p className="product-card-price">
           {product.price ? (
             <>
-              {currencySymbol} {product.price}
+              <CurrencySymbol symbol={currencySymbol} /> {product.price}
               {product.unit && (() => {
                 const raw = String(product.unit).replace(/^\/\s*/, '').trim();
                 const knownUnit = getUnitByCode(raw);
@@ -229,18 +231,20 @@ export function ProductCard({ product, categories, isFavorited, onToggleFavorite
 export function FeaturedProducts({ initialProducts = [] }) {
   // Seed state from the server-fetched products so SSR HTML carries
   // the real `/product/<firestoreId>` links Google needs to discover
-  // the catalog. The subscribeToQuery below still runs on hydration
-  // to pick up live updates (new uploads, status changes).
+  // the catalog. The subscribeToQuery below picks up live updates (new
+  // uploads, status changes) once the page has settled: the cards are
+  // already on screen, so it should not compete with the first paint.
   const [products, setProducts] = useState(initialProducts);
   const [allProducts, setAllProducts] = useState(initialProducts);
   const [loading, setLoading] = useState(initialProducts.length === 0);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(true);
   const scrollRef = useRef(null);
+  const settled = usePageSettled();
   const { categories } = useCategories();
   // Batch-load the owner role for every visible product so the
   // logistics accent lands without a per-card Firestore read.
-  const ownerRoles = useOwnerRoles(products.map((p) => p.userId));
+  const ownerRoles = useOwnerRoles(products.map((p) => p.userId), settled);
 
   // Responsive limits with lazy loading: mobile 4, tablet 8, desktop 12, max 30
   const { limit, displayCount, isReady, loadMore, hasMore } = useResponsiveLimit({
@@ -275,7 +279,7 @@ export function FeaturedProducts({ initialProducts = [] }) {
   }, [displayCount, allProducts]);
 
   useEffect(() => {
-    if (!isReady) return; // Wait for responsive limit to be determined
+    if (!isReady || !settled) return; // Wait for responsive limit and a settled page
 
     const firestoreDS = container.getFirestoreDataSource();
 
@@ -310,7 +314,7 @@ export function FeaturedProducts({ initialProducts = [] }) {
     );
 
     return () => unsubscribe();
-  }, [isReady]);
+  }, [isReady, settled]);
 
   const handleScroll = () => {
     if (scrollRef.current) {

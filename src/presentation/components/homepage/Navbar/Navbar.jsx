@@ -10,7 +10,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import Link from 'next/link';
+import Link from '@/presentation/components/common/DeferredLink/DeferredLink';
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
 import { useAuth } from '@/presentation/contexts/AuthContext';
