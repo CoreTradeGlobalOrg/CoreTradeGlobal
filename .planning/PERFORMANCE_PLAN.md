@@ -6,9 +6,9 @@ Created 2026-10-12 from Lighthouse 13.5 runs on https://www.coretradeglobal.com 
 and live in production; 1.2 measured and not kept; 2.6 and 1.3 done and live in production.
 2026-10-15: catalog pages (product/RFQ/fair detail, /products, /requests) moved out of the loading
 screen and the detail pages made ISR, for SEO and TTFB. See "Progress log" at the bottom.
-2026-10-21: re-audit (PSI mobile 63/64, desktop 99/97) and a "startup requests" batch, see
-"Progress log". Next: decisions on analytics timing and ad impressions (Priority 4), product card
-images (4.3), then Priority 2 JS (2.2) and CSS (2.5).
+2026-10-21: re-audit (PSI mobile 63/64, desktop 99/97) and Priority 4 (4.1–4.3, what the page
+starts in its first seconds) done on `development`, see "Progress log". Next: production PSI after
+the merge, then Priority 2 JS (2.2) and CSS (2.5).
 
 ## Baseline (2026-10-12, production)
 
@@ -183,14 +183,16 @@ delayed runs.
   fairs, showcase products) wait for `usePageSettled()` (`src/lib/pageSettled.js`: load + 3 s +
   idle, or the first scroll/tap/key); hero data-card queries skipped at ≤920 px where the cards
   are hidden. The hero sponsored ad still loads right away (above the fold).
-- 4.2 (OPEN, needs a decision) gtag + Clarity: now fire ~0.25 s after load (177 KiB). Could load
-  on the same "settled" signal; visits shorter than ~3.5 s without interaction would not be counted.
-  trackAdImpression fires the moment an ad is 50 % visible; waiting for 1 s of visibility (IAB
-  standard) would move it out of the first seconds and change impression counts slightly.
-- 4.3 (OPEN) product card thumbnails: on mobile 7 thumbs (~330 KiB) start before the first paint
-  (carousel cards right of the viewport are inside Chrome's lazy-load margin); some 640 px thumbs
-  are 84–89 KiB. Options: smaller/lower-quality thumbs (re-run the backfill), or our own
-  IntersectionObserver for off-screen carousel cards.
+- 4.2 (DONE 2026-10-21, decided by the user) gtag.js and the Clarity tag load on the same
+  "settled" signal (`DeferredAnalytics`; the gtag()/clarity() queues are defined inline in the root
+  layout so page_view and identifyClarity() are kept). Visits shorter than ~3.5 s without any
+  interaction are no longer recorded. trackAdImpression now needs 1 s of ≥50 % visibility
+  (IAB/MRC rule); impression counts before 2026-10-21 run a little higher.
+- 4.3 (DONE 2026-10-21, carousel part) FeaturedProducts cards from the third on hold their
+  image until the card is within 320 px of the carousel's visible strip (IntersectionObserver
+  with the carousel as root); the first two stay in the SSR HTML. Mobile: 3 thumbnails before
+  load instead of 7. Not done: smaller thumbnails (640 px is already under the phone card's
+  ~650–1200 physical px, so shrinking would blur them).
 
 ## Order and expectations
 1. Quick batch: 1.1, 1.2, 1.4, Priority 3.
@@ -384,6 +386,25 @@ blocked (no fake ad impressions), mobile runs alternated:
 
 Headless click-through on the new build: no secondary Firestore queries or prefetches until ~3.3 s
 without interaction, immediately on scroll; RFQ cards, prices and product links work.
+
+### 2026-10-21: 4.2 analytics / ad impressions and 4.3 carousel images
+Same setup (baseline 34926bd, cloudfunctions.net blocked), 6 mobile and 2 desktop runs per build,
+alternated. All 12 mobile runs painted normally (no delayed paint), so the gain in delayed runs is
+shown by what has started by then rather than by a score:
+
+| Local | Baseline | 4.1–4.3 |
+|---|---|---|
+| Mobile performance | 78 [77–79] | **82** [81–83] |
+| Mobile FCP / LCP / SI | 2.11 / 4.97 / 2.87 s | 1.66 / 4.52 / 2.43 s |
+| Requested before first paint | 911 KiB | 662 KiB |
+| Started by 1.3 s (mobile) | 1.9 MB, 157 requests | 0.97 MB, 64 requests |
+| Started by 2.4 s (mobile) | 1.9 MB, 157 requests | 0.97 MB, 66 requests |
+| Total page weight (mobile) | 1.92 MB | 1.56 MB |
+| Desktop performance / FCP | 99 / 0.49 s | 99 / 0.41 s |
+
+Headless checks: gtag.js and Clarity load at ~3.2 s without interaction (at once on scroll), GA
+page_view and Clarity collect are sent; the ad impression call moves from ~0.6 s to ~1.8 s
+(1 s after the hero ad shows); carousel cards beyond the visible strip load when scrolled to.
 
 ## Open items outside this plan (from the same session)
 - Unused components: `src/presentation/components/features/product/ProductCard/ProductCard.jsx`
