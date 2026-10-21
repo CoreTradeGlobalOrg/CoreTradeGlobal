@@ -74,14 +74,49 @@ function isUnoptimizedProduct(product) {
   return d instanceof Date && !isNaN(d) && d >= UNOPTIMIZED_AFTER;
 }
 
-// Image component with loading state
-const ProductCardImage = memo(function ProductCardImage({ src, alt, unoptimized = false }) {
+// Carousel cards this far outside the visible strip keep their image back.
+const LAZY_IMAGE_MARGIN = '0px 320px';
+
+// Image component with loading state.
+// `lazyRoot` (a ref to the horizontal carousel) holds the image back until
+// the card is within LAZY_IMAGE_MARGIN of the carousel's visible area.
+// Chrome's native lazy loading fetches anything within ~1250 px, which on a
+// phone (one card per screen) meant ~6 off-screen thumbnails competing with
+// the first paint.
+const ProductCardImage = memo(function ProductCardImage({ src, alt, unoptimized = false, lazyRoot = null }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   // 640 px thumbnail; falls back to the original if it is missing.
   const thumb = productThumbUrl(src);
   const [thumbFailed, setThumbFailed] = useState(false);
   const shownSrc = thumbFailed ? src : thumb;
+  const [near, setNear] = useState(!lazyRoot);
+  const holderRef = useRef(null);
+
+  useEffect(() => {
+    if (near) return undefined;
+    const root = lazyRoot?.current;
+    const node = holderRef.current;
+    if (!root || !node || !('IntersectionObserver' in window)) {
+      setNear(true);
+      return undefined;
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setNear(true);
+          observer.disconnect();
+        }
+      },
+      { root, rootMargin: LAZY_IMAGE_MARGIN }
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [near, lazyRoot]);
+
+  if (src && !near) {
+    return <div ref={holderRef} className="absolute inset-0 animate-shimmer z-10" />;
+  }
 
   if (!src || error) {
     return (
@@ -125,7 +160,7 @@ const ProductCardImage = memo(function ProductCardImage({ src, alt, unoptimized 
   );
 });
 
-export function ProductCard({ product, categories, isFavorited, onToggleFavorite, ownerRole }) {
+export function ProductCard({ product, categories, isFavorited, onToggleFavorite, ownerRole, lazyImageRoot = null }) {
   // Get first image from images array
   const imageUrl = product.images?.[0] || product.imageUrl;
 
@@ -151,7 +186,12 @@ export function ProductCard({ product, categories, isFavorited, onToggleFavorite
     >
       {/* Product Image */}
       <div className="product-card-image relative">
-        <ProductCardImage src={imageUrl} alt={product.name} unoptimized={isUnoptimizedProduct(product)} />
+        <ProductCardImage
+          src={imageUrl}
+          alt={product.name}
+          unoptimized={isUnoptimizedProduct(product)}
+          lazyRoot={lazyImageRoot}
+        />
         {onToggleFavorite && (
           <button
             onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleFavorite(product.id); }}
@@ -383,12 +423,15 @@ export function FeaturedProducts({ initialProducts = [] }) {
                   a ~0.045 CLS shift Lighthouse attributed to the
                   section on throttled mobile — skeleton cards were
                   slightly shorter than the real card layout. */}
-              {products.map((product) => (
+              {products.map((product, index) => (
                 <ProductCard
                   key={product.id}
                   product={product}
                   categories={categories}
                   ownerRole={ownerRoles.get(product.userId)}
+                  // The first two cards are on screen on every width; the
+                  // rest load as the carousel brings them near.
+                  lazyImageRoot={index >= 2 ? scrollRef : null}
                 />
               ))}
             </div>

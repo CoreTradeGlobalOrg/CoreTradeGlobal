@@ -6,6 +6,7 @@ import { ProductViewProvider } from '@/presentation/contexts/ProductViewContext'
 import { MessagesProvider } from '@/presentation/contexts/MessagesContext';
 import { AnalyticsProvider } from '@/presentation/contexts/AnalyticsContext';
 import { InstrumentationHead, InstrumentationTail } from './InstrumentationStack';
+import { DeferredAnalytics } from '@/presentation/components/common/DeferredAnalytics/DeferredAnalytics';
 
 const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID;
 const CLARITY_PROJECT_ID = process.env.NEXT_PUBLIC_CLARITY_PROJECT_ID;
@@ -137,8 +138,8 @@ export default function RootLayout({ children }) {
             longer loads that iframe on page load, only on pages with a
             Google button (see firebase.config.js).
 
-            Removed: scripts.clarity.ms. Clarity loads with lazyOnload,
-            long after a head preconnect would have gone idle. */}
+            Removed: scripts.clarity.ms. Clarity loads seconds after the
+            page settles, long after a head preconnect would have gone idle. */}
         <link rel="preconnect" href="https://firebasestorage.googleapis.com" crossOrigin="anonymous" />
         <link rel="preconnect" href="https://firestore.googleapis.com" />
         <link rel="dns-prefetch" href="https://www.googleapis.com" />
@@ -190,37 +191,24 @@ export default function RootLayout({ children }) {
           @media (max-width:1024px){.main-content-reservation{min-height:3400px}}
           @media (max-width:600px){.main-content-reservation{min-height:100vh}}
         ` }} />
-        {/* Analytics stack moved to strategy="lazyOnload" — the browser
-            defers fetch/eval until the window load event, so gtag.js
-            (~157 KiB) and Clarity's tag no longer sit on the LCP
-            critical path. Lighthouse called gtag out for 315 KiB total
-            with 177 KiB unused; deferring pays that whole cost after
-            the user can already see the page. Both are pure telemetry
-            with no first-paint dependency, so lazy is safe. */}
-        {GA_MEASUREMENT_ID && (
-          <>
-            <Script
-              src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
-              strategy="lazyOnload"
-            />
-            <Script id="google-analytics" strategy="lazyOnload">
-              {`
-                window.dataLayer = window.dataLayer || [];
-                function gtag(){dataLayer.push(arguments);}
-                gtag('js', new Date());
-                gtag('config', '${GA_MEASUREMENT_ID}');
-              `}
-            </Script>
-          </>
-        )}
-        {CLARITY_PROJECT_ID && (
-          <Script id="microsoft-clarity" strategy="lazyOnload">
+        {/* Analytics: only the gtag() / clarity() queues are defined here, so
+            the page_view config and early identifyClarity() calls are kept.
+            The tags themselves (gtag.js ~177 KiB, Clarity) are injected by
+            <DeferredAnalytics> once the page has settled (load + 3 s, or the
+            first scroll / tap / key). With lazyOnload they still landed
+            ~0.25 s after load on a fast build, inside the window Lighthouse
+            charges to LCP on mobile. */}
+        {(GA_MEASUREMENT_ID || CLARITY_PROJECT_ID) && (
+          <Script id="analytics-queues" strategy="beforeInteractive">
             {`
-              (function(c,l,a,r,i,t,y){
-                  c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
-                  t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
-                  y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
-              })(window, document, "clarity", "script", "${CLARITY_PROJECT_ID}");
+              ${GA_MEASUREMENT_ID ? `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              window.gtag = gtag;
+              gtag('js', new Date());
+              gtag('config', '${GA_MEASUREMENT_ID}');` : ''}
+              ${CLARITY_PROJECT_ID ? `
+              window.clarity = window.clarity || function(){(window.clarity.q = window.clarity.q || []).push(arguments);};` : ''}
             `}
           </Script>
         )}
@@ -233,6 +221,7 @@ export default function RootLayout({ children }) {
               <ProductViewProvider>
                 {children}
                 <InstrumentationTail />
+                <DeferredAnalytics gaId={GA_MEASUREMENT_ID} clarityId={CLARITY_PROJECT_ID} />
               </ProductViewProvider>
             </MessagesProvider>
           </AnalyticsProvider>
