@@ -25,7 +25,7 @@ import { useCategories } from '@/presentation/hooks/category/useCategories';
 import toast from 'react-hot-toast';
 import { QuantityUnit } from '@/presentation/components/common/QuantityUnit/QuantityUnit';
 import { useSafeBack } from '@/presentation/hooks/navigation/useSafeBack';
-import { publicCompanyName } from '@/core/utils/publicIdentity';
+import { isAnonymousGuest, publicCompanyName } from '@/core/utils/publicIdentity';
 
 export function RequestDetailsClient({ initialRequest = null, initialAuthor = null } = {}) {
   const params = useParams();
@@ -126,6 +126,28 @@ export function RequestDetailsClient({ initialRequest = null, initialAuthor = nu
 
   const countryCode = request.targetCountry || request.country;
   const countryName = getCountryName(countryCode);
+
+  // Kayıt olmadan (misafir) açılan RFQ: sahibinin dolu bir profili yok, kart
+  // profile götürmesin. Adını/şirketini girince normal üye gibi linklenir.
+  const authorHasProfile = !!author?.id && !isAnonymousGuest(author);
+  const buyerSummary = (
+    <>
+      {author?.companyLogo ? (
+        <img src={author.companyLogo} alt="Logo" className="w-16 h-16 rounded-xl object-cover border border-[rgba(255,255,255,0.1)]" />
+      ) : (
+        <div className="w-16 h-16 rounded-xl bg-[rgba(255,255,255,0.05)] flex items-center justify-center text-3xl border border-[rgba(255,255,255,0.1)]">
+          🏭
+        </div>
+      )}
+      <div>
+        <p className={`font-bold text-white ${authorHasProfile ? 'hover:text-[#3B82F6] transition-colors' : ''}`}>{publicCompanyName(author, 'Buyer')}</p>
+        <p className="text-xs text-[#A0A0A0] flex items-center gap-1 mt-1">
+          <CountryFlag countryCode={countryCode} size={14} />
+          {countryName}
+        </p>
+      </div>
+    </>
+  );
 
   // Format date helper
   const formatPostedDate = (timestamp) => {
@@ -284,22 +306,13 @@ export function RequestDetailsClient({ initialRequest = null, initialAuthor = nu
               <div className="glass-card p-6 border-t-4 border-t-[#FFD700]">
                 <h3 className="text-lg font-bold text-white mb-4">Buyer Information</h3>
 
-                <Link href={`/profile/${author?.id}`} className="flex items-center gap-4 mb-6 hover:opacity-80 transition-opacity">
-                  {author?.companyLogo ? (
-                    <img src={author.companyLogo} alt="Logo" className="w-16 h-16 rounded-xl object-cover border border-[rgba(255,255,255,0.1)]" />
-                  ) : (
-                    <div className="w-16 h-16 rounded-xl bg-[rgba(255,255,255,0.05)] flex items-center justify-center text-3xl border border-[rgba(255,255,255,0.1)]">
-                      🏭
-                    </div>
-                  )}
-                  <div>
-                    <p className="font-bold text-white hover:text-[#3B82F6] transition-colors">{publicCompanyName(author, 'Buyer')}</p>
-                    <p className="text-xs text-[#A0A0A0] flex items-center gap-1 mt-1">
-                      <CountryFlag countryCode={countryCode} size={14} />
-                      {countryName}
-                    </p>
-                  </div>
-                </Link>
+                {authorHasProfile ? (
+                  <Link href={`/profile/${author.id}`} className="flex items-center gap-4 mb-6 hover:opacity-80 transition-opacity">
+                    {buyerSummary}
+                  </Link>
+                ) : (
+                  <div className="flex items-center gap-4 mb-6">{buyerSummary}</div>
+                )}
 
                 <div className="space-y-3 mb-6">
                   <div className="flex justify-between text-sm">
