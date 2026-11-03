@@ -1614,7 +1614,12 @@ html {
 #products .product-card {
     flex: 0 0 calc(25% - 18px);
     min-width: 280px;
-    height: 520px;
+    /* min-height, not height: with a larger browser font setting (e.g. Chrome's
+       minimum font size 16) the text needs more room and a fixed 520 px pushed
+       the View Details button out of the card. Cards in the row stretch to the
+       tallest one, so they still line up. */
+    height: auto;
+    min-height: 520px;
     display: flex;
     flex-direction: column;
     background: linear-gradient(145deg, rgba(18, 28, 40, 0.55) 0%, rgba(11, 20, 32, 0.6) 100%);
