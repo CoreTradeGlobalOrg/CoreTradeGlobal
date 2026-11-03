@@ -16,6 +16,7 @@ import { useRef, useEffect, useMemo, useState } from 'react';
 import { Canvas, useThree, useFrame } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
+import { attachGlobeCursor } from './globeCursor';
 
 const ROUTE_COLORS = [0xFFD700, 0xFFD700, 0xFDB931, 0xFFE5B4]; // Premium Gold tones
 
@@ -376,6 +377,12 @@ export function GlobeCanvas({ className = '', onReady }) {
     observer.observe(containerRef.current);
     return () => observer.disconnect();
   }, [mounted]);
+
+  // Hand cursor over the globe where it can be dragged (desktop).
+  useEffect(() => {
+    if (!mounted || isMobile || !containerRef.current) return undefined;
+    return attachGlobeCursor(containerRef.current);
+  }, [mounted, isMobile]);
 
   if (!mounted) return null;
 

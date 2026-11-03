@@ -8,8 +8,9 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import Link from 'next/link';
+import Link from '@/presentation/components/common/DeferredLink/DeferredLink';
 import { container } from '@/core/di/container';
+import { usePageSettled } from '@/presentation/hooks/usePageSettled';
 
 // Default categories with emojis - Show 5 on homepage + "More" card
 const DEFAULT_CATEGORIES = [
@@ -57,6 +58,9 @@ export function CategoriesSection() {
   const [loading, setLoading] = useState(true);
   const [visibleCount, setVisibleCount] = useState(6);
   const containerRef = useRef(null);
+  // Below the fold: the default categories render until the page has
+  // settled (or the visitor scrolls), then the live list replaces them.
+  const settled = usePageSettled();
 
   // Calculate how many cards fit
   useEffect(() => {
@@ -80,6 +84,7 @@ export function CategoriesSection() {
   }, [categories, loading]);
 
   useEffect(() => {
+    if (!settled) return;
     const fetchCategories = async () => {
       try {
         const categoryRepo = container.getCategoryRepository();
@@ -127,7 +132,7 @@ export function CategoriesSection() {
     };
 
     fetchCategories();
-  }, []);
+  }, [settled]);
 
   return (
     <section className="categories-section" id="categories" ref={containerRef}>

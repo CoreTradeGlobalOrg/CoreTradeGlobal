@@ -8,7 +8,7 @@
 
 'use client';
 
-import Link from 'next/link';
+import Link from '@/presentation/components/common/DeferredLink/DeferredLink';
 import Image from 'next/image';
 import { CountryFlag } from '@/presentation/components/common/CountryFlag/CountryFlag';
 import { COUNTRIES } from '@/core/constants/countries';

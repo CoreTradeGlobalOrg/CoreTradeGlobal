@@ -112,23 +112,26 @@ export async function generateMetadata({ params }) {
   };
 }
 
-function RequestJsonLd({ request, author }) {
+// An RFQ is a buyer's request, so it is marked up as a schema.org Demand,
+// not a Product for sale. It used to be a Product with `offers` of type
+// Demand, which Search Console reported as a critical error ("invalid
+// object type for field offers": Google accepts only Offer or
+// AggregateOffer there). Google has no rich result for Demand, so it is
+// not validated; it still describes the page to crawlers.
+function RequestJsonLd({ request }) {
   if (!request) return null;
-  const buyerName = (!isAnonymousGuest(author) && (author?.companyName || author?.displayName)) || 'CoreTradeGlobal buyer';
   const canonicalUrl = `https://www.coretradeglobal.com/request/${request.id}`;
   const name = request.productName || request.title || 'RFQ';
   const payload = {
     '@context': 'https://schema.org/',
-    '@type': 'Product',
+    '@type': 'Demand',
     name,
     description: (request.description || '').slice(0, 500) || name,
+    url: canonicalUrl,
     ...(request.category ? { category: request.category } : {}),
-    brand: { '@type': 'Organization', name: buyerName },
-    offers: {
-      '@type': 'Demand',
-      url: canonicalUrl,
-      ...(request.quantity ? { eligibleQuantity: { '@type': 'QuantitativeValue', value: request.quantity, unitText: request.unit || undefined } } : {}),
-    },
+    ...(request.quantity ? { eligibleQuantity: { '@type': 'QuantitativeValue', value: request.quantity, unitText: request.unit || undefined } } : {}),
+    // Destination country as an ISO 3166-1 code, which eligibleRegion accepts.
+    ...(request.targetCountry ? { eligibleRegion: request.targetCountry } : {}),
   };
 
   return (
@@ -151,7 +154,7 @@ export default async function RequestDetailsPage({ params }) {
 
   return (
     <>
-      <RequestJsonLd request={plainRequest} author={plainAuthor} />
+      <RequestJsonLd request={plainRequest} />
       <RequestDetailsClient initialRequest={plainRequest} initialAuthor={plainAuthor} />
     </>
   );

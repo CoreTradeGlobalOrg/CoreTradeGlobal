@@ -8,7 +8,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import Link from 'next/link';
+import Link from '@/presentation/components/common/DeferredLink/DeferredLink';
 import { container } from '@/core/di/container';
 import { ChevronLeft, ChevronRight, FileText } from 'lucide-react';
 import { COUNTRIES } from '@/core/constants/countries';
@@ -17,6 +17,7 @@ import { CountryFlag } from '@/presentation/components/common/CountryFlag/Countr
 import { useCategories } from '@/presentation/hooks/category/useCategories';
 import { useOwnerRoles } from '@/presentation/hooks/user/useOwnerRoles';
 import { useResponsiveLimit, useScrollLoadMore } from '@/presentation/hooks/useResponsiveLimit';
+import { usePageSettled } from '@/presentation/hooks/usePageSettled';
 
 // Helper to get country name from ISO code
 const getCountryName = (countryCode) => {
@@ -163,9 +164,12 @@ function RFQCard({ rfq, ownerRole }) {
 
 export function FeaturedRFQs() {
   const [rfqs, setRfqs] = useState(DEFAULT_RFQS);
+  // Below the fold: no Firestore traffic until the page has settled
+  // (or the visitor starts scrolling).
+  const settled = usePageSettled();
   // Batch-load owner role so logistics-provider RFQs pick up the
   // custom border tint without a per-card lookup.
-  const ownerRoles = useOwnerRoles(rfqs.map((r) => r.userId));
+  const ownerRoles = useOwnerRoles(rfqs.map((r) => r.userId), settled);
   const [allRfqs, setAllRfqs] = useState([]); // Store all fetched RFQs
   const [displayRfqs, setDisplayRfqs] = useState(DEFAULT_RFQS);
   const [loading, setLoading] = useState(true);
@@ -220,7 +224,7 @@ export function FeaturedRFQs() {
   }, [rfqs]);
 
   useEffect(() => {
-    if (!isReady) return; // Wait for responsive limit to be determined
+    if (!isReady || !settled) return; // Wait for responsive limit and a settled page
 
     const firestoreDS = container.getFirestoreDataSource();
 
@@ -258,7 +262,7 @@ export function FeaturedRFQs() {
     );
 
     return () => unsubscribe();
-  }, [isReady]);
+  }, [isReady, settled]);
 
   const handleScroll = () => {
     if (scrollRef.current) {

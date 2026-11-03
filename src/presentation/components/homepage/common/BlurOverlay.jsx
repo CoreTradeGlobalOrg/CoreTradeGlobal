@@ -7,7 +7,7 @@
 
 'use client';
 
-import Link from 'next/link';
+import Link from '@/presentation/components/common/DeferredLink/DeferredLink';
 import { Lock, UserPlus, LogIn } from 'lucide-react';
 
 export function BlurOverlay({

@@ -25,7 +25,7 @@ import { useCategories } from '@/presentation/hooks/category/useCategories';
 import toast from 'react-hot-toast';
 import { QuantityUnit } from '@/presentation/components/common/QuantityUnit/QuantityUnit';
 import { useSafeBack } from '@/presentation/hooks/navigation/useSafeBack';
-import { publicCompanyName } from '@/core/utils/publicIdentity';
+import { isAnonymousGuest, publicCompanyName } from '@/core/utils/publicIdentity';
 
 export function RequestDetailsClient({ initialRequest = null, initialAuthor = null } = {}) {
   const params = useParams();
@@ -126,6 +126,28 @@ export function RequestDetailsClient({ initialRequest = null, initialAuthor = nu
 
   const countryCode = request.targetCountry || request.country;
   const countryName = getCountryName(countryCode);
+
+  // Kayıt olmadan (misafir) açılan RFQ: sahibinin dolu bir profili yok, kart
+  // profile götürmesin. Adını/şirketini girince normal üye gibi linklenir.
+  const authorHasProfile = !!author?.id && !isAnonymousGuest(author);
+  const buyerSummary = (
+    <>
+      {author?.companyLogo ? (
+        <img src={author.companyLogo} alt="Logo" className="w-16 h-16 rounded-xl object-cover border border-[rgba(255,255,255,0.1)]" />
+      ) : (
+        <div className="w-16 h-16 rounded-xl bg-[rgba(255,255,255,0.05)] flex items-center justify-center text-3xl border border-[rgba(255,255,255,0.1)]">
+          🏭
+        </div>
+      )}
+      <div>
+        <p className={`font-bold text-white ${authorHasProfile ? 'hover:text-[#3B82F6] transition-colors' : ''}`}>{publicCompanyName(author, 'Buyer')}</p>
+        <p className="text-xs text-[#A0A0A0] flex items-center gap-1 mt-1">
+          <CountryFlag countryCode={countryCode} size={14} />
+          {countryName}
+        </p>
+      </div>
+    </>
+  );
 
   // Format date helper
   const formatPostedDate = (timestamp) => {
@@ -248,18 +270,9 @@ export function RequestDetailsClient({ initialRequest = null, initialAuthor = nu
                 </div>
               </div>
 
-              <div
-                className="prose prose-invert max-w-none overflow-hidden cursor-pointer"
-                onClick={() => request.description?.length > 300 && setDescriptionExpanded(!descriptionExpanded)}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-lg font-bold text-white">Description</h3>
-                  {request.description?.length > 300 && (
-                    <span className="text-xs font-medium text-gray-400">
-                      {descriptionExpanded ? 'Click to collapse' : 'Click to expand'}
-                    </span>
-                  )}
-                </div>
+              {/* Same Show More / Show Less control as the product page, in the RFQ blue */}
+              <div className="prose prose-invert max-w-none overflow-hidden">
+                <h3 className="text-lg font-bold text-white mb-2">Description</h3>
                 <div className={`overflow-hidden transition-all duration-300 ${descriptionExpanded ? '' : 'line-clamp-6'}`}>
                   <p className="text-[#A0A0A0] leading-relaxed whitespace-pre-line">
                     {request.description || 'No detailed description provided.'}
@@ -267,27 +280,20 @@ export function RequestDetailsClient({ initialRequest = null, initialAuthor = nu
                 </div>
                 {request.description?.length > 300 && (
                   <button
-                    className="mt-3 text-[#3B82F6] font-semibold text-sm hover:text-[#60A5FA] transition-colors flex items-center gap-2"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setDescriptionExpanded(!descriptionExpanded);
-                    }}
+                    type="button"
+                    onClick={() => setDescriptionExpanded((v) => !v)}
+                    aria-expanded={descriptionExpanded}
+                    className="mt-6 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-[#3B82F6]/40 bg-[#3B82F6]/5 text-[#3B82F6] font-semibold text-sm hover:bg-[#3B82F6]/15 hover:border-[#3B82F6]/60 transition-colors"
                   >
-                    {descriptionExpanded ? (
-                      <>
-                        Show Less
-                        <svg className="w-4 h-4 rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                        </svg>
-                      </>
-                    ) : (
-                      <>
-                        Read More
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                        </svg>
-                      </>
-                    )}
+                    {descriptionExpanded ? 'Show Less' : 'Show More'}
+                    <svg
+                      className={`w-4 h-4 transition-transform duration-200 ${descriptionExpanded ? 'rotate-180' : ''}`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
                   </button>
                 )}
               </div>
@@ -300,22 +306,13 @@ export function RequestDetailsClient({ initialRequest = null, initialAuthor = nu
               <div className="glass-card p-6 border-t-4 border-t-[#FFD700]">
                 <h3 className="text-lg font-bold text-white mb-4">Buyer Information</h3>
 
-                <Link href={`/profile/${author?.id}`} className="flex items-center gap-4 mb-6 hover:opacity-80 transition-opacity">
-                  {author?.companyLogo ? (
-                    <img src={author.companyLogo} alt="Logo" className="w-16 h-16 rounded-xl object-cover border border-[rgba(255,255,255,0.1)]" />
-                  ) : (
-                    <div className="w-16 h-16 rounded-xl bg-[rgba(255,255,255,0.05)] flex items-center justify-center text-3xl border border-[rgba(255,255,255,0.1)]">
-                      🏭
-                    </div>
-                  )}
-                  <div>
-                    <p className="font-bold text-white hover:text-[#3B82F6] transition-colors">{publicCompanyName(author, 'Buyer')}</p>
-                    <p className="text-xs text-[#A0A0A0] flex items-center gap-1 mt-1">
-                      <CountryFlag countryCode={countryCode} size={14} />
-                      {countryName}
-                    </p>
-                  </div>
-                </Link>
+                {authorHasProfile ? (
+                  <Link href={`/profile/${author.id}`} className="flex items-center gap-4 mb-6 hover:opacity-80 transition-opacity">
+                    {buyerSummary}
+                  </Link>
+                ) : (
+                  <div className="flex items-center gap-4 mb-6">{buyerSummary}</div>
+                )}
 
                 <div className="space-y-3 mb-6">
                   <div className="flex justify-between text-sm">

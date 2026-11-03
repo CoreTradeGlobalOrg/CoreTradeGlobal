@@ -6,7 +6,9 @@ Created 2026-10-12 from Lighthouse 13.5 runs on https://www.coretradeglobal.com 
 and live in production; 1.2 measured and not kept; 2.6 and 1.3 done and live in production.
 2026-10-15: catalog pages (product/RFQ/fair detail, /products, /requests) moved out of the loading
 screen and the detail pages made ISR, for SEO and TTFB. See "Progress log" at the bottom.
-Next: Priority 2 (2.1/2.2 main-thread JS: in slow PSI runs the first paint waits for it).
+2026-10-21: re-audit (PSI mobile 63/64, desktop 99/97) and Priority 4 (4.1–4.3, what the page
+starts in its first seconds) done on `development`, see "Progress log". Next: production PSI after
+the merge, then Priority 2 JS (2.2) and CSS (2.5).
 
 ## Baseline (2026-10-12, production)
 
@@ -164,6 +166,33 @@ every load, render-blocking CSS, full-size images, and main-thread JS.
 - **SEO 92**: "Links do not have descriptive text", 1 link. Find it in the Lighthouse details
   (likely a "View" / "Visit" / "Book" link on a card) and add an `aria-label` or better text.
 - **Navbar logo**: `/icons/ctg-logo-optimized.png` is 400×218 for 147×80 display; ship 300 px.
+
+## Priority 4: what the page starts in its first seconds (added 2026-10-21)
+
+PSI and local Lighthouse mobile runs randomly show a +1.3 s or +2.3 s "element render delay" on the
+LCP text (Chrome does not present the first frame; seen on GitHub, nextjs.org, react.dev and on a
+JS-free copy of our page too, so it is not our code). Lantern charges every request that started
+before that paint to the simulated LCP, so a delayed run lands at LCP ~10 s with 125 requests /
+1.8 MB in the window. Blocking the non-critical requests in Lighthouse gave 61–64 → 68–71 even in
+delayed runs.
+
+- 4.1 (DONE 2026-10-21) favicon 102 → 5 KiB; ₹ ₺ ₩ ₽ prices drawn in the system font
+  (`CurrencySymbol`) so Inter's 84 KiB latin-ext file is no longer fetched; notification.mp3 only
+  for signed-in users; homepage `<Link>`s are `DeferredLink` (prefetch after the page settles);
+  below-the-fold Firestore reads (products/RFQs listeners, owner roles, companies, categories,
+  fairs, showcase products) wait for `usePageSettled()` (`src/lib/pageSettled.js`: load + 3 s +
+  idle, or the first scroll/tap/key); hero data-card queries skipped at ≤920 px where the cards
+  are hidden. The hero sponsored ad still loads right away (above the fold).
+- 4.2 (DONE 2026-10-21, decided by the user) gtag.js and the Clarity tag load on the same
+  "settled" signal (`DeferredAnalytics`; the gtag()/clarity() queues are defined inline in the root
+  layout so page_view and identifyClarity() are kept). Visits shorter than ~3.5 s without any
+  interaction are no longer recorded. trackAdImpression now needs 1 s of ≥50 % visibility
+  (IAB/MRC rule); impression counts before 2026-10-21 run a little higher.
+- 4.3 (DONE 2026-10-21, carousel part) FeaturedProducts cards from the third on hold their
+  image until the card is within 320 px of the carousel's visible strip (IntersectionObserver
+  with the carousel as root); the first two stay in the SSR HTML. Mobile: 3 thumbnails before
+  load instead of 7. Not done: smaller thumbnails (640 px is already under the phone card's
+  ~650–1200 physical px, so shrinking would blur them).
 
 ## Order and expectations
 1. Quick batch: 1.1, 1.2, 1.4, Priority 3.
@@ -338,6 +367,44 @@ canonical and robots inside `<body>` in a hidden Suspense segment, the visible p
   overridden in production anyway).
 - Not done: HS code / GTİP (no such field on products). Search Console resubmission is for the
   user (the Chrome profile has no Search Console property).
+
+### 2026-10-21: re-audit and 4.1 startup requests
+Production before the change: PSI mobile 63, 64 (LCP 7.9 / 6.6 s, render delay 2,250 / 1,290 ms),
+desktop 99, 97. Local Lighthouse 13.5 mobile on production 61–64 (all runs with the delayed paint).
+
+Local `next build && next start`, baseline = 34926bd in a separate worktree, cloudfunctions.net
+blocked (no fake ad impressions), mobile runs alternated:
+
+| Local mobile | Baseline (n=9) | 4.1 (n=4) |
+|---|---|---|
+| Performance, normal paint | 77–79 (median 78, 7 runs) | 79–82 (median 81) |
+| Performance, delayed paint | 67, 68 (2 runs) | no delayed run in 4 |
+| FCP / LCP (normal paint) | 2.11 s / 4.97 s | 1.66 s / 4.52 s |
+| Speed Index | 3.3 s | 2.6 s |
+| Requested before first paint | 911 KiB | 828 KiB |
+| Desktop performance / FCP | 99 / 0.49 s | 99 / 0.41 s |
+
+Headless click-through on the new build: no secondary Firestore queries or prefetches until ~3.3 s
+without interaction, immediately on scroll; RFQ cards, prices and product links work.
+
+### 2026-10-21: 4.2 analytics / ad impressions and 4.3 carousel images
+Same setup (baseline 34926bd, cloudfunctions.net blocked), 6 mobile and 2 desktop runs per build,
+alternated. All 12 mobile runs painted normally (no delayed paint), so the gain in delayed runs is
+shown by what has started by then rather than by a score:
+
+| Local | Baseline | 4.1–4.3 |
+|---|---|---|
+| Mobile performance | 78 [77–79] | **82** [81–83] |
+| Mobile FCP / LCP / SI | 2.11 / 4.97 / 2.87 s | 1.66 / 4.52 / 2.43 s |
+| Requested before first paint | 911 KiB | 662 KiB |
+| Started by 1.3 s (mobile) | 1.9 MB, 157 requests | 0.97 MB, 64 requests |
+| Started by 2.4 s (mobile) | 1.9 MB, 157 requests | 0.97 MB, 66 requests |
+| Total page weight (mobile) | 1.92 MB | 1.56 MB |
+| Desktop performance / FCP | 99 / 0.49 s | 99 / 0.41 s |
+
+Headless checks: gtag.js and Clarity load at ~3.2 s without interaction (at once on scroll), GA
+page_view and Clarity collect are sent; the ad impression call moves from ~0.6 s to ~1.8 s
+(1 s after the hero ad shows); carousel cards beyond the visible strip load when scrolled to.
 
 ## Open items outside this plan (from the same session)
 - Unused components: `src/presentation/components/features/product/ProductCard/ProductCard.jsx`

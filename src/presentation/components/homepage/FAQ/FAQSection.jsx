@@ -9,7 +9,7 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
+import Link from '@/presentation/components/common/DeferredLink/DeferredLink';
 import { useRouter } from 'next/navigation';
 import { ChevronDown } from 'lucide-react';
 import { useAuth } from '@/presentation/contexts/AuthContext';

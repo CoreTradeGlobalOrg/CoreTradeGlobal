@@ -6,7 +6,7 @@
 
 'use client';
 
-import Link from 'next/link';
+import Link from '@/presentation/components/common/DeferredLink/DeferredLink';
 import { ArrowRight } from 'lucide-react';
 
 export function SectionHeader({

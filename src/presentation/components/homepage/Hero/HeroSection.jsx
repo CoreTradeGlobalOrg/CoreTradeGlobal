@@ -11,7 +11,7 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
-import Link from 'next/link';
+import Link from '@/presentation/components/common/DeferredLink/DeferredLink';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/presentation/contexts/AuthContext';
 import { container } from '@/core/di/container';
@@ -94,8 +94,19 @@ export function HeroSection({ fetchData = false }) {
   // main thread is still parsing large chunks — so we add an explicit delay
   // window before firing the 4 parallel Firestore queries. This keeps the
   // idle fetch off the LCP + TBT critical path on throttled Lighthouse runs.
+  // HeroDataCards are display:none at ≤920px (homepage.css), so phones and
+  // small tablets skip the queries entirely.
+  const [dataCardsVisible, setDataCardsVisible] = useState(false);
   useEffect(() => {
-    if (!fetchData || !mounted) return;
+    const mq = window.matchMedia('(min-width: 921px)');
+    const update = () => setDataCardsVisible(mq.matches);
+    update();
+    mq.addEventListener('change', update);
+    return () => mq.removeEventListener('change', update);
+  }, []);
+
+  useEffect(() => {
+    if (!fetchData || !mounted || !dataCardsVisible) return;
 
     setDataLoading(true);
 
@@ -152,7 +163,7 @@ export function HeroSection({ fetchData = false }) {
     });
 
     return () => cancelIdle(idleId);
-  }, [fetchData, mounted]);
+  }, [fetchData, mounted, dataCardsVisible]);
 
   const handleSearch = (e) => {
     e.preventDefault();

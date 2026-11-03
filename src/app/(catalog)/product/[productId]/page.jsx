@@ -142,8 +142,14 @@ export async function generateMetadata({ params }) {
 // Emit a Product JSON-LD block so crawlers that parse structured data
 // (Google, Bing, LLM search) can pick up the name/image/price/brand
 // even before they render the interactive card.
+//
+// Only for products with a price. Google requires `offers`, `review` or
+// `aggregateRating` on a Product and counts one without them as an
+// invalid item (a critical issue in Search Console). A negotiable product
+// (price 0) has none of them, so it gets no Product block at all; its name
+// and description are still in the page and its meta tags.
 function ProductJsonLd({ product, seller }) {
-  if (!product) return null;
+  if (!product || !(product.price > 0)) return null;
   const sellerName = seller?.companyName || seller?.displayName || 'CoreTradeGlobal';
   const canonicalUrl = `https://www.coretradeglobal.com/product/${product.id}`;
   const image = product.images?.[0] || undefined;
@@ -158,25 +164,16 @@ function ProductJsonLd({ product, seller }) {
     // injected server-side as `categoryName` so Google (and the UI
     // first paint) see the real category instead of nothing.
     ...(product.categoryName ? { category: product.categoryName } : {}),
-    // `product.price > 0` instead of a truthy check — a price of 0
-    // (negotiable B2B listings) was previously treated as "no price"
-    // AND would have emitted `price: 0` if the check had fired, both
-    // of which trip Google's rich-results validator. Negotiable
-    // products legitimately have no offer; omit the block entirely.
-    ...(product.price && product.price > 0
-      ? {
-          offers: {
-            '@type': 'Offer',
-            price: product.price,
-            priceCurrency: product.currency || 'USD',
-            availability: product.status === 'active'
-              ? 'https://schema.org/InStock'
-              : 'https://schema.org/OutOfStock',
-            url: canonicalUrl,
-            seller: { '@type': 'Organization', name: sellerName },
-          },
-        }
-      : {}),
+    offers: {
+      '@type': 'Offer',
+      price: product.price,
+      priceCurrency: product.currency || 'USD',
+      availability: product.status === 'active'
+        ? 'https://schema.org/InStock'
+        : 'https://schema.org/OutOfStock',
+      url: canonicalUrl,
+      seller: { '@type': 'Organization', name: sellerName },
+    },
   };
 
   return (

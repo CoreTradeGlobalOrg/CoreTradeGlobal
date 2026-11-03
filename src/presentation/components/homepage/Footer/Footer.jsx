@@ -9,7 +9,7 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
-import Link from 'next/link';
+import Link from '@/presentation/components/common/DeferredLink/DeferredLink';
 import { useNewsletter } from '@/hooks/useNewsletter';
 import toast from 'react-hot-toast';
 

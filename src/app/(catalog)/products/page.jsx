@@ -1,7 +1,7 @@
 /**
  * Products Listing — Server Shell
  *
- * The interactive page (search, filters, pagination, URL sync) lives
+ * The interactive page (search, filters, infinite scroll, URL sync) lives
  * in ProductsPageClient. This shell fetches the top N active products
  * via firebase-admin so the SSR HTML Googlebot sees contains real
  * `/product/<firestoreId>` links — previously the page was fully

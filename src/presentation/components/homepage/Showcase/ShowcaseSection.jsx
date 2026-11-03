@@ -19,7 +19,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import Link from 'next/link';
+import Link from '@/presentation/components/common/DeferredLink/DeferredLink';
 import Image from 'next/image';
 import { COUNTRIES } from '@/core/constants/countries';
 import { CountryFlag } from '@/presentation/components/common/CountryFlag/CountryFlag';
@@ -29,6 +29,8 @@ import { useUserProfile } from '@/presentation/hooks/user/useUserProfile';
 import { useProductsByIds } from '@/presentation/hooks/product/useProductsByIds';
 import { ProductThumbImg } from '@/presentation/components/common/ProductThumbImg/ProductThumbImg';
 import { useCategories } from '@/presentation/hooks/category/useCategories';
+import { CurrencySymbol } from '@/presentation/components/common/CurrencySymbol/CurrencySymbol';
+import { usePageSettled } from '@/presentation/hooks/usePageSettled';
 import './ShowcaseSection.css';
 
 function getCountryName(code) {
@@ -53,7 +55,7 @@ function formatPrice(product) {
   const code = product.currency || 'USD';
   const symbol = CURRENCY_SYMBOLS[code] || code;
   if (!product.price) return 'Negotiable';
-  return `${symbol} ${product.price}`;
+  return <><CurrencySymbol symbol={symbol} /> {product.price}</>;
 }
 
 function ArrowRightIcon() {
@@ -165,7 +167,10 @@ function SponsoredCard({ ad, categories }) {
     return Array.from(new Set(fallback)).slice(0, 3);
   }, [ad.showcaseProductIds, ad.heroProductId, ad.productsListProductId]);
 
-  const productMap = useProductsByIds(productIds);
+  // Far below the fold: fetch the showcase products once the page has
+  // settled (the ad and the company profile are shared with the hero).
+  const settled = usePageSettled();
+  const productMap = useProductsByIds(settled ? productIds : []);
   const products = productIds
     .map((id) => productMap.get(id))
     .filter((p) => p && p.status !== 'draft');

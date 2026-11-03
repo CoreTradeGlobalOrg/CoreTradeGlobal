@@ -5664,11 +5664,42 @@ exports.onNewMemberRegistered = onDocumentWritten(
 // Aynı anda işlenen üye sayısı (bildirim / push / mail)
 const RFQ_NOTIFY_CONCURRENCY = 10;
 
-function buildRfqEmailBody({ productName, categoryName }) {
+// Sitedeki ülke adlarıyla aynı olsun diye: Intl bunları farklı yazıyor
+// (ör. TR → "Türkiye", site "Turkey").
+const COUNTRY_NAME_OVERRIDES = {
+  AG: 'Antigua and Barbuda', BA: 'Bosnia and Herzegovina', CG: 'Congo', CD: 'Congo (DRC)',
+  CZ: 'Czech Republic', CI: 'Ivory Coast', MM: 'Myanmar', PS: 'Palestine',
+  KN: 'Saint Kitts and Nevis', LC: 'Saint Lucia', VC: 'Saint Vincent and the Grenadines',
+  ST: 'Sao Tome and Principe', TT: 'Trinidad and Tobago', TR: 'Turkey',
+};
+const regionNames = new Intl.DisplayNames(['en'], { type: 'region' });
+
+/** 'TR' → 'Turkey' (the name the site shows); anything else comes back as given. */
+function countryNameFromCode(code) {
+  const value = String(code || '').trim();
+  const upper = value.toUpperCase();
+  if (COUNTRY_NAME_OVERRIDES[upper]) return COUNTRY_NAME_OVERRIDES[upper];
+  if (!/^[A-Z]{2}$/.test(upper)) return value;
+  try {
+    return regionNames.of(upper) || value;
+  } catch {
+    return value;
+  }
+}
+
+function buildRfqEmailBody({ productName, categoryName, countryName }) {
   const product = escapeEmailText(productName);
   const category = escapeEmailText(categoryName);
+  const country = escapeEmailText(countryName);
+  const detail = (label, value) => `<tr>
+        <td style="padding:6px 16px 6px 0;color:#8899AA;white-space:nowrap;vertical-align:top;">${label}</td>
+        <td style="padding:6px 0;color:#FFFFFF;font-weight:bold;">${value}</td>
+      </tr>`;
   return `<p style="margin:0 0 16px 0;">A new request for quotation has been posted in your category${category ? `, <strong>${category}</strong>` : ''}.</p>
-    <p style="margin:0 0 16px 0;">Buyer is looking for: <strong>${product}</strong></p>
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 16px 0;border-collapse:collapse;">
+      ${detail('RFQ', product)}
+      ${country ? detail('Destination', country) : ''}
+    </table>
     <p style="margin:0;">Send your quote before other suppliers do.</p>`;
 }
 
@@ -5692,6 +5723,7 @@ async function notifyMembersOfNewRfq(requestId, rfq) {
     if (!rfq) return;
     const now = Timestamp.now();
     const productName = rfq.productName || rfq.title || 'a product';
+    const countryName = countryNameFromCode(rfq.targetCountry || rfq.country);
     const creatorId = rfq.userId;
     const categoryId = rfq.categoryId || null;
     const link = `/request/${requestId}`;
@@ -5717,11 +5749,11 @@ async function notifyMembersOfNewRfq(requestId, rfq) {
     }
 
     const emailHtml = buildBrandedEmailHtml(
-      buildRfqEmailBody({ productName, categoryName }),
+      buildRfqEmailBody({ productName, categoryName, countryName }),
       'View RFQ',
       `${APP_URL}${link}`
     );
-    const emailSubject = `New RFQ in ${categoryName || 'your category'}: ${productName}`;
+    const emailSubject = `New RFQ in ${categoryName || 'your category'}: ${productName}${countryName ? ` (${countryName})` : ''}`;
 
     let emailed = 0;
     const notifyMember = async (memberDoc) => {

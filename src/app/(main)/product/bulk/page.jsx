@@ -117,28 +117,29 @@ export default function BulkUploadActionPage() {
         transformHeader: (h) => h.replace(/^\uFEFF/, '').trim(),
         complete: (results) => {
           if (!results?.data?.length) {
-            setParseError('The CSV file appears to be empty.');
+            setParseError({ message: 'The CSV file appears to be empty.' });
             return;
           }
           const headers = results.meta?.fields || [];
           const missing = REQUIRED_COLUMNS.filter((c) => !headers.includes(c));
           if (missing.length) {
-            setParseError(
-              `Your CSV is missing required column${missing.length > 1 ? 's' : ''}: ${missing.join(', ')}. Download the template to see the expected format.`
-            );
+            setParseError({
+              message: `Your CSV is missing required column${missing.length > 1 ? 's' : ''}: ${missing.join(', ')}.`,
+              offerTemplate: true,
+            });
             return;
           }
           if (results.data.length > MAX_ROWS) {
-            setParseError(
-              `Self-serve uploads are capped at ${MAX_ROWS} rows per file. Your CSV has ${results.data.length} rows. Please split it and upload separately.`
-            );
+            setParseError({
+              message: `Self-serve uploads are capped at ${MAX_ROWS} rows per file. Your CSV has ${results.data.length} rows. Please split it and upload separately.`,
+            });
             return;
           }
           const validated = results.data.map((row, i) => validateRow(row, i, categoryMap));
           setParsedRows(validated);
         },
         error: (err) => {
-          setParseError(`Failed to parse CSV: ${err.message}`);
+          setParseError({ message: `Failed to parse CSV: ${err.message}` });
         },
       });
     },
@@ -377,7 +378,22 @@ export default function BulkUploadActionPage() {
         {parseError && (
           <div className="mt-4 rounded-2xl border border-red-500/40 bg-red-500/10 px-4 py-3 flex items-start gap-2">
             <AlertCircle className="w-5 h-5 text-red-300 flex-shrink-0 mt-0.5" />
-            <p className="text-red-200 text-sm">{parseError}</p>
+            <p className="text-red-200 text-sm">
+              {parseError.message}
+              {parseError.offerTemplate && (
+                <>
+                  {' '}
+                  <button
+                    type="button"
+                    onClick={downloadTemplate}
+                    className="font-semibold text-red-100 underline underline-offset-2 hover:text-white"
+                  >
+                    Download the template
+                  </button>
+                  {' '}to see the expected format.
+                </>
+              )}
+            </p>
           </div>
         )}
 
@@ -496,10 +512,12 @@ export default function BulkUploadActionPage() {
                           )}
                         </td>
                         <td className="px-3 py-3 text-white text-xs">
-                          {r.price !== null ? `${r.currency || ''} ${r.price}` : '-'}
+                          {r.price === 0 ? 'Negotiable' : r.price !== null ? `${r.currency || ''} ${r.price}` : '-'}
                         </td>
                         <td className="px-3 py-3 text-white text-xs">
-                          {r.quantity !== null ? `${r.quantity} ${r.unit || ''}`.trim() : r.unit || '-'}
+                          {r.quantity === 0
+                            ? 'Contact for stock'
+                            : r.quantity !== null ? `${r.quantity} ${r.unit || ''}`.trim() : r.unit || '-'}
                         </td>
                         <td className="px-3 py-3">
                           <RowImageCell

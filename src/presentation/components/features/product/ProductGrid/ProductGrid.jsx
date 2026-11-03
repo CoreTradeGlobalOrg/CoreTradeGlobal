@@ -8,7 +8,7 @@
 
 'use client';
 
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { useState, useEffect, useLayoutEffect, useMemo, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { Star, MessageSquarePlus } from 'lucide-react';
 import { container } from '@/core/di/container';
@@ -23,6 +23,7 @@ import { useTrackEvent } from '@/presentation/hooks/analytics';
 import { useActiveAd } from '@/presentation/hooks/ads/useActiveAd';
 import { useTrackAd } from '@/presentation/hooks/ads/useTrackAd';
 import { AD_TYPES } from '@/core/constants/adTypes';
+import { CurrencySymbol } from '@/presentation/components/common/CurrencySymbol/CurrencySymbol';
 
 // Sort helper — products with an image come first (visual browsing beats a
 // wall of placeholder tiles), tie-broken by newest createdAt. Applied at
@@ -69,43 +70,61 @@ const CURRENCY_SYMBOLS = {
 // The /products server shell now hydrates the grid with real Firestore
 // products via the `initialProducts` prop.
 
-// Every page renders exactly 12 tiles total. When a Featured Product
-// ad is live on page 1 it eats one of those 12 slots, so we drop 11
-// organic products alongside it; the remainder of the catalog picks up
-// on page 2 with 12 organic products each.
-const PAGE_SIZE = 12;
+// Infinite scroll over the filtered set. The first batch is 11 products
+// plus the sponsored tile (12 tiles, as page 1 used to be); every later
+// batch adds 12, so rows stay full in 1-, 2-, 3- and 4-column layouts.
+const FIRST_BATCH = 11;
+const BATCH_SIZE = 12;
+// The next batch is added while the end of the grid is still this far below the screen.
+const LOAD_AHEAD_MARGIN = '0px 0px 800px 0px';
 
-// ?page=N in the address bar. Written with window.history (Next.js keeps its
-// router in sync and does not refetch), read back on mount and on back/forward.
-function readPageFromUrl() {
+// The full list is kept for the whole visit: coming back from a product
+// shows it at once (so the scroll position can be restored) without
+// reading the 500 docs again.
+const PRODUCTS_CACHE_TTL_MS = 5 * 60 * 1000;
+let productsCache = null; // { products, at }
+
+// The last sponsored tile shown (ad + its product). A remount draws it at
+// once instead of the "Book This Spot" placeholder: swapping the tile a
+// moment later moves every card by one cell, so a restored scroll position
+// lands a row off. Ad blockers hide .sponsored-slot (EasyList), which turns
+// that swap into a removal.
+let sponsoredCache = null; // { ad, product }
+
+// Ürüne girip tarayıcının geri tuşuyla dönünce liste aynı yerden açılsın.
+// Konum ürüne tıklanınca kaydediliyor; sadece popstate'in hemen ardından
+// açılan liste geri yüklüyor (menüdeki Products linki en baştan açar).
+const POSITION_KEY = 'ctg:products-position';
+const RESTORE_WINDOW_MS = 3000;
+let lastPopStateAt = 0;
+if (typeof window !== 'undefined') {
+    window.addEventListener('popstate', () => { lastPopStateAt = Date.now(); });
+}
+
+function currentListUrl() {
+    return `${window.location.pathname}${window.location.search}`;
+}
+
+function takeSavedPosition() {
     if (typeof window === 'undefined') return null;
-    const n = parseInt(new URLSearchParams(window.location.search).get('page') || '', 10);
-    return Number.isFinite(n) && n > 0 ? n : null;
+    if (Date.now() - lastPopStateAt > RESTORE_WINDOW_MS) return null;
+    try {
+        const saved = JSON.parse(window.sessionStorage.getItem(POSITION_KEY) || 'null');
+        return saved && saved.url === currentListUrl() ? saved : null;
+    } catch {
+        return null;
+    }
 }
 
-function writePageToUrl(page, { replace = false } = {}) {
-    if (typeof window === 'undefined') return;
-    const params = new URLSearchParams(window.location.search);
-    if (page > 1) params.set('page', String(page));
-    else params.delete('page');
-    const qs = params.toString();
-    const url = `${window.location.pathname}${qs ? `?${qs}` : ''}`;
-    if (url === `${window.location.pathname}${window.location.search}`) return;
-    window.history[replace ? 'replaceState' : 'pushState'](null, '', url);
-}
-
-export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter, countryFilter, sidebarVisible = false, initialProducts = [], initialPage = 1 }) {
-    const [products, setProducts] = useState(initialProducts);
-    const [filteredProducts, setFilteredProducts] = useState(initialProducts);
-    // Batch-load the owner role for every visible product so the
-    // logistics-provider accent lights up without a per-card read.
-    const ownerRoles = useOwnerRoles(filteredProducts.map((p) => p.userId));
-    const [loading, setLoading] = useState(initialProducts.length === 0);
-    // Ürüne girip geri dönünce aynı sayfa açılsın: önce adres satırı, yoksa sunucudan gelen değer
-    const [currentPage, setCurrentPage] = useState(() => readPageFromUrl() || initialPage || 1);
-    const gridTopRef = useRef(null);
-    // Sayfayı sadece filtreler gerçekten değişince 1'e çek. "İlk açılış" bayrağı
-    // StrictMode'da işe yaramıyor: effect ikinci kez çalışıp ?page=N'i siliyordu.
+export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter, countryFilter, sidebarVisible = false, initialProducts = [] }) {
+    const [products, setProducts] = useState(() => productsCache?.products || initialProducts);
+    // initialProducts is only the newest 60; more arrive with the full list.
+    const [fullListReady, setFullListReady] = useState(() => !!productsCache);
+    const [loading, setLoading] = useState(() => !productsCache && initialProducts.length === 0);
+    const [savedPosition] = useState(takeSavedPosition);
+    const [visibleCount, setVisibleCount] = useState(() => Math.max(FIRST_BATCH, savedPosition?.count || 0));
+    const sentinelRef = useRef(null);
+    // Reset the list only when the filters actually change (never on mount).
     const filterKey = `${searchQuery || ''}|${categoryFilter || ''}|${categoryIdFilter || ''}|${countryFilter || ''}`;
     const lastFilterKeyRef = useRef(filterKey);
     const { categories } = useCategories();
@@ -113,15 +132,21 @@ export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter, cou
     const { track } = useTrackEvent();
     // The sponsored package (SPONSORED) is the only ad tier — it fills
     // the top of /products from sponsored.productsListProductId.
-    const { ad: sponsoredAd } = useActiveAd(AD_TYPES.SPONSORED);
+    const { ad: liveSponsoredAd, loading: sponsoredAdLoading } = useActiveAd(AD_TYPES.SPONSORED);
+    // Until the first ads snapshot arrives, keep the tile from the last visit.
+    const sponsoredAd = sponsoredAdLoading ? (sponsoredCache?.ad ?? null) : liveSponsoredAd;
+    useEffect(() => {
+        if (!sponsoredAdLoading && !liveSponsoredAd) sponsoredCache = null;
+    }, [sponsoredAdLoading, liveSponsoredAd]);
 
     // Fetch Products
     useEffect(() => {
+        if (productsCache && Date.now() - productsCache.at < PRODUCTS_CACHE_TTL_MS) return;
         const fetchProducts = async () => {
             try {
                 const firestoreDS = container.getFirestoreDataSource();
                 // Newest first (so recent uploads appear) with a generous cap.
-                // Pagination is client-side over this set. TODO: server-side
+                // Infinite scroll is client-side over this set. TODO: server-side
                 // filtering/cursor pagination if the catalog grows much larger.
                 const allProducts = await firestoreDS.query('products', {
                     orderBy: [['createdAt', 'desc']],
@@ -146,6 +171,7 @@ export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter, cou
                     const sorted = active.sort(sortByImageThenDate);
 
                     if (sorted.length > 0) {
+                        productsCache = { products: sorted, at: Date.now() };
                         setProducts(sorted);
                     }
                 }
@@ -153,29 +179,31 @@ export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter, cou
                 console.error('Error fetching products:', error);
             } finally {
                 setLoading(false);
+                setFullListReady(true);
             }
         };
 
         fetchProducts();
     }, []);
 
-    // Reset to first page when the filters actually change (never on mount)
+    // Back to the first batch when the filters actually change (never on mount)
     useEffect(() => {
         if (lastFilterKeyRef.current === filterKey) return;
         lastFilterKeyRef.current = filterKey;
-        setCurrentPage(1);
-        writePageToUrl(1, { replace: true });
+        setVisibleCount(FIRST_BATCH);
     }, [filterKey]);
 
-    // Browser back/forward between pages of the grid
+    // Old numbered-pagination links (?page=N) open the list from the top.
     useEffect(() => {
-        const onPopState = () => setCurrentPage(readPageFromUrl() || 1);
-        window.addEventListener('popstate', onPopState);
-        return () => window.removeEventListener('popstate', onPopState);
+        const params = new URLSearchParams(window.location.search);
+        if (!params.has('page')) return;
+        params.delete('page');
+        const qs = params.toString();
+        window.history.replaceState(window.history.state, '', `${window.location.pathname}${qs ? `?${qs}` : ''}`);
     }, []);
 
     // Filter Logic
-    useEffect(() => {
+    const filteredProducts = useMemo(() => {
         let result = products;
 
         if (searchQuery) {
@@ -214,29 +242,65 @@ export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter, cou
             result = result.filter(p => p.country === countryFilter);
         }
 
-        setFilteredProducts([...result].sort(sortByImageThenDate));
-
+        return [...result].sort(sortByImageThenDate);
     }, [products, searchQuery, categoryFilter, categoryIdFilter, countryFilter, categories]);
 
-    // Numbered pagination (client-side over the filtered set).
-    // The Sponsored Product slot renders on EVERY page as the first
-    // tile — either a live ad (SponsoredProductCard) or a "Book This
-    // Spot" placeholder (SponsoredProductPlaceholder). The reservation
-    // is unconditional so grid density stays constant whether or not
-    // an ad is running, and organic totals per page stay predictable.
-    const perPageOrganic = PAGE_SIZE - 1;
-    const totalPages = Math.max(1, Math.ceil(filteredProducts.length / perPageOrganic));
-    const safePage = Math.min(currentPage, totalPages);
-    const pageStart = (safePage - 1) * perPageOrganic;
-    const pageProducts = filteredProducts.slice(pageStart, pageStart + perPageOrganic);
+    // The Sponsored Product slot is always the first tile — either a live
+    // ad (SponsoredPackageCard) or a "Book This Spot" placeholder
+    // (SponsoredProductPlaceholder) — so grid density stays the same
+    // whether or not an ad is running.
+    const visibleProducts = filteredProducts.slice(0, visibleCount);
+    const hasMore = visibleCount < filteredProducts.length;
+    // Products past the newest 60 are still on their way.
+    const waitingForMore = !hasMore && !fullListReady;
 
-    const goToPage = useCallback((page) => {
-        const clamped = Math.min(Math.max(1, page), totalPages);
-        setCurrentPage(clamped);
-        writePageToUrl(clamped);
-        // Smooth-scroll back to the top of the grid on page change.
-        gridTopRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, [totalPages]);
+    // Batch-load the owner role for every visible product so the
+    // logistics-provider accent lights up without a per-card read.
+    const ownerRoles = useOwnerRoles(visibleProducts.map((p) => p.userId));
+
+    // Add the next batch as the end of the grid comes near. The observer is
+    // rebuilt after every batch, so if the end is still in range (tall
+    // screen) the next batch follows straight away.
+    useEffect(() => {
+        if (!hasMore) return undefined;
+        const node = sentinelRef.current;
+        if (!node) return undefined;
+        if (!('IntersectionObserver' in window)) {
+            setVisibleCount(filteredProducts.length);
+            return undefined;
+        }
+        const observer = new IntersectionObserver((entries) => {
+            if (entries.some((entry) => entry.isIntersecting)) {
+                setVisibleCount((count) => count + BATCH_SIZE);
+            }
+        }, { rootMargin: LOAD_AHEAD_MARGIN });
+        observer.observe(node);
+        return () => observer.disconnect();
+    }, [hasMore, visibleCount, filteredProducts.length]);
+
+    // Coming back from a product: once the list is long enough again,
+    // jump to where the visitor was before the first paint.
+    const restoredRef = useRef(false);
+    useLayoutEffect(() => {
+        if (!savedPosition || restoredRef.current || !fullListReady) return;
+        restoredRef.current = true;
+        // 'instant': globals.css sets scroll-behavior: smooth, which would
+        // animate the page down from the top for about a second.
+        window.scrollTo({ top: savedPosition.scrollY, behavior: 'instant' });
+    }, [savedPosition, fullListReady]);
+
+    // Saved on click (capture phase, before next/link navigates).
+    const rememberPosition = useCallback(() => {
+        try {
+            window.sessionStorage.setItem(POSITION_KEY, JSON.stringify({
+                url: currentListUrl(),
+                count: visibleCount,
+                scrollY: window.scrollY,
+            }));
+        } catch {
+            // Storage unavailable (private mode): coming back starts at the top.
+        }
+    }, [visibleCount]);
 
     // Reduce to 3 columns when the category sidebar is visible (sidebar takes ~224px)
     const gridColsClass = sidebarVisible
@@ -272,7 +336,8 @@ export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter, cou
     // empty result set doesn't spam analytics on every re-render.
     const lastZeroKeyRef = useRef('');
     useEffect(() => {
-        if (loading) return;
+        // Only the full list can say there is no match.
+        if (!fullListReady) return;
         if (filteredProducts.length !== 0) return;
         if (!searchQuery) return;
         const key = `${searchQuery}|${categoryFilter}|${categoryIdFilter}|${countryFilter}`;
@@ -285,9 +350,9 @@ export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter, cou
             country: countryFilter || null,
             suggestions_count: suggestedProducts.length,
         });
-    }, [loading, filteredProducts.length, searchQuery, categoryFilter, categoryIdFilter, countryFilter, suggestedProducts.length, track]);
+    }, [fullListReady, filteredProducts.length, searchQuery, categoryFilter, categoryIdFilter, countryFilter, suggestedProducts.length, track]);
 
-    if (loading) {
+    if (loading || (filteredProducts.length === 0 && !fullListReady)) {
         return (
             <div className={`grid ${gridColsClass} gap-6`}>
                 {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
@@ -304,8 +369,8 @@ export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter, cou
         : <SponsoredProductPlaceholder />;
 
     if (filteredProducts.length === 0) {
-        // PAGE_SIZE - 1: the sponsored tile takes one slot, same as paged view
-        const suggested = suggestedProducts.slice(0, PAGE_SIZE - 1);
+        // The sponsored tile takes one slot, same as the first batch
+        const suggested = suggestedProducts.slice(0, FIRST_BATCH);
         const rfqHref = searchQuery
             ? `/request/new?title=${encodeURIComponent(searchQuery)}`
             : '/request/new';
@@ -361,27 +426,11 @@ export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter, cou
         );
     }
 
-    // Windowed page numbers with ellipsis: 1 … (p-1) p (p+1) … N
-    const pageItems = (() => {
-        const items = [];
-        const add = (v) => items.push(v);
-        const window = new Set([1, totalPages, safePage, safePage - 1, safePage + 1]);
-        let prev = 0;
-        for (let i = 1; i <= totalPages; i++) {
-            if (!window.has(i)) continue;
-            if (i - prev > 1) add('ellipsis');
-            add(i);
-            prev = i;
-        }
-        return items;
-    })();
-
     return (
-        <>
-            <div ref={gridTopRef} className="scroll-mt-28" />
+        <div onClickCapture={rememberPosition}>
             <div className={`grid ${gridColsClass} gap-6`}>
                 {sponsoredSlot}
-                {pageProducts.map((product) => (
+                {visibleProducts.map((product) => (
                     <ProductCard
                         key={product.id}
                         product={product}
@@ -393,49 +442,18 @@ export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter, cou
                 ))}
             </div>
 
-            {/* Numbered pagination */}
-            {totalPages > 1 && (
-                <nav className="flex items-center justify-center flex-wrap gap-2 mt-10" aria-label="Products pagination">
-                    <button
-                        type="button"
-                        onClick={() => goToPage(safePage - 1)}
-                        disabled={safePage === 1}
-                        className="px-4 py-2 rounded-lg bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] text-white text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[rgba(255,255,255,0.1)] transition-all"
-                    >
-                        ‹ Previous
-                    </button>
-
-                    {pageItems.map((item, idx) =>
-                        item === 'ellipsis' ? (
-                            <span key={`e${idx}`} className="px-2 text-[#A0A0A0] select-none">…</span>
-                        ) : (
-                            <button
-                                key={item}
-                                type="button"
-                                onClick={() => goToPage(item)}
-                                aria-current={item === safePage ? 'page' : undefined}
-                                className={`min-w-[40px] px-3 py-2 rounded-lg text-sm font-semibold transition-all border ${
-                                    item === safePage
-                                        ? 'bg-[#FFD700] text-[#0F1B2B] border-[#FFD700]'
-                                        : 'bg-[rgba(255,255,255,0.05)] text-white border-[rgba(255,255,255,0.1)] hover:bg-[rgba(255,255,255,0.1)]'
-                                }`}
-                            >
-                                {item}
-                            </button>
-                        )
-                    )}
-
-                    <button
-                        type="button"
-                        onClick={() => goToPage(safePage + 1)}
-                        disabled={safePage === totalPages}
-                        className="px-4 py-2 rounded-lg bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] text-white text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[rgba(255,255,255,0.1)] transition-all"
-                    >
-                        Next ›
-                    </button>
-                </nav>
+            {hasMore && <div ref={sentinelRef} aria-hidden="true" className="h-px" />}
+            {waitingForMore && (
+                <div className="flex justify-center mt-10" role="status" aria-label="Loading more products">
+                    <div className="w-8 h-8 border-2 border-[#FFD700] border-t-transparent rounded-full animate-spin" />
+                </div>
             )}
-        </>
+            {!hasMore && fullListReady && filteredProducts.length > FIRST_BATCH && (
+                <p className="text-center text-sm text-[#A0A0A0] mt-10">
+                    You&rsquo;ve seen all {filteredProducts.length.toLocaleString('en-US')} products
+                </p>
+            )}
+        </div>
     );
 }
 
@@ -511,7 +529,7 @@ function ProductCard({ product, categories, isFavorited, onToggleFavorite, owner
                     <div className="text-[#FFD700] font-bold text-xl">
                         {product.price ? (
                             <>
-                                {CURRENCY_SYMBOLS[product.currency] || product.currency || '$'} {product.price}
+                                <CurrencySymbol symbol={CURRENCY_SYMBOLS[product.currency] || product.currency || '$'} /> {product.price}
                                 {product.unit && (
                                     <span
                                         className="text-sm font-semibold ml-1"
@@ -551,7 +569,16 @@ function SponsoredPackageCard({ ad, categories }) {
     const productId = ad.productsListProductId || ad.heroProductId
         || (Array.isArray(ad.showcaseProductIds) ? ad.showcaseProductIds[0] : null);
     const productMap = useProductsByIds(productId ? [productId] : []);
-    const product = productId ? productMap.get(productId) : null;
+    const cachedProduct = sponsoredCache?.ad.id === ad.id && sponsoredCache.product.id === productId
+        ? sponsoredCache.product
+        : null;
+    // has(): a deleted product resolves to null, which must not fall back to the cache.
+    const product = !productId ? null
+        : productMap.has(productId) ? productMap.get(productId) : cachedProduct;
+
+    useEffect(() => {
+        if (product) sponsoredCache = { ad, product };
+    }, [ad, product]);
 
     if (!product) return <SponsoredProductPlaceholder />;
 

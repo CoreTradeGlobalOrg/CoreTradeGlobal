@@ -8,15 +8,17 @@
 'use client';
 
 import { useState, useEffect, useRef, memo } from 'react';
-import Link from 'next/link';
+import Link from '@/presentation/components/common/DeferredLink/DeferredLink';
 import Image from 'next/image';
 import { container } from '@/core/di/container';
 import { ChevronLeft, ChevronRight, Package, Star } from 'lucide-react';
 import { useCategories } from '@/presentation/hooks/category/useCategories';
 import { useOwnerRoles } from '@/presentation/hooks/user/useOwnerRoles';
 import { useResponsiveLimit, useScrollLoadMore } from '@/presentation/hooks/useResponsiveLimit';
+import { usePageSettled } from '@/presentation/hooks/usePageSettled';
 import { getUnitByCode, getUnitName } from '@/core/constants/units';
 import { productThumbUrl } from '@/lib/productThumbnail';
+import { CurrencySymbol } from '@/presentation/components/common/CurrencySymbol/CurrencySymbol';
 
 // Mock product fallback (ids '1'..'8', fake "Afyon marble" / "Tuscany
 // olive oil" / "CNC machine" listings) was removed on 2026-10-11.
@@ -72,14 +74,49 @@ function isUnoptimizedProduct(product) {
   return d instanceof Date && !isNaN(d) && d >= UNOPTIMIZED_AFTER;
 }
 
-// Image component with loading state
-const ProductCardImage = memo(function ProductCardImage({ src, alt, unoptimized = false }) {
+// Carousel cards this far outside the visible strip keep their image back.
+const LAZY_IMAGE_MARGIN = '0px 320px';
+
+// Image component with loading state.
+// `lazyRoot` (a ref to the horizontal carousel) holds the image back until
+// the card is within LAZY_IMAGE_MARGIN of the carousel's visible area.
+// Chrome's native lazy loading fetches anything within ~1250 px, which on a
+// phone (one card per screen) meant ~6 off-screen thumbnails competing with
+// the first paint.
+const ProductCardImage = memo(function ProductCardImage({ src, alt, unoptimized = false, lazyRoot = null }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   // 640 px thumbnail; falls back to the original if it is missing.
   const thumb = productThumbUrl(src);
   const [thumbFailed, setThumbFailed] = useState(false);
   const shownSrc = thumbFailed ? src : thumb;
+  const [near, setNear] = useState(!lazyRoot);
+  const holderRef = useRef(null);
+
+  useEffect(() => {
+    if (near) return undefined;
+    const root = lazyRoot?.current;
+    const node = holderRef.current;
+    if (!root || !node || !('IntersectionObserver' in window)) {
+      setNear(true);
+      return undefined;
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setNear(true);
+          observer.disconnect();
+        }
+      },
+      { root, rootMargin: LAZY_IMAGE_MARGIN }
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [near, lazyRoot]);
+
+  if (src && !near) {
+    return <div ref={holderRef} className="absolute inset-0 animate-shimmer z-10" />;
+  }
 
   if (!src || error) {
     return (
@@ -123,7 +160,7 @@ const ProductCardImage = memo(function ProductCardImage({ src, alt, unoptimized 
   );
 });
 
-export function ProductCard({ product, categories, isFavorited, onToggleFavorite, ownerRole }) {
+export function ProductCard({ product, categories, isFavorited, onToggleFavorite, ownerRole, lazyImageRoot = null }) {
   // Get first image from images array
   const imageUrl = product.images?.[0] || product.imageUrl;
 
@@ -149,7 +186,12 @@ export function ProductCard({ product, categories, isFavorited, onToggleFavorite
     >
       {/* Product Image */}
       <div className="product-card-image relative">
-        <ProductCardImage src={imageUrl} alt={product.name} unoptimized={isUnoptimizedProduct(product)} />
+        <ProductCardImage
+          src={imageUrl}
+          alt={product.name}
+          unoptimized={isUnoptimizedProduct(product)}
+          lazyRoot={lazyImageRoot}
+        />
         {onToggleFavorite && (
           <button
             onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleFavorite(product.id); }}
@@ -188,7 +230,7 @@ export function ProductCard({ product, categories, isFavorited, onToggleFavorite
         <p className="product-card-price">
           {product.price ? (
             <>
-              {currencySymbol} {product.price}
+              <CurrencySymbol symbol={currencySymbol} /> {product.price}
               {product.unit && (() => {
                 const raw = String(product.unit).replace(/^\/\s*/, '').trim();
                 const knownUnit = getUnitByCode(raw);
@@ -229,18 +271,20 @@ export function ProductCard({ product, categories, isFavorited, onToggleFavorite
 export function FeaturedProducts({ initialProducts = [] }) {
   // Seed state from the server-fetched products so SSR HTML carries
   // the real `/product/<firestoreId>` links Google needs to discover
-  // the catalog. The subscribeToQuery below still runs on hydration
-  // to pick up live updates (new uploads, status changes).
+  // the catalog. The subscribeToQuery below picks up live updates (new
+  // uploads, status changes) once the page has settled: the cards are
+  // already on screen, so it should not compete with the first paint.
   const [products, setProducts] = useState(initialProducts);
   const [allProducts, setAllProducts] = useState(initialProducts);
   const [loading, setLoading] = useState(initialProducts.length === 0);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(true);
   const scrollRef = useRef(null);
+  const settled = usePageSettled();
   const { categories } = useCategories();
   // Batch-load the owner role for every visible product so the
   // logistics accent lands without a per-card Firestore read.
-  const ownerRoles = useOwnerRoles(products.map((p) => p.userId));
+  const ownerRoles = useOwnerRoles(products.map((p) => p.userId), settled);
 
   // Responsive limits with lazy loading: mobile 4, tablet 8, desktop 12, max 30
   const { limit, displayCount, isReady, loadMore, hasMore } = useResponsiveLimit({
@@ -275,7 +319,7 @@ export function FeaturedProducts({ initialProducts = [] }) {
   }, [displayCount, allProducts]);
 
   useEffect(() => {
-    if (!isReady) return; // Wait for responsive limit to be determined
+    if (!isReady || !settled) return; // Wait for responsive limit and a settled page
 
     const firestoreDS = container.getFirestoreDataSource();
 
@@ -310,7 +354,7 @@ export function FeaturedProducts({ initialProducts = [] }) {
     );
 
     return () => unsubscribe();
-  }, [isReady]);
+  }, [isReady, settled]);
 
   const handleScroll = () => {
     if (scrollRef.current) {
@@ -379,12 +423,15 @@ export function FeaturedProducts({ initialProducts = [] }) {
                   a ~0.045 CLS shift Lighthouse attributed to the
                   section on throttled mobile — skeleton cards were
                   slightly shorter than the real card layout. */}
-              {products.map((product) => (
+              {products.map((product, index) => (
                 <ProductCard
                   key={product.id}
                   product={product}
                   categories={categories}
                   ownerRole={ownerRoles.get(product.userId)}
+                  // The first two cards are on screen on every width; the
+                  // rest load as the carousel brings them near.
+                  lazyImageRoot={index >= 2 ? scrollRef : null}
                 />
               ))}
             </div>

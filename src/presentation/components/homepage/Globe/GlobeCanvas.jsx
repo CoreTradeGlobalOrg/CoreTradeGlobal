@@ -22,6 +22,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
+import { attachGlobeCursor } from './globeCursor';
 
 const GlobeCanvasFallback = dynamic(
   () => import('./GlobeCanvasFallback').then((m) => m.GlobeCanvas),
@@ -185,6 +186,7 @@ export function GlobeCanvas({ className = '', onReady }) {
     };
     const onCancel = forwardPointer('cancel');
 
+    const detachCursor = isMobile ? null : attachGlobeCursor(container);
     if (!isMobile) {
       container.addEventListener('pointerdown', onDown);
       container.addEventListener('pointermove', onMove);
@@ -199,6 +201,7 @@ export function GlobeCanvas({ className = '', onReady }) {
       workerRef.current = null;
       ro.disconnect();
       io.disconnect();
+      detachCursor?.();
       if (!isMobile) {
         container.removeEventListener('pointerdown', onDown);
         container.removeEventListener('pointermove', onMove);

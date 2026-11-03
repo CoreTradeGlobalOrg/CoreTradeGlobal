@@ -19,7 +19,7 @@
 
 'use client';
 
-import Link from 'next/link';
+import Link from '@/presentation/components/common/DeferredLink/DeferredLink';
 import { useMemo } from 'react';
 import { useSponsoredHeroAd } from '@/presentation/hooks/ads/useSponsoredHeroAd';
 import { useTrackAd } from '@/presentation/hooks/ads/useTrackAd';

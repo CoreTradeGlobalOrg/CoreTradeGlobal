@@ -41,7 +41,6 @@ export function ProductsPageClient({ initialProducts = [], initialSearchParams =
     const handleSearch = useCallback((value) => {
         setSearchQuery(value);
         const params = getCurrentParams();
-        params.delete('page'); // filtre değişince 1. sayfadan başla
         if (value) params.set('search', value);
         else params.delete('search');
         const newUrl = params.toString() ? `${pathname}?${params.toString()}` : pathname;
@@ -51,7 +50,6 @@ export function ProductsPageClient({ initialProducts = [], initialSearchParams =
     const handleCountryChange = useCallback((value) => {
         setCountryFilter(value);
         const params = getCurrentParams();
-        params.delete('page'); // filtre değişince 1. sayfadan başla
         if (value) params.set('country', value);
         else params.delete('country');
         const newUrl = params.toString() ? `${pathname}?${params.toString()}` : pathname;
@@ -60,7 +58,6 @@ export function ProductsPageClient({ initialProducts = [], initialSearchParams =
 
     const handleCategorySelect = useCallback((categoryId) => {
         const params = getCurrentParams();
-        params.delete('page'); // filtre değişince 1. sayfadan başla
         if (categoryId) {
             params.set('categoryId', categoryId);
             params.delete('category');
@@ -154,7 +151,6 @@ export function ProductsPageClient({ initialProducts = [], initialSearchParams =
                             countryFilter={countryFilter}
                             sidebarVisible
                             initialProducts={initialProducts}
-                            initialPage={parseInt(initialSearchParams.page, 10) || 1}
                         />
                     </div>
                 </div>
