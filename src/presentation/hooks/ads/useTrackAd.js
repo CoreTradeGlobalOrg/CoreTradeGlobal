@@ -16,23 +16,22 @@
 
 'use client';
 
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { httpsCallable } from 'firebase/functions';
 import { getFunctionsInstance } from '@/core/config/firebase.config';
 
 const VIEWABLE_MS = 1000;
 
 export function useTrackAd(adId, slot) {
-  const nodeRef = useRef(null);
+  // State, not a ref: the ad element can mount after the hook (the /products
+  // tile shows a placeholder until the ad's product loads), and the observer
+  // must start then. With a ref the effect ran once with no element and
+  // /products impressions were never counted.
+  const [node, setRef] = useState(null);
   const impressionFired = useRef(false);
-
-  const setRef = useCallback((node) => {
-    nodeRef.current = node;
-  }, []);
 
   useEffect(() => {
     if (!adId || typeof window === 'undefined') return undefined;
-    const node = nodeRef.current;
     if (!node || !('IntersectionObserver' in window)) return undefined;
 
     let cancelled = false;
@@ -76,7 +75,7 @@ export function useTrackAd(adId, slot) {
       if (viewTimer) clearTimeout(viewTimer);
       observer.disconnect();
     };
-  }, [adId, slot]);
+  }, [adId, slot, node]);
 
   const trackClick = useCallback(() => {
     if (!adId) return;
