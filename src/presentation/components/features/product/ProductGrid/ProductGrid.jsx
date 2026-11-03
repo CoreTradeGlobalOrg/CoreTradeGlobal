@@ -84,6 +84,13 @@ const LOAD_AHEAD_MARGIN = '0px 0px 800px 0px';
 const PRODUCTS_CACHE_TTL_MS = 5 * 60 * 1000;
 let productsCache = null; // { products, at }
 
+// The last sponsored tile shown (ad + its product). A remount draws it at
+// once instead of the "Book This Spot" placeholder: swapping the tile a
+// moment later moves every card by one cell, so a restored scroll position
+// lands a row off. Ad blockers hide .sponsored-slot (EasyList), which turns
+// that swap into a removal.
+let sponsoredCache = null; // { ad, product }
+
 // Ürüne girip tarayıcının geri tuşuyla dönünce liste aynı yerden açılsın.
 // Konum ürüne tıklanınca kaydediliyor; sadece popstate'in hemen ardından
 // açılan liste geri yüklüyor (menüdeki Products linki en baştan açar).
@@ -125,7 +132,12 @@ export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter, cou
     const { track } = useTrackEvent();
     // The sponsored package (SPONSORED) is the only ad tier — it fills
     // the top of /products from sponsored.productsListProductId.
-    const { ad: sponsoredAd } = useActiveAd(AD_TYPES.SPONSORED);
+    const { ad: liveSponsoredAd, loading: sponsoredAdLoading } = useActiveAd(AD_TYPES.SPONSORED);
+    // Until the first ads snapshot arrives, keep the tile from the last visit.
+    const sponsoredAd = sponsoredAdLoading ? (sponsoredCache?.ad ?? null) : liveSponsoredAd;
+    useEffect(() => {
+        if (!sponsoredAdLoading && !liveSponsoredAd) sponsoredCache = null;
+    }, [sponsoredAdLoading, liveSponsoredAd]);
 
     // Fetch Products
     useEffect(() => {
@@ -557,7 +569,16 @@ function SponsoredPackageCard({ ad, categories }) {
     const productId = ad.productsListProductId || ad.heroProductId
         || (Array.isArray(ad.showcaseProductIds) ? ad.showcaseProductIds[0] : null);
     const productMap = useProductsByIds(productId ? [productId] : []);
-    const product = productId ? productMap.get(productId) : null;
+    const cachedProduct = sponsoredCache?.ad.id === ad.id && sponsoredCache.product.id === productId
+        ? sponsoredCache.product
+        : null;
+    // has(): a deleted product resolves to null, which must not fall back to the cache.
+    const product = !productId ? null
+        : productMap.has(productId) ? productMap.get(productId) : cachedProduct;
+
+    useEffect(() => {
+        if (product) sponsoredCache = { ad, product };
+    }, [ad, product]);
 
     if (!product) return <SponsoredProductPlaceholder />;
 
