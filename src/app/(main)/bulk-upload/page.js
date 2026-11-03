@@ -31,7 +31,7 @@ const STEPS = [
   {
     icon: FileSpreadsheet,
     title: '2. Fill it in Excel or Google Sheets',
-    body: 'One product per row. Prices as numbers, currencies as 3-letter codes (USD, EUR, TRY…). Paste image URLs separated by commas, and we fetch and store them for you.',
+    body: 'One product per row. Prices as numbers, currencies as 3-letter codes (USD, EUR, TRY…). Leave Price or Quantity empty (or 0) and the product shows "Negotiable" or "Contact for stock". Paste image URLs separated by commas, and we fetch and store them for you.',
   },
   {
     icon: UploadCloud,
@@ -145,9 +145,9 @@ export default function BulkUploadGuidePage() {
                   <tr>
                     <td className="px-3 py-2 whitespace-nowrap">Steel Rebar Grade 60</td>
                     <td className="px-3 py-2 whitespace-nowrap">Steel</td>
-                    <td className="px-3 py-2 whitespace-nowrap">720</td>
+                    <td className="px-3 py-2 whitespace-nowrap">Negotiable</td>
                     <td className="px-3 py-2 whitespace-nowrap">USD</td>
-                    <td className="px-3 py-2 whitespace-nowrap">50</td>
+                    <td className="px-3 py-2 whitespace-nowrap">Contact for stock</td>
                     <td className="px-3 py-2 whitespace-nowrap">ton</td>
                   </tr>
                 </tbody>

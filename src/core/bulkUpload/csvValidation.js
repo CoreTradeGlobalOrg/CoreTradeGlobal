@@ -29,6 +29,18 @@ export const VALID_CURRENCY_CODES = new Set(CURRENCIES.map((c) => c.value));
 /** CSV columns that MUST be present in the file header. */
 export const REQUIRED_COLUMNS = ['Product Name', 'Price', 'Currency', 'Quantity', 'Unit'];
 
+// Fiyat/stok boş, 0 ya da bu kelimeler: 0 kaydedilir, sitede "Negotiable" /
+// "Contact for Stock" görünür. ("Negotiatable" yaygın yazım hatası.)
+const PRICE_ZERO_WORDS = ['negotiable', 'negotiatable'];
+const QUANTITY_ZERO_WORDS = ['contact for stock'];
+
+/** Empty cell or one of `zeroWords` → 0; otherwise parseFloat (NaN when not a number). */
+function readAmount(raw, zeroWords) {
+  const text = raw === undefined || raw === null ? '' : String(raw).trim();
+  if (text === '' || zeroWords.includes(text.toLowerCase())) return 0;
+  return parseFloat(text);
+}
+
 /**
  * Build a case-insensitive lookup table from the Firestore categories
  * list so a CSV row's "Category" cell can resolve to the canonical
@@ -85,13 +97,9 @@ export function validateRow(row, index, categoryMap) {
   // caller via `needsCategoryPick` so a dropdown can be shown per row.
   const resolvedCategory = resolveCategory(row['Category'], categoryMap);
 
-  const priceRaw = row['Price'];
-  const hasPrice = priceRaw !== undefined && priceRaw !== null && String(priceRaw).trim() !== '';
-  const price = hasPrice ? parseFloat(priceRaw) : null;
-  if (!hasPrice) {
-    errors.push('Price is required');
-  } else if (isNaN(price) || price < 0) {
-    errors.push('Price must be a non-negative number');
+  const price = readAmount(row['Price'], PRICE_ZERO_WORDS);
+  if (isNaN(price) || price < 0) {
+    errors.push('Price must be a number, "Negotiable", or left empty');
   }
 
   const currency = row['Currency']?.trim().toUpperCase();
@@ -99,16 +107,11 @@ export function validateRow(row, index, categoryMap) {
     errors.push(`Currency "${row['Currency'] || ''}" is not valid. Use a 3-letter code like USD, EUR.`);
   }
 
-  const quantityRaw = row['Quantity'];
-  const hasQuantity = quantityRaw !== undefined && quantityRaw !== null && String(quantityRaw).trim() !== '';
-  const quantity = hasQuantity ? parseFloat(quantityRaw) : null;
-  if (!hasQuantity) {
-    // Silently letting blank quantities through used to publish
-    // products that read as "out of stock" on the product page
-    // (stockQuantity falls back to 0). Force the column to be filled.
-    errors.push('Quantity is required');
-  } else if (isNaN(quantity) || quantity < 0) {
-    errors.push('Quantity must be a non-negative number');
+  // A blank quantity used to be an error because 0 read as "out of stock";
+  // the product page now shows "Contact for Stock" for 0.
+  const quantity = readAmount(row['Quantity'], QUANTITY_ZERO_WORDS);
+  if (isNaN(quantity) || quantity < 0) {
+    errors.push('Quantity must be a number, "Contact for stock", or left empty');
   }
 
   if (!row['Unit']?.trim()) {
@@ -120,9 +123,9 @@ export function validateRow(row, index, categoryMap) {
     original: row,
     name: row['Product Name']?.trim() || '',
     category: resolvedCategory,
-    price: price !== null && !isNaN(price) ? price : null,
+    price: !isNaN(price) ? price : null,
     currency: VALID_CURRENCY_CODES.has(currency) ? currency : null,
-    quantity: quantity !== null && !isNaN(quantity) ? quantity : null,
+    quantity: !isNaN(quantity) ? quantity : null,
     unit: row['Unit']?.trim() || '',
     description: row['Description']?.trim() || '',
     // Kept optional for backwards-compat with admin-uploaded CSVs that
