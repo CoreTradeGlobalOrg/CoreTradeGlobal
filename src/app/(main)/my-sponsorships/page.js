@@ -4,9 +4,9 @@
  * Rendered at /my-sponsorships. Lists every ad inquiry owned by the
  * signed-in user with its payment status so they can pick up a pending
  * payment later, or check whether a wire has been confirmed. Login is
- * required; anonymous visitors are bounced to /login with a returnTo.
+ * required; anonymous visitors are bounced to /login with a redirect back.
  *
- * Each row links back to /pricing/inquire/pay/{inquiryId} — that page
+ * Each row links back to /advertising/inquire/pay/{inquiryId} — that page
  * owns the actual "I've sent the wire" action and shows the bank
  * details.
  *
@@ -52,7 +52,7 @@ export default function MySponsorshipsPage() {
   useEffect(() => {
     if (authLoading) return;
     if (!user?.uid) {
-      router.replace('/login?returnTo=/my-sponsorships');
+      router.replace(`/login?redirect=${encodeURIComponent('/my-sponsorships')}`);
     }
   }, [authLoading, user, router]);
 
@@ -127,7 +127,7 @@ export default function MySponsorshipsPage() {
             <p className="text-[#c8d3e0] text-sm">Track your Sponsored Package reservations and payments.</p>
           </div>
           <Link
-            href="/pricing/inquire?type=sponsored"
+            href="/advertising/inquire?type=sponsored"
             style={{ color: '#0F1B2B', WebkitTextFillColor: '#0F1B2B' }}
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-[#FFD700] to-[#FDB931] font-bold text-sm no-underline hover:shadow-[0_10px_25px_rgba(255,215,0,0.35)] transition-all"
           >
@@ -201,7 +201,7 @@ function SponsorshipRow({ row }) {
 
   return (
     <Link
-      href={`/pricing/inquire/pay/${row.id}`}
+      href={`/advertising/inquire/pay/${row.id}`}
       className="block rounded-2xl border border-[rgba(255,255,255,0.08)] bg-gradient-to-br from-[rgba(26,40,59,0.6)] to-[rgba(15,27,43,0.85)] p-4 md:p-5 hover:border-[rgba(255,215,0,0.35)] transition-colors no-underline"
     >
       <div className="flex flex-wrap items-center justify-between gap-4">
@@ -259,7 +259,7 @@ function EmptyState() {
       <p className="text-white font-bold mb-2">No sponsorships yet</p>
       <p className="text-[#c8d3e0] text-sm mb-5">Reserve a month and your Sponsored Package will show up here with its payment status.</p>
       <Link
-        href="/pricing/inquire?type=sponsored"
+        href="/advertising/inquire?type=sponsored"
         style={{ color: '#0F1B2B', WebkitTextFillColor: '#0F1B2B' }}
         className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-[#FFD700] to-[#FDB931] font-bold text-sm no-underline"
       >

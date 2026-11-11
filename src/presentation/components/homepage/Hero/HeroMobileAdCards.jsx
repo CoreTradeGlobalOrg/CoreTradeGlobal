@@ -151,7 +151,7 @@ export function HeroMobileAdCards() {
           tag: 'Featured Product',
           title: 'Your Product Here',
           subtitle: 'Front-page product spotlight',
-          href: '/pricing/inquire?type=sponsored',
+          href: '/advertising/inquire?type=sponsored',
         }}
       />
       <AdSlot
@@ -162,7 +162,7 @@ export function HeroMobileAdCards() {
           tag: 'Hero Spotlight',
           title: 'Your Brand Here',
           subtitle: 'Front-page hero spotlight',
-          href: '/pricing/inquire?type=sponsored',
+          href: '/advertising/inquire?type=sponsored',
         }}
       />
     </div>

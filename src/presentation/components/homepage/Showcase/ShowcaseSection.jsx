@@ -138,7 +138,7 @@ function BookThisSpotCard() {
         Book the sponsored placement to feature your brand on the homepage,
         the products directory, and every hero card visitors land on.
       </p>
-      <Link href="/pricing/inquire?type=sponsored" className="sponsored-placeholder-cta">
+      <Link href="/advertising/inquire?type=sponsored" className="sponsored-placeholder-cta">
         Book This Spot
         <CtaArrow />
       </Link>

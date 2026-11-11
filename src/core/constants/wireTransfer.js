@@ -2,7 +2,7 @@
  * Wire Transfer Constants
  *
  * Single source of truth for the Enpara beneficiary details shown on
- * the /pricing/inquire/pay/[inquiryId] page and embedded in the
+ * the /advertising/inquire/pay/[inquiryId] page and embedded in the
  * payment-instructions email. Any change here flows to both surfaces
  * without a schema migration — the wire fields are display-only, not
  * persisted per inquiry.

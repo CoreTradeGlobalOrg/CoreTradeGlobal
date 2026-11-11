@@ -8,7 +8,7 @@
  *   - Admin AdCampaignsManager form + list
  *   - useActiveAd hook + injection points (Hero, ProductGrid, Showcase)
  *   - /advertising page tier grid
- *   - /pricing/inquire form package options + ?type= prefill mapping
+ *   - /advertising/inquire form package options + ?type= prefill mapping
  */
 
 export const AD_TYPES = {

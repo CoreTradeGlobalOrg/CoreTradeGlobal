@@ -3,7 +3,7 @@
  *
  * Rendered at /advertising. Post-consolidation the platform sells one
  * package (SPONSORED) at a single monthly price — this page frames that
- * offer and routes the visitor to /pricing/inquire?type=sponsored.
+ * offer and routes the visitor to /advertising/inquire?type=sponsored.
  *
  * The old page grew a 4-tier grid + custom SVG mockup per placement.
  * That's been retired in favour of a single hero card that surfaces
@@ -91,7 +91,7 @@ function SponsoredHero() {
               </ul>
 
               <Link
-                href="/pricing/inquire?type=sponsored"
+                href="/advertising/inquire?type=sponsored"
                 style={{ color: '#0F1B2B', WebkitTextFillColor: '#0F1B2B' }}
                 className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full bg-gradient-to-r from-[#FFD700] to-[#FDB931] font-bold text-sm hover:shadow-[0_10px_25px_rgba(255,215,0,0.35)] transition-all no-underline"
               >
@@ -128,7 +128,7 @@ function BottomCTA() {
           Pick a month, pick your products, we&apos;ll do the rest.
         </p>
         <Link
-          href="/pricing/inquire?type=sponsored"
+          href="/advertising/inquire?type=sponsored"
           style={{ color: '#0F1B2B', WebkitTextFillColor: '#0F1B2B' }}
           className="inline-flex items-center gap-2 px-8 py-4 rounded-full bg-gradient-to-r from-[#FFD700] to-[#FDB931] font-bold text-base hover:shadow-[0_10px_30px_rgba(255,215,0,0.35)] hover:-translate-y-0.5 transition-all no-underline"
         >

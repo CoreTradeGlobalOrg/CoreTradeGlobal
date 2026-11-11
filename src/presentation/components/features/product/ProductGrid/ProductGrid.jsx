@@ -145,12 +145,17 @@ export function ProductGrid({ searchQuery, categoryFilter, categoryIdFilter, cou
         const fetchProducts = async () => {
             try {
                 const firestoreDS = container.getFirestoreDataSource();
-                // Newest first (so recent uploads appear) with a generous cap.
-                // Infinite scroll is client-side over this set. TODO: server-side
-                // filtering/cursor pagination if the catalog grows much larger.
+                // Every active product, newest first. The status filter has to
+                // be in the query: with a plain "newest 500" cap, inactive docs
+                // used up the slots and older active products (all of Germany's,
+                // for one) never reached the list or the country filter.
+                // Uses the status + createdAt index. Infinite scroll is
+                // client-side over this set. TODO: server-side filtering/cursor
+                // pagination if the catalog grows much larger.
                 const allProducts = await firestoreDS.query('products', {
+                    where: [['status', '==', 'active']],
                     orderBy: [['createdAt', 'desc']],
-                    limit: 500,
+                    limit: 3000,
                 });
 
                 if (allProducts && allProducts.length > 0) {
@@ -614,7 +619,7 @@ function SponsoredPackageCard({ ad, categories }) {
 function SponsoredProductPlaceholder() {
     return (
         <Link
-            href="/pricing/inquire?type=sponsored_product"
+            href="/advertising/inquire?type=sponsored_product"
             aria-label="Book the Sponsored Product placement"
             className="product-grid-card group relative"
             style={{

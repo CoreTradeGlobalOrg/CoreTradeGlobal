@@ -37,6 +37,9 @@ export const COLLECTIONS = {
 
   // Newsletter (existing)
   NEWSLETTER: 'newsletter',      // Newsletter subscribers
+
+  // Partnership requests from /partnership
+  PARTNER_REQUESTS: 'partnerRequests',
 };
 
 /**

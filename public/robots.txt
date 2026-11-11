@@ -27,6 +27,7 @@ Disallow: /favorites
 Disallow: /notifications
 Disallow: /my-reports
 Disallow: /my-sponsorships
+Disallow: /product-views
 Disallow: /deals
 Disallow: /bulk-upload
 Disallow: /product/new

@@ -1,7 +1,7 @@
 /**
  * Sponsored Package Inquiry Form
  *
- * URL: /pricing/inquire[?type=sponsored]
+ * URL: /advertising/inquire[?type=sponsored]
  *
  * Post-consolidation the platform sells exactly one placement — the
  * Sponsored Package — at $499/month. Buyers pick a calendar month
@@ -15,7 +15,7 @@
  * but stays editable. Submit writes to `adInquiries/{autoId}`; the
  * `notifyAdminsOnAdInquiry` Cloud Function fans out notifications.
  *
- * On success we route to /pricing/inquire/thank-you.
+ * On success we route to /advertising/inquire/thank-you.
  */
 
 'use client';
@@ -90,10 +90,10 @@ function InquirePageInner() {
   // Login-required — the inquiry ties to a userId that admins reference
   // when confirming payment, and /my-sponsorships needs an owner to
   // list against. Wait for auth to resolve, then push anonymous users
-  // to /login with a returnTo so they land back here after signing in.
+  // to /login with a redirect so they land back here after signing in.
   useEffect(() => {
     if (authLoading) return;
-    if (!user?.uid) router.replace('/login?returnTo=/pricing/inquire?type=sponsored');
+    if (!user?.uid) router.replace(`/login?redirect=${encodeURIComponent('/advertising/inquire?type=sponsored')}`);
   }, [authLoading, user, router]);
 
   const [company, setCompany] = useState('');
@@ -315,7 +315,7 @@ function InquirePageInner() {
       }
       // Route straight to the wire-transfer instructions. Buyer can
       // finish payment now or come back later via /my-sponsorships.
-      router.push(`/pricing/inquire/pay/${docRef.id}`);
+      router.push(`/advertising/inquire/pay/${docRef.id}`);
     } catch (err) {
       // eslint-disable-next-line no-console
       console.error('adInquiry create failed:', err);

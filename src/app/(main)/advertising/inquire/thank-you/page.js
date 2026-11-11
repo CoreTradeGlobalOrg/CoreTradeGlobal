@@ -1,10 +1,10 @@
 /**
  * Inquiry Thank-You Page
  *
- * URL: /pricing/inquire/thank-you
+ * URL: /advertising/inquire/thank-you
  *
  * Confirms the ad inquiry landed and gives the visitor two productive
- * exits — back to Pricing (compare tiers again) or into the platform
+ * exits — back to Advertising (compare placements again) or into the platform
  * to explore products/RFQs while they wait for the team to reach out.
  */
 
@@ -30,11 +30,11 @@ export default function InquiryThankYouPage() {
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
           <Link
-            href="/pricing"
+            href="/advertising"
             style={{ color: '#0F1B2B', WebkitTextFillColor: '#0F1B2B' }}
             className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-gradient-to-r from-[#FFD700] to-[#FDB931] font-bold text-sm hover:shadow-[0_10px_30px_rgba(255,215,0,0.35)] transition-all no-underline"
           >
-            Back to Pricing
+            Back to Advertising
             <ArrowRight className="w-4 h-4" />
           </Link>
           <Link

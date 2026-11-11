@@ -91,6 +91,12 @@ service cloud.firestore {
         allow read, write: if isOwner(userId);
       }
 
+      // Weekly product view reports (private). Written only by the
+      // sendWeeklyProductViewReport Cloud Function; read on /product-views.
+      match /viewReports/{weekKey} {
+        allow read: if isOwner(userId);
+      }
+
       // User notifications subcollection (private)
       match /notifications/{notificationId} {
         allow read: if isOwner(userId);
@@ -526,6 +532,47 @@ service cloud.firestore {
                         && resource.data.paymentStatus == 'awaiting_payment'
                         && request.resource.data.paymentStatus == 'reported');
       allow delete: if isAdmin();
+    }
+
+    // Partnership requests from /partnership. Anyone may submit one
+    // (most candidates are not members); reading and working them is
+    // admin-only through the global admin rule at the top. Type values
+    // match PARTNER_TYPES in src/core/constants/partnerRequests.js.
+    match /partnerRequests/{requestId} {
+      allow create: if request.resource.data.keys().hasOnly([
+                       'fullName', 'company', 'email', 'phone', 'country', 'website',
+                       'partnerType', 'message', 'status', 'createdAt', 'userId'
+                     ])
+                   && request.resource.data.fullName is string
+                   && request.resource.data.fullName.size() > 0
+                   && request.resource.data.fullName.size() <= 200
+                   && request.resource.data.company is string
+                   && request.resource.data.company.size() > 0
+                   && request.resource.data.company.size() <= 200
+                   && request.resource.data.email is string
+                   && request.resource.data.email.matches('^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$')
+                   && request.resource.data.email.size() <= 254
+                   && request.resource.data.country is string
+                   && request.resource.data.country.size() == 2
+                   && request.resource.data.partnerType in [
+                        'logistics_insurance', 'technology_media',
+                        'country_representative', 'referral', 'other'
+                      ]
+                   && request.resource.data.message is string
+                   && request.resource.data.message.size() > 0
+                   && request.resource.data.message.size() <= 2000
+                   && request.resource.data.status == 'new'
+                   && request.resource.data.createdAt == request.time
+                   && (!('phone' in request.resource.data)
+                       || (request.resource.data.phone is string
+                           && request.resource.data.phone.size() <= 40))
+                   && (!('website' in request.resource.data)
+                       || (request.resource.data.website is string
+                           && request.resource.data.website.size() <= 500))
+                   && (!('userId' in request.resource.data)
+                       || (request.resource.data.userId is string
+                           && request.auth != null
+                           && request.resource.data.userId == request.auth.uid));
     }
 
     // ─────────────────────────────────────────────────────────────────────────

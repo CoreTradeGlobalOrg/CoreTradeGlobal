@@ -143,7 +143,7 @@ export function AdCampaignForm({
 
   // SPONSORED-tier fields — the unified sponsorship record. Pre-filled
   // from either the ad being edited or the inquiry prefill (buyer's
-  // picks in /pricing/inquire). Free-form so the admin can override or
+  // picks in /advertising/inquire). Free-form so the admin can override or
   // add showcase products the buyer left blank.
   const [sponsoredUserId, setSponsoredUserId] = useState(
     editing?.userId || prefill?.userId || ''
@@ -440,7 +440,7 @@ export function AdCampaignForm({
 
           {/* SPONSORED-only summary panel — the sponsor userId + slot
               productIds are carried across from the inquiry (the buyer
-              picked them in /pricing/inquire); admin never needs to
+              picked them in /advertising/inquire); admin never needs to
               type them. Values still live in state and get written on
               submit; the panel is read-only info so admin can confirm
               what got booked before hitting Save. */}

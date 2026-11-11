@@ -7,7 +7,7 @@
  * the funnel.
  */
 
-const CANONICAL_URL = 'https://www.coretradeglobal.com/pricing/inquire/thank-you';
+const CANONICAL_URL = 'https://www.coretradeglobal.com/advertising/inquire/thank-you';
 
 export const metadata = {
   title: 'Inquiry Received | CoreTradeGlobal',

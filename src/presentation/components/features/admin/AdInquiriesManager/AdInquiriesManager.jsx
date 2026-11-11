@@ -259,7 +259,7 @@ export function AdInquiriesManager() {
           <p className="text-sm">
             {statusFilter !== 'all' || search
               ? 'Try widening filters or clearing search.'
-              : 'When someone submits the ad inquiry form at /pricing/inquire, it lands here.'}
+              : 'When someone submits the ad inquiry form at /advertising/inquire, it lands here.'}
           </p>
         </div>
       ) : (
