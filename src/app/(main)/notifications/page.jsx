@@ -2,7 +2,7 @@
  * Notifications Page Route
  *
  * URL: /notifications
- * Protected route - requires authentication (see middleware.js)
+ * Not in src/proxy.js's matcher, so the proxy does not guard this route.
  * Thin shell loading the full NotificationCenterPage component.
  */
 

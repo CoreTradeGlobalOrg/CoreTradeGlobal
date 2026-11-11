@@ -129,6 +129,7 @@ export function BulkProductUpload({ users, categories, onClose, initialMemberId,
   const [uploadState, setUploadState] = useState(null); // null | 'uploading' | 'done'
   const [uploadResult, setUploadResult] = useState(null);
   const [loadingCsv, setLoadingCsv] = useState(false);
+  const [bulkCategory, setBulkCategory] = useState('');
   const fileInputRef = useRef(null);
   const { picking: pickingCsv, openPicker: openCsvPicker } = useFilePickerFeedback(fileInputRef);
 
@@ -157,6 +158,7 @@ export function BulkProductUpload({ users, categories, onClose, initialMemberId,
     setParsedRows(null);
     setUploadResult(null);
     setUploadState(null);
+    setBulkCategory('');
 
     Papa.parse(csvText, {
       header: true,
@@ -225,6 +227,7 @@ export function BulkProductUpload({ users, categories, onClose, initialMemberId,
     setParsedRows(null);
     setUploadResult(null);
     setUploadState(null);
+    setBulkCategory('');
 
     Papa.parse(file, {
       header: true,
@@ -287,6 +290,16 @@ export function BulkProductUpload({ users, categories, onClose, initialMemberId,
     );
   };
 
+  // Top-of-table picker: one category for every row, replacing whatever
+  // the CSV's Category column resolved to.
+  const applyCategoryToAll = (categoryValue) => {
+    if (!categoryValue) return;
+    setBulkCategory(categoryValue);
+    setParsedRows((prev) =>
+      prev.map((r) => ({ ...r, category: categoryValue, needsCategoryPick: false }))
+    );
+  };
+
   // Rows ready for upload: valid + has category assigned
   const uploadableRows = parsedRows
     ? parsedRows.filter((r) => r.isValid && r.category)
@@ -333,6 +346,7 @@ export function BulkProductUpload({ users, categories, onClose, initialMemberId,
     setParseError(null);
     setUploadState(null);
     setUploadResult(null);
+    setBulkCategory('');
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
@@ -443,6 +457,24 @@ export function BulkProductUpload({ users, categories, onClose, initialMemberId,
       {/* Preview table */}
       {parsedRows && parsedRows.length > 0 && uploadState !== 'done' && (
         <div className="mb-5">
+          {/* One category for the whole list (same picker as ProductForm) */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              Category for all products
+            </label>
+            <div className="max-w-md">
+              <SearchableSelect
+                options={categories || []}
+                value={bulkCategory}
+                onChange={applyCategoryToAll}
+                placeholder="Select category"
+                disabled={uploadState === 'uploading'}
+                className="dark-select"
+              />
+            </div>
+            <p className="text-[#A0A0A0] text-xs mt-2">Every product in the list is added to this category.</p>
+          </div>
+
           {/* Summary bar */}
           <div className="flex items-center gap-3 mb-3 flex-wrap">
             <div className="flex items-center gap-1.5 text-sm">

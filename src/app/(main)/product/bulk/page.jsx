@@ -43,6 +43,7 @@ import { getFunctionsInstance, getStorageInstance } from '@/core/config/firebase
 import { useAuth } from '@/presentation/contexts/AuthContext';
 import { useCategories } from '@/presentation/hooks/category/useCategories';
 import { useFilePickerFeedback } from '@/presentation/hooks/useFilePickerFeedback';
+import { SearchableSelect } from '@/presentation/components/common/SearchableSelect/SearchableSelect';
 import {
   buildCategoryMap,
   validateRow,
@@ -88,6 +89,7 @@ export default function BulkUploadActionPage() {
   const [parseError, setParseError] = useState(null);
   const [uploadState, setUploadState] = useState(null); // null | 'uploading' | 'done'
   const [uploadResult, setUploadResult] = useState(null);
+  const [bulkCategory, setBulkCategory] = useState('');
   const fileInputRef = useRef(null);
   const { picking: pickingCsv, openPicker: openCsvPicker } = useFilePickerFeedback(fileInputRef);
 
@@ -108,6 +110,7 @@ export default function BulkUploadActionPage() {
       setParseError(null);
       setParsedRows(null);
       setUploadResult(null);
+      setBulkCategory('');
       Papa.parse(csvText, {
         header: true,
         skipEmptyLines: 'greedy',
@@ -174,6 +177,16 @@ export default function BulkUploadActionPage() {
           ? { ...r, category: categoryValue, needsCategoryPick: !categoryValue }
           : r
       )
+    );
+  };
+
+  // Top-of-table picker: one category for every row, replacing whatever
+  // the CSV's Category column resolved to.
+  const applyCategoryToAll = (categoryValue) => {
+    if (!categoryValue) return;
+    setBulkCategory(categoryValue);
+    setParsedRows((prev) =>
+      prev.map((r) => ({ ...r, category: categoryValue, needsCategoryPick: false }))
     );
   };
 
@@ -263,6 +276,7 @@ export default function BulkUploadActionPage() {
     setParseError(null);
     setUploadState(null);
     setUploadResult(null);
+    setBulkCategory('');
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
@@ -399,7 +413,29 @@ export default function BulkUploadActionPage() {
 
         {/* Validation preview */}
         {parsedRows && uploadState !== 'done' && (
-          <section className="mt-6 rounded-3xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] overflow-hidden">
+          <section className="mt-6 rounded-3xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)]">
+            {/* No overflow-hidden on this section: it would clip the
+                category dropdown when the list is short. */}
+            {/* One category for the whole list (same picker as ProductForm) */}
+            <div className="px-5 py-4 border-b border-[rgba(255,255,255,0.06)]">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Category for all products
+              </label>
+              <div className="max-w-md">
+                <SearchableSelect
+                  options={categories}
+                  value={bulkCategory}
+                  onChange={applyCategoryToAll}
+                  placeholder="Select category"
+                  disabled={categoriesLoading || uploadState === 'uploading'}
+                  className="dark-select"
+                />
+              </div>
+              <p className="text-[#A0A0A0] text-xs mt-2">
+                Every product in the list is added to this category.
+              </p>
+            </div>
+
             {/* Counts bar */}
             <div className="flex flex-wrap items-center gap-3 px-5 py-4 border-b border-[rgba(255,255,255,0.06)]">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 text-xs font-bold">

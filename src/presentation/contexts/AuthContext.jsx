@@ -483,6 +483,13 @@ export function AuthProvider({ children }) {
     }
   };
 
+  // The user doc is read once per sign-in. After the app writes a field
+  // to it, merge the same field here so every screen sees the new value
+  // without a full refreshUser() (which flips profileLoading).
+  const patchUser = (fields) => {
+    setUser((prev) => (prev ? { ...prev, ...fields } : prev));
+  };
+
   const value = {
     user,
     // Backward compatibility: `loading` maps to authLoading (fast check)
@@ -495,6 +502,7 @@ export function AuthProvider({ children }) {
     isAuthenticated: !!user,
     isEmailVerified: user?.emailVerified === true,
     refreshUser, // Expose refresh function
+    patchUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
