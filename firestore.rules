@@ -91,6 +91,12 @@ service cloud.firestore {
         allow read, write: if isOwner(userId);
       }
 
+      // Weekly product view reports (private). Written only by the
+      // sendWeeklyProductViewReport Cloud Function; read on /product-views.
+      match /viewReports/{weekKey} {
+        allow read: if isOwner(userId);
+      }
+
       // User notifications subcollection (private)
       match /notifications/{notificationId} {
         allow read: if isOwner(userId);

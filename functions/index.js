@@ -7984,6 +7984,9 @@ exports.wfFormAbandonmentSweep = onSchedule(
 
 // Mailde tek tek listelenen ürün sayısı; kalanlar sadece toplamlara girer
 const WEEKLY_VIEWS_TOP_N = 5;
+// Products kept per stored report (users/{uid}/viewReports/{weekKey}); keeps
+// the doc far below Firestore's 1 MiB limit even for big catalogs.
+const VIEW_REPORT_MAX_PRODUCTS = 500;
 
 function escapeEmailText(value) {
   return String(value ?? '')
@@ -8041,6 +8044,12 @@ function buildWeeklyViewsEmailBody({ rangeLabel, top, weeklyTotal, allTimeTotal 
  * top WEEKLY_VIEWS_TOP_N products by last week's views, last week's total
  * and the all-time total across all of the user's products. Sent even when last week had zero views.
  *
+ * The full report is also stored at users/{uid}/viewReports/{weekKey}, and
+ * the notification, push and email open /product-views?week=<weekKey>,
+ * which shows it in large type with the advertising offer. It has to be
+ * stored: a product's weekViewCount restarts with its first view of the
+ * new week, so last week's per-product numbers are gone soon after.
+ *
  * Idempotent per user and week: the notification doc id is
  * weekly-views-<weekKey>; if it exists the user is skipped, so a manual
  * re-run never double-sends.
@@ -8059,7 +8068,7 @@ exports.sendWeeklyProductViewReport = onSchedule(
 
     const productsSnap = await db
       .collection('products')
-      .select('userId', 'name', 'viewCount', 'weekViewKey', 'weekViewCount')
+      .select('userId', 'name', 'images', 'status', 'viewCount', 'weekViewKey', 'weekViewCount')
       .get();
 
     const byOwner = new Map();
@@ -8068,6 +8077,9 @@ exports.sendWeeklyProductViewReport = onSchedule(
       if (!p.userId) continue;
       if (!byOwner.has(p.userId)) byOwner.set(p.userId, []);
       byOwner.get(p.userId).push({
+        id: doc.id,
+        image: Array.isArray(p.images) ? p.images.find((url) => typeof url === 'string' && url) || null : null,
+        status: p.status || null,
         name: p.name || 'Untitled product',
         weekly: p.weekViewKey === weekKey ? Number(p.weekViewCount) || 0 : 0,
         allTime: Number(p.viewCount) || 0,
@@ -8095,7 +8107,17 @@ exports.sendWeeklyProductViewReport = onSchedule(
       const top = products.slice(0, WEEKLY_VIEWS_TOP_N);
       const weeklyTotal = products.reduce((sum, p) => sum + p.weekly, 0);
       const allTimeTotal = products.reduce((sum, p) => sum + p.allTime, 0);
-      const link = `/profile/${uid}?tab=products`;
+      const link = `/product-views?week=${weekKey}`;
+
+      await db.collection('users').doc(uid).collection('viewReports').doc(weekKey).set({
+        weekKey,
+        rangeLabel,
+        weeklyTotal,
+        allTimeTotal,
+        productCount: products.length,
+        products: products.slice(0, VIEW_REPORT_MAX_PRODUCTS),
+        createdAt: Timestamp.now(),
+      });
 
       await notifRef.set({
         type: 'product_views_weekly',
@@ -8121,7 +8143,7 @@ exports.sendWeeklyProductViewReport = onSchedule(
       if (user.email && emailEnabled) {
         const html = buildBrandedEmailHtml(
           buildWeeklyViewsEmailBody({ rangeLabel, top, weeklyTotal, allTimeTotal }),
-          'View all products',
+          'See your full report',
           `${APP_URL}${link}`
         );
         const ok = await sendEmail({
