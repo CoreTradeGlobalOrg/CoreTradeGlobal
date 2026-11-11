@@ -22,12 +22,9 @@ import { CheckCircle2, Eye, EyeOff, Loader2, Mail, AlertTriangle } from 'lucide-
 import toast from 'react-hot-toast';
 import { auth, getFunctionsInstance } from '@/core/config/firebase.config';
 import { revalidatePublicPage } from '@/lib/revalidatePublicPage';
+import { safeRedirectPath } from '@/lib/safeRedirect';
 
 const EMAIL_KEY = 'emailForSignIn';
-
-function safeNext(raw) {
-  return raw && raw.startsWith('/') && !raw.startsWith('//') ? raw : '/';
-}
 
 function readStoredEmail() {
   try {
@@ -69,7 +66,7 @@ function EmailLinkContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const rfqId = searchParams.get('rfq');
-  const next = safeNext(searchParams.get('next'));
+  const next = safeRedirectPath(searchParams.get('next'));
 
   // 'checking' | 'need-email' | 'working' | 'rfq-live' | 'invalid' | 'error'
   const [status, setStatus] = useState('checking');

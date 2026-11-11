@@ -9,6 +9,7 @@
  */
 
 import { NextResponse } from 'next/server';
+import { safeRedirectPath } from '@/lib/safeRedirect';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -32,7 +33,7 @@ export async function GET(request) {
   }
 
   const { searchParams } = new URL(request.url);
-  const redirectTarget = searchParams.get('redirect') || '/';
+  const redirectTarget = safeRedirectPath(searchParams.get('redirect'));
   // mode=connect links LinkedIn to the already-signed-in user (profile page);
   // default mode signs the user in / signs them up.
   const mode = searchParams.get('mode') === 'connect' ? 'connect' : 'signin';

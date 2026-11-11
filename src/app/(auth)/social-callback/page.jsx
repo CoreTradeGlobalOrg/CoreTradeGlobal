@@ -16,6 +16,7 @@ import { useRouter } from 'next/navigation';
 import { container } from '@/core/di/container';
 import { useAuth } from '@/presentation/contexts/AuthContext';
 import toast from 'react-hot-toast';
+import { safeRedirectPath } from '@/lib/safeRedirect';
 
 export default function SocialCallbackPage() {
   const router = useRouter();
@@ -31,7 +32,7 @@ export default function SocialCallbackPage() {
     const params = new URLSearchParams(hash);
     const token = params.get('token');
     const isConnect = params.get('li_connect') === '1';
-    const redirectTo = params.get('redirect') || '/';
+    const redirectTo = safeRedirectPath(params.get('redirect'));
     const liName = params.get('name') || '';
     const liSub = params.get('sub') || '';
 

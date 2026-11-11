@@ -20,6 +20,7 @@ import { DeletedAccountDialog } from '@/presentation/components/features/auth/De
 import { SocialAuthButtons } from '@/presentation/components/features/auth/SocialAuthButtons/SocialAuthButtons';
 import { useTrackEvent } from '@/presentation/hooks/analytics';
 import { Eye, EyeOff, ShieldCheck, KeyRound } from 'lucide-react';
+import { safeRedirectPath } from '@/lib/safeRedirect';
 
 export function LoginForm() {
   const [email, setEmail] = useState('');
@@ -36,7 +37,8 @@ export function LoginForm() {
   const { trackLogin } = useTrackEvent();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectTo = searchParams.get('redirect');
+  // Only same-site paths: ?redirect=https://… must not send people off-site.
+  const redirectTo = safeRedirectPath(searchParams.get('redirect'), null);
 
   // Guard so the fast-path redirect only fires once — otherwise every
   // AuthContext state tick (basicUser -> full profile) re-runs the
