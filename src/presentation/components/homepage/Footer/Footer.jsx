@@ -84,6 +84,7 @@ export function Footer() {
             <h4>Company</h4>
             <Link href="/about-us">About Us</Link>
             <Link href="/contact">Contact Support</Link>
+            <Link href="/partnership">Become a Partner</Link>
             <Link href="/faq">FAQ</Link>
           </div>
 

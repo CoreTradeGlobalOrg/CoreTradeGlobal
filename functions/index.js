@@ -1876,6 +1876,180 @@ exports.notifyAdminsOnAdInquiry = onDocumentCreated(
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Partner requests (/partnership)
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Mirrors PARTNER_TYPES in src/core/constants/partnerRequests.js.
+const PARTNER_TYPE_LABELS = {
+  logistics_insurance: 'Logistics / Insurance Provider',
+  technology_media: 'Technology / Media Partner',
+  country_representative: 'Country Representative',
+  referral: 'Referral Partner',
+  other: 'Other',
+};
+
+function emailShell({ title, body }) {
+  return `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html lang="en"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>${escapeEmailText(title)}</title></head>
+<body style="margin:0;padding:0;background-color:#0f1b2b;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+<table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#0f1b2b;">
+  <tr><td align="center" style="padding:30px 10px 20px 10px;">
+    <table border="0" cellpadding="0" cellspacing="0" width="600" style="max-width:600px;background-color:#1a283b;border:1px solid rgba(255,255,255,0.08);border-radius:16px;">
+      ${body}
+    </table>
+  </td></tr>
+</table>
+</body></html>`;
+}
+
+function buildPartnerRequestAdminEmailHtml(req) {
+  const label = (text) => `<tr><td style="padding:6px 0;color:#94a3b8;font-size:12px;text-transform:uppercase;letter-spacing:0.05em;">${text}</td></tr>`;
+  const value = (html) => `<tr><td style="padding:0 0 8px 0;color:#f1f5f9;font-size:15px;">${html}</td></tr>`;
+  const website = /^https?:\/\//i.test(req.website || '')
+    ? `<a href="${escapeEmailText(req.website)}" target="_blank" style="color:#ffd700;text-decoration:none;">${escapeEmailText(req.website)}</a>`
+    : '—';
+  return emailShell({
+    title: 'New Partnership Request',
+    body: `
+      <tr><td style="padding:28px 32px 8px 32px;">
+        <div style="color:#ffd700;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">New Partnership Request</div>
+        <h1 style="color:#ffffff;font-size:22px;font-weight:800;margin:0 0 4px 0;line-height:1.35;">${escapeEmailText(req.company)}</h1>
+        <p style="color:#94a3b8;font-size:14px;margin:0;">${escapeEmailText(PARTNER_TYPE_LABELS[req.partnerType] || req.partnerType)}</p>
+      </td></tr>
+      <tr><td style="padding:8px 32px 24px 32px;">
+        <table border="0" cellpadding="0" cellspacing="0" width="100%">
+          ${label('Contact')}
+          ${value(`${escapeEmailText(req.fullName)} &middot; <a href="mailto:${escapeEmailText(req.email)}" style="color:#ffd700;text-decoration:none;">${escapeEmailText(req.email)}</a>`)}
+          ${req.phone ? `${label('Phone')}${value(escapeEmailText(req.phone))}` : ''}
+          ${label('Country')}
+          ${value(escapeEmailText(countryNameFromCode(req.country)))}
+          ${label('Website')}
+          ${value(website)}
+          ${label('Proposal')}
+          <tr><td style="padding:0 0 12px 0;color:#f1f5f9;font-size:14px;line-height:1.6;">${escapeEmailText(req.message).replace(/\n/g, '<br />')}</td></tr>
+        </table>
+      </td></tr>
+      <tr><td align="center" style="padding:0 32px 28px 32px;">
+        <a href="https://www.coretradeglobal.com/admin?tab=partner-requests" target="_blank" style="display:inline-block;padding:14px 28px;font-size:14px;font-weight:700;color:#0f1b2b;text-decoration:none;border-radius:99px;background-color:#ffd700;">Review in Admin Dashboard &rarr;</a>
+      </td></tr>
+      <tr><td style="padding:16px 32px 24px 32px;border-top:1px solid rgba(255,255,255,0.06);color:#64748b;font-size:12px;line-height:1.5;text-align:center;">
+        Sent because you're an admin on CoreTradeGlobal. Reply to this email to answer the applicant.
+      </td></tr>`,
+  });
+}
+
+function buildPartnerRequestReceivedEmailHtml(req) {
+  const firstName = String(req.fullName || '').trim().split(/\s+/)[0] || 'there';
+  return emailShell({
+    title: 'We received your partnership request',
+    body: `
+      <tr><td style="padding:28px 32px 8px 32px;">
+        <div style="color:#ffd700;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">Partnership Request Received</div>
+        <h1 style="color:#ffffff;font-size:22px;font-weight:800;margin:0 0 12px 0;line-height:1.35;">Thank you, ${escapeEmailText(firstName)}!</h1>
+        <p style="color:#cbd5e1;font-size:15px;line-height:1.6;margin:0 0 12px 0;">
+          We received your request to partner with CoreTradeGlobal as a <strong style="color:#ffffff;">${escapeEmailText(PARTNER_TYPE_LABELS[req.partnerType] || 'partner')}</strong> on behalf of <strong style="color:#ffffff;">${escapeEmailText(req.company)}</strong>.
+        </p>
+        <p style="color:#cbd5e1;font-size:15px;line-height:1.6;margin:0 0 20px 0;">
+          Our team reviews every request and will get back to you by email. If you want to add anything in the meantime, just reply to this email.
+        </p>
+      </td></tr>
+      <tr><td align="center" style="padding:0 32px 28px 32px;">
+        <a href="https://www.coretradeglobal.com" target="_blank" style="display:inline-block;padding:14px 28px;font-size:14px;font-weight:700;color:#0f1b2b;text-decoration:none;border-radius:99px;background-color:#ffd700;">Visit CoreTradeGlobal &rarr;</a>
+      </td></tr>
+      <tr><td style="padding:16px 32px 24px 32px;border-top:1px solid rgba(255,255,255,0.06);color:#64748b;font-size:12px;line-height:1.5;text-align:center;">
+        You are receiving this email because this address was used on the Become a Partner form at coretradeglobal.com.
+      </td></tr>`,
+  });
+}
+
+/**
+ * notifyAdminsOnPartnerRequest
+ *
+ * Fires when a /partnership request lands in `partnerRequests`.
+ * Same fan-out as notifyAdminsOnAdInquiry: an in-app notification and an
+ * email for every admin (Reply goes to the applicant), plus a short
+ * "we received your request" email to the applicant. Each step is
+ * best-effort so one failing does not stop the others.
+ */
+exports.notifyAdminsOnPartnerRequest = onDocumentCreated(
+  'partnerRequests/{requestId}',
+  async (event) => {
+    const snapshot = event.data;
+    if (!snapshot) return null;
+    const requestId = event.params.requestId;
+    const data = snapshot.data() || {};
+    const typeLabel = PARTNER_TYPE_LABELS[data.partnerType] || 'a partnership';
+
+    let adminDocs = [];
+    try {
+      const adminsSnap = await db.collection('users').where('role', '==', 'admin').limit(50).get();
+      adminDocs = adminsSnap.docs;
+    } catch (err) {
+      console.error(`notifyAdminsOnPartnerRequest: admin lookup failed for ${requestId}:`, err);
+    }
+
+    if (adminDocs.length > 0) {
+      try {
+        const batch = db.batch();
+        const notification = {
+          type: 'partner_request',
+          title: 'New Partnership Request',
+          body: `${data.company || 'A company'} applied as ${typeLabel}`,
+          data: {
+            requestId,
+            company: data.company || null,
+            email: data.email || null,
+            partnerType: data.partnerType || null,
+          },
+          isRead: false,
+          createdAt: Timestamp.now(),
+          link: '/admin?tab=partner-requests',
+        };
+        adminDocs.forEach((adminDoc) => {
+          batch.set(db.collection('users').doc(adminDoc.id).collection('notifications').doc(), notification);
+        });
+        await batch.commit();
+      } catch (err) {
+        console.error(`notifyAdminsOnPartnerRequest: in-app fan-out failed for ${requestId}:`, err);
+      }
+
+      try {
+        const adminEmails = adminDocs
+          .map((d) => d.data()?.email)
+          .filter((e) => typeof e === 'string' && e.includes('@'));
+        if (adminEmails.length > 0) {
+          await sendEmail({
+            to: adminEmails,
+            subject: `New Partnership Request: ${data.company || 'Unknown company'} (${typeLabel})`,
+            html: buildPartnerRequestAdminEmailHtml(data),
+            replyTo: data.email || undefined,
+            tag: `notifyAdminsOnPartnerRequest (${requestId})`,
+          });
+        }
+      } catch (err) {
+        console.error(`notifyAdminsOnPartnerRequest: admin email failed for ${requestId}:`, err);
+      }
+    }
+
+    if (data.email) {
+      try {
+        await sendEmail({
+          to: data.email,
+          subject: 'We received your partnership request',
+          html: buildPartnerRequestReceivedEmailHtml(data),
+          tag: `notifyAdminsOnPartnerRequest:applicant (${requestId})`,
+        });
+      } catch (err) {
+        console.error(`notifyAdminsOnPartnerRequest: applicant email failed for ${requestId}:`, err);
+      }
+    }
+
+    return null;
+  }
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Deal Negotiation Constants (mirrored from src/core/constants/dealConstants.js)
 // Cloud Functions are CommonJS — cannot import ESM from the Next.js app.
 // ─────────────────────────────────────────────────────────────────────────────
