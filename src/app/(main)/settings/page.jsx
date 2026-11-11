@@ -2,7 +2,7 @@
  * Settings Page Route
  *
  * URL: /settings
- * Protected route - requires authentication (see middleware.js)
+ * Protected route - requires authentication (see src/proxy.js)
  * Thin shell with Suspense boundary wrapping the main SettingsPage component
  */
 

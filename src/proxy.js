@@ -1,5 +1,5 @@
 /**
- * Next.js Middleware
+ * Next.js Proxy (the file convention formerly called middleware)
  *
  * Automatically protects routes that require authentication
  * Runs BEFORE the page loads - server-side protection
@@ -35,7 +35,7 @@ function getSessionData(request) {
   }
 }
 
-export function middleware(request) {
+export function proxy(request) {
   const { pathname } = request.nextUrl;
 
   // Get session data from cookie
