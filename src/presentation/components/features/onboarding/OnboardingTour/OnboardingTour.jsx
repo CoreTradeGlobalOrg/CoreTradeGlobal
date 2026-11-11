@@ -21,6 +21,7 @@ import { useRouter } from 'next/navigation';
 import { createPortal } from 'react-dom';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/core/config/firebase.config';
+import { useAuth } from '@/presentation/contexts/AuthContext';
 import './OnboardingTour.css';
 
 /**
@@ -226,6 +227,7 @@ function getPanelStyle(placement, targetRect) {
  */
 export function OnboardingTour({ user, onComplete }) {
   const router = useRouter();
+  const { patchUser } = useAuth();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [collapsed, setCollapsed] = useState(false);
   const [targetRect, setTargetRect] = useState(null);
@@ -322,10 +324,15 @@ export function OnboardingTour({ user, onComplete }) {
     } catch (err) {
       console.error('OnboardingTour: failed to write completion flag', err);
     } finally {
+      // The layout's own "dismissed" state is lost when a route group
+      // change remounts it, and AuthContext still held the flag from
+      // sign-in, so the finished tour opened again on the next page.
+      // Done even if the write failed: the user has seen the tour.
+      patchUser({ onboardingTourCompleted: true });
       setSaving(false);
       onComplete?.();
     }
-  }, [user?.uid, onComplete, saving]);
+  }, [user?.uid, onComplete, saving, patchUser]);
 
   const handleAdvance = () => {
     if (currentIndex < TOUR_SEQUENCE.length - 1) {
