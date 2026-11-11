@@ -21,7 +21,7 @@ import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { collection, doc, getDoc, getDocs, limit, orderBy, query, where } from 'firebase/firestore';
-import { ArrowRight, ChevronLeft, ChevronRight, Eye, Loader2, Package, PlusCircle, Sparkles, TrendingUp } from 'lucide-react';
+import { ArrowRight, Camera, ChevronLeft, ChevronRight, Eye, Loader2, Package, PlusCircle, Sparkles, TrendingUp, Upload } from 'lucide-react';
 import { db } from '@/core/config/firebase.config';
 import { COLLECTIONS } from '@/core/constants/collections';
 import { useAuth } from '@/presentation/contexts/AuthContext';
@@ -254,6 +254,9 @@ function ProductViewsContent() {
 
   const maxWeekly = Math.max(1, ...entry.products.map((p) => p.weekly));
   const hasProducts = entries.some((e) => e.productCount > 0);
+  // Listed products without a photo, counted on today's products (entry 0)
+  // whatever week is open: /products shows products with photos first.
+  const listedWithoutPhoto = entries[0].products.filter((p) => p.status === 'active' && !p.image).length;
 
   return (
     <main className="pt-[calc(var(--navbar-height)+24px)] pb-16 bg-radial-navy min-h-screen text-white">
@@ -320,30 +323,79 @@ function ProductViewsContent() {
           <StatCard icon={Package} label="Products" value={formatCount(entry.productCount)} />
         </div>
 
-        {/* Advertising offer */}
-        <section className="mb-8 rounded-3xl border border-[rgba(255,215,0,0.3)] bg-gradient-to-br from-[rgba(26,40,59,0.95)] to-[rgba(15,27,43,0.98)] p-6 md:p-8 flex flex-col md:flex-row md:items-center gap-5">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#FFD700] to-[#FDB931] flex items-center justify-center flex-shrink-0">
-            <Sparkles className="w-7 h-7 text-[#0F1B2B]" />
+        {/* Ways to get more views: advertise, or list more products */}
+        <div className="space-y-4 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <section className="rounded-3xl border border-[rgba(255,215,0,0.3)] bg-gradient-to-br from-[rgba(26,40,59,0.95)] to-[rgba(15,27,43,0.98)] p-6 md:p-7 flex flex-col">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#FFD700] to-[#FDB931] flex items-center justify-center mb-4">
+                <Sparkles className="w-6 h-6 text-[#0F1B2B]" />
+              </div>
+              <h2 className="text-xl md:text-2xl font-extrabold mb-1.5">
+                {entry.weeklyTotal === 0 ? 'Get your first views' : 'Want more views?'}
+              </h2>
+              <p className="text-[#c8d3e0] text-sm md:text-base leading-relaxed mb-5 flex-1">
+                The Sponsored Package puts your products on both homepage hero cards, the Sponsored Company
+                showcase and the top of the products directory for a full month.
+              </p>
+              <Link
+                href="/advertising"
+                onClick={() => track('advertising_promo_click', { source: 'product_views', week: entry.key })}
+                style={{ color: '#0F1B2B', WebkitTextFillColor: '#0F1B2B' }}
+                className="self-start inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-gradient-to-r from-[#FFD700] to-[#FDB931] font-bold text-sm no-underline whitespace-nowrap hover:shadow-[0_10px_25px_rgba(255,215,0,0.35)] transition-all"
+              >
+                See advertising options
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            </section>
+
+            <section className="rounded-3xl border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.03)] p-6 md:p-7 flex flex-col">
+              <div className="w-12 h-12 rounded-2xl bg-[rgba(255,215,0,0.1)] border border-[rgba(255,215,0,0.35)] flex items-center justify-center mb-4">
+                <PlusCircle className="w-6 h-6 text-[#FFD700]" />
+              </div>
+              <h2 className="text-xl md:text-2xl font-extrabold mb-1.5">Add more products</h2>
+              <p className="text-[#c8d3e0] text-sm md:text-base leading-relaxed mb-5 flex-1">
+                Every product you add is another way for buyers to find you. Each new product brings new views.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <Link
+                  href="/product/new"
+                  onClick={() => track('add_product_promo_click', { source: 'product_views', target: 'single' })}
+                  className="inline-flex items-center gap-2 px-5 py-3 rounded-full border border-[#FFD700] text-[#FFD700] font-bold text-sm no-underline hover:bg-[rgba(255,215,0,0.08)] transition-colors"
+                  style={{ color: '#FFD700' }}
+                >
+                  <PlusCircle className="w-4 h-4" />
+                  Add a product
+                </Link>
+                <Link
+                  href="/product/bulk"
+                  onClick={() => track('add_product_promo_click', { source: 'product_views', target: 'bulk' })}
+                  className="inline-flex items-center gap-2 px-5 py-3 rounded-full border border-[rgba(255,255,255,0.15)] text-white font-semibold text-sm no-underline hover:bg-[rgba(255,255,255,0.05)] transition-colors"
+                  style={{ color: '#ffffff' }}
+                >
+                  <Upload className="w-4 h-4" />
+                  Bulk upload (CSV)
+                </Link>
+              </div>
+            </section>
           </div>
-          <div className="flex-1">
-            <h2 className="text-xl md:text-2xl font-extrabold mb-1.5">
-              {entry.weeklyTotal === 0 ? 'Get your first views' : 'Want more views?'}
-            </h2>
-            <p className="text-[#c8d3e0] text-sm md:text-base leading-relaxed">
-              The Sponsored Package puts your products on both homepage hero cards, the Sponsored Company
-              showcase and the top of the products directory for a full month.
-            </p>
-          </div>
-          <Link
-            href="/advertising"
-            onClick={() => track('advertising_promo_click', { source: 'product_views', week: entry.key })}
-            style={{ color: '#0F1B2B', WebkitTextFillColor: '#0F1B2B' }}
-            className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-gradient-to-r from-[#FFD700] to-[#FDB931] font-bold text-sm no-underline whitespace-nowrap hover:shadow-[0_10px_25px_rgba(255,215,0,0.35)] transition-all"
-          >
-            See advertising options
-            <ArrowRight className="w-4 h-4" />
-          </Link>
-        </section>
+
+          {listedWithoutPhoto > 0 && (
+            <Link
+              href={`/profile/${user.uid}?tab=products`}
+              className="flex items-start gap-3 rounded-2xl border border-amber-500/40 bg-amber-500/10 px-5 py-4 no-underline hover:bg-amber-500/15 transition-colors"
+            >
+              <Camera className="w-5 h-5 text-amber-300 flex-shrink-0 mt-0.5" />
+              <span className="text-sm text-[#f5e6c4] leading-relaxed">
+                <strong className="text-white">
+                  {listedWithoutPhoto === 1
+                    ? '1 of your products has no photo.'
+                    : `${formatCount(listedWithoutPhoto)} of your products have no photo.`}
+                </strong>{' '}
+                Products with photos are shown first on the products page. Add photos →
+              </span>
+            </Link>
+          )}
+        </div>
 
         {/* Per-product numbers */}
         {!hasProducts ? (
