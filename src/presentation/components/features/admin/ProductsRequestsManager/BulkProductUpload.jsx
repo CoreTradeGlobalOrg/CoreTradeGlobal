@@ -129,6 +129,7 @@ export function BulkProductUpload({ users, categories, onClose, initialMemberId,
   const [uploadState, setUploadState] = useState(null); // null | 'uploading' | 'done'
   const [uploadResult, setUploadResult] = useState(null);
   const [loadingCsv, setLoadingCsv] = useState(false);
+  const [bulkCategory, setBulkCategory] = useState('');
   const fileInputRef = useRef(null);
   const { picking: pickingCsv, openPicker: openCsvPicker } = useFilePickerFeedback(fileInputRef);
 
@@ -157,6 +158,7 @@ export function BulkProductUpload({ users, categories, onClose, initialMemberId,
     setParsedRows(null);
     setUploadResult(null);
     setUploadState(null);
+    setBulkCategory('');
 
     Papa.parse(csvText, {
       header: true,
@@ -225,6 +227,7 @@ export function BulkProductUpload({ users, categories, onClose, initialMemberId,
     setParsedRows(null);
     setUploadResult(null);
     setUploadState(null);
+    setBulkCategory('');
 
     Papa.parse(file, {
       header: true,
@@ -287,6 +290,16 @@ export function BulkProductUpload({ users, categories, onClose, initialMemberId,
     );
   };
 
+  // Top-of-table picker: one category for every row, replacing whatever
+  // the CSV's Category column resolved to.
+  const applyCategoryToAll = (categoryValue) => {
+    if (!categoryValue) return;
+    setBulkCategory(categoryValue);
+    setParsedRows((prev) =>
+      prev.map((r) => ({ ...r, category: categoryValue, needsCategoryPick: false }))
+    );
+  };
+
   // Rows ready for upload: valid + has category assigned
   const uploadableRows = parsedRows
     ? parsedRows.filter((r) => r.isValid && r.category)
@@ -333,6 +346,7 @@ export function BulkProductUpload({ users, categories, onClose, initialMemberId,
     setParseError(null);
     setUploadState(null);
     setUploadResult(null);
+    setBulkCategory('');
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
@@ -443,6 +457,28 @@ export function BulkProductUpload({ users, categories, onClose, initialMemberId,
       {/* Preview table */}
       {parsedRows && parsedRows.length > 0 && uploadState !== 'done' && (
         <div className="mb-5">
+          {/* One category for the whole list */}
+          <div className="flex items-center gap-x-3 gap-y-2 mb-3 flex-wrap">
+            <label htmlFor="admin-bulk-category-all" className="text-white text-sm font-medium">
+              Category for all products
+            </label>
+            <select
+              id="admin-bulk-category-all"
+              value={bulkCategory}
+              onChange={(e) => applyCategoryToAll(e.target.value)}
+              disabled={uploadState === 'uploading'}
+              className="min-w-[200px] bg-[#1a2a3a] border border-[rgba(255,215,0,0.3)] text-white text-xs rounded px-2 py-1.5 focus:outline-none focus:border-[#FFD700] disabled:opacity-60"
+            >
+              <option value="" disabled>Choose a category</option>
+              {categoryOptions.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+            <span className="text-[#A0A0A0] text-xs">Every product in the list is added to this category.</span>
+          </div>
+
           {/* Summary bar */}
           <div className="flex items-center gap-3 mb-3 flex-wrap">
             <div className="flex items-center gap-1.5 text-sm">

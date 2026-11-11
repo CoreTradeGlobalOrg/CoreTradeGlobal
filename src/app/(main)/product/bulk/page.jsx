@@ -88,6 +88,7 @@ export default function BulkUploadActionPage() {
   const [parseError, setParseError] = useState(null);
   const [uploadState, setUploadState] = useState(null); // null | 'uploading' | 'done'
   const [uploadResult, setUploadResult] = useState(null);
+  const [bulkCategory, setBulkCategory] = useState('');
   const fileInputRef = useRef(null);
   const { picking: pickingCsv, openPicker: openCsvPicker } = useFilePickerFeedback(fileInputRef);
 
@@ -108,6 +109,7 @@ export default function BulkUploadActionPage() {
       setParseError(null);
       setParsedRows(null);
       setUploadResult(null);
+      setBulkCategory('');
       Papa.parse(csvText, {
         header: true,
         skipEmptyLines: 'greedy',
@@ -174,6 +176,16 @@ export default function BulkUploadActionPage() {
           ? { ...r, category: categoryValue, needsCategoryPick: !categoryValue }
           : r
       )
+    );
+  };
+
+  // Top-of-table picker: one category for every row, replacing whatever
+  // the CSV's Category column resolved to.
+  const applyCategoryToAll = (categoryValue) => {
+    if (!categoryValue) return;
+    setBulkCategory(categoryValue);
+    setParsedRows((prev) =>
+      prev.map((r) => ({ ...r, category: categoryValue, needsCategoryPick: false }))
     );
   };
 
@@ -263,6 +275,7 @@ export default function BulkUploadActionPage() {
     setParseError(null);
     setUploadState(null);
     setUploadResult(null);
+    setBulkCategory('');
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
@@ -400,6 +413,32 @@ export default function BulkUploadActionPage() {
         {/* Validation preview */}
         {parsedRows && uploadState !== 'done' && (
           <section className="mt-6 rounded-3xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] overflow-hidden">
+            {/* One category for the whole list */}
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-5 py-4 border-b border-[rgba(255,255,255,0.06)]">
+              <label htmlFor="bulk-category-all" className="text-white text-sm font-semibold">
+                Category for all products
+              </label>
+              <select
+                id="bulk-category-all"
+                value={bulkCategory}
+                onChange={(e) => applyCategoryToAll(e.target.value)}
+                disabled={categoriesLoading || uploadState === 'uploading'}
+                className="min-w-[220px] bg-[rgba(255,255,255,0.05)] border border-[#FFD700]/50 rounded-lg px-3 py-1.5 text-white text-sm focus:outline-none focus:border-[#FFD700] disabled:opacity-60"
+              >
+                <option value="" disabled className="bg-[#0F1B2B]">
+                  Choose a category
+                </option>
+                {categoryOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value} className="bg-[#0F1B2B]">
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+              <span className="text-[#A0A0A0] text-xs">
+                Every product in the list is added to this category.
+              </span>
+            </div>
+
             {/* Counts bar */}
             <div className="flex flex-wrap items-center gap-3 px-5 py-4 border-b border-[rgba(255,255,255,0.06)]">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 text-xs font-bold">
