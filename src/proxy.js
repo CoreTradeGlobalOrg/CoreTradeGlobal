@@ -19,8 +19,13 @@ const protectedRoutes = ['/dashboard', '/messages', '/settings', '/admin'];
 // Reserved for routes we ever add that need pure server-side admin gating.
 const adminRoutes = [];
 
-// Routes only for guests (redirects to home if already logged in)
-const guestOnlyRoutes = ['/login', '/register'];
+// No guest-only redirect for /login and /register. It sent signed-in users
+// from /login back to '/' whenever the session cookie was present, and on
+// Chrome/Opera the Navbar can briefly show Login/Register to a signed-in
+// user while AuthContext hydrates, so clicking either link looked like the
+// page reloading in place. LoginForm sends users on after they actually
+// sign in. (This was fixed on 2026-07-31 in src/middleware.js, which Next
+// never loaded; the root middleware.js was the live file.)
 
 /**
  * Parse session cookie and return user data
@@ -50,9 +55,6 @@ export function proxy(request) {
   const isAdminRoute = adminRoutes.some((route) =>
     pathname.startsWith(route)
   );
-  const isGuestOnlyRoute = guestOnlyRoutes.some((route) =>
-    pathname.startsWith(route)
-  );
 
   // Admin routes - require admin role
   if (isAdminRoute) {
@@ -74,11 +76,6 @@ export function proxy(request) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // Guest-only routes - redirect to home if already logged in
-  if (isGuestOnlyRoute && isAuthenticated) {
-    return NextResponse.redirect(new URL('/', request.url));
-  }
-
   return NextResponse.next();
 }
 
@@ -93,7 +90,7 @@ export function proxy(request) {
 // reads on every crawl and crawl budget stayed tiny.
 //
 // Narrowing the matcher to the handful of routes that actually need an
-// auth decision (protectedRoutes + guestOnlyRoutes above) lets the public
+// auth decision (protectedRoutes above) lets the public
 // routes keep their `revalidate = 3600` cache. Everything else runs
 // through middleware exactly as before.
 export const config = {
@@ -102,7 +99,5 @@ export const config = {
     '/messages/:path*',
     '/settings/:path*',
     '/admin/:path*',
-    '/login',
-    '/register',
   ],
 };
