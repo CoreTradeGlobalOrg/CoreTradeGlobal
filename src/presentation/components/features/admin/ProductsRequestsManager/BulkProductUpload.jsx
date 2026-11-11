@@ -457,26 +457,22 @@ export function BulkProductUpload({ users, categories, onClose, initialMemberId,
       {/* Preview table */}
       {parsedRows && parsedRows.length > 0 && uploadState !== 'done' && (
         <div className="mb-5">
-          {/* One category for the whole list */}
-          <div className="flex items-center gap-x-3 gap-y-2 mb-3 flex-wrap">
-            <label htmlFor="admin-bulk-category-all" className="text-white text-sm font-medium">
+          {/* One category for the whole list (same picker as ProductForm) */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-300 mb-2">
               Category for all products
             </label>
-            <select
-              id="admin-bulk-category-all"
-              value={bulkCategory}
-              onChange={(e) => applyCategoryToAll(e.target.value)}
-              disabled={uploadState === 'uploading'}
-              className="min-w-[200px] bg-[#1a2a3a] border border-[rgba(255,215,0,0.3)] text-white text-xs rounded px-2 py-1.5 focus:outline-none focus:border-[#FFD700] disabled:opacity-60"
-            >
-              <option value="" disabled>Choose a category</option>
-              {categoryOptions.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-            <span className="text-[#A0A0A0] text-xs">Every product in the list is added to this category.</span>
+            <div className="max-w-md">
+              <SearchableSelect
+                options={categories || []}
+                value={bulkCategory}
+                onChange={applyCategoryToAll}
+                placeholder="Select category"
+                disabled={uploadState === 'uploading'}
+                className="dark-select"
+              />
+            </div>
+            <p className="text-[#A0A0A0] text-xs mt-2">Every product in the list is added to this category.</p>
           </div>
 
           {/* Summary bar */}
