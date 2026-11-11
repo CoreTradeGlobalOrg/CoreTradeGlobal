@@ -90,10 +90,10 @@ function InquirePageInner() {
   // Login-required — the inquiry ties to a userId that admins reference
   // when confirming payment, and /my-sponsorships needs an owner to
   // list against. Wait for auth to resolve, then push anonymous users
-  // to /login with a returnTo so they land back here after signing in.
+  // to /login with a redirect so they land back here after signing in.
   useEffect(() => {
     if (authLoading) return;
-    if (!user?.uid) router.replace('/login?returnTo=/advertising/inquire?type=sponsored');
+    if (!user?.uid) router.replace(`/login?redirect=${encodeURIComponent('/advertising/inquire?type=sponsored')}`);
   }, [authLoading, user, router]);
 
   const [company, setCompany] = useState('');

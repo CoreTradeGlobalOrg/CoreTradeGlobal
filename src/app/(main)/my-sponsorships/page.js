@@ -4,7 +4,7 @@
  * Rendered at /my-sponsorships. Lists every ad inquiry owned by the
  * signed-in user with its payment status so they can pick up a pending
  * payment later, or check whether a wire has been confirmed. Login is
- * required; anonymous visitors are bounced to /login with a returnTo.
+ * required; anonymous visitors are bounced to /login with a redirect back.
  *
  * Each row links back to /advertising/inquire/pay/{inquiryId} — that page
  * owns the actual "I've sent the wire" action and shows the bank
@@ -52,7 +52,7 @@ export default function MySponsorshipsPage() {
   useEffect(() => {
     if (authLoading) return;
     if (!user?.uid) {
-      router.replace('/login?returnTo=/my-sponsorships');
+      router.replace(`/login?redirect=${encodeURIComponent('/my-sponsorships')}`);
     }
   }, [authLoading, user, router]);
 

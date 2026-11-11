@@ -106,7 +106,7 @@ export default function PayPage() {
   useEffect(() => {
     if (authLoading) return;
     if (!user?.uid) {
-      router.replace(`/login?returnTo=/advertising/inquire/pay/${inquiryId || ''}`);
+      router.replace(`/login?redirect=${encodeURIComponent(`/advertising/inquire/pay/${inquiryId || ''}`)}`);
     }
   }, [authLoading, user, router, inquiryId]);
 
