@@ -8270,3 +8270,28 @@ exports.deleteProductThumbnail = onObjectDeleted(
     await bucket.file(productThumbnail.thumbPathFor(name)).delete({ ignoreNotFound: true });
   }
 );
+
+// ─── IndexNow ────────────────────────────────────────────────────────────────
+// Pings Bing, Yandex and the other IndexNow engines when a public page is
+// published, edited or removed (see utils/indexNow.js). The listing rules
+// match src/app/sitemap.js. Company profiles are not pinged: they render
+// client-side, their user docs change on every login, and the sitemap
+// already lists them.
+
+const indexNow = require('./utils/indexNow');
+
+const isActive = (doc) => doc.status === 'active';
+const isListedFair = (doc) => doc.status === 'upcoming' || doc.status === 'ongoing';
+
+function indexNowTrigger(collectionName, pagePath, isListed) {
+  return onDocumentWritten(`${collectionName}/{docId}`, async (event) => {
+    const before = event.data?.before?.data();
+    const after = event.data?.after?.data();
+    if (!indexNow.pageChanged(before, after, isListed)) return;
+    await indexNow.submitUrls([`${indexNow.SITE_URL}/${pagePath}/${event.params.docId}`]);
+  });
+}
+
+exports.indexNowProducts = indexNowTrigger('products', 'product', isActive);
+exports.indexNowRequests = indexNowTrigger('requests', 'request', isActive);
+exports.indexNowFairs = indexNowTrigger('fairs', 'fair', isListedFair);
