@@ -1,9 +1,9 @@
 /**
  * Sponsored Package — Payment Instructions
  *
- * Rendered at /pricing/inquire/pay/{inquiryId}. Owner + admin gated.
+ * Rendered at /advertising/inquire/pay/{inquiryId}. Owner + admin gated.
  *
- * The user lands here right after submitting /pricing/inquire, or comes
+ * The user lands here right after submitting /advertising/inquire, or comes
  * back to it later via /my-sponsorships, the persistent nudge banner,
  * the wf7.1 confirmation email, or the wf7.x reminder emails.
  *
@@ -106,7 +106,7 @@ export default function PayPage() {
   useEffect(() => {
     if (authLoading) return;
     if (!user?.uid) {
-      router.replace(`/login?returnTo=/pricing/inquire/pay/${inquiryId || ''}`);
+      router.replace(`/login?returnTo=/advertising/inquire/pay/${inquiryId || ''}`);
     }
   }, [authLoading, user, router, inquiryId]);
 
@@ -162,9 +162,9 @@ export default function PayPage() {
   const handleCopyLink = async () => {
     // Always share the canonical production URL — pasting a localhost
     // link into an email or Slack message on the user's phone is
-    // useless. The route (/pricing/inquire/pay/{id}) is identical
+    // useless. The route (/advertising/inquire/pay/{id}) is identical
     // across environments so hard-coding the domain is safe.
-    const link = `https://www.coretradeglobal.com/pricing/inquire/pay/${inquiry.id}`;
+    const link = `https://www.coretradeglobal.com/advertising/inquire/pay/${inquiry.id}`;
     try {
       await navigator.clipboard.writeText(link);
       toast.success('Payment link copied. You can come back to it later.');
@@ -193,7 +193,7 @@ export default function PayPage() {
             This payment link doesn&apos;t match any inquiry on your account. Double-check the URL or start a new inquiry.
           </p>
           <Link
-            href="/pricing/inquire?type=sponsored"
+            href="/advertising/inquire?type=sponsored"
             className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-gradient-to-r from-[#FFD700] to-[#FDB931] text-[#0F1B2B] font-bold text-sm"
             style={{ color: '#0F1B2B', WebkitTextFillColor: '#0F1B2B' }}
           >

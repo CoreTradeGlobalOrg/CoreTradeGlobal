@@ -619,7 +619,7 @@ function SponsoredPackageCard({ ad, categories }) {
 function SponsoredProductPlaceholder() {
     return (
         <Link
-            href="/pricing/inquire?type=sponsored_product"
+            href="/advertising/inquire?type=sponsored_product"
             aria-label="Book the Sponsored Product placement"
             className="product-grid-card group relative"
             style={{

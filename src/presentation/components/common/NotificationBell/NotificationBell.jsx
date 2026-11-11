@@ -88,7 +88,7 @@ export function NotificationBell() {
         : `${formatMonthShort(inq.startDate)} · reference ${inq.paymentReference || 'CTG'}`,
       createdAt: inq.createdAt,
       isRead: false,
-      link: `/pricing/inquire/pay/${inq.id}`,
+      link: `/advertising/inquire/pay/${inq.id}`,
     })),
     [pendingPayments],
   );

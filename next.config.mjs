@@ -36,6 +36,15 @@ const nextConfig = {
     imageSizes: [16, 32, 48, 64, 80, 96, 128, 200, 256, 384, 512],
     formats: ['image/avif', 'image/webp'],
   },
+  // The ad inquiry flow moved from /pricing/inquire to /advertising/inquire.
+  // Old links (shared pay links, bookmarks) keep working; the ?type= query
+  // is carried over.
+  async redirects() {
+    return [
+      { source: '/pricing/inquire', destination: '/advertising/inquire', permanent: true },
+      { source: '/pricing/inquire/:path*', destination: '/advertising/inquire/:path*', permanent: true },
+    ];
+  },
   // Security headers.
   async headers() {
     return [

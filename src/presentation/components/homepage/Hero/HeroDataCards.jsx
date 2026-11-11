@@ -217,7 +217,7 @@ export function HeroDataCards({ fetchData, dataLoading, latestProduct, latestReq
           </Link>
         ) : (
           <Link
-            href="/pricing/inquire?type=sponsored"
+            href="/advertising/inquire?type=sponsored"
             className="hero-info-card hero-product-card hero-promo-slot-card"
             aria-label="Feature your product here. Inquire about the Featured Product placement"
           >
@@ -370,7 +370,7 @@ export function HeroDataCards({ fetchData, dataLoading, latestProduct, latestReq
           </Link>
         ) : (
           <Link
-            href="/pricing/inquire?type=sponsored"
+            href="/advertising/inquire?type=sponsored"
             className="hero-info-card hero-supplier-card hero-promo-slot-card"
             aria-label="Your company here. Inquire about featured advertising"
           >

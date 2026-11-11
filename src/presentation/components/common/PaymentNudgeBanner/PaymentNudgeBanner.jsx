@@ -132,7 +132,7 @@ export function PaymentNudgeBanner() {
       role="alert"
     >
       <Link
-        href={`/pricing/inquire/pay/${topPending.id}`}
+        href={`/advertising/inquire/pay/${topPending.id}`}
         className="flex items-center gap-2 md:gap-3 px-4 py-2 md:py-2.5 max-w-6xl mx-auto no-underline text-[#0F1B2B]"
         style={{ color: '#0F1B2B', WebkitTextFillColor: '#0F1B2B' }}
       >

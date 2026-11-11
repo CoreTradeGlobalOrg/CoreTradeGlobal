@@ -4,11 +4,11 @@
  * Placement inquiry form for advertising tiers. Keeps SEO neutral —
  * this is a transactional page, not something we want ranking in
  * search results for competitive terms. Canonical still points at
- * itself so social scrapers land here (from the Pricing page CTA) and
+ * itself so social scrapers land here (from the Advertising page CTA) and
  * not on the homepage.
  */
 
-const CANONICAL_URL = 'https://www.coretradeglobal.com/pricing/inquire';
+const CANONICAL_URL = 'https://www.coretradeglobal.com/advertising/inquire';
 
 export const metadata = {
   title: 'Advertising Placement Inquiry | CoreTradeGlobal',
