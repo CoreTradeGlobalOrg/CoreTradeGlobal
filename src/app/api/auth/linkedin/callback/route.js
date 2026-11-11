@@ -14,6 +14,7 @@
 
 import { NextResponse } from 'next/server';
 import { getAdminAuth } from '@/lib/firebase-admin';
+import { safeRedirectPath } from '@/lib/safeRedirect';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -37,7 +38,7 @@ export async function GET(request) {
   const providerError = searchParams.get('error');
 
   const cookieState = request.cookies.get('li_oauth_state')?.value;
-  const redirectTarget = request.cookies.get('li_redirect')?.value || '/';
+  const redirectTarget = safeRedirectPath(request.cookies.get('li_redirect')?.value);
   const mode = request.cookies.get('li_mode')?.value === 'connect' ? 'connect' : 'signin';
 
   const clearCookies = (res) => {
@@ -51,7 +52,7 @@ export async function GET(request) {
     console.error('[linkedin/callback]', reason);
     // On connect-mode failure, return to the profile with an error flag.
     const target = mode === 'connect'
-      ? `${origin}${redirectTarget.startsWith('/') ? redirectTarget : '/'}?linkedin=error`
+      ? `${origin}${redirectTarget}?linkedin=error`
       : `${origin}/login?error=linkedin`;
     return clearCookies(NextResponse.redirect(target));
   };
@@ -106,10 +107,9 @@ export async function GET(request) {
     // client knows the true current Firebase user. Data goes in the URL fragment
     // (not sent to servers/logs); it is non-sensitive display info only. ──
     if (mode === 'connect') {
-      const safeRedirect = redirectTarget.startsWith('/') ? redirectTarget : '/';
       const params = new URLSearchParams({
         li_connect: '1',
-        redirect: safeRedirect,
+        redirect: redirectTarget,
         name: displayName || '',
         sub: profile.sub || '',
       });

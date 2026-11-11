@@ -17,10 +17,11 @@ import { httpsCallable } from 'firebase/functions';
 import { ArrowLeft, Loader2, Mail, Link2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { getFunctionsInstance } from '@/core/config/firebase.config';
+import { safeRedirectPath } from '@/lib/safeRedirect';
 
 function LoginLinkContent() {
   const searchParams = useSearchParams();
-  const redirect = searchParams.get('redirect') || '/';
+  const redirect = safeRedirectPath(searchParams.get('redirect'));
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);

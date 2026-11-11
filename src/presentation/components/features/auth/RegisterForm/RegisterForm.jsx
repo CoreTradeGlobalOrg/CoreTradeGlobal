@@ -28,6 +28,7 @@ import { toTitleCase } from '@/core/utils/nameCase';
 import { RegisterFormFields } from './RegisterFormFields';
 import { SocialAuthButtons } from '@/presentation/components/features/auth/SocialAuthButtons/SocialAuthButtons';
 import { clearFormAbandonment, reportFormAbandonment } from '@/lib/formAbandonment';
+import { safeRedirectPath } from '@/lib/safeRedirect';
 
 // SECURITY: Google's test reCAPTCHA key - should NEVER be used in production
 const RECAPTCHA_TEST_KEY = '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI';
@@ -57,7 +58,8 @@ const STEP_TITLES = {
 export function RegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectTo = searchParams.get('redirect');
+  // Only same-site paths: ?redirect=https://… must not send people off-site.
+  const redirectTo = safeRedirectPath(searchParams.get('redirect'), null);
   const { register: registerUser, loading } = useRegister();
   const { categories, loading: categoriesLoading } = useCategories();
   const { trackSignUp, track } = useTrackEvent();
