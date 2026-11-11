@@ -7984,6 +7984,9 @@ exports.wfFormAbandonmentSweep = onSchedule(
 
 // Mailde tek tek listelenen ürün sayısı; kalanlar sadece toplamlara girer
 const WEEKLY_VIEWS_TOP_N = 5;
+// Sentence added to the weekly notification and push to nudge members to
+// list more products.
+const WEEKLY_VIEWS_ADD_MORE = 'More products mean more ways for buyers to find you — add your next one today.';
 // Products kept per stored report (users/{uid}/viewReports/{weekKey}); keeps
 // the doc far below Firestore's 1 MiB limit even for big catalogs.
 const VIEW_REPORT_MAX_PRODUCTS = 500;
@@ -8032,7 +8035,18 @@ function buildWeeklyViewsEmailBody({ rangeLabel, top, weeklyTotal, allTimeTotal 
         <td style="padding:6px 0 0 0;font-size:14px;font-family:Arial,sans-serif;color:#FFFFFF;font-weight:bold;">All time, all products</td>
         <td style="padding:6px 0 0 0;font-size:14px;font-family:Arial,sans-serif;color:#FFFFFF;font-weight:bold;text-align:right;white-space:nowrap;">${formatCount(allTimeTotal)} ${allTimeTotal === 1 ? 'view' : 'views'}</td>
       </tr>
+    </table>
+    <p style="margin:24px 0 12px 0;"><strong style="color:#FFFFFF;">Every product you add is another way for buyers to find you.</strong> Add more products, or upload many at once with a CSV file.</p>
+    <table cellpadding="0" cellspacing="0" border="0">
+      <tr>
+        <td style="padding:0 8px 0 0;">${weeklyViewsSecondaryButton('Add a product', `${APP_URL}/product/new`)}</td>
+        <td>${weeklyViewsSecondaryButton('Bulk upload', `${APP_URL}/product/bulk`)}</td>
+      </tr>
     </table>`;
+}
+
+function weeklyViewsSecondaryButton(label, url) {
+  return `<a href="${url}" style="display:inline-block;border:1px solid #FFD700;color:#FFD700;text-decoration:none;padding:10px 18px;border-radius:6px;font-weight:bold;font-size:14px;font-family:Arial,sans-serif;">${label}</a>`;
 }
 
 /**
@@ -8122,7 +8136,7 @@ exports.sendWeeklyProductViewReport = onSchedule(
       await notifRef.set({
         type: 'product_views_weekly',
         title: 'Your weekly product views',
-        body: `Your products were viewed ${formatCount(weeklyTotal)} ${weeklyTotal === 1 ? 'time' : 'times'} last week (${rangeLabel}). All-time total: ${formatCount(allTimeTotal)} views.`,
+        body: `Your products were viewed ${formatCount(weeklyTotal)} ${weeklyTotal === 1 ? 'time' : 'times'} last week (${rangeLabel}). All-time total: ${formatCount(allTimeTotal)} views. ${WEEKLY_VIEWS_ADD_MORE}`,
         isRead: false,
         createdAt: Timestamp.now(),
         link,
@@ -8134,7 +8148,7 @@ exports.sendWeeklyProductViewReport = onSchedule(
         await sendFCMPushToUser(uid, user, {
           type: 'product_views_weekly',
           title: 'Your weekly product views',
-          body: `Your products were viewed ${formatCount(weeklyTotal)} ${weeklyTotal === 1 ? 'time' : 'times'} last week.`,
+          body: `Your products were viewed ${formatCount(weeklyTotal)} ${weeklyTotal === 1 ? 'time' : 'times'} last week. ${WEEKLY_VIEWS_ADD_MORE}`,
           link,
         }).catch((err) => console.warn(`sendWeeklyProductViewReport: push failed for ${uid}:`, err.message));
       }
