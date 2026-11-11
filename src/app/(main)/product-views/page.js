@@ -10,15 +10,17 @@
  * Past weeks come from users/{uid}/viewReports/{weekKey}, which
  * sendWeeklyProductViewReport stores every Monday. "This week so far" is
  * read live from the member's products, so the page is useful before the
- * first stored report and between reports.
+ * first stored report and between reports. Weeks from before reports were
+ * stored (notifications sent until 2026-11-09) only have the totals kept
+ * on their notification, so those weeks show the totals alone.
  */
 
 'use client';
 
-import { Suspense, useEffect, useMemo, useState } from 'react';
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { collection, getDocs, limit, orderBy, query, where } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, limit, orderBy, query, where } from 'firebase/firestore';
 import { ArrowRight, ChevronLeft, ChevronRight, Eye, Loader2, Package, PlusCircle, Sparkles, TrendingUp } from 'lucide-react';
 import { db } from '@/core/config/firebase.config';
 import { COLLECTIONS } from '@/core/constants/collections';
@@ -54,6 +56,18 @@ function currentWeekStartLabel(now) {
   return monday.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' });
 }
 
+/** "Nov 2 – Nov 8" for an ISO week key such as "2026-W45" (same format the report stores). */
+function weekRangeLabel(weekKey) {
+  const match = /^(\d{4})-W(\d{2})$/.exec(weekKey || '');
+  if (!match) return weekKey;
+  const jan4 = new Date(Date.UTC(Number(match[1]), 0, 4));
+  const weekOneMonday = jan4.getTime() - ((jan4.getUTCDay() + 6) % 7) * DAY_MS;
+  const monday = new Date(weekOneMonday + (Number(match[2]) - 1) * 7 * DAY_MS);
+  const sunday = new Date(monday.getTime() + 6 * DAY_MS);
+  const fmt = (d) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+  return `${fmt(monday)} – ${fmt(sunday)}`;
+}
+
 function formatCount(n) {
   return Number(n || 0).toLocaleString('en-US');
 }
@@ -86,6 +100,9 @@ function ProductViewsContent() {
   const { track } = useTrackEvent();
   const [entries, setEntries] = useState(null); // newest first: live week, then stored reports
   const [loadFailed, setLoadFailed] = useState(false);
+  // The week the page was opened for (from the notification); the old-week
+  // lookup below runs once, not on every week switch.
+  const openedWeekRef = useRef(requestedWeek);
 
   useEffect(() => {
     if (authLoading || user?.uid) return;
@@ -160,7 +177,33 @@ function ProductViewsContent() {
         };
       });
 
-      setEntries([live, ...reports]);
+      // A week from before reports were stored: its notification still has
+      // the totals the member was told about.
+      let older = null;
+      const opened = openedWeekRef.current;
+      if (opened && opened !== LIVE && !reports.some((r) => r.key === opened)) {
+        const notif = await getDoc(doc(db, COLLECTIONS.USERS, user.uid, 'notifications', `weekly-views-${opened}`))
+          .catch(() => null);
+        if (cancelled) return;
+        const totals = notif?.exists() ? notif.data()?.data : null;
+        if (totals && Number.isFinite(Number(totals.weeklyTotal))) {
+          const range = weekRangeLabel(opened);
+          older = {
+            key: opened,
+            navLabel: range,
+            periodLabel: range,
+            statLabel: opened === lastWeekKey ? 'Views last week' : 'Views that week',
+            weeklyTotal: Number(totals.weeklyTotal) || 0,
+            allTimeTotal: Number(totals.allTimeTotal) || 0,
+            productCount: live.productCount,
+            products: [],
+            totalsOnly: true,
+          };
+        }
+      }
+      const past = older ? [...reports, older].sort((a, b) => b.key.localeCompare(a.key)) : reports;
+
+      setEntries([live, ...past]);
     })();
     return () => {
       cancelled = true;
@@ -256,7 +299,9 @@ function ProductViewsContent() {
 
         {missingWeek && (
           <p className="mb-6 rounded-xl border border-[rgba(255,215,0,0.3)] bg-[rgba(255,215,0,0.06)] px-4 py-3 text-sm text-[#c8d3e0]">
-            We couldn&apos;t find the report for that week, so here is your latest one.
+            {entry.key === LIVE
+              ? "We couldn't find the report for that week, so here are this week's numbers so far."
+              : "We couldn't find the report for that week, so here is your latest one."}
           </p>
         )}
 
@@ -321,7 +366,22 @@ function ProductViewsContent() {
               <h2 className="text-lg md:text-xl font-bold">Views per product</h2>
               <span className="text-xs text-[#A0A0A0]">{plural(entry.products.length, 'product')}</span>
             </div>
-            {entry.products.length === 0 ? (
+            {entry.totalsOnly ? (
+              <div className="px-6 py-8 text-sm text-[#A0A0A0]">
+                <p className="mb-4">
+                  Views per product are kept from your next weekly report on. You can already see this
+                  week&apos;s views for each product.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => goTo(0)}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[rgba(255,215,0,0.4)] text-[#FFD700] text-sm font-semibold hover:bg-[rgba(255,215,0,0.08)] transition-colors"
+                >
+                  See this week per product
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              </div>
+            ) : entry.products.length === 0 ? (
               <p className="px-6 py-8 text-sm text-[#A0A0A0]">No products in this report.</p>
             ) : (
               <ol>

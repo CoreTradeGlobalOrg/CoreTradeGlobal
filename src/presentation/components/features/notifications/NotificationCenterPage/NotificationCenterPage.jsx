@@ -22,6 +22,7 @@ import { container } from '@/core/di/container';
 import { NotificationFilterTabs } from './NotificationFilterTabs';
 import { NotificationCenterItem } from './NotificationCenterItem';
 import { NotificationBulkActions } from './NotificationBulkActions';
+import { productViewsLink } from '@/lib/productViewsLink';
 
 // Notification type-to-tab mapping
 const TYPE_TO_TAB = {
@@ -212,6 +213,10 @@ export function NotificationCenterPage() {
       // Navigate based on notification type/link
       if (isExpandableNotification(notification)) {
         // Read in place, no navigation
+      } else if (notification.type === 'product_views_weekly') {
+        // Reports sent before 2026-11-11 carry a link to the profile; route
+        // by type so every one of them opens the report page.
+        router.push(productViewsLink(notification));
       } else if (notification.link) {
         router.push(notification.link);
       } else if (notification.type === 'report_reviewed') {

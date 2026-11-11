@@ -17,6 +17,7 @@ import { useAuth } from '@/presentation/contexts/AuthContext';
 import { useMessages } from '@/presentation/contexts/MessagesContext';
 import { useMarkAsRead } from '@/presentation/hooks/messaging/useMarkAsRead';
 import { PAYMENT_STATUSES } from '@/core/constants/wireTransfer';
+import { productViewsLink } from '@/lib/productViewsLink';
 import './NotificationBell.css';
 
 // Virtual notifications for pending payments — synthesized client-side
@@ -148,6 +149,10 @@ export function NotificationBell() {
     } else if (notification.type === 'announcement') {
       // Announcements are read in full on the notifications page
       router.push(`/notifications?open=${encodeURIComponent(notification.id)}`);
+    } else if (notification.type === 'product_views_weekly') {
+      // Reports sent before 2026-11-11 carry a link to the profile; route
+      // by type so every one of them opens the report page.
+      router.push(productViewsLink(notification));
     } else if (notification.link) {
       // Navigate using the notification's link field (e.g., product_upload_request)
       router.push(notification.link);
