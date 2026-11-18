@@ -67,4 +67,4 @@ contacts), choose a sender address and an HTML template, preview it, and send.
 
 ## Progress log
 
-- 2026-11-18: plan written; Phase 1 started.
+- 2026-11-18: plan written; Phase 1 committed (2517a03). Firestore rules and `sendAdminTestEmail` deployed to production; the Email tab goes live when `development` is pushed.
