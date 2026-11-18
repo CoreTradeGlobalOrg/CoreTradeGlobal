@@ -17,7 +17,12 @@ setGlobalOptions({ maxInstances: 10 });
 const admin = require('firebase-admin');
 const { Timestamp, FieldValue } = require('firebase-admin/firestore');
 const { toTitleCase } = require('./utils/nameCase');
-const { sendEmail } = require('./emailClient');
+const { sendEmail, trySendEmail } = require('./emailClient');
+const {
+  renderTemplate: renderAdminEmailTemplate,
+  sanitizeVars: sanitizeAdminEmailVars,
+  loadSender: loadAdminEmailSender,
+} = require('./adminEmail/render');
 
 // Initialize Firebase Admin SDK
 admin.initializeApp();
@@ -6564,6 +6569,78 @@ exports.sendAnnouncement = onCall(async (request) => {
     console.error(`sendAnnouncement: delivery failed for ${announcementRef.id}:`, err);
     throw new HttpsError('internal', 'Failed to deliver announcement.');
   }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Admin Email Tool (.planning/ADMIN_EMAIL_PLAN.md)
+// ─────────────────────────────────────────────────────────────────────────────
+
+const ADMIN_EMAIL_MAX_HTML = 400 * 1024;
+const ADMIN_EMAIL_MAX_SUBJECT = 300;
+
+/**
+ * sendAdminTestEmail (onCall)
+ *
+ * Admin-only. Renders a template with sample variables and sends it from the
+ * chosen sender to the calling admin's own address. Used by the template
+ * editor ("Send test to me") and the Senders tab ("Send test"). A successful
+ * send stamps the sender's verifiedAt; a failure stores the provider's reason
+ * in lastTestError so the Senders tab can show why (e.g. the address is not
+ * added as a Sender Address in ZeptoMail).
+ *
+ * Accepts: { senderId, subject, html, vars }
+ * Returns: { ok, to, error? }
+ */
+exports.sendAdminTestEmail = onCall(async (request) => {
+  const auth = request.auth;
+  if (!auth) {
+    throw new HttpsError('unauthenticated', 'You must be logged in.');
+  }
+  if (!(await isUserAdmin(auth.uid))) {
+    throw new HttpsError('permission-denied', 'Only administrators can send test emails.');
+  }
+
+  const { senderId, subject, html, vars } = request.data || {};
+  if (typeof subject !== 'string' || !subject.trim()) {
+    throw new HttpsError('invalid-argument', 'Subject is required.');
+  }
+  if (subject.length > ADMIN_EMAIL_MAX_SUBJECT) {
+    throw new HttpsError('invalid-argument', `Subject must be under ${ADMIN_EMAIL_MAX_SUBJECT} characters.`);
+  }
+  if (typeof html !== 'string' || !html.trim()) {
+    throw new HttpsError('invalid-argument', 'HTML is required.');
+  }
+  if (html.length > ADMIN_EMAIL_MAX_HTML) {
+    throw new HttpsError('invalid-argument', 'HTML is too large (400 KB max).');
+  }
+
+  const { sender, error: senderError } = await loadAdminEmailSender(db, senderId);
+  if (senderError) {
+    throw new HttpsError('failed-precondition', senderError);
+  }
+
+  const to = auth.token.email || (await admin.auth().getUser(auth.uid)).email;
+  if (!to) {
+    throw new HttpsError('failed-precondition', 'Your account has no email address.');
+  }
+
+  const cleanVars = sanitizeAdminEmailVars(vars);
+  const { ok, error } = await trySendEmail({
+    to,
+    subject: `[TEST] ${renderAdminEmailTemplate(subject, cleanVars, { escape: false })}`,
+    html: renderAdminEmailTemplate(html, cleanVars, { escape: true }),
+    from: { address: sender.address, name: sender.name },
+    replyTo: sender.replyTo,
+    tag: 'sendAdminTestEmail',
+  });
+
+  await db.collection('emailSenders').doc(senderId).update(
+    ok
+      ? { verifiedAt: FieldValue.serverTimestamp(), lastTestError: null }
+      : { lastTestError: (error || 'Unknown error').slice(0, 500), lastTestFailedAt: FieldValue.serverTimestamp() }
+  );
+
+  return ok ? { ok, to } : { ok, to, error };
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
