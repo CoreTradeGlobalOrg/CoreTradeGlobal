@@ -59,6 +59,11 @@ contacts), choose a sender address and an HTML template, preview it, and send.
   double-send. Scheduling uses the task `scheduleTime`.
 - History tab, Pause/Cancel, confirmation dialog (type SEND above 100 recipients), daily cap.
 - Image upload for templates (Firebase Storage → https URL inserted into the HTML).
+- Unsubscribe: `{{unsubscribe_link}}` already renders each recipient's `/unsubscribe?email=` link
+  (preview and tests use `test@example.com`). Still to do: skip addresses in `unsubscribes`, add
+  `List-Unsubscribe` / `List-Unsubscribe-Post` headers pointing at `/api/unsubscribe/one-click`, and
+  give `/unsubscribe` a confirm button. Today it unsubscribes on page load, so corporate link
+  scanners (Outlook Safe Links) can unsubscribe people who never clicked.
 
 ## Phase 3: Bounces
 
@@ -68,3 +73,4 @@ contacts), choose a sender address and an HTML template, preview it, and send.
 ## Progress log
 
 - 2026-11-18: plan written; Phase 1 committed (2517a03). Firestore rules and `sendAdminTestEmail` deployed to production; the Email tab goes live when `development` is pushed.
+- 2026-11-19: `development` pushed; Email tab on the Vercel preview. Fix 065caac: `{{unsubscribe_link}}` rendered empty (unknown variable); now filled by the server. `sendAdminTestEmail` redeployed.
