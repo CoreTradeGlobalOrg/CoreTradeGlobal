@@ -5,9 +5,10 @@
  * that cannot be done from the client side.
  */
 
-const { onCall, HttpsError } = require('firebase-functions/v2/https');
+const { onCall, onRequest, HttpsError } = require('firebase-functions/v2/https');
 const { onDocumentCreated, onDocumentUpdated, onDocumentWritten } = require('firebase-functions/v2/firestore');
 const { onSchedule } = require('firebase-functions/v2/scheduler');
+const { onTaskDispatched } = require('firebase-functions/v2/tasks');
 const { setGlobalOptions } = require('firebase-functions/v2');
 
 // Cloud Run varsayılanı fonksiyon başına 100 instance; 60+ fonksiyonda bu,
@@ -17,7 +18,18 @@ setGlobalOptions({ maxInstances: 10 });
 const admin = require('firebase-admin');
 const { Timestamp, FieldValue } = require('firebase-admin/firestore');
 const { toTitleCase } = require('./utils/nameCase');
-const { sendEmail } = require('./emailClient');
+const { sendEmail, trySendEmail } = require('./emailClient');
+const {
+  renderTemplate: renderAdminEmailTemplate,
+  sanitizeVars: sanitizeAdminEmailVars,
+  loadSender: loadAdminEmailSender,
+  unsubscribeLink: adminEmailUnsubscribeLink,
+  UNSUBSCRIBE_VARIABLE: ADMIN_EMAIL_UNSUBSCRIBE_VARIABLE,
+  TEST_UNSUBSCRIBE_EMAIL: ADMIN_EMAIL_TEST_UNSUBSCRIBE_EMAIL,
+  listUnsubscribeHeaders: adminEmailListUnsubscribeHeaders,
+} = require('./adminEmail/render');
+const adminEmailCampaigns = require('./adminEmail/campaigns');
+const zeptomailWebhook = require('./adminEmail/webhook');
 
 // Initialize Firebase Admin SDK
 admin.initializeApp();
@@ -6563,6 +6575,289 @@ exports.sendAnnouncement = onCall(async (request) => {
     await announcementRef.update({ status: 'failed' });
     console.error(`sendAnnouncement: delivery failed for ${announcementRef.id}:`, err);
     throw new HttpsError('internal', 'Failed to deliver announcement.');
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Admin Email Tool (.planning/ADMIN_EMAIL_PLAN.md)
+// ─────────────────────────────────────────────────────────────────────────────
+
+const ADMIN_EMAIL_MAX_HTML = 400 * 1024;
+const ADMIN_EMAIL_MAX_SUBJECT = 300;
+
+/**
+ * sendAdminTestEmail (onCall)
+ *
+ * Admin-only. Renders a template with sample variables and sends it from the
+ * chosen sender to the calling admin's own address. {{unsubscribe_link}}
+ * points at a placeholder address, never the admin's. Used by the template
+ * editor ("Send test to me") and the Senders tab ("Send test"). A successful
+ * send stamps the sender's verifiedAt; a failure stores the provider's reason
+ * in lastTestError so the Senders tab can show why (e.g. the address is not
+ * added as a Sender Address in ZeptoMail).
+ *
+ * Accepts: { senderId, subject, html, vars }
+ * Returns: { ok, to, error? }
+ */
+exports.sendAdminTestEmail = onCall(async (request) => {
+  const auth = request.auth;
+  if (!auth) {
+    throw new HttpsError('unauthenticated', 'You must be logged in.');
+  }
+  if (!(await isUserAdmin(auth.uid))) {
+    throw new HttpsError('permission-denied', 'Only administrators can send test emails.');
+  }
+
+  const { senderId, subject, html, vars } = request.data || {};
+  if (typeof subject !== 'string' || !subject.trim()) {
+    throw new HttpsError('invalid-argument', 'Subject is required.');
+  }
+  if (subject.length > ADMIN_EMAIL_MAX_SUBJECT) {
+    throw new HttpsError('invalid-argument', `Subject must be under ${ADMIN_EMAIL_MAX_SUBJECT} characters.`);
+  }
+  if (typeof html !== 'string' || !html.trim()) {
+    throw new HttpsError('invalid-argument', 'HTML is required.');
+  }
+  if (html.length > ADMIN_EMAIL_MAX_HTML) {
+    throw new HttpsError('invalid-argument', 'HTML is too large (400 KB max).');
+  }
+
+  const { sender, error: senderError } = await loadAdminEmailSender(db, senderId);
+  if (senderError) {
+    throw new HttpsError('failed-precondition', senderError);
+  }
+
+  const to = auth.token.email || (await admin.auth().getUser(auth.uid)).email;
+  if (!to) {
+    throw new HttpsError('failed-precondition', 'Your account has no email address.');
+  }
+
+  const cleanVars = {
+    ...sanitizeAdminEmailVars(vars),
+    [ADMIN_EMAIL_UNSUBSCRIBE_VARIABLE]: adminEmailUnsubscribeLink(ADMIN_EMAIL_TEST_UNSUBSCRIBE_EMAIL),
+  };
+  const { ok, error } = await trySendEmail({
+    to,
+    subject: `[TEST] ${renderAdminEmailTemplate(subject, cleanVars, { escape: false })}`,
+    html: renderAdminEmailTemplate(html, cleanVars, { escape: true }),
+    from: { address: sender.address, name: sender.name },
+    replyTo: sender.replyTo,
+    headers: adminEmailListUnsubscribeHeaders(ADMIN_EMAIL_TEST_UNSUBSCRIBE_EMAIL),
+    tag: 'sendAdminTestEmail',
+  });
+
+  await db.collection('emailSenders').doc(senderId).update(
+    ok
+      ? { verifiedAt: FieldValue.serverTimestamp(), lastTestError: null }
+      : { lastTestError: (error || 'Unknown error').slice(0, 500), lastTestFailedAt: FieldValue.serverTimestamp() }
+  );
+
+  return ok ? { ok, to } : { ok, to, error };
+});
+
+async function requireAdmin(request, action) {
+  if (!request.auth) {
+    throw new HttpsError('unauthenticated', 'You must be logged in.');
+  }
+  if (!(await isUserAdmin(request.auth.uid))) {
+    throw new HttpsError('permission-denied', `Only administrators can ${action}.`);
+  }
+}
+
+/**
+ * createEmailCampaign (onCall)
+ *
+ * Admin-only. Sends a saved template from a sender to selected members and/or
+ * CSV rows. With dryRun it only returns the summary the Send tab shows before
+ * the admin confirms (who is excluded and why, empty variables, daily cap).
+ * Otherwise it writes the campaign and queues sendEmailCampaignBatch tasks.
+ *
+ * Accepts: { templateId, senderId, uids: string[], csvRows: {email, vars}[],
+ *            csvFileName?, name?, dryRun? }
+ * Returns: { summary, campaignId? }
+ */
+exports.createEmailCampaign = onCall({ timeoutSeconds: 300, memory: '512MiB' }, async (request) => {
+  await requireAdmin(request, 'send emails');
+
+  const { templateId, senderId, uids = [], csvRows = [], csvFileName, name, dryRun } = request.data || {};
+  if (!Array.isArray(uids) || !Array.isArray(csvRows)) {
+    throw new HttpsError('invalid-argument', 'Recipients must be lists.');
+  }
+  const memberUids = [...new Set(uids.filter((u) => typeof u === 'string' && u.length > 0 && u.length <= 128))];
+  if (memberUids.length + csvRows.length === 0) {
+    throw new HttpsError('invalid-argument', 'Add at least one recipient.');
+  }
+  if (memberUids.length + csvRows.length > adminEmailCampaigns.MAX_RECIPIENTS) {
+    throw new HttpsError(
+      'invalid-argument',
+      `At most ${adminEmailCampaigns.MAX_RECIPIENTS} recipients per send. Split the list.`
+    );
+  }
+
+  if (typeof templateId !== 'string' || !templateId) {
+    throw new HttpsError('invalid-argument', 'Choose a template.');
+  }
+  const templateSnap = await db.collection('emailTemplates').doc(templateId).get();
+  if (!templateSnap.exists) {
+    throw new HttpsError('not-found', 'Template not found.');
+  }
+  const template = { id: templateSnap.id, ...templateSnap.data() };
+  if (typeof template.subject !== 'string' || !template.subject.trim()) {
+    throw new HttpsError('failed-precondition', 'The template has no subject.');
+  }
+  if (typeof template.html !== 'string' || !template.html.trim()) {
+    throw new HttpsError('failed-precondition', 'The template has no HTML.');
+  }
+
+  const { sender, error: senderError } = await loadAdminEmailSender(db, senderId);
+  if (senderError) {
+    throw new HttpsError('failed-precondition', senderError);
+  }
+
+  const plan = await adminEmailCampaigns.planCampaign(db, {
+    uids: memberUids,
+    csvRows,
+    subject: template.subject,
+    html: template.html,
+  });
+  if (dryRun) {
+    return { summary: plan.summary };
+  }
+
+  if (plan.summary.toSend === 0) {
+    throw new HttpsError('failed-precondition', 'Nobody to send to after exclusions.');
+  }
+  if (plan.summary.toSend > plan.summary.remainingToday) {
+    throw new HttpsError(
+      'resource-exhausted',
+      `This send has ${plan.summary.toSend} recipients but only ${plan.summary.remainingToday} of the daily ${plan.summary.dailyCap} are left. Try again tomorrow or send to fewer people.`
+    );
+  }
+
+  const { campaignId, batches } = await adminEmailCampaigns.writeCampaign(db, {
+    plan,
+    template,
+    sender: { id: senderId, address: sender.address, name: sender.name || null, replyTo: sender.replyTo || null },
+    name: (typeof name === 'string' && name.trim() ? name.trim() : template.name || 'Untitled').slice(0, 120),
+    sources: {
+      members: memberUids.length,
+      csvRows: csvRows.length,
+      csvFileName: typeof csvFileName === 'string' ? csvFileName.slice(0, 200) : null,
+    },
+    createdBy: { uid: request.auth.uid, email: request.auth.token.email || null },
+  });
+
+  try {
+    await adminEmailCampaigns.enqueueBatches(campaignId, [...Array(batches).keys()]);
+  } catch (err) {
+    console.error(`createEmailCampaign: could not queue ${campaignId}:`, err);
+    await db.collection('emailCampaigns').doc(campaignId).update({
+      status: 'paused',
+      lastError: 'Could not queue the emails. Press Resume to try again.',
+    });
+  }
+
+  return { campaignId, summary: plan.summary };
+});
+
+/**
+ * updateEmailCampaign (onCall)
+ *
+ * Admin-only. { campaignId, action: 'pause' | 'resume' | 'cancel' }.
+ * Pause and cancel stop the queued tasks before their next email; resume
+ * re-queues the batches that still have pending recipients.
+ */
+exports.updateEmailCampaign = onCall(async (request) => {
+  await requireAdmin(request, 'manage email sends');
+
+  const { campaignId, action } = request.data || {};
+  if (typeof campaignId !== 'string' || !campaignId) {
+    throw new HttpsError('invalid-argument', 'campaignId is required.');
+  }
+  const allowedFrom = { pause: ['queued', 'sending'], resume: ['paused'], cancel: ['queued', 'sending', 'paused'] };
+  if (!allowedFrom[action]) {
+    throw new HttpsError('invalid-argument', 'Unknown action.');
+  }
+
+  const ref = db.collection('emailCampaigns').doc(campaignId);
+  await db.runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    if (!snap.exists) {
+      throw new HttpsError('not-found', 'Send not found.');
+    }
+    const { status } = snap.data();
+    if (!allowedFrom[action].includes(status)) {
+      throw new HttpsError('failed-precondition', `A ${status} send cannot be ${action}d.`);
+    }
+    const next = { pause: 'paused', resume: 'queued', cancel: 'cancelled' }[action];
+    tx.update(ref, {
+      status: next,
+      [`${next}At`]: FieldValue.serverTimestamp(),
+      ...(action === 'resume' ? { lastError: null } : {}),
+    });
+  });
+
+  if (action === 'resume') {
+    const batches = await adminEmailCampaigns.pendingBatches(ref);
+    if (batches.length === 0) {
+      // Everything was already sent before the pause.
+      await ref.update({ status: 'sending' });
+      await adminEmailCampaigns.syncCampaign(db, ref);
+    } else {
+      try {
+        await adminEmailCampaigns.enqueueBatches(campaignId, batches);
+      } catch (err) {
+        console.error(`updateEmailCampaign: could not queue ${campaignId}:`, err);
+        await ref.update({ status: 'paused', lastError: 'Could not queue the emails. Press Resume to try again.' });
+        throw new HttpsError('internal', 'Could not queue the emails.');
+      }
+    }
+  }
+
+  return { ok: true };
+});
+
+/**
+ * sendEmailCampaignBatch (Cloud Task)
+ *
+ * Sends one batch (50 recipients) of an admin email campaign. The queue runs
+ * one batch at a time across all campaigns, which throttles sending to about
+ * two emails a second.
+ */
+exports.sendEmailCampaignBatch = onTaskDispatched(
+  {
+    retryConfig: { maxAttempts: 3, minBackoffSeconds: 60 },
+    rateLimits: { maxConcurrentDispatches: 1 },
+    timeoutSeconds: 540,
+  },
+  async (req) => {
+    const { campaignId, batch } = req.data || {};
+    if (typeof campaignId !== 'string' || !Number.isInteger(batch)) {
+      console.error('sendEmailCampaignBatch: bad task payload', req.data);
+      return;
+    }
+    await adminEmailCampaigns.sendCampaignBatch(db, { campaignId, batch });
+  }
+);
+
+/**
+ * zeptomailWebhook (HTTPS)
+ *
+ * ZeptoMail posts hard bounces and spam complaints here; the addresses go to
+ * emailSuppressions and admin email skips them. Configured in ZeptoMail →
+ * Agent → Webhooks with the header X-Webhook-Key = ZEPTOMAIL_WEBHOOK_KEY.
+ */
+exports.zeptomailWebhook = onRequest(async (req, res) => {
+  try {
+    const [status, body] = await zeptomailWebhook.handleWebhook(db, {
+      method: req.method,
+      headers: req.headers,
+      body: req.body,
+    });
+    res.status(status).json(body);
+  } catch (err) {
+    console.error('zeptomailWebhook: failed:', err);
+    res.status(500).json({ error: 'Failed' });
   }
 });
 

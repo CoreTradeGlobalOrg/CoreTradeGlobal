@@ -643,5 +643,41 @@ service cloud.firestore {
       allow update: if isAdmin();
       allow delete: if false;
     }
+
+    // Admin email tool (.planning/ADMIN_EMAIL_PLAN.md). Sender addresses must
+    // be on the platform domain; sendAdminTestEmail re-checks on the server
+    // (EMAIL_ALLOWED_FROM_DOMAINS) before sending from one.
+    match /emailSenders/{senderId} {
+      allow read, delete: if isAdmin();
+      allow create, update: if isAdmin()
+        && request.resource.data.address is string
+        && request.resource.data.address.matches('^[a-z0-9._%+-]+@coretradeglobal[.]com$');
+    }
+
+    match /emailTemplates/{templateId} {
+      allow read, delete: if isAdmin();
+      allow create, update: if isAdmin()
+        && request.resource.data.html is string
+        && request.resource.data.html.size() <= 400 * 1024;
+    }
+
+    // Admin email sends. Written only by createEmailCampaign and the
+    // sendEmailCampaignBatch task (Admin SDK); the Send/History tabs read them.
+    match /emailCampaigns/{campaignId} {
+      allow read: if isAdmin();
+      allow write: if false;
+
+      match /recipients/{emailHash} {
+        allow read: if isAdmin();
+        allow write: if false;
+      }
+    }
+
+    // Addresses that hard-bounced or complained (ZeptoMail webhook). Admin
+    // email skips them. Doc id = sha256 of the lowercased address.
+    match /emailSuppressions/{emailHash} {
+      allow read, delete: if isAdmin();
+      allow create, update: if false;
+    }
   }
 }
