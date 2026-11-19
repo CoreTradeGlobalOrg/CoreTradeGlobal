@@ -3,27 +3,49 @@
 /**
  * EmailManager
  *
- * Admin Email tab (.planning/ADMIN_EMAIL_PLAN.md). Phase 1: HTML templates
- * with live preview and the sender addresses emails may go out from.
- * Every send goes through ZeptoMail as transactional email.
+ * Admin Email tab (.planning/ADMIN_EMAIL_PLAN.md): send a saved HTML template
+ * to members and CSV contacts, follow sends in History, edit templates and
+ * manage the sender addresses. Every send goes through ZeptoMail as
+ * transactional email.
  */
 
 import { useState, useEffect } from 'react';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { Mail } from 'lucide-react';
 import { db } from '@/core/config/firebase.config';
+import { SendPanel } from './SendPanel';
+import { HistoryPanel } from './HistoryPanel';
 import { TemplatesPanel } from './TemplatesPanel';
 import { SendersPanel } from './SendersPanel';
 
 const SUB_TABS = [
+  { id: 'send', label: 'Send' },
+  { id: 'history', label: 'History' },
   { id: 'templates', label: 'Templates' },
   { id: 'senders', label: 'Senders' },
 ];
 
-export function EmailManager() {
-  const [subTab, setSubTab] = useState('templates');
+export function EmailManager({ users = [] }) {
+  const [subTab, setSubTab] = useState('send');
   const [senders, setSenders] = useState([]);
   const [sendersLoading, setSendersLoading] = useState(true);
+  const [templates, setTemplates] = useState([]);
+  const [templatesLoading, setTemplatesLoading] = useState(true);
+
+  useEffect(() => {
+    const q = query(collection(db, 'emailTemplates'), orderBy('updatedAt', 'desc'));
+    return onSnapshot(
+      q,
+      (snap) => {
+        setTemplates(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+        setTemplatesLoading(false);
+      },
+      (err) => {
+        console.error('EmailManager: templates snapshot error:', err);
+        setTemplatesLoading(false);
+      }
+    );
+  }, []);
 
   useEffect(() => {
     const q = query(collection(db, 'emailSenders'), orderBy('address'));
@@ -49,7 +71,7 @@ export function EmailManager() {
         <div>
           <h2 className="text-lg font-bold text-white">Email</h2>
           <p className="text-xs text-[#A0A0A0]">
-            HTML templates and sender addresses for transactional emails sent through ZeptoMail.
+            Send HTML templates to members and CSV contacts as transactional email through ZeptoMail.
           </p>
         </div>
       </div>
@@ -71,7 +93,11 @@ export function EmailManager() {
         ))}
       </div>
 
-      {subTab === 'templates' && <TemplatesPanel senders={senders} />}
+      {subTab === 'send' && (
+        <SendPanel templates={templates} senders={senders} users={users} onSent={() => setSubTab('history')} />
+      )}
+      {subTab === 'history' && <HistoryPanel />}
+      {subTab === 'templates' && <TemplatesPanel templates={templates} loading={templatesLoading} senders={senders} />}
       {subTab === 'senders' && <SendersPanel senders={senders} loading={sendersLoading} />}
     </div>
   );

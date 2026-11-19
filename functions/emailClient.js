@@ -42,7 +42,7 @@ function toList(to) {
   );
 }
 
-async function sendViaZeptoMail({ to, subject, html, replyTo, from }) {
+async function sendViaZeptoMail({ to, subject, html, replyTo, from, headers, clientReference }) {
   const token = process.env.ZEPTOMAIL_TOKEN.trim().replace(/^Zoho-enczapikey\s+/i, '');
   const body = {
     from: fromParts(from),
@@ -51,6 +51,8 @@ async function sendViaZeptoMail({ to, subject, html, replyTo, from }) {
     htmlbody: html,
   };
   if (replyTo) body.reply_to = [{ address: replyTo }];
+  if (headers && Object.keys(headers).length > 0) body.mime_headers = headers;
+  if (clientReference) body.client_reference = clientReference;
 
   const res = await fetch(process.env.ZEPTOMAIL_API_URL || ZEPTOMAIL_API_URL_DEFAULT, {
     method: 'POST',
@@ -73,7 +75,7 @@ async function sendViaZeptoMail({ to, subject, html, replyTo, from }) {
  * Same options as sendEmail().
  * @returns {Promise<{ok: boolean, error?: string}>}
  */
-async function trySendEmail({ to, subject, html, replyTo, from, tag = 'sendEmail' }) {
+async function trySendEmail({ to, subject, html, replyTo, from, headers, clientReference, tag = 'sendEmail' }) {
   const recipients = toList(to);
   if (recipients.length === 0 || !subject || !html) {
     return { ok: false, error: 'Missing recipient, subject or body.' };
@@ -85,7 +87,7 @@ async function trySendEmail({ to, subject, html, replyTo, from, tag = 'sendEmail
   }
 
   try {
-    await sendViaZeptoMail({ to: recipients, subject, html, replyTo, from });
+    await sendViaZeptoMail({ to: recipients, subject, html, replyTo, from, headers, clientReference });
     console.log(`${tag}: sent "${subject}" to ${recipients.join(', ')}`);
     return { ok: true };
   } catch (err) {
@@ -105,6 +107,8 @@ async function trySendEmail({ to, subject, html, replyTo, from, tag = 'sendEmail
  * @param {{address: string, name?: string}} [opts.from] sender override; the
  *        caller must have checked it against the allowed senders. Defaults to
  *        EMAIL_FROM_ADDRESS / EMAIL_FROM_NAME.
+ * @param {Object<string,string>} [opts.headers] extra MIME headers, e.g. List-Unsubscribe
+ * @param {string} [opts.clientReference] echoed back in ZeptoMail webhooks
  * @param {string} [opts.tag] log prefix, e.g. the calling function's name
  * @returns {Promise<boolean>} true when the provider accepted the message
  */

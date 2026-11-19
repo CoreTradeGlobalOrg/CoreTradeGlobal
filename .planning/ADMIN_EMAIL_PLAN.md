@@ -25,6 +25,10 @@ contacts), choose a sender address and an HTML template, preview it, and send.
    groups so replies land somewhere. `noreply@` gets `replyTo: contact@` in its sender record.
 3. DNS: the apex has two SPF TXT records, which makes SPF a permerror. Replace both with one:
    `v=spf1 include:_spf.google.com include:_spf.firebasemail.com include:eu.zcsend.net ~all`
+4. ZeptoMail → Agents → (the agent of `ZEPTOMAIL_TOKEN`) → Webhooks → Configure Webhook:
+   URL `https://us-central1-core-trade-global.cloudfunctions.net/zeptomailWebhook`, authorization
+   header `X-Webhook-Key` = `ZEPTOMAIL_WEBHOOK_KEY` from `functions/.env.core-trade-global`, events
+   Hard bounces + Feedback loop. Deploy `zeptomailWebhook` first, then press Verify.
 
 ## Phase 1: Senders and templates
 
@@ -44,7 +48,18 @@ contacts), choose a sender address and an HTML template, preview it, and send.
 - Variables: `{{firstName}}`, `{{lastName}}`, `{{companyName}}`, `{{email}}`, plus any CSV
   column (Phase 2). Values are HTML-escaped in the body; the subject is plain text.
 
-## Phase 2: Recipients and sending
+## Phase 2: Recipients and sending (written 2026-11-19, not deployed)
+
+Built as described below, except: member selection lives in the Email → Send tab (its own
+filters: role, approval, email verified, country, analytics segment) instead of checkboxes in
+the Users tab; no scheduling and no image upload yet. Daily cap: `ADMIN_EMAIL_DAILY_CAP`,
+default 2000. Queue: one batch of 50 at a time (`maxConcurrentDispatches: 1`), about two emails a
+second. `/unsubscribe` now waits for a click.
+
+Deploy order: `firestore:rules`, then one at a time `sendAdminTestEmail`, `createEmailCampaign`,
+`updateEmailCampaign`, `sendEmailCampaignBatch` (first deploy enables the Cloud Tasks API),
+`zeptomailWebhook`; then push `development`.
+
 
 - Recipient sources, combinable: member selection (Users-tab filters + checkboxes, "Email
   selected" button), an analytics segment (`getMemberSegments`), CSV upload (papaparse).
@@ -65,7 +80,14 @@ contacts), choose a sender address and an HTML template, preview it, and send.
   give `/unsubscribe` a confirm button. Today it unsubscribes on page load, so corporate link
   scanners (Outlook Safe Links) can unsubscribe people who never clicked.
 
-## Phase 3: Bounces
+## Phase 3: Bounces (written 2026-11-19, not deployed)
+
+`zeptomailWebhook` (HTTPS) checks `X-Webhook-Key`, suppresses only the bounced recipient
+(`details.bounced_recipient`) or the complainer (`details.to`, event `fbl_compliant`), and updates
+the campaign recipient via `client_reference = campaignId:emailHash`. Soft bounces are ignored.
+A running send pauses itself at a 5% hard-bounce rate after 50 sent. History lists the
+suppressed addresses with Remove.
+
 
 - ZeptoMail bounce/complaint webhook → `emailSuppressions/{emailHash}`; Phase 2 skips these.
 - Bounce/complaint counts per campaign in History.
@@ -74,3 +96,4 @@ contacts), choose a sender address and an HTML template, preview it, and send.
 
 - 2026-11-18: plan written; Phase 1 committed (2517a03). Firestore rules and `sendAdminTestEmail` deployed to production; the Email tab goes live when `development` is pushed.
 - 2026-11-19: `development` pushed; Email tab on the Vercel preview. Fix 065caac: `{{unsubscribe_link}}` rendered empty (unknown variable); now filled by the server. `sendAdminTestEmail` redeployed.
+- 2026-11-19: Phases 2 and 3 written and committed locally; e2e test against the Firestore emulator with a fake ZeptoMail API passes. Not deployed. Unverified: whether ZeptoMail passes `List-Unsubscribe` through `mime_headers` (first real test send will show).

@@ -3,13 +3,12 @@
 /**
  * TemplatesPanel
  *
- * Lists `emailTemplates` and opens TemplateEditor for a new or existing one.
+ * Lists `emailTemplates` (loaded by EmailManager) and opens TemplateEditor
+ * for a new or existing one.
  */
 
-import { useState, useEffect } from 'react';
-import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
+import { useState } from 'react';
 import { FileCode2, Plus } from 'lucide-react';
-import { db } from '@/core/config/firebase.config';
 import { TemplateEditor } from './TemplateEditor';
 
 function formatDate(ts) {
@@ -17,26 +16,9 @@ function formatDate(ts) {
   return ts.toDate().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
-export function TemplatesPanel({ senders }) {
-  const [templates, setTemplates] = useState([]);
-  const [loading, setLoading] = useState(true);
+export function TemplatesPanel({ templates, loading, senders }) {
   // null = list view; 'new' = blank editor; otherwise the template id being edited
   const [editingId, setEditingId] = useState(null);
-
-  useEffect(() => {
-    const q = query(collection(db, 'emailTemplates'), orderBy('updatedAt', 'desc'));
-    return onSnapshot(
-      q,
-      (snap) => {
-        setTemplates(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
-        setLoading(false);
-      },
-      (err) => {
-        console.error('TemplatesPanel: snapshot error:', err);
-        setLoading(false);
-      }
-    );
-  }, []);
 
   if (editingId) {
     const template = editingId === 'new' ? null : templates.find((t) => t.id === editingId);

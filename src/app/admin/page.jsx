@@ -382,7 +382,7 @@ function AdminPageContent() {
       {/* Email Tab */}
       {activeTab === 'email' && (
         <div className="text-white">
-          <EmailManager />
+          <EmailManager users={users} />
         </div>
       )}
 

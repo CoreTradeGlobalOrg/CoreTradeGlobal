@@ -18,10 +18,11 @@ export const UNSUBSCRIBE_VARIABLE = 'unsubscribe_link';
 export const TEST_UNSUBSCRIBE_EMAIL = 'test@example.com';
 
 /** Same URL as unsubscribeLink() in functions/adminEmail/render.js. */
-export function unsubscribeLink(email) {
-  return `https://www.coretradeglobal.com/unsubscribe?email=${encodeURIComponent(
-    String(email).trim().toLowerCase()
-  )}&utm_source=admin-email`;
+export function unsubscribeLink(email, campaignId) {
+  const query = `email=${encodeURIComponent(String(email).trim().toLowerCase())}&utm_source=admin-email`;
+  return `https://www.coretradeglobal.com/unsubscribe?${
+    campaignId ? `${query}&utm_campaign=${encodeURIComponent(campaignId)}` : query
+  }`;
 }
 
 export const MAX_HTML_BYTES = 400 * 1024;

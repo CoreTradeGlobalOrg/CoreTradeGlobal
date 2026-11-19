@@ -23,11 +23,27 @@ const UNSUBSCRIBE_VARIABLE = 'unsubscribe_link';
 // unsubscribes a real person.
 const TEST_UNSUBSCRIBE_EMAIL = 'test@example.com';
 
+const SITE_URL = 'https://www.coretradeglobal.com';
+
+function unsubscribeQuery(email, campaignId) {
+  const query = `email=${encodeURIComponent(String(email).trim().toLowerCase())}&utm_source=admin-email`;
+  return campaignId ? `${query}&utm_campaign=${encodeURIComponent(campaignId)}` : query;
+}
+
 /** Same URL as unsubscribeLink() in src/lib/email/adminEmailTemplate.js. */
-function unsubscribeLink(email) {
-  return `https://www.coretradeglobal.com/unsubscribe?email=${encodeURIComponent(
-    String(email).trim().toLowerCase()
-  )}&utm_source=admin-email`;
+function unsubscribeLink(email, campaignId) {
+  return `${SITE_URL}/unsubscribe?${unsubscribeQuery(email, campaignId)}`;
+}
+
+/**
+ * RFC 8058 headers. Gmail and Yahoo show their own "Unsubscribe" button and
+ * POST to the one-click endpoint, which writes the same `unsubscribes` doc.
+ */
+function listUnsubscribeHeaders(email, campaignId) {
+  return {
+    'List-Unsubscribe': `<${SITE_URL}/api/unsubscribe/one-click?${unsubscribeQuery(email, campaignId)}>`,
+    'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+  };
 }
 
 function escapeHtml(value) {
@@ -50,6 +66,15 @@ function renderTemplate(text, vars, { escape }) {
     const value = Object.prototype.hasOwnProperty.call(vars, key) ? vars[key] : '';
     return escape ? escapeHtml(value) : String(value);
   });
+}
+
+/** Variable names used in the given texts, in first-seen order. */
+function findVariables(...texts) {
+  const seen = new Set();
+  for (const text of texts) {
+    for (const match of String(text || '').matchAll(VARIABLE_RE)) seen.add(match[1]);
+  }
+  return [...seen];
 }
 
 /**
@@ -108,8 +133,10 @@ module.exports = {
   UNSUBSCRIBE_VARIABLE,
   TEST_UNSUBSCRIBE_EMAIL,
   unsubscribeLink,
+  listUnsubscribeHeaders,
   escapeHtml,
   renderTemplate,
+  findVariables,
   sanitizeVars,
   isAllowedFromAddress,
   loadSender,
