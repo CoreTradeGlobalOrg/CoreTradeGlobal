@@ -48,7 +48,7 @@ contacts), choose a sender address and an HTML template, preview it, and send.
 - Variables: `{{firstName}}`, `{{lastName}}`, `{{companyName}}`, `{{email}}`, plus any CSV
   column (Phase 2). Values are HTML-escaped in the body; the subject is plain text.
 
-## Phase 2: Recipients and sending (written 2026-11-19, not deployed)
+## Phase 2: Recipients and sending (deployed 2026-11-19)
 
 Built as described below, except: member selection lives in the Email → Send tab (its own
 filters: role, approval, email verified, country, analytics segment) instead of checkboxes in
@@ -80,7 +80,7 @@ Deploy order: `firestore:rules`, then one at a time `sendAdminTestEmail`, `creat
   give `/unsubscribe` a confirm button. Today it unsubscribes on page load, so corporate link
   scanners (Outlook Safe Links) can unsubscribe people who never clicked.
 
-## Phase 3: Bounces (written 2026-11-19, not deployed)
+## Phase 3: Bounces (deployed 2026-11-19; ZeptoMail webhook still to configure)
 
 `zeptomailWebhook` (HTTPS) checks `X-Webhook-Key`, suppresses only the bounced recipient
 (`details.bounced_recipient`) or the complainer (`details.to`, event `fbl_compliant`), and updates
@@ -97,3 +97,4 @@ suppressed addresses with Remove.
 - 2026-11-18: plan written; Phase 1 committed (2517a03). Firestore rules and `sendAdminTestEmail` deployed to production; the Email tab goes live when `development` is pushed.
 - 2026-11-19: `development` pushed; Email tab on the Vercel preview. Fix 065caac: `{{unsubscribe_link}}` rendered empty (unknown variable); now filled by the server. `sendAdminTestEmail` redeployed.
 - 2026-11-19: Phases 2 and 3 written and committed locally; e2e test against the Firestore emulator with a fake ZeptoMail API passes. Not deployed. Unverified: whether ZeptoMail passes `List-Unsubscribe` through `mime_headers` (first real test send will show).
+- 2026-11-19: Phases 2 and 3 deployed: `firestore:rules`, `sendAdminTestEmail`, `createEmailCampaign`, `updateEmailCampaign`, `sendEmailCampaignBatch` (enabled Cloud Tasks API; queue RUNNING, concurrency 1, 3 attempts), `zeptomailWebhook` (403 without key, 200 with key). `development` pushed (1e3111e). Left: configure the webhook in ZeptoMail, first real test send (List-Unsubscribe check), small real send.
