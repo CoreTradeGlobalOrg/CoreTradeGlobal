@@ -22,6 +22,9 @@ const {
   renderTemplate: renderAdminEmailTemplate,
   sanitizeVars: sanitizeAdminEmailVars,
   loadSender: loadAdminEmailSender,
+  unsubscribeLink: adminEmailUnsubscribeLink,
+  UNSUBSCRIBE_VARIABLE: ADMIN_EMAIL_UNSUBSCRIBE_VARIABLE,
+  TEST_UNSUBSCRIBE_EMAIL: ADMIN_EMAIL_TEST_UNSUBSCRIBE_EMAIL,
 } = require('./adminEmail/render');
 
 // Initialize Firebase Admin SDK
@@ -6582,7 +6585,8 @@ const ADMIN_EMAIL_MAX_SUBJECT = 300;
  * sendAdminTestEmail (onCall)
  *
  * Admin-only. Renders a template with sample variables and sends it from the
- * chosen sender to the calling admin's own address. Used by the template
+ * chosen sender to the calling admin's own address. {{unsubscribe_link}}
+ * points at a placeholder address, never the admin's. Used by the template
  * editor ("Send test to me") and the Senders tab ("Send test"). A successful
  * send stamps the sender's verifiedAt; a failure stores the provider's reason
  * in lastTestError so the Senders tab can show why (e.g. the address is not
@@ -6624,7 +6628,10 @@ exports.sendAdminTestEmail = onCall(async (request) => {
     throw new HttpsError('failed-precondition', 'Your account has no email address.');
   }
 
-  const cleanVars = sanitizeAdminEmailVars(vars);
+  const cleanVars = {
+    ...sanitizeAdminEmailVars(vars),
+    [ADMIN_EMAIL_UNSUBSCRIBE_VARIABLE]: adminEmailUnsubscribeLink(ADMIN_EMAIL_TEST_UNSUBSCRIBE_EMAIL),
+  };
   const { ok, error } = await trySendEmail({
     to,
     subject: `[TEST] ${renderAdminEmailTemplate(subject, cleanVars, { escape: false })}`,

@@ -20,11 +20,17 @@ import { useAuth } from '@/presentation/contexts/AuthContext';
 import {
   BUILT_IN_VARIABLES,
   MAX_HTML_BYTES,
+  TEST_UNSUBSCRIBE_EMAIL,
+  UNSUBSCRIBE_VARIABLE,
   byteSize,
   findVariables,
   lintTemplate,
   renderTemplate,
+  unsubscribeLink,
 } from '@/lib/email/adminEmailTemplate';
+
+// What {{unsubscribe_link}} becomes in the preview and in test sends.
+const TEST_UNSUBSCRIBE_LINK = unsubscribeLink(TEST_UNSUBSCRIBE_EMAIL);
 
 const STARTER_HTML = `<!DOCTYPE html>
 <html lang="en">
@@ -69,13 +75,21 @@ export function TemplateEditor({ template, senders, onClose }) {
   const deferredHtml = useDeferredValue(html);
   const deferredSubject = useDeferredValue(subject);
 
+  // {{unsubscribe_link}} is generated per recipient, so it gets no sample input.
   const variables = useMemo(
-    () => [...new Set([...BUILT_IN_VARIABLES, ...findVariables(deferredSubject, deferredHtml)])],
+    () =>
+      [...new Set([...BUILT_IN_VARIABLES, ...findVariables(deferredSubject, deferredHtml)])].filter(
+        (key) => key !== UNSUBSCRIBE_VARIABLE
+      ),
     [deferredSubject, deferredHtml]
   );
+  const previewVars = useMemo(
+    () => ({ ...sampleVars, [UNSUBSCRIBE_VARIABLE]: TEST_UNSUBSCRIBE_LINK }),
+    [sampleVars]
+  );
   const previewHtml = useMemo(
-    () => renderTemplate(deferredHtml, sampleVars, { escape: true }),
-    [deferredHtml, sampleVars]
+    () => renderTemplate(deferredHtml, previewVars, { escape: true }),
+    [deferredHtml, previewVars]
   );
   const issues = useMemo(
     () => lintTemplate({ subject: deferredSubject, html: deferredHtml }),
@@ -307,6 +321,11 @@ export function TemplateEditor({ template, senders, onClose }) {
                 </div>
               ))}
             </div>
+            <p className="mt-3 text-xs text-[#5a6a7a]">
+              <span className="font-mono">{`{{${UNSUBSCRIBE_VARIABLE}}}`}</span> is filled in automatically with each
+              recipient&apos;s own unsubscribe link. Previews and tests use {TEST_UNSUBSCRIBE_EMAIL}, so clicking it
+              never unsubscribes you.
+            </p>
           </div>
         </div>
 
@@ -345,7 +364,7 @@ export function TemplateEditor({ template, senders, onClose }) {
               </p>
               <p className="text-white break-words">
                 <span className="text-[#5a6a7a]">Subject: </span>
-                {renderTemplate(deferredSubject, sampleVars, { escape: false }) || '(empty)'}
+                {renderTemplate(deferredSubject, previewVars, { escape: false }) || '(empty)'}
               </p>
             </div>
 

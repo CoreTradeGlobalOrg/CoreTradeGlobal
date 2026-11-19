@@ -10,6 +10,20 @@ const VARIABLE_RE = /\{\{\s*([A-Za-z_][A-Za-z0-9_]*)\s*\}\}/g;
 
 export const BUILT_IN_VARIABLES = ['firstName', 'lastName', 'companyName', 'email'];
 
+// Filled in by the system for each recipient; the admin never types it.
+export const UNSUBSCRIBE_VARIABLE = 'unsubscribe_link';
+
+// Previews and test sends link to this address so clicking the link in a
+// test email never unsubscribes a real person.
+export const TEST_UNSUBSCRIBE_EMAIL = 'test@example.com';
+
+/** Same URL as unsubscribeLink() in functions/adminEmail/render.js. */
+export function unsubscribeLink(email) {
+  return `https://www.coretradeglobal.com/unsubscribe?email=${encodeURIComponent(
+    String(email).trim().toLowerCase()
+  )}&utm_source=admin-email`;
+}
+
 export const MAX_HTML_BYTES = 400 * 1024;
 
 // Gmail clips messages over ~102 KB and hides the rest behind "View entire message".
@@ -83,7 +97,15 @@ export function lintTemplate({ subject, html }) {
     issues.push({ level: 'warning', message: 'Some links are relative. Use absolute URLs such as https://www.coretradeglobal.com/...' });
   }
 
-  const custom = findVariables(subject, body).filter((v) => !BUILT_IN_VARIABLES.includes(v));
+  const used = findVariables(subject, body);
+  if (body.trim() && !used.includes(UNSUBSCRIBE_VARIABLE)) {
+    issues.push({
+      level: 'warning',
+      message: `No unsubscribe link. Add <a href="{{${UNSUBSCRIBE_VARIABLE}}}">Unsubscribe</a> to the footer.`,
+    });
+  }
+
+  const custom = used.filter((v) => !BUILT_IN_VARIABLES.includes(v) && v !== UNSUBSCRIBE_VARIABLE);
   if (custom.length > 0) {
     issues.push({
       level: 'warning',

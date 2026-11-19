@@ -15,6 +15,21 @@ const MAX_VAR_LENGTH = 1000;
 
 const ALLOWED_FROM_DOMAINS_DEFAULT = 'coretradeglobal.com';
 
+// {{unsubscribe_link}} is filled in by the server for each recipient and
+// overrides anything the client sends under that name.
+const UNSUBSCRIBE_VARIABLE = 'unsubscribe_link';
+
+// Test sends link to this address so clicking the link in a test email never
+// unsubscribes a real person.
+const TEST_UNSUBSCRIBE_EMAIL = 'test@example.com';
+
+/** Same URL as unsubscribeLink() in src/lib/email/adminEmailTemplate.js. */
+function unsubscribeLink(email) {
+  return `https://www.coretradeglobal.com/unsubscribe?email=${encodeURIComponent(
+    String(email).trim().toLowerCase()
+  )}&utm_source=admin-email`;
+}
+
 function escapeHtml(value) {
   return String(value)
     .replace(/&/g, '&amp;')
@@ -90,6 +105,9 @@ async function loadSender(db, senderId) {
 }
 
 module.exports = {
+  UNSUBSCRIBE_VARIABLE,
+  TEST_UNSUBSCRIBE_EMAIL,
+  unsubscribeLink,
   escapeHtml,
   renderTemplate,
   sanitizeVars,
